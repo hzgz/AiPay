@@ -1,0 +1,17 @@
+{
+  "config": {
+    "sitename": "AiPay",
+    "adminMail": "ops@example.com",
+    "smtp-host": "smtp.example.com",
+    "smtp-port": "465",
+    "smtp-user": "ops@example.com",
+    "smtp-pass": "replace-with-real-password",
+    "SmtpSecure": "ssl",
+    "smstype": "qcloud",
+    "tensms-AppId": "replace-with-app-id",
+    "tensms-accessKeyId": "replace-with-secret-id",
+    "tensms-Secret": "replace-with-secret-key",
+    "tensms-SignName": "replace-with-sign-name",
+    "tensms-LoginCodeId": "replace-with-template-id"
+  }
+}

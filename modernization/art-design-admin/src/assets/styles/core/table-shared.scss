@@ -1,0 +1,60 @@
+.table-actions {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: var(--el-component-custom-height);
+}
+
+.table-actions .el-button + .el-button,
+.table-action-link + .table-action-link {
+  margin-left: 0 !important;
+}
+
+.table-actions > * {
+  flex: 0 0 auto;
+}
+
+.table-action-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+  width: 76px;
+  min-width: 76px;
+  max-width: 76px;
+  min-height: var(--el-component-custom-height) !important;
+  padding: 0 10px !important;
+  border-radius: 9px !important;
+  font-size: 12.5px;
+  line-height: 1;
+  font-weight: 500;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.table-action-link > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.status-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.operation-column-cell .cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0 !important;
+}

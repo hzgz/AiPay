@@ -1,0 +1,113 @@
+{
+  "code": "wxpay_v3",
+  "name": "微信支付 V3 插件",
+  "description": "用于维护微信支付 V3 账户，统一管理配置、安装、启停与清理。",
+  "version": "1.0.0",
+  "provider": "AiPay官方",
+  "entry": "plugins/payments/wxpay_v3/src/Plugin.php",
+  "class": "Plugins\\Payments\\WxpayV3\\Plugin",
+  "capabilities": [
+    "admin_account",
+    "gateway_certificate",
+    "merchant_qrcode",
+    "create_order"
+  ],
+  "merchant_enabled": true,
+  "managed_channels": [
+    {
+      "code": "wxpay_v3",
+      "name": "微信支付 V3",
+      "type": "wxpay",
+      "info": "旧 TP 微信支付 V3 通道，现由独立支付插件托管。",
+      "status": 1,
+      "sort": 90,
+      "maxcount": 999
+    }
+  ],
+  "migrations": {
+    "strategy": "versioned_sql",
+    "releases": [
+      {
+        "version": "1.0.0",
+        "files": [
+          "001_create_config_table.sql",
+          "002_create_plugin_log_table.sql"
+        ],
+        "notes": [
+          "初始化微信支付 V3 插件的配置表与日志表。",
+          "保留原有 V3 账户字段处理逻辑，仅把插件生命周期和托管通道标准化。"
+        ]
+      }
+    ]
+  },
+  "upgrade": {
+    "impact": "low",
+    "downtime": "none",
+    "requires_disable_after_upgrade": false,
+    "notes": [
+      "该插件主要管理后台账户能力与托管通道，不承接商户上游插件流量。",
+      "后续证书或 API V3 密钥字段扩展应通过新增迁移版本完成。"
+    ],
+    "checklist": [
+      "升级前确认后台不存在未审核的插件清理计划。",
+      "升级后检查 admin_channel 中 wxpay_v3 通道仍处于插件托管状态。"
+    ],
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "summary": "微信支付 V3 插件首个独立目录版本。",
+        "breaking": false,
+        "migration_files": [
+          "001_create_config_table.sql",
+          "002_create_plugin_log_table.sql"
+        ],
+        "notes": [
+          "保留旧 TP 的 V3 账户字段、公私钥、API V3 密钥与证书序列号逻辑。",
+          "本次改造重点是插件目录、清理策略和托管通道独立化。"
+        ]
+      }
+    ],
+    "rollback": {
+      "supported": true,
+      "mode": "backup_restore",
+      "automatic": false,
+      "requires_backup": true,
+      "notes": [
+        "如需回滚，请先恢复插件目录与 pay_plugin_wxpay_v3_* 表。",
+        "业务订单、商户、资金与结算数据不属于插件清理范围。"
+      ]
+    }
+  },
+  "cleanup": {
+    "safe": {
+      "files": [
+        "runtime/payment-plugins/wxpay_v3"
+      ],
+      "tables": [
+        "pay_plugin_wxpay_v3_config"
+      ],
+      "notes": [
+        "安全清理仅移除插件运行时目录与插件自有配置表。"
+      ]
+    },
+    "purge": {
+      "files": [
+        "plugins/payments/wxpay_v3"
+      ],
+      "tables": [
+        "pay_plugin_wxpay_v3_log"
+      ],
+      "notes": [
+        "彻底清理会移除插件包目录与插件日志表，并尝试清理插件托管通道。"
+      ]
+    },
+    "retain": [
+      "支付账户主表记录",
+      "历史订单",
+      "资金与结算记录",
+      "商户业务数据",
+      "平台审计日志"
+    ],
+    "purge_requires_confirmation": true
+  }
+}

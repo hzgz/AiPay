@@ -1,0 +1,567 @@
+<?php
+
+namespace app\support;
+
+class AdminPermissionMigrationMapper
+{
+    private const STATUS_META = [
+        'write_enabled' => ['label' => '已开放', 'type' => 'success'],
+        'read_only' => ['label' => '只读', 'type' => 'info'],
+        'pending_write' => ['label' => '待完善', 'type' => 'warning'],
+        'group_split' => ['label' => '已拆分', 'type' => 'primary'],
+        'legacy_only' => ['label' => '已移除', 'type' => 'danger'],
+        'unmapped' => ['label' => '待整理', 'type' => 'warning'],
+    ];
+
+    private const ROOT_GROUPS = [
+        '后台权限' => '系统管理 / 支付配置 / 内容中心 / 财务审计 / 工单中心',
+        '系统管理' => '系统管理',
+        '通道管理' => '支付配置',
+        '会员管理' => '系统管理 / 支付配置',
+        '商城管理' => '支付控制台 / 订单中心 / 财务审计 / 工单中心',
+        '安全管理' => '系统管理 / 风控中心',
+        '下载管理' => '内容中心 / 支付配置',
+        '工单管理' => '工单中心',
+        '主题设置' => '内容中心',
+    ];
+
+    public static function describe(array $permission): array
+    {
+        $title = trim((string)($permission['title'] ?? ''));
+        $path = trim((string)($permission['href'] ?? $permission['path'] ?? ''));
+        $normalizedPath = trim($path, '/');
+        [$legacyModule, $legacyAction] = self::splitPath($normalizedPath);
+
+        $mapping = self::mappingFor($title, $normalizedPath, $legacyModule, $legacyAction);
+        $status = (string)($mapping['migration_status'] ?? 'unmapped');
+        $meta = self::STATUS_META[$status] ?? self::STATUS_META['unmapped'];
+
+        return [
+            'legacy_module' => $legacyModule !== '' ? $legacyModule : null,
+            'legacy_action' => $legacyAction !== '' ? $legacyAction : null,
+            'modern_group_title' => $mapping['modern_group_title'] ?? null,
+            'modern_menu_title' => $mapping['modern_menu_title'] ?? null,
+            'modern_route_name' => $mapping['modern_route_name'] ?? null,
+            'modern_route_path' => $mapping['modern_route_path'] ?? null,
+            'modern_component' => $mapping['modern_component'] ?? null,
+            'migration_status' => $status,
+            'migration_status_label' => $meta['label'],
+            'migration_status_type' => $meta['type'],
+            'migration_note' => $mapping['migration_note'] ?? self::defaultNote($status),
+        ];
+    }
+
+    private static function splitPath(string $normalizedPath): array
+    {
+        if ($normalizedPath === '') {
+            return ['', ''];
+        }
+
+        $parts = explode('/', $normalizedPath, 2);
+
+        return [
+            trim((string)($parts[0] ?? '')),
+            trim((string)($parts[1] ?? '')),
+        ];
+    }
+
+    private static function mappingFor(
+        string $title,
+        string $normalizedPath,
+        string $legacyModule,
+        string $legacyAction
+    ): array {
+        if ($normalizedPath === '') {
+            return self::groupSplitMapping($title);
+        }
+
+        $exact = self::exactPathMappings();
+        if (isset($exact[$normalizedPath])) {
+            return $exact[$normalizedPath];
+        }
+
+        return match ($legacyModule) {
+            'ypay.demo_theme' => self::removedThemeScopeMapping('演示模板'),
+            'ypay.doc_theme' => self::removedThemeScopeMapping('开发文档模板'),
+            'ypay.home' => self::removedThemeScopeMapping('首页模板'),
+            'ypay.news_theme' => self::removedThemeScopeMapping('公告模板'),
+            'ypay.pay_theme' => self::removedThemeScopeMapping('支付模板'),
+            'ypay.user_theme' => self::removedThemeScopeMapping('商户中心模板'),
+            default => self::moduleDefinitionMapping($legacyModule, $legacyAction),
+        };
+    }
+
+    private static function exactPathMappings(): array
+    {
+        return [
+            'index/home' => self::page(
+                '支付控制台',
+                '经营总览',
+                'AiPayConsole',
+                '/dashboard/console',
+                'src/views/dashboard/console/index.vue',
+                'write_enabled',
+                '旧版控制台已并入新版经营总览。'
+            ),
+            'admin.admin/log' => self::page(
+                '系统管理',
+                '管理员日志',
+                'SystemAdminLogs',
+                '/system/logs',
+                'src/views/system/logs/index.vue',
+                'read_only',
+                '管理员日志已迁移到系统管理中统一查看。'
+            ),
+            'admin.admin/removeLog' => self::page(
+                '系统管理',
+                '管理员日志',
+                'SystemAdminLogs',
+                '/system/logs',
+                'src/views/system/logs/index.vue',
+                'write_enabled',
+                '管理员日志清理能力已并入当前日志页面。'
+            ),
+            'update' => self::page(
+                '系统管理',
+                '在线更新',
+                null,
+                null,
+                null,
+                'legacy_only',
+                '旧版在线更新入口已移除，请通过部署脚本或发布包更新系统。'
+            ),
+            'ypay.domain/index' => self::page(
+                '系统管理',
+                '域名审核',
+                'SystemDomains',
+                '/system/domains',
+                'src/views/system/domains/index.vue',
+                'write_enabled',
+                '域名审核已迁移到系统管理。'
+            ),
+            'ypay.shop/index' => self::page(
+                '支付控制台',
+                '商城总览',
+                'AiPayBusinessOverview',
+                '/dashboard/business',
+                'src/views/dashboard/business/index.vue',
+                'read_only',
+                '商城统计与概览已迁移到新版总览页。'
+            ),
+            'ypay.shop/clear' => self::page(
+                '系统管理',
+                '数据清理',
+                'SystemCleanupAudit',
+                '/system/cleanup',
+                'src/views/system/cleanup/index.vue',
+                'write_enabled',
+                '数据清理已迁移到系统管理。'
+            ),
+            'ypay.shop/cdk' => self::page(
+                '财务审计',
+                '卡券管理',
+                'FinanceCdks',
+                '/finance/cdks',
+                'src/views/finance/cdks/index.vue',
+                'write_enabled',
+                '卡券管理已迁移到财务审计。'
+            ),
+            'ypay.shop/plus' => self::page(
+                '财务审计',
+                '资金日志',
+                'FinanceMoneyLogs',
+                '/finance/money-logs',
+                'src/views/finance/money-logs/index.vue',
+                'write_enabled',
+                '资金日志已迁移到财务审计。'
+            ),
+            'ypay.shop/ticket' => self::page(
+                '工单中心',
+                '工单列表',
+                'TicketList',
+                '/tickets/list',
+                'src/views/tickets/list/index.vue',
+                'write_enabled',
+                '工单列表已迁移到工单中心。'
+            ),
+        ];
+    }
+
+    private static function moduleDefinitions(): array
+    {
+        return [
+            'admin.admin' => [
+                'group' => '系统管理',
+                'menu' => '管理员账户',
+                'route_name' => 'SystemAdmins',
+                'route_path' => '/system/admins',
+                'component' => 'src/views/system/admins/index.vue',
+                'read_only_actions' => ['index'],
+                'write_enabled_actions' => ['add', 'edit', 'status', 'remove', 'batchRemove', 'role', 'permission', 'recycle', 'removeLog'],
+            ],
+            'admin.channel' => [
+                'group' => '支付配置',
+                'menu' => '支付插件',
+                'route_name' => 'PaymentPlugins',
+                'route_path' => '/payments/plugins',
+                'component' => 'src/views/payments/plugins/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'remove', 'batchRemove', 'recycle'],
+            ],
+            'admin.front_log' => [
+                'group' => '系统管理',
+                'menu' => '商户日志',
+                'route_name' => 'SystemFrontLogs',
+                'route_path' => '/system/front-logs',
+                'component' => 'src/views/system/front-logs/index.vue',
+                'write_enabled_actions' => ['index', 'remove', 'batchRemove'],
+                'pending_actions' => ['add', 'edit', 'recycle'],
+            ],
+            'admin.permission' => [
+                'group' => '系统管理',
+                'menu' => '菜单配置',
+                'route_name' => 'SystemMenu',
+                'route_path' => '/system/menu',
+                'component' => 'src/views/system/menu/index.vue',
+                'write_enabled_actions' => ['add', 'edit', 'sort', 'status', 'remove'],
+            ],
+            'admin.photo' => [
+                'group' => '系统管理',
+                'menu' => '图片素材',
+                'route_name' => 'SystemMediaLibrary',
+                'route_path' => '/system/media-library',
+                'component' => 'src/views/system/media-library/index.vue',
+                'write_enabled_actions' => ['index', 'list', 'add', 'del', 'addPhoto', 'addPhotos', 'remove', 'batchRemove'],
+            ],
+            'admin.role' => [
+                'group' => '系统管理',
+                'menu' => '角色权限',
+                'route_name' => 'SystemRole',
+                'route_path' => '/system/role',
+                'component' => 'src/views/system/role/index.vue',
+                'write_enabled_actions' => ['add', 'edit', 'remove', 'permission'],
+                'pending_actions' => ['recycle'],
+            ],
+            'config' => [
+                'group' => '系统管理',
+                'menu' => '配置总览',
+                'route_name' => 'SystemConfigOverview',
+                'route_path' => '/system/config',
+                'component' => 'src/views/system/config/index.vue',
+                'write_enabled_actions' => ['index', 'update', 'groupUpdate'],
+            ],
+            'money.log' => [
+                'group' => '财务审计',
+                'menu' => '资金日志',
+                'route_name' => 'FinanceMoneyLogs',
+                'route_path' => '/finance/money-logs',
+                'component' => 'src/views/finance/money-logs/index.vue',
+                'write_enabled_actions' => ['add'],
+                'pending_actions' => ['edit', 'remove', 'batchRemove', 'recycle'],
+            ],
+            'ypay.account' => [
+                'group' => '支付配置',
+                'menu' => '收款账号',
+                'route_name' => 'PaymentAccounts',
+                'route_path' => '/payments/accounts',
+                'component' => 'src/views/payments/accounts/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'is_status', 'remove', 'batchRemove'],
+                'pending_actions' => ['recycle'],
+            ],
+            'ypay.navs' => [
+                'group' => '内容中心',
+                'menu' => '导航管理',
+                'route_name' => 'ContentNavs',
+                'route_path' => '/content/navs',
+                'component' => 'src/views/content/navs/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'target', 'sort', 'remove', 'batchRemove', 'recycle'],
+            ],
+            'ypay.news' => [
+                'group' => '内容中心',
+                'menu' => '公告管理',
+                'route_name' => 'ContentNews',
+                'route_path' => '/content/news',
+                'component' => 'src/views/content/news/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'remove', 'batchRemove', 'recycle'],
+            ],
+            'ypay.order' => [
+                'group' => '订单中心',
+                'menu' => '订单中心',
+                'route_name' => 'Orders',
+                'route_path' => '/orders',
+                'component' => 'src/views/orders/index.vue',
+                'pending_actions' => ['add', 'edit', 'remove', 'batchRemove', 'recycle'],
+            ],
+            'ypay.paylist' => [
+                'group' => '支付配置',
+                'menu' => '支付插件',
+                'route_name' => 'PaymentPlugins',
+                'route_path' => '/payments/plugins',
+                'component' => 'src/views/payments/plugins/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'remove', 'batchRemove'],
+            ],
+            'ypay.payment' => [
+                'group' => '支付配置',
+                'menu' => '支付方式',
+                'route_name' => 'PaymentMethods',
+                'route_path' => '/payments/methods',
+                'component' => 'src/views/payments/methods/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'remove', 'batchRemove', 'recycle'],
+            ],
+            'ypay.plug' => [
+                'group' => '内容中心',
+                'menu' => '插件下载',
+                'route_name' => 'ContentPluginDownloads',
+                'route_path' => '/content/plugins',
+                'component' => 'src/views/content/plugins/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'remove', 'batchRemove', 'recycle'],
+            ],
+            'ypay.quicklogin' => [
+                'group' => '系统管理',
+                'menu' => '快捷登录',
+                'route_name' => 'SystemQuickLogins',
+                'route_path' => '/system/quick-logins',
+                'component' => 'src/views/system/quick-logins/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'remove', 'batchRemove'],
+            ],
+            'ypay.recharge' => [
+                'group' => '财务审计',
+                'menu' => '充值记录',
+                'route_name' => 'RechargeRecords',
+                'route_path' => '/recharge',
+                'component' => 'src/views/recharge/index.vue',
+                'pending_actions' => ['add', 'edit', 'remove', 'batchRemove', 'recycle'],
+            ],
+            'ypay.risk' => [
+                'group' => '风控中心',
+                'menu' => '风控记录',
+                'route_name' => 'RiskRecords',
+                'route_path' => '/risk/records',
+                'component' => 'src/views/risk/records/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'remove', 'batchRemove'],
+                'pending_actions' => ['recycle'],
+            ],
+            'ypay.ticket_category' => [
+                'group' => '工单中心',
+                'menu' => '工单分类',
+                'route_name' => 'TicketCategories',
+                'route_path' => '/tickets/categories',
+                'component' => 'src/views/tickets/categories/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'remove', 'batchRemove'],
+                'pending_actions' => ['recycle'],
+            ],
+            'ypay.user' => [
+                'group' => '系统管理',
+                'menu' => '商户管理',
+                'route_name' => 'SystemUser',
+                'route_path' => '/system/user',
+                'component' => 'src/views/system/user/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'remove', 'batchRemove', 'email', 'adminLogin'],
+                'pending_actions' => ['recycle'],
+            ],
+            'ypay.vip' => [
+                'group' => '系统管理',
+                'menu' => '会员套餐',
+                'route_name' => 'SystemVips',
+                'route_path' => '/system/vips',
+                'component' => 'src/views/system/vips/index.vue',
+                'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'sort', 'remove', 'batchRemove', 'recycle'],
+            ],
+        ];
+    }
+
+    private static function groupSplitMapping(string $title): array
+    {
+        if (!isset(self::ROOT_GROUPS[$title])) {
+            return self::page(null, null, null, null, null, 'unmapped', '该权限节点尚未整理到新后台。');
+        }
+
+        return self::page(
+            self::ROOT_GROUPS[$title],
+            '分组导航',
+            null,
+            null,
+            null,
+            'group_split',
+            $title . ' 已拆分到多个业务中心，请在对应模块中继续管理。'
+        );
+    }
+
+    private static function removedThemeScopeMapping(string $scopeTitle): array
+    {
+        return self::page(
+            '内容中心',
+            '主题模板',
+            null,
+            null,
+            null,
+            'legacy_only',
+            $scopeTitle . ' 对应的旧主题模板体系已移除，当前系统不再保留该入口。'
+        );
+    }
+
+    private static function moduleDefinitionMapping(string $legacyModule, string $legacyAction): array
+    {
+        $definition = self::moduleDefinitions()[$legacyModule] ?? null;
+        if ($definition === null) {
+            return self::page(null, null, null, null, null, 'unmapped', '该权限节点尚未映射到新后台页面。');
+        }
+
+        return self::moduleMapping(
+            $legacyAction,
+            $definition['group'],
+            $definition['menu'],
+            $definition['route_name'],
+            $definition['route_path'],
+            $definition['component'],
+            [
+                'read_only_actions' => $definition['read_only_actions'] ?? ['index'],
+                'write_enabled_actions' => $definition['write_enabled_actions'] ?? [],
+                'pending_actions' => $definition['pending_actions'] ?? [],
+                'index_note' => $definition['index_note'] ?? null,
+                'notes' => $definition['notes'] ?? [],
+            ]
+        );
+    }
+
+    private static function moduleMapping(
+        string $action,
+        string $groupTitle,
+        string $menuTitle,
+        ?string $routeName,
+        ?string $routePath,
+        ?string $component,
+        array $options = []
+    ): array {
+        $readOnlyActions = $options['read_only_actions'] ?? ['index'];
+        $writeEnabledActions = $options['write_enabled_actions'] ?? [];
+        $pendingActions = $options['pending_actions'] ?? [];
+        $notes = $options['notes'] ?? [];
+
+        $status = 'read_only';
+        if (in_array($action, $writeEnabledActions, true)) {
+            $status = 'write_enabled';
+        } elseif (in_array($action, $pendingActions, true) || self::looksLikeWriteAction($action)) {
+            $status = 'pending_write';
+        } elseif (!in_array($action, $readOnlyActions, true) && $action !== '') {
+            $status = 'pending_write';
+        }
+
+        $note = $notes[$action] ?? null;
+        if ($note === null) {
+            if ($action === '' || $action === 'index') {
+                $note = $options['index_note'] ?? self::buildActionNote($menuTitle, 'index', $status);
+            } else {
+                $note = self::buildActionNote($menuTitle, $action, $status);
+            }
+        }
+
+        return self::page($groupTitle, $menuTitle, $routeName, $routePath, $component, $status, $note);
+    }
+
+    private static function buildActionNote(string $menuTitle, string $action, string $status): string
+    {
+        if ($action === '' || $action === 'index') {
+            return match ($status) {
+                'write_enabled' => $menuTitle . ' 已完成迁移并支持日常维护。',
+                'read_only' => $menuTitle . ' 当前以查看为主。',
+                'pending_write' => $menuTitle . ' 已建立页面入口，完整写入能力仍在完善。',
+                default => self::defaultNote($status),
+            };
+        }
+
+        $actionLabel = self::actionLabel($action);
+
+        return match ($status) {
+            'write_enabled' => $menuTitle . ' 的“' . $actionLabel . '”能力已迁移完成。',
+            'read_only' => $menuTitle . ' 当前只读，“' . $actionLabel . '”暂未开放。',
+            'pending_write' => $menuTitle . ' 的“' . $actionLabel . '”能力仍在完善。',
+            'legacy_only' => $menuTitle . ' 的“' . $actionLabel . '”属于已移除的旧能力。',
+            default => self::defaultNote($status),
+        };
+    }
+
+    private static function actionLabel(string $action): string
+    {
+        return match ($action) {
+            'add', 'create' => '新增',
+            'edit', 'update' => '编辑',
+            'status' => '状态切换',
+            'sort' => '排序维护',
+            'target' => '跳转方式',
+            'permission' => '权限分配',
+            'role' => '角色分配',
+            'remove', 'delete' => '删除',
+            'batchRemove', 'batch-delete' => '批量删除',
+            'recycle', 'restore' => '回收恢复',
+            'removeLog' => '日志清理',
+            'groupUpdate' => '分组保存',
+            'addPhoto', 'addPhotos' => '上传素材',
+            'del' => '素材删除',
+            'email' => '通知处理',
+            'adminLogin' => '后台代登',
+            'is_status' => '轮换状态维护',
+            default => '维护',
+        };
+    }
+
+    private static function page(
+        ?string $groupTitle,
+        ?string $menuTitle,
+        ?string $routeName,
+        ?string $routePath,
+        ?string $component,
+        string $status,
+        ?string $note = null
+    ): array {
+        return [
+            'modern_group_title' => $groupTitle,
+            'modern_menu_title' => $menuTitle,
+            'modern_route_name' => $routeName,
+            'modern_route_path' => $routePath,
+            'modern_component' => $component,
+            'migration_status' => $status,
+            'migration_note' => $note,
+        ];
+    }
+
+    private static function looksLikeWriteAction(string $action): bool
+    {
+        return in_array($action, [
+            'add',
+            'create',
+            'edit',
+            'update',
+            'status',
+            'sort',
+            'target',
+            'remove',
+            'delete',
+            'batchRemove',
+            'batch-delete',
+            'recycle',
+            'restore',
+            'permission',
+            'role',
+            'removeLog',
+            'addPhoto',
+            'addPhotos',
+            'del',
+            'groupUpdate',
+            'email',
+            'adminLogin',
+            'is_status',
+        ], true);
+    }
+
+    private static function defaultNote(string $status): string
+    {
+        return match ($status) {
+            'write_enabled' => '该权限节点已迁移完成。',
+            'read_only' => '该权限节点当前以查看为主。',
+            'pending_write' => '该权限节点仍在持续迁移中。',
+            'group_split' => '该根权限已拆分为多个业务中心。',
+            'legacy_only' => '该权限节点已废弃或已被新架构移除。',
+            default => '该权限节点尚未完成映射。',
+        };
+    }
+}

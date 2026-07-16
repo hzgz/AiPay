@@ -1,0 +1,39 @@
+/.idea
+/.vscode
+*.log
+*.tmp
+*.bak
+*.old
+*.zip
+*.rar
+*.7z
+
+# Root release/build residue
+/modernization/releases/
+/docs/.cache/
+
+# Frontend
+/modernization/art-design-admin/node_modules/
+/modernization/art-design-admin/dist/
+/modernization/art-design-admin/.output/
+/modernization/art-design-admin/.cache/
+/modernization/art-design-admin/.auto-import.json
+/modernization/art-design-admin/.husky/_/
+/modernization/art-design-admin/src/types/import/
+/modernization/art-design-admin/vite-8132.log
+/modernization/art-design-admin/vite-8132.err.log
+/modernization/art-design-admin/.vite-8132.stderr.log
+/modernization/art-design-admin/.vite-8132.stdout.log
+
+# Backend
+/modernization/webman-api/vendor/
+/modernization/webman-api/runtime/
+/modernization/webman-api/upload-assets/
+/modernization/webman-api/public/upload/
+/modernization/webman-api/.env
+/modernization/webman-api/.webman.stderr.log
+/modernization/webman-api/.webman.stdout.log
+
+# OS / tool residue
+Thumbs.db
+.DS_Store

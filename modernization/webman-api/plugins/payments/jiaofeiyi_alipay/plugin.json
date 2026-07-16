@@ -1,0 +1,115 @@
+{
+  "code": "jiaofeiyi_alipay",
+  "name": "\u7f34\u8d39\u6613\u652f\u4ed8\u5b9d\u63d2\u4ef6",
+  "description": "Managed Jiaofeiyi Alipay account plugin for Webman.",
+  "version": "1.0.0",
+  "provider": "AiPay Official",
+  "entry": "plugins/payments/jiaofeiyi_alipay/src/Plugin.php",
+  "class": "Plugins\\Payments\\JiaofeiyiAlipay\\Plugin",
+  "capabilities": [
+    "admin_account",
+    "remote_gateway",
+    "merchant_qrcode"
+  ],
+  "merchant_enabled": true,
+  "supported_payment_types": [
+    "alipay"
+  ],
+  "managed_channels": [
+    {
+      "code": "jiaofeiyi_alipay",
+      "name": "\u7f34\u8d39\u6613\u652f\u4ed8\u5b9d",
+      "type": "alipay",
+      "info": "Legacy TP Jiaofeiyi Alipay channel managed by the standalone plugin.",
+      "status": 1,
+      "sort": 100,
+      "maxcount": 999
+    }
+  ],
+  "migrations": {
+    "strategy": "versioned_sql",
+    "releases": [
+      {
+        "version": "1.0.0",
+        "files": [
+          "001_create_config_table.sql",
+          "002_create_plugin_log_table.sql"
+        ],
+        "notes": [
+          "Initialize the Jiaofeiyi Alipay plugin config table and log table.",
+          "Keep legacy account field mapping while standardizing lifecycle and cleanup metadata."
+        ]
+      }
+    ]
+  },
+  "upgrade": {
+    "impact": "low",
+    "downtime": "none",
+    "requires_disable_after_upgrade": false,
+    "notes": [
+      "This plugin currently focuses on managed accounts and test-order integration.",
+      "Shared order-create, remote-fallback, and query helpers have been centralized in Webman."
+    ],
+    "checklist": [
+      "Verify there is no pending cleanup plan before upgrade.",
+      "Confirm admin_channel still keeps jiaofeiyi_alipay in managed-plugin mode after upgrade."
+    ],
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "summary": "First standalone Jiaofeiyi Alipay plugin directory release.",
+        "breaking": false,
+        "migration_files": [
+          "001_create_config_table.sql",
+          "002_create_plugin_log_table.sql"
+        ],
+        "notes": [
+          "Preserve legacy merchant-id, merchant-no, store-name, remark, and remote-api mapping.",
+          "Shared Jiaofeiyi request logic now lives in a dedicated Webman support layer."
+        ]
+      }
+    ],
+    "rollback": {
+      "supported": true,
+      "mode": "backup_restore",
+      "automatic": false,
+      "requires_backup": true,
+      "notes": [
+        "Restore the plugin directory and pay_plugin_jiaofeiyi_alipay_* tables before rollback.",
+        "Business order, merchant, fund, and settlement data remain outside plugin cleanup scope."
+      ]
+    }
+  },
+  "cleanup": {
+    "safe": {
+      "files": [
+        "runtime/payment-plugins/jiaofeiyi_alipay"
+      ],
+      "tables": [
+        "pay_plugin_jiaofeiyi_alipay_config"
+      ],
+      "notes": [
+        "Safe cleanup removes only runtime files and the plugin-owned config table."
+      ]
+    },
+    "purge": {
+      "files": [
+        "plugins/payments/jiaofeiyi_alipay"
+      ],
+      "tables": [
+        "pay_plugin_jiaofeiyi_alipay_log"
+      ],
+      "notes": [
+        "Purge removes the package directory and plugin log table, then attempts managed-channel cleanup."
+      ]
+    },
+    "retain": [
+      "payment account master records",
+      "historical orders",
+      "fund and settlement records",
+      "merchant business data",
+      "platform audit logs"
+    ],
+    "purge_requires_confirmation": true
+  }
+}

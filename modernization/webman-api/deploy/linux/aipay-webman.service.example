@@ -1,0 +1,18 @@
+[Unit]
+Description=AIPay Webman Backend
+After=network.target mariadb.service
+
+[Service]
+Type=forking
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/aipay/backend
+Environment=APP_ENV=production
+ExecStart=/usr/bin/php /var/www/aipay/backend/start.php start -d
+ExecStop=/usr/bin/php /var/www/aipay/backend/start.php stop
+ExecReload=/usr/bin/php /var/www/aipay/backend/start.php restart
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

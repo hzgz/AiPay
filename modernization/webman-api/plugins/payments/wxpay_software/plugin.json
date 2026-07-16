@@ -1,0 +1,112 @@
+{
+  "code": "wxpay_software",
+  "name": "微信软件版插件",
+  "description": "用于维护微信软件版收款能力，统一管理账户、安装、启停与清理。",
+  "version": "1.0.0",
+  "provider": "AiPay官方",
+  "entry": "plugins/payments/wxpay_software/src/Plugin.php",
+  "class": "Plugins\\Payments\\WxpaySoftware\\Plugin",
+  "capabilities": [
+    "admin_account",
+    "software_collection",
+    "merchant_qrcode"
+  ],
+  "merchant_enabled": true,
+  "managed_channels": [
+    {
+      "code": "wxpay_software",
+      "name": "微信软件版",
+      "type": "wxpay",
+      "info": "旧 TP 微信软件版收款通道，现由支付插件目录独立托管。",
+      "status": 1,
+      "sort": 20,
+      "maxcount": 999
+    }
+  ],
+  "migrations": {
+    "strategy": "versioned_sql",
+    "releases": [
+      {
+        "version": "1.0.0",
+        "files": [
+          "001_create_config_table.sql",
+          "002_create_plugin_log_table.sql"
+        ],
+        "notes": [
+          "初始化微信软件版插件的配置表与日志表。",
+          "保留旧 TP 账户能力，只将插件生命周期与托管通道转为独立目录管理。"
+        ]
+      }
+    ]
+  },
+  "upgrade": {
+    "impact": "low",
+    "downtime": "none",
+    "requires_disable_after_upgrade": false,
+    "notes": [
+      "该插件主要管理后台账户能力与托管通道，不承接商户上游网关流量。",
+      "后续若扩展插件自有配置字段，可追加新的迁移版本而不是回改当前版本。"
+    ],
+    "checklist": [
+      "升级前确认后台不存在未审核的插件清理计划。",
+      "升级后检查 admin_channel 中 wxpay_software 通道仍处于插件托管状态。"
+    ],
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "summary": "微信软件版插件首个独立目录版本。",
+        "breaking": false,
+        "migration_files": [
+          "001_create_config_table.sql",
+          "002_create_plugin_log_table.sql"
+        ],
+        "notes": [
+          "旧 TP 的微信软件版账户字段与处理逻辑继续复用现有 PaymentAccountController 分支。",
+          "本次改造重点是把插件目录、托管通道、清理策略和审计落盘拆分独立。"
+        ]
+      }
+    ],
+    "rollback": {
+      "supported": true,
+      "mode": "backup_restore",
+      "automatic": false,
+      "requires_backup": true,
+      "notes": [
+        "如需回滚，请先恢复插件目录与 pay_plugin_wxpay_software_* 表。",
+        "涉及后台账户的业务记录与订单数据不在插件清理范围内。"
+      ]
+    }
+  },
+  "cleanup": {
+    "safe": {
+      "files": [
+        "runtime/payment-plugins/wxpay_software"
+      ],
+      "tables": [
+        "pay_plugin_wxpay_software_config"
+      ],
+      "notes": [
+        "安全清理仅移除插件运行时目录与插件自有配置表。"
+      ]
+    },
+    "purge": {
+      "files": [
+        "plugins/payments/wxpay_software"
+      ],
+      "tables": [
+        "pay_plugin_wxpay_software_log"
+      ],
+      "notes": [
+        "彻底清理会移除插件包目录与插件日志表，并尝试清理插件托管通道。"
+      ]
+    },
+    "retain": [
+      "支付账户主表记录",
+      "历史订单",
+      "资金与结算记录",
+      "商户业务数据",
+      "平台审计日志"
+    ],
+    "purge_requires_confirmation": true
+  }
+}

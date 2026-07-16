@@ -49,20 +49,12 @@ trait MerchantPortalUrlSupport
 
     protected function requestOrigin(Request $request): string
     {
-        $host = trim((string)$request->host());
-        if ($host === '') {
-            $host = trim((string)$request->header('host', '127.0.0.1:8787'));
-        }
-        if ($host === '') {
-            $host = '127.0.0.1:8787';
-        }
-
-        return $this->requestScheme($request) . '://' . $host;
+        return FrontendUrlBuilder::requestOrigin($request);
     }
 
     protected function merchantQrCodeUrl(Request $request, string $content, string $size = '250x250'): string
     {
-        return $this->requestOrigin($request)
+        return rtrim(FrontendUrlBuilder::publicBaseUrl($request), '/')
             . '/qrcode.php?text='
             . rawurlencode($content)
             . '&size='

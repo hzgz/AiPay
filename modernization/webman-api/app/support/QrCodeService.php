@@ -17,17 +17,21 @@ final class QrCodeService
 {
     public function renderPng(string $text, int $size): string
     {
-        $writer = new PngWriter();
-        $qrCode = QrCode::create($text)
-            ->setEncoding(new Encoding('UTF-8'))
-            ->setErrorCorrectionLevel(new ErrorCorrectionLevelLow())
-            ->setSize($size)
-            ->setMargin(0)
-            ->setRoundBlockSizeMode(new RoundBlockSizeModeMargin())
-            ->setForegroundColor(new Color(0, 0, 0))
-            ->setBackgroundColor(new Color(255, 255, 255));
+        $png = $this->withoutQrCodeVendorDeprecations(static function () use ($text, $size): string {
+            $writer = new PngWriter();
+            $qrCode = QrCode::create($text)
+                ->setEncoding(new Encoding('UTF-8'))
+                ->setErrorCorrectionLevel(new ErrorCorrectionLevelLow())
+                ->setSize($size)
+                ->setMargin(0)
+                ->setRoundBlockSizeMode(new RoundBlockSizeModeMargin())
+                ->setForegroundColor(new Color(0, 0, 0))
+                ->setBackgroundColor(new Color(255, 255, 255));
 
-        $png = $writer->write($qrCode)->getString();
+            $png = $writer->write($qrCode)->getString();
+            return is_string($png) ? $png : '';
+        });
+
         if (!is_string($png) || !$this->isPng($png)) {
             throw new RuntimeException('qrcode renderer returned invalid png');
         }
@@ -62,5 +66,38 @@ final class QrCodeService
     private function isPng(string $body): bool
     {
         return str_starts_with($body, "\x89PNG\r\n\x1a\n");
+    }
+
+    private function withoutQrCodeVendorDeprecations(callable $callback): mixed
+    {
+        $previousErrorReporting = error_reporting();
+        $previousHandler = null;
+        $previousHandler = set_error_handler(
+            static function (int $severity, string $message, string $file = '', int $line = 0) use (&$previousHandler): bool {
+                if (
+                    ($severity === E_DEPRECATED || $severity === E_USER_DEPRECATED)
+                    && (
+                        str_contains($message, 'Implicitly marking parameter $logo as nullable is deprecated')
+                        || str_contains($message, 'Endroid\\QrCode\\')
+                    )
+                ) {
+                    return true;
+                }
+
+                if (is_callable($previousHandler)) {
+                    return (bool)$previousHandler($severity, $message, $file, $line);
+                }
+
+                return false;
+            }
+        );
+        error_reporting($previousErrorReporting & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
+        try {
+            return $callback();
+        } finally {
+            error_reporting($previousErrorReporting);
+            restore_error_handler();
+        }
     }
 }

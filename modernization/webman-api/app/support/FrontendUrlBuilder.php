@@ -16,26 +16,7 @@ final class FrontendUrlBuilder
 
     public static function requestOrigin(Request $request): string
     {
-        $scheme = 'http';
-        $forwardedProto = strtolower(trim((string)$request->header('x-forwarded-proto', '')));
-        if ($forwardedProto !== '') {
-            $proto = trim((string)(explode(',', $forwardedProto)[0] ?? ''));
-            if (in_array($proto, ['http', 'https'], true)) {
-                $scheme = $proto;
-            }
-        } elseif ((string)$request->header('front-end-https', '') === 'on' || (string)$request->header('x-forwarded-port', '') === '443') {
-            $scheme = 'https';
-        }
-
-        $host = trim((string)$request->host());
-        if ($host === '') {
-            $host = trim((string)$request->header('host', '127.0.0.1:8787'));
-        }
-        if ($host === '') {
-            $host = '127.0.0.1:8787';
-        }
-
-        return $scheme . '://' . $host;
+        return self::detectedScheme($request) . '://' . self::forwardedHost($request);
     }
 
     public static function adminBaseUrl(Request $request): string
@@ -52,7 +33,7 @@ final class FrontendUrlBuilder
     {
         $configured = self::firstConfiguredUrl(['AIPAY_PUBLIC_FRONTEND_URL']);
         if ($configured !== null) {
-            return $configured;
+            return self::preferVisibleUrl($configured, $request);
         }
 
         return self::requestOrigin($request);
@@ -154,10 +135,10 @@ final class FrontendUrlBuilder
     {
         $configured = self::firstConfiguredUrl($envKeys);
         if ($configured !== null) {
-            return $configured;
+            return self::preferVisibleUrl($configured, $request);
         }
 
-        $host = trim((string)$request->host());
+        $host = self::forwardedHost($request);
         if (preg_match('/^(127\.0\.0\.1|localhost)(:\d+)?$/i', $host)) {
             return 'http://127.0.0.1:8132';
         }
@@ -231,5 +212,103 @@ final class FrontendUrlBuilder
 
         self::$envCache = $values;
         return self::$envCache;
+    }
+
+    private static function preferVisibleUrl(string $baseUrl, Request $request): string
+    {
+        $baseUrl = rtrim(trim($baseUrl), '/');
+        if ($baseUrl === '') {
+            return $baseUrl;
+        }
+
+        $parts = parse_url($baseUrl);
+        if (!is_array($parts) || !isset($parts['host'])) {
+            return $baseUrl;
+        }
+
+        $configuredScheme = strtolower((string)($parts['scheme'] ?? 'http'));
+        $configuredHost = strtolower((string)($parts['host'] ?? ''));
+        $requestScheme = self::detectedScheme($request);
+        $requestHost = strtolower((string)parse_url(self::requestOrigin($request), PHP_URL_HOST));
+
+        if ($configuredScheme === 'http' && $requestScheme === 'https' && $configuredHost !== '' && $configuredHost === $requestHost) {
+            $parts['scheme'] = 'https';
+            return self::unparseUrl($parts);
+        }
+
+        return $baseUrl;
+    }
+
+    private static function detectedScheme(Request $request): string
+    {
+        foreach (['x-forwarded-proto', 'x-forwarded-scheme', 'x-scheme'] as $header) {
+            $value = strtolower(trim((string)$request->header($header, '')));
+            if ($value === '') {
+                continue;
+            }
+
+            $proto = trim((string)(explode(',', $value)[0] ?? ''));
+            if (in_array($proto, ['http', 'https'], true)) {
+                return $proto;
+            }
+        }
+
+        $cfVisitor = trim((string)$request->header('cf-visitor', ''));
+        if ($cfVisitor !== '') {
+            $decoded = json_decode($cfVisitor, true);
+            if (is_array($decoded)) {
+                $proto = strtolower(trim((string)($decoded['scheme'] ?? '')));
+                if (in_array($proto, ['http', 'https'], true)) {
+                    return $proto;
+                }
+            }
+        }
+
+        if ((string)$request->header('front-end-https', '') === 'on') {
+            return 'https';
+        }
+
+        if (strtolower(trim((string)$request->header('x-forwarded-ssl', ''))) === 'on') {
+            return 'https';
+        }
+
+        if ((string)$request->header('x-forwarded-port', '') === '443') {
+            return 'https';
+        }
+
+        return 'http';
+    }
+
+    private static function forwardedHost(Request $request): string
+    {
+        $forwardedHost = trim((string)$request->header('x-forwarded-host', ''));
+        if ($forwardedHost !== '') {
+            $host = trim((string)(explode(',', $forwardedHost)[0] ?? ''));
+            if ($host !== '') {
+                return $host;
+            }
+        }
+
+        $host = trim((string)$request->host());
+        if ($host === '') {
+            $host = trim((string)$request->header('host', '127.0.0.1:8787'));
+        }
+
+        return $host !== '' ? $host : '127.0.0.1:8787';
+    }
+
+    private static function unparseUrl(array $parts): string
+    {
+        $scheme = isset($parts['scheme']) ? ($parts['scheme'] . '://') : '';
+        $user = (string)($parts['user'] ?? '');
+        $pass = (string)($parts['pass'] ?? '');
+        $auth = $user !== '' ? ($user . ($pass !== '' ? ':' . $pass : '') . '@') : '';
+        $host = (string)($parts['host'] ?? '');
+        $port = isset($parts['port']) ? (':' . $parts['port']) : '';
+        $path = (string)($parts['path'] ?? '');
+        $query = isset($parts['query']) ? ('?' . $parts['query']) : '';
+        $fragment = isset($parts['fragment']) ? ('#' . $parts['fragment']) : '';
+
+        return $scheme . $auth . $host . $port . $path . $query . $fragment;
     }
 }

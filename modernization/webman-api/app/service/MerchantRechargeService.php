@@ -471,7 +471,7 @@ class MerchantRechargeService
 
     private function requestOrigin(Request $request): string
     {
-        return $this->requestScheme($request) . '://' . $request->host();
+        return \app\support\FrontendUrlBuilder::requestOrigin($request);
     }
 
     private function requestScheme(Request $request): string

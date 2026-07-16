@@ -252,7 +252,7 @@
 
       <div v-else-if="qrcodePayload" class="merchant-api-qrcode-dialog">
         <div class="merchant-api-qrcode-dialog__image">
-          <img :src="qrcodePayload.qrcode_url || qrcodePayload.qrcode" alt="商户对接二维码" />
+          <img :src="merchantQrcodeImageSrc" alt="商户对接二维码" />
         </div>
 
         <div class="merchant-chip-row merchant-chip-row--compact">
@@ -328,6 +328,9 @@
   const payload = ref<Record<string, any> | null>(null)
   const qrcodePayload = ref<MerchantQrcodePayload | null>(null)
   const selectedGatewayUrl = ref('')
+  const merchantQrcodeImageSrc = computed(() =>
+    normalizeMerchantQrcodeUrl(qrcodePayload.value?.qrcode_url || qrcodePayload.value?.qrcode || '')
+  )
 
   const gatewayLines = computed<GatewayLine[]>(() =>
     Array.isArray(payload.value?.gateway_lines) ? payload.value!.gateway_lines : []
@@ -415,6 +418,35 @@
     return String(url || '')
       .trim()
       .replace(/\/+$/, '')
+  }
+
+  function normalizeMerchantQrcodeUrl(url: string) {
+    const raw = String(url || '').trim()
+    if (!raw || typeof window === 'undefined') {
+      return raw
+    }
+
+    try {
+      const resolved = new URL(raw, window.location.origin)
+      const isQrcodeEndpoint =
+        resolved.pathname === '/qrcode.php' || resolved.pathname.endsWith('/qrcode.php')
+
+      if (isQrcodeEndpoint) {
+        return `${window.location.origin}${resolved.pathname}${resolved.search}`
+      }
+
+      if (
+        window.location.protocol === 'https:' &&
+        resolved.protocol === 'http:' &&
+        resolved.host === window.location.host
+      ) {
+        resolved.protocol = 'https:'
+      }
+
+      return resolved.toString()
+    } catch {
+      return raw
+    }
   }
 
   function isSelectedLine(url: string) {

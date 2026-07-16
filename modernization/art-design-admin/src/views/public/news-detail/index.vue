@@ -6,34 +6,36 @@
     page-label="公告详情"
   >
     <div class="public-news-detail-page">
-      <section v-if="loading && !article" class="state-panel">
+      <section v-if="loading && !article" class="detail-state">
         <ElSkeleton animated :rows="12" />
       </section>
 
-      <section v-else-if="notFound" class="state-panel state-panel--warning">
+      <section v-else-if="notFound" class="detail-state">
         <h1>公告不存在</h1>
         <p>当前访问的公告可能已经删除、下线，或者链接地址已经失效。</p>
-        <div class="state-panel__actions">
-          <RouterLink class="state-link state-link--primary" to="/news/index">返回公告中心</RouterLink>
-          <RouterLink class="state-link" to="/">返回首页</RouterLink>
+        <div class="detail-state__actions">
+          <RouterLink class="detail-link detail-link--primary" to="/news/index">返回公告中心</RouterLink>
+          <RouterLink class="detail-link" to="/">返回首页</RouterLink>
         </div>
       </section>
 
-      <section v-else-if="error" class="state-panel state-panel--error">
+      <section v-else-if="error" class="detail-state">
         <h1>公告详情加载失败</h1>
         <p>{{ error }}</p>
-        <button type="button" class="state-panel__button" @click="loadPage">重新加载</button>
+        <button type="button" class="detail-link detail-link--primary detail-link--button" @click="loadPage">
+          重新加载
+        </button>
       </section>
 
       <template v-else-if="article">
-        <section class="article-hero">
+        <section class="detail-hero">
           <div>
-            <span>{{ resolveTypeTitle(article.type) }}</span>
+            <span class="detail-eyebrow">{{ resolveTypeTitle(article.type) }}</span>
             <h1>{{ article.title }}</h1>
             <p>{{ article.excerpt || `发布时间 ${article.date_label}` }}</p>
           </div>
 
-          <aside class="article-hero__meta">
+          <aside class="detail-hero__meta">
             <div>
               <small>栏目</small>
               <strong>{{ resolveTypeTitle(article.type) }}</strong>
@@ -49,22 +51,22 @@
           </aside>
         </section>
 
-        <section class="article-layout">
-          <article class="article-card">
-            <div class="article-card__content" v-html="article.content_html"></div>
+        <section class="detail-layout">
+          <article class="detail-content">
+            <div class="detail-content__body" v-html="article.content_html"></div>
           </article>
 
-          <aside class="article-side">
-            <div class="article-side__card">
-              <span>快捷跳转</span>
+          <aside class="detail-side">
+            <div class="detail-side__section">
+              <span class="detail-eyebrow">快捷跳转</span>
               <RouterLink :to="`/news/categories/${article.type}`">返回 {{ resolveTypeTitle(article.type) }}</RouterLink>
               <RouterLink to="/news/index">公告中心</RouterLink>
               <RouterLink to="/doc">开发文档</RouterLink>
             </div>
 
-            <div class="article-side__card">
-              <span>当前信息</span>
-              <p>公告详情统一走前台原生页面展示，不再依赖旧模板详情页。</p>
+            <div class="detail-side__section">
+              <span class="detail-eyebrow">页面说明</span>
+              <p>当前页面仅展示公告正文、发布时间和所属栏目，避免与其它公共内容混杂在一起。</p>
             </div>
           </aside>
         </section>
@@ -137,226 +139,201 @@
 <style scoped lang="scss">
   .public-news-detail-page {
     display: grid;
-    gap: 22px;
+    gap: 28px;
   }
 
-  .state-panel,
-  .article-hero,
-  .article-card,
-  .article-side__card {
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 28px;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  .detail-eyebrow {
+    display: inline-flex;
+    color: var(--public-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
-  .state-panel {
-    padding: 28px;
+  .detail-state,
+  .detail-hero,
+  .detail-content,
+  .detail-side__section {
+    border-top: 1px solid var(--public-border-strong);
+    padding-top: 14px;
   }
 
-  .state-panel--warning {
-    background: #fffbeb;
-    border-color: rgba(245, 158, 11, 0.2);
-  }
-
-  .state-panel--error {
-    background: #fff7f7;
-    border-color: rgba(239, 68, 68, 0.2);
-  }
-
-  .state-panel h1 {
+  .detail-state h1 {
     margin: 0 0 10px;
-    color: #1f2937;
-    font-size: 1.6rem;
+    color: var(--public-title);
+    font-size: 1.8rem;
   }
 
-  .state-panel p {
+  .detail-state p {
     margin: 0;
-    color: #5f6b7a;
-    line-height: 1.8;
+    color: var(--public-text);
+    line-height: 1.84;
   }
 
-  .state-panel__actions {
+  .detail-state__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin-top: 18px;
+    margin-top: 16px;
   }
 
-  .state-link,
-  .state-panel__button {
+  .detail-link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 42px;
+    min-height: 40px;
     padding: 0 16px;
-    border-radius: 14px;
-    border: 0;
-    color: #1f2937;
+    border: 1px solid var(--public-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--public-title);
     font-weight: 700;
     text-decoration: none;
-    cursor: pointer;
-    background: #e2e8f0;
   }
 
-  .state-link--primary,
-  .state-panel__button {
-    background: #5467f5;
+  .detail-link--primary {
+    background: #18202f;
+    border-color: #18202f;
     color: #fff;
   }
 
-  .article-hero {
+  .detail-link--button {
+    cursor: pointer;
+  }
+
+  .detail-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.7fr);
-    gap: 18px;
-    padding: 30px;
+    grid-template-columns: minmax(0, 1.45fr) minmax(250px, 0.65fr);
+    gap: 30px;
+    align-items: end;
   }
 
-  .article-hero span,
-  .article-side__card span {
-    display: inline-flex;
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(97, 115, 255, 0.12);
-    color: #5467f5;
-    font-size: 0.8rem;
-    font-weight: 700;
-  }
-
-  .article-hero h1 {
-    margin: 18px 0 12px;
-    color: #1f2937;
-    font-size: clamp(2rem, 4vw, 3.2rem);
+  .detail-hero h1 {
+    margin: 14px 0 14px;
+    color: var(--public-title);
+    font-size: clamp(2.2rem, 4vw, 3.9rem);
     line-height: 1.08;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.05em;
   }
 
-  .article-hero p {
+  .detail-hero p {
     margin: 0;
-    color: #5f6b7a;
-    line-height: 1.8;
+    max-width: 760px;
+    color: var(--public-text);
+    line-height: 1.9;
   }
 
-  .article-hero__meta {
+  .detail-hero__meta {
     display: grid;
-    gap: 12px;
+    gap: 14px;
   }
 
-  .article-hero__meta div {
-    padding: 18px;
-    border-radius: 20px;
-    background: #f8fbff;
-  }
-
-  .article-hero__meta small {
+  .detail-hero__meta small {
     display: block;
-    color: #64748b;
+    color: var(--public-muted);
   }
 
-  .article-hero__meta strong {
+  .detail-hero__meta strong {
     display: block;
     margin-top: 8px;
-    color: #1f2937;
+    color: var(--public-title);
   }
 
-  .article-layout {
+  .detail-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.8fr);
-    gap: 20px;
+    grid-template-columns: minmax(0, 1.65fr) minmax(250px, 0.7fr);
+    gap: 32px;
   }
 
-  .article-card {
-    padding: 28px 30px;
+  .detail-content__body {
+    color: #344255;
+    line-height: 1.92;
+    font-size: 1.02rem;
   }
 
-  .article-card__content {
-    color: #334155;
-    line-height: 1.9;
-    font-size: 1rem;
-  }
-
-  .article-card__content :deep(img) {
+  .detail-content__body :deep(img) {
     max-width: 100%;
     height: auto;
     border-radius: 18px;
   }
 
-  .article-card__content :deep(p) {
+  .detail-content__body :deep(p) {
     margin: 0 0 1.1em;
   }
 
-  .article-card__content :deep(h1),
-  .article-card__content :deep(h2),
-  .article-card__content :deep(h3),
-  .article-card__content :deep(h4) {
-    margin: 1.4em 0 0.8em;
-    color: #1f2937;
+  .detail-content__body :deep(h1),
+  .detail-content__body :deep(h2),
+  .detail-content__body :deep(h3),
+  .detail-content__body :deep(h4) {
+    margin: 1.35em 0 0.8em;
+    color: var(--public-title);
     line-height: 1.35;
   }
 
-  .article-card__content :deep(pre) {
-    overflow: auto;
-    padding: 18px;
-    border-radius: 18px;
-    background: #0f172a;
-    color: #e2e8f0;
+  .detail-content__body :deep(blockquote) {
+    margin: 1.2em 0;
+    padding: 16px 18px;
+    border-left: 3px solid rgba(15, 23, 42, 0.16);
+    background: #f8fafc;
+    color: var(--public-text);
   }
 
-  .article-card__content :deep(table) {
+  .detail-content__body :deep(pre) {
+    overflow: auto;
+    padding: 18px;
+    border-radius: 16px;
+    background: #f8fafc;
+    color: #1f2937;
+  }
+
+  .detail-content__body :deep(table) {
     width: 100%;
     border-collapse: collapse;
   }
 
-  .article-card__content :deep(th),
-  .article-card__content :deep(td) {
+  .detail-content__body :deep(th),
+  .detail-content__body :deep(td) {
     padding: 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e5e7eb;
   }
 
-  .article-side {
+  .detail-side {
+    position: sticky;
+    top: 96px;
     display: grid;
-    gap: 18px;
+    gap: 24px;
     align-self: start;
   }
 
-  .article-side__card {
-    padding: 22px;
-  }
-
-  .article-side__card a {
+  .detail-side__section a {
     display: block;
-    margin-top: 14px;
-    color: #1f2937;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    color: var(--public-title);
     font-weight: 700;
     text-decoration: none;
   }
 
-  .article-side__card p {
-    margin: 16px 0 0;
-    color: #5f6b7a;
-    line-height: 1.8;
+  .detail-side__section a:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
   }
 
-  @media (max-width: 960px) {
-    .article-hero,
-    .article-layout {
+  .detail-side__section p {
+    margin: 10px 0 0;
+    color: var(--public-text);
+    line-height: 1.82;
+  }
+
+  @media (max-width: 980px) {
+    .detail-hero,
+    .detail-layout {
       grid-template-columns: 1fr;
     }
-  }
 
-  @media (max-width: 640px) {
-    .state-panel,
-    .article-hero,
-    .article-card,
-    .article-side__card {
-      border-radius: 24px;
-    }
-
-    .state-panel,
-    .article-hero,
-    .article-card,
-    .article-side__card {
-      padding: 22px;
+    .detail-side {
+      position: static;
     }
   }
 </style>

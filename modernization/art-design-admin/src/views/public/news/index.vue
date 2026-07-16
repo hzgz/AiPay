@@ -8,79 +8,79 @@
     <div class="public-news-page">
       <section class="news-hero">
         <div>
-          <span class="news-hero__tag">公告中心</span>
+          <span class="news-eyebrow">公告中心</span>
           <h1>{{ pageTitle }}</h1>
           <p>{{ pageDescription }}</p>
         </div>
 
         <div class="news-hero__meta">
-          <article>
-            <small>内容数量</small>
+          <div>
+            <small>内容总数</small>
             <strong>{{ payload?.total ?? 0 }}</strong>
-          </article>
-          <article>
+          </div>
+          <div>
             <small>当前页</small>
             <strong>{{ payload?.current ?? currentPage }}</strong>
-          </article>
-          <article>
+          </div>
+          <div>
             <small>当前栏目</small>
             <strong>{{ currentTypeTitle }}</strong>
-          </article>
+          </div>
         </div>
       </section>
 
-      <section class="news-type-grid">
+      <section class="news-types">
         <RouterLink
           v-for="item in typeCards"
           :key="item.type"
           :to="item.to"
-          :class="['type-card', { 'is-active': item.type === currentType && isCategoryMode }]"
+          :class="['news-type', { 'is-active': item.type === currentType && isCategoryMode }]"
         >
-          <span>{{ item.eyebrow }}</span>
-          <h2>{{ item.title }}</h2>
-          <p>{{ item.description }}</p>
+          <strong>{{ item.title }}</strong>
+          <small>{{ item.description }}</small>
         </RouterLink>
       </section>
 
-      <section v-if="loading && !payload" class="state-panel">
+      <section v-if="loading && !payload" class="news-state">
         <ElSkeleton animated :rows="10" />
       </section>
 
-      <section v-else-if="error" class="state-panel state-panel--error">
+      <section v-else-if="error" class="news-state">
         <h2>公告列表加载失败</h2>
         <p>{{ error }}</p>
-        <button type="button" class="state-panel__button" @click="loadPage">重新加载</button>
+        <button type="button" class="news-state__button" @click="loadPage">重新加载</button>
       </section>
 
-      <section v-else class="news-list-panel">
-        <div class="news-list-panel__head">
+      <section v-else class="news-list-section">
+        <div class="news-list-section__head">
           <div>
-            <span>最新内容</span>
+            <span class="news-eyebrow">内容列表</span>
             <h2>{{ listTitle }}</h2>
           </div>
 
-          <div class="news-list-panel__meta">共 {{ payload?.total ?? 0 }} 条</div>
+          <div class="news-list-section__meta">共 {{ payload?.total ?? 0 }} 条</div>
         </div>
 
         <div class="news-list">
-          <article v-for="item in records" :key="item.id" class="news-card">
-            <div class="news-card__meta">
+          <article v-for="item in records" :key="item.id" class="news-row">
+            <div class="news-row__meta">
               <span>{{ resolveTypeTitle(item.type) }}</span>
               <strong>{{ item.date_label }}</strong>
             </div>
 
-            <h3>
-              <RouterLink :to="`/news/detail/${item.id}`">{{ item.title }}</RouterLink>
-            </h3>
+            <div class="news-row__body">
+              <h3>
+                <RouterLink :to="`/news/detail/${item.id}`">{{ item.title }}</RouterLink>
+              </h3>
+              <p>{{ item.excerpt || '点击查看完整公告内容。' }}</p>
+            </div>
 
-            <p>{{ item.excerpt || '点击查看完整公告内容。' }}</p>
-
-            <div class="news-card__actions">
+            <div class="news-row__action">
               <RouterLink :to="`/news/detail/${item.id}`">查看详情</RouterLink>
             </div>
           </article>
 
-          <div v-if="!records.length" class="news-card news-card--empty">当前栏目暂无公告内容</div>
+          <div v-if="!records.length" class="news-empty">当前栏目暂无公告内容</div>
         </div>
 
         <div v-if="(payload?.total || 0) > (payload?.size || 10)" class="news-pagination">
@@ -134,23 +134,20 @@
   const typeCards = [
     {
       type: 1,
-      eyebrow: '平台公告',
-      title: '系统通知',
-      description: '查看平台公告、更新说明和站点通知。',
+      title: '平台公告',
+      description: '查看平台更新、通知和站点公告',
       to: '/news/categories/1'
     },
     {
       type: 2,
-      eyebrow: '行业资讯',
-      title: '行业动态',
-      description: '收录支付环境变化、渠道更新和行业事件。',
+      title: '行业资讯',
+      description: '查看行业动态和支付环境变化',
       to: '/news/categories/2'
     },
     {
       type: 3,
-      eyebrow: '常见问题',
-      title: '问题排查',
-      description: '集中整理高频问题和接入排查建议。',
+      title: '常见问题',
+      description: '查看接入和使用过程中的高频问题',
       to: '/news/categories/3'
     }
   ]
@@ -166,8 +163,8 @@
   const pageTitle = computed(() => (isCategoryMode.value ? currentTypeTitle.value : '公告中心'))
   const pageDescription = computed(() =>
     isCategoryMode.value
-      ? `${currentTypeTitle.value}统一使用 index99 前台样式展示。`
-      : '平台公告、行业资讯和常见问题统一从这里对外展示。'
+      ? `${currentTypeTitle.value}统一在这里对外展示。`
+      : '平台公告、行业资讯与常见问题统一从这里对外展示。'
   )
   const listTitle = computed(() => (isCategoryMode.value ? currentTypeTitle.value : '最新公告'))
 
@@ -188,7 +185,7 @@
 
       scrollPublicPageToTop()
     } catch (err) {
-      error.value = resolvePublicErrorMessage(err, '公告内容暂时不可用，请检查 8787 接口。')
+      error.value = resolvePublicErrorMessage(err, '公告内容暂时不可用，请稍后再试。')
     } finally {
       loading.value = false
     }
@@ -225,229 +222,214 @@
 <style scoped lang="scss">
   .public-news-page {
     display: grid;
-    gap: 22px;
+    gap: 28px;
   }
 
-  .news-hero,
-  .type-card,
-  .state-panel,
-  .news-list-panel {
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 28px;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  .news-eyebrow {
+    display: inline-flex;
+    color: var(--public-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .news-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
-    gap: 20px;
-    padding: 30px;
-  }
-
-  .news-hero__tag,
-  .news-card__meta span,
-  .news-list-panel__head span {
-    display: inline-flex;
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(97, 115, 255, 0.12);
-    color: #5467f5;
-    font-size: 0.8rem;
-    font-weight: 700;
+    grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
+    gap: 30px;
+    align-items: end;
   }
 
   .news-hero h1 {
-    margin: 18px 0 12px;
-    color: #1f2937;
-    font-size: clamp(2rem, 4vw, 3.2rem);
+    margin: 14px 0 14px;
+    color: var(--public-title);
+    font-size: clamp(2.2rem, 4vw, 3.9rem);
     line-height: 1.08;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.05em;
   }
 
   .news-hero p {
     margin: 0;
-    color: #5f6b7a;
-    line-height: 1.8;
+    max-width: 760px;
+    color: var(--public-text);
+    line-height: 1.9;
+  }
+
+  .news-hero__meta,
+  .news-types,
+  .news-state,
+  .news-list-section {
+    border-top: 1px solid var(--public-border-strong);
+    padding-top: 14px;
   }
 
   .news-hero__meta {
     display: grid;
-    gap: 12px;
-  }
-
-  .news-hero__meta article {
-    padding: 18px;
-    border-radius: 20px;
-    background: #f8fbff;
+    gap: 14px;
   }
 
   .news-hero__meta small {
     display: block;
-    color: #64748b;
+    color: var(--public-muted);
   }
 
   .news-hero__meta strong {
     display: block;
     margin-top: 8px;
-    color: #1f2937;
-    font-size: 1.08rem;
+    color: var(--public-title);
   }
 
-  .news-type-grid {
+  .news-types {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    gap: 24px;
   }
 
-  .type-card {
+  .news-type {
     display: block;
-    padding: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
     color: inherit;
     text-decoration: none;
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      background 0.2s ease;
   }
 
-  .type-card:hover,
-  .type-card.is-active {
-    transform: translateY(-2px);
-    background: #f8fbff;
-    box-shadow: 0 18px 36px rgba(97, 115, 255, 0.12);
+  .news-type strong {
+    display: block;
+    color: var(--public-title);
   }
 
-  .type-card span {
-    display: inline-flex;
-    color: #5467f5;
-    font-size: 0.82rem;
-    font-weight: 700;
+  .news-type small {
+    display: block;
+    margin-top: 8px;
+    color: var(--public-text);
+    line-height: 1.75;
   }
 
-  .type-card h2 {
-    margin: 14px 0 10px;
-    color: #1f2937;
-    font-size: 1.22rem;
+  .news-type.is-active strong {
+    color: var(--public-accent);
   }
 
-  .type-card p {
+  .news-state h2 {
+    margin: 0 0 10px;
+    color: var(--public-title);
+  }
+
+  .news-state p {
     margin: 0;
-    color: #5f6b7a;
+    color: var(--public-text);
     line-height: 1.8;
   }
 
-  .state-panel {
-    padding: 28px;
-  }
-
-  .state-panel--error {
-    background: #fff7f7;
-    border-color: rgba(239, 68, 68, 0.2);
-  }
-
-  .state-panel h2 {
-    margin: 0 0 8px;
-    color: #1f2937;
-  }
-
-  .state-panel p {
-    margin: 0;
-    color: #5f6b7a;
-    line-height: 1.8;
-  }
-
-  .state-panel__button {
-    margin-top: 18px;
-    min-height: 42px;
+  .news-state__button {
+    margin-top: 16px;
+    min-height: 40px;
     padding: 0 16px;
-    border: 0;
-    border-radius: 14px;
-    background: #5467f5;
-    color: #fff;
+    border: 1px solid var(--public-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--public-title);
     font-weight: 700;
     cursor: pointer;
   }
 
-  .news-list-panel {
-    padding: 26px;
-  }
-
-  .news-list-panel__head {
+  .news-list-section__head {
     display: flex;
-    align-items: center;
+    align-items: end;
     justify-content: space-between;
-    gap: 14px;
-    margin-bottom: 18px;
+    gap: 18px;
+    margin-bottom: 16px;
   }
 
-  .news-list-panel__head h2 {
-    margin: 14px 0 0;
-    color: #1f2937;
-    font-size: 1.42rem;
+  .news-list-section__head h2 {
+    margin: 10px 0 0;
+    color: var(--public-title);
+    font-size: 1.72rem;
+    line-height: 1.25;
+    letter-spacing: -0.04em;
   }
 
-  .news-list-panel__meta {
-    color: #64748b;
+  .news-list-section__meta {
+    color: var(--public-muted);
     font-weight: 700;
   }
 
   .news-list {
     display: grid;
-    gap: 14px;
   }
 
-  .news-card {
-    padding: 22px;
-    border-radius: 22px;
-    background: #f8fbff;
+  .news-row {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr) 120px;
+    gap: 20px;
+    align-items: start;
+    padding: 18px 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
   }
 
-  .news-card__meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+  .news-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
   }
 
-  .news-card__meta strong {
-    color: #64748b;
-    font-size: 0.9rem;
+  .news-row__meta {
+    display: grid;
+    gap: 8px;
   }
 
-  .news-card h3 {
-    margin: 16px 0 10px;
-    font-size: 1.16rem;
-    line-height: 1.55;
-  }
-
-  .news-card h3 a {
-    color: #1f2937;
-    text-decoration: none;
-  }
-
-  .news-card p {
-    margin: 0;
-    color: #5f6b7a;
-    line-height: 1.8;
-  }
-
-  .news-card__actions {
-    margin-top: 16px;
-  }
-
-  .news-card__actions a {
-    color: #5467f5;
+  .news-row__meta span {
+    display: inline-flex;
+    width: fit-content;
+    color: var(--public-muted);
+    font-size: 0.84rem;
     font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .news-row__meta strong {
+    color: var(--public-title);
+    font-size: 0.96rem;
+  }
+
+  .news-row__body h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.6;
+  }
+
+  .news-row__body h3 a,
+  .news-row__action a {
+    color: var(--public-title);
     text-decoration: none;
   }
 
-  .news-card--empty {
+  .news-row__body p {
+    margin: 10px 0 0;
+    color: var(--public-text);
+    line-height: 1.82;
+  }
+
+  .news-row__action {
     display: flex;
+    justify-content: flex-end;
+  }
+
+  .news-row__action a {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 180px;
-    color: #64748b;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--public-border);
+    border-radius: 999px;
+    background: #fff;
+    font-weight: 700;
+  }
+
+  .news-empty {
+    padding: 24px 0 4px;
+    color: var(--public-text);
   }
 
   .news-pagination {
@@ -458,29 +440,23 @@
 
   @media (max-width: 980px) {
     .news-hero,
-    .news-type-grid {
+    .news-types {
       grid-template-columns: 1fr;
+    }
+
+    .news-row {
+      grid-template-columns: 1fr;
+    }
+
+    .news-row__action {
+      justify-content: flex-start;
     }
   }
 
-  @media (max-width: 640px) {
-    .news-hero,
-    .type-card,
-    .state-panel,
-    .news-list-panel {
-      border-radius: 24px;
-    }
-
-    .news-hero,
-    .state-panel,
-    .news-list-panel {
-      padding: 22px;
-    }
-
-    .news-list-panel__head,
-    .news-card__meta {
+  @media (max-width: 720px) {
+    .news-list-section__head {
       flex-direction: column;
-      align-items: flex-start;
+      align-items: stretch;
     }
   }
 </style>

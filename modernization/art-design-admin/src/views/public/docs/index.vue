@@ -11,78 +11,71 @@
     <div class="public-docs-page">
       <section class="docs-hero">
         <div>
-          <span class="docs-hero__tag">开发文档</span>
+          <span class="docs-eyebrow">开发文档</span>
           <h1>{{ activeSectionMeta.title }}</h1>
           <p>{{ activeSectionMeta.description }}</p>
         </div>
 
         <div class="docs-hero__meta">
-          <article>
-            <small>后端服务</small>
-            <strong>{{ backendOriginLabel }}</strong>
-          </article>
-          <article>
-            <small>前端入口</small>
-            <strong>{{ frontendOriginLabel }}</strong>
-          </article>
-          <article>
-            <small>当前分栏</small>
+          <div>
+            <small>当前栏目</small>
             <strong>{{ activeSectionMeta.shortLabel }}</strong>
-          </article>
+          </div>
+          <div>
+            <small>文档分组</small>
+            <strong>{{ docGroups.length }}</strong>
+          </div>
+          <div>
+            <small>配置项数</small>
+            <strong>{{ docFieldCount }}</strong>
+          </div>
         </div>
       </section>
 
       <div v-if="error" class="docs-alert">
-        文档动态配置读取失败，当前展示为本地固定版。{{ error }}
+        文档数据暂时不可用，当前展示为默认内容。{{ error }}
       </div>
 
       <section class="docs-layout">
-        <aside class="docs-sidebar">
-          <div class="docs-sidebar__card">
-            <span>文档目录</span>
+        <aside class="docs-side">
+          <div class="docs-side__section">
+            <span class="docs-eyebrow">文档目录</span>
 
             <RouterLink
               v-for="item in sectionNavItems"
               :key="item.key"
               :to="item.to"
-              :class="{ 'is-active': item.key === activeSection }"
+              :class="['docs-side__nav', { 'is-active': item.key === activeSection }]"
             >
               <strong>{{ item.title }}</strong>
               <small>{{ item.note }}</small>
             </RouterLink>
           </div>
 
-          <div class="docs-sidebar__card">
-            <span>快捷入口</span>
-            <a :href="merchantLoginUrl">商户登录</a>
-            <a :href="merchantRegisterUrl">注册商户</a>
-            <a :href="merchantApiUrl">商户接口配置</a>
-          </div>
-
-          <div class="docs-sidebar__card">
-            <span>对接提示</span>
-            <p>接口地址统一走 8787，游客前台统一走 8132。</p>
-            <p>公开文档只展示稳定入口，不再混用旧模板说明文案。</p>
-            <p>管理员登录地址不会在游客前台展示。</p>
+          <div class="docs-side__section">
+            <span class="docs-eyebrow">常用入口</span>
+            <a class="docs-side__link" :href="merchantLoginUrl">商户登录</a>
+            <a class="docs-side__link" :href="merchantRegisterUrl">注册商户</a>
+            <a class="docs-side__link" :href="merchantApiUrl">接口配置</a>
           </div>
         </aside>
 
         <div class="docs-content">
-          <article v-for="group in docGroups" :key="group.id" class="doc-group">
-            <div class="doc-group__head">
+          <article v-for="group in docGroups" :key="group.id" class="docs-group">
+            <div class="docs-group__head">
               <span>{{ group.eyebrow }}</span>
               <h2>{{ group.title }}</h2>
               <p>{{ group.description }}</p>
             </div>
 
-            <div class="doc-group__rows">
-              <div v-for="item in group.items" :key="`${group.id}-${item.label}`" class="doc-row">
-                <div class="doc-row__label">
+            <div class="docs-rows">
+              <div v-for="item in group.items" :key="`${group.id}-${item.label}`" class="docs-row">
+                <div class="docs-row__label">
                   <strong>{{ item.label }}</strong>
                   <small v-if="item.note">{{ item.note }}</small>
                 </div>
 
-                <div class="doc-row__value">
+                <div class="docs-row__value">
                   <code>{{ item.value }}</code>
                   <button v-if="item.copyable !== false" type="button" @click="copyDocValue(item.value)">
                     复制
@@ -147,13 +140,13 @@
     {
       key: 'overview',
       title: '页面跳转支付',
-      note: '前台与回调基础地址',
+      note: '提交地址与基础参数',
       to: '/doc'
     },
     {
       key: 'api',
       title: 'API 接口支付',
-      note: 'MAPI、聚合接口与辅助入口',
+      note: 'MAPI、聚合接口与辅助地址',
       to: '/doc/api'
     },
     {
@@ -180,32 +173,28 @@
   const merchantDashboardUrl = computed(() => '/#/merchant/dashboard')
   const merchantApiUrl = computed(() => '/#/merchant/api')
   const backendOrigin = computed(() => resolvePublicBackendOrigin() || '')
-  const backendOriginLabel = computed(() => backendOrigin.value || '未配置')
-  const frontendOriginLabel = computed(() =>
-    typeof window === 'undefined' ? '当前前台入口' : window.location.origin
-  )
 
   const activeSectionMeta = computed(() => {
     const map: Record<SectionKey, { title: string; shortLabel: string; description: string }> = {
       overview: {
         title: '页面跳转支付文档',
         shortLabel: '跳转支付',
-        description: '整理公开前台、支付跳转地址、基础参数和商户接入入口。'
+        description: '整理公开前台、支付跳转地址、基础参数与商户接入入口。'
       },
       api: {
         title: 'API 接口支付文档',
         shortLabel: 'API 支付',
-        description: '集中展示 MAPI、聚合接口、订单查询与商户常用辅助地址。'
+        description: '集中展示 MAPI、聚合下单接口、订单查询与商户常用辅助地址。'
       },
       result: {
         title: '支付结果通知文档',
         shortLabel: '结果通知',
-        description: '说明异步通知、同步返回、回调字段和商户验签规则。'
+        description: '说明异步通知、同步返回、回调字段与商户验签规则。'
       },
       findorder: {
         title: '订单查询文档',
         shortLabel: '订单查询',
-        description: '说明查单接口、参数格式、返回字段以及商户后台订单入口。'
+        description: '说明查单入口、参数格式、返回字段以及商户后台订单入口。'
       }
     }
 
@@ -213,6 +202,9 @@
   })
 
   const docGroups = computed<DocGroupCard[]>(() => buildDocGroups(activeSection.value))
+  const docFieldCount = computed(() =>
+    docGroups.value.reduce((total, group) => total + group.items.length, 0)
+  )
 
   async function loadPage() {
     loading.value = true
@@ -246,7 +238,7 @@
 
     const commonParams: DocRowItem[] = [
       { label: 'pid', value: '商户 ID', copyable: false },
-      { label: 'type', value: '支付方式标识，如 wxpay / alipay / qqpay', copyable: false },
+      { label: 'type', value: '支付方式标识，例如 wxpay / alipay / qqpay', copyable: false },
       { label: 'out_trade_no', value: '商户订单号，必须唯一', copyable: false },
       { label: 'name', value: '商品名称或订单名称', copyable: false },
       { label: 'money', value: '订单金额，单位元，保留两位小数', copyable: false },
@@ -263,7 +255,7 @@
           id: 'api-endpoints',
           eyebrow: '接口地址',
           title: 'API 下单入口',
-          description: '兼容旧接口地址，同时补充当前 Webman 聚合接口入口。',
+          description: '保留兼容下单地址，同时提供当前标准聚合接口入口。',
           items: [
             { label: '兼容 MAPI', value: backendUrl('/mapi.php') },
             { label: '聚合接口', value: backendUrl('/Api/mapi') },
@@ -273,20 +265,20 @@
         },
         {
           id: 'api-params',
-          eyebrow: '常用参数',
+          eyebrow: '请求参数',
           title: '下单参数说明',
-          description: '公开页面展示常用参数，实际测试与调通建议在商户端完成。',
+          description: '页面跳转与 API 支付共用以下基础参数。',
           items: commonParams
         },
         {
           id: 'api-helper',
-          eyebrow: '辅助入口',
+          eyebrow: '商户入口',
           title: '商户常用地址',
-          description: '商户登录、商户后台和接口配置页全部从 8132 前台进入。',
+          description: '公开前台只保留真实有用的商户入口和配置页面。',
           items: [
             { label: '商户登录', value: frontendHash('/merchant/login') },
             { label: '商户控制台', value: frontendHash('/merchant/dashboard') },
-            { label: '商户接口配置', value: frontendHash('/merchant/api') }
+            { label: '接口配置', value: frontendHash('/merchant/api') }
           ]
         }
       ]
@@ -310,7 +302,7 @@
           id: 'result-fields',
           eyebrow: '回调字段',
           title: '回调参数列表',
-          description: '当前系统商户回调 payload 统一包含以下字段。',
+          description: '当前系统的商户回调 payload 统一包含以下字段。',
           items: [
             { label: 'pid', value: '商户 ID', copyable: false },
             { label: 'trade_no', value: '平台订单号', copyable: false },
@@ -327,11 +319,11 @@
           id: 'result-sign',
           eyebrow: '验签规则',
           title: '商户侧强烈建议校验签名',
-          description: '回调参数先按键名升序排序，再拼接商户密钥计算 MD5。',
+          description: '先按参数名升序排列，再拼接商户密钥计算 MD5。',
           items: [
             { label: '排序规则', value: '按参数名升序排序', copyable: false },
             { label: '忽略字段', value: 'sign、sign_type 和空值', copyable: false },
-            { label: '拼接规则', value: 'key1=value1&key2=value2... + 商户密钥', copyable: false },
+            { label: '拼接规则', value: 'key1=value1&key2=value2... 加上商户密钥', copyable: false },
             { label: '签名算法', value: 'md5(拼接结果)', copyable: false }
           ]
         }
@@ -348,14 +340,14 @@
           items: [
             { label: '查单接口', value: backendUrl('/Api/findorder') },
             { label: 'order_no', value: '平台订单号或商户订单号', copyable: false },
-            { label: 'type', value: '1 表示优先 trade_no，其他值优先 out_trade_no', copyable: false }
+            { label: 'type', value: '1 优先 trade_no，其他值优先 out_trade_no', copyable: false }
           ]
         },
         {
           id: 'findorder-response',
           eyebrow: '返回字段',
           title: '查单结果说明',
-          description: '查单成功后，可从返回字段中判断金额、状态与回调地址。',
+          description: '查单成功后，可从返回字段判断金额、状态与回调地址。',
           items: [
             { label: 'trade_no', value: '平台订单号', copyable: false },
             { label: 'out_trade_no', value: '商户订单号', copyable: false },
@@ -374,7 +366,7 @@
           items: [
             { label: '商户订单列表', value: frontendHash('/merchant/orders') },
             { label: '商户控制台', value: frontendHash('/merchant/dashboard') },
-            { label: '商户接口配置', value: frontendHash('/merchant/api') }
+            { label: '接口配置', value: frontendHash('/merchant/api') }
           ]
         }
       ]
@@ -385,7 +377,7 @@
         id: 'overview-entry',
         eyebrow: '基础入口',
         title: '公开前台与商户入口',
-        description: '8132 承载公开页面、商户登录、注册和游客访问入口。',
+        description: '首页、商户登录、注册和支付测试都从统一前台入口访问。',
         items: [
           { label: '前台首页', value: frontend || '/' },
           { label: '商户登录', value: frontendHash('/merchant/login') },
@@ -396,11 +388,11 @@
       {
         id: 'overview-submit',
         eyebrow: '跳转支付',
-        title: '页面跳转与回调地址',
-        description: '兼容旧系统的页面支付入口，同时保留当前 Webman 提交地址。',
+        title: '页面提交与回调地址',
+        description: '兼容旧系统页面支付入口，同时保留当前标准提交通道。',
         items: [
           { label: '兼容提交地址', value: backendUrl('/submit.php') },
-          { label: 'Webman 提交地址', value: backendUrl('/Pay/submit') },
+          { label: '当前提交地址', value: backendUrl('/Pay/submit') },
           { label: '异步通知地址', value: backendUrl('/Notify/epay_notifyzj') },
           { label: '同步返回地址', value: backendUrl('/Notify/epay_returnzj') }
         ]
@@ -409,7 +401,7 @@
         id: 'overview-params',
         eyebrow: '请求参数',
         title: '常用下单参数',
-        description: '页面跳转与 API 支付共用的基础参数可以按以下格式准备。',
+        description: '页面跳转与 API 支付共用的基础参数如下。',
         items: commonParams
       }
     ]
@@ -427,214 +419,195 @@
 <style scoped lang="scss">
   .public-docs-page {
     display: grid;
-    gap: 22px;
+    gap: 28px;
   }
 
-  .docs-hero,
-  .docs-alert,
-  .docs-sidebar__card,
-  .doc-group {
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 28px;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  .docs-eyebrow,
+  .docs-group__head span {
+    display: inline-flex;
+    color: var(--public-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .docs-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
-    gap: 20px;
-    padding: 30px;
-  }
-
-  .docs-hero__tag,
-  .docs-sidebar__card span,
-  .doc-group__head span {
-    display: inline-flex;
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(97, 115, 255, 0.12);
-    color: #5467f5;
-    font-size: 0.8rem;
-    font-weight: 700;
+    grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
+    gap: 30px;
+    align-items: end;
   }
 
   .docs-hero h1 {
-    margin: 18px 0 12px;
-    color: #1f2937;
-    font-size: clamp(2rem, 4vw, 3.3rem);
+    margin: 14px 0 14px;
+    color: var(--public-title);
+    font-size: clamp(2.2rem, 4vw, 3.8rem);
     line-height: 1.08;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.05em;
   }
 
   .docs-hero p {
     margin: 0;
-    color: #5f6b7a;
-    line-height: 1.85;
     max-width: 760px;
+    color: var(--public-text);
+    line-height: 1.9;
   }
 
   .docs-hero__meta {
     display: grid;
-    gap: 12px;
+    gap: 14px;
   }
 
-  .docs-hero__meta article {
-    padding: 18px;
-    border-radius: 20px;
-    background: #f8fbff;
+  .docs-hero__meta div,
+  .docs-side__section,
+  .docs-group,
+  .docs-alert {
+    border-top: 1px solid var(--public-border-strong);
+    padding-top: 14px;
   }
 
   .docs-hero__meta small {
     display: block;
-    color: #64748b;
+    color: var(--public-muted);
   }
 
   .docs-hero__meta strong {
     display: block;
     margin-top: 8px;
-    color: #1f2937;
-    line-height: 1.7;
-    word-break: break-all;
+    color: var(--public-title);
+    font-size: 1.02rem;
   }
 
   .docs-alert {
-    padding: 16px 18px;
-    background: #fff7ed;
-    color: #9a3412;
-    line-height: 1.75;
+    color: #b45309;
+    line-height: 1.8;
   }
 
   .docs-layout {
     display: grid;
-    grid-template-columns: minmax(280px, 0.88fr) minmax(0, 1.7fr);
-    gap: 20px;
+    grid-template-columns: minmax(250px, 0.82fr) minmax(0, 1.8fr);
+    gap: 32px;
   }
 
-  .docs-sidebar {
+  .docs-side {
+    position: sticky;
+    top: 96px;
     display: grid;
-    gap: 18px;
+    gap: 24px;
     align-self: start;
   }
 
-  .docs-sidebar__card {
-    padding: 22px;
-  }
-
-  .docs-sidebar__card a {
+  .docs-side__nav,
+  .docs-side__link {
     display: block;
-    margin-top: 14px;
-    padding: 14px 16px;
-    border-radius: 18px;
-    background: #f8fbff;
-    color: #1f2937;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    color: inherit;
     text-decoration: none;
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      background 0.2s ease;
   }
 
-  .docs-sidebar__card a.is-active,
-  .docs-sidebar__card a:hover {
-    transform: translateY(-1px);
-    background: #edf2ff;
-    box-shadow: 0 18px 34px rgba(97, 115, 255, 0.12);
+  .docs-side__nav:last-child,
+  .docs-side__link:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
   }
 
-  .docs-sidebar__card a strong {
+  .docs-side__nav strong {
     display: block;
-    margin-bottom: 6px;
+    color: var(--public-title);
   }
 
-  .docs-sidebar__card a small,
-  .docs-sidebar__card p {
-    color: #5f6b7a;
-    line-height: 1.75;
+  .docs-side__nav small {
+    display: block;
+    margin-top: 6px;
+    color: var(--public-text);
+    line-height: 1.7;
   }
 
-  .docs-sidebar__card p {
-    margin: 14px 0 0;
+  .docs-side__nav.is-active {
+    color: var(--public-accent);
   }
 
   .docs-content {
     display: grid;
-    gap: 18px;
+    gap: 28px;
   }
 
-  .doc-group {
-    padding: 24px;
+  .docs-group__head h2 {
+    margin: 12px 0 10px;
+    color: var(--public-title);
+    font-size: 1.48rem;
+    line-height: 1.3;
   }
 
-  .doc-group__head h2 {
-    margin: 16px 0 10px;
-    color: #1f2937;
-    font-size: 1.35rem;
-  }
-
-  .doc-group__head p {
+  .docs-group__head p {
     margin: 0;
-    color: #5f6b7a;
-    line-height: 1.8;
+    color: var(--public-text);
+    line-height: 1.84;
   }
 
-  .doc-group__rows {
+  .docs-rows {
     display: grid;
-    gap: 12px;
     margin-top: 18px;
   }
 
-  .doc-row {
+  .docs-row {
     display: grid;
     grid-template-columns: 220px minmax(0, 1fr);
-    gap: 16px;
-    align-items: center;
-    padding: 16px 18px;
-    border-radius: 20px;
-    background: #f8fbff;
+    gap: 20px;
+    align-items: start;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
   }
 
-  .doc-row__label strong {
+  .docs-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .docs-row__label strong {
     display: block;
-    color: #1f2937;
+    color: var(--public-title);
   }
 
-  .doc-row__label small {
+  .docs-row__label small {
     display: block;
     margin-top: 6px;
-    color: #64748b;
+    color: var(--public-muted);
     line-height: 1.6;
   }
 
-  .doc-row__value {
+  .docs-row__value {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 12px;
     min-width: 0;
   }
 
-  .doc-row__value code {
+  .docs-row__value code {
     display: block;
-    min-width: 0;
     flex: 1;
-    overflow: hidden;
+    min-width: 0;
     padding: 12px 14px;
-    border-radius: 14px;
-    background: #0f172a;
-    color: #e2e8f0;
+    border-radius: 16px;
+    background: #f8fafc;
+    color: #1f2937;
     font-family: 'Cascadia Code', 'Consolas', monospace;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.75;
   }
 
-  .doc-row__value button {
+  .docs-row__value button {
     flex-shrink: 0;
+    min-width: 72px;
     min-height: 40px;
     padding: 0 14px;
-    border: 0;
-    border-radius: 14px;
-    background: #5467f5;
-    color: #fff;
+    border: 1px solid var(--public-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--public-title);
     font-weight: 700;
     cursor: pointer;
   }
@@ -644,32 +617,24 @@
     .docs-layout {
       grid-template-columns: 1fr;
     }
+
+    .docs-side {
+      position: static;
+    }
   }
 
-  @media (max-width: 640px) {
-    .docs-hero,
-    .docs-alert,
-    .docs-sidebar__card,
-    .doc-group {
-      border-radius: 24px;
-    }
-
-    .docs-hero,
-    .docs-sidebar__card,
-    .doc-group {
-      padding: 22px;
-    }
-
-    .doc-row {
+  @media (max-width: 720px) {
+    .docs-row {
       grid-template-columns: 1fr;
+      gap: 12px;
     }
 
-    .doc-row__value {
+    .docs-row__value {
       flex-direction: column;
       align-items: stretch;
     }
 
-    .doc-row__value button {
+    .docs-row__value button {
       width: 100%;
     }
   }

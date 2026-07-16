@@ -1,51 +1,42 @@
 <template>
-  <div class="index99-shell">
-    <div class="index99-shell__glow index99-shell__glow--left"></div>
-    <div class="index99-shell__glow index99-shell__glow--right"></div>
-
-    <header class="index99-header">
-      <div class="index99-header__inner">
-        <a class="index99-brand" href="/">
+  <div class="public-shell">
+    <header class="public-header">
+      <div class="public-header__inner">
+        <a class="public-brand" href="/">
           <strong>{{ siteName }}</strong>
           <small>{{ pageLabel }}</small>
         </a>
 
-        <nav class="index99-nav">
+        <nav class="public-nav">
           <a
             v-for="item in displayNavs"
             :key="item.key"
             :href="item.href"
             :target="item.newWindow ? '_blank' : undefined"
             :rel="item.newWindow ? 'noreferrer' : undefined"
-            :class="['index99-nav__item', { 'is-active': isActiveNav(item.href) }]"
+            :class="['public-nav__item', { 'is-active': isActiveNav(item.href) }]"
           >
             {{ item.name }}
           </a>
         </nav>
 
-        <div class="index99-actions">
-          <span class="index99-accent-pill">
-            <Icon icon="ri:palette-line" />
-            <em>index99</em>
-          </span>
-
+        <div class="public-actions">
           <a
             v-if="isLoggedIn"
-            class="index99-auth index99-auth--primary"
+            class="public-action public-action--primary"
             :href="merchantCenterHref"
           >
-            <Icon icon="ri:user-3-line" />
-            <span>商户中心</span>
+            商户中心
           </a>
 
-          <a v-else class="index99-auth index99-auth--primary" :href="merchantLoginHref">
-            <Icon icon="ri:user-3-line" />
-            <span>登录 / 注册</span>
-          </a>
+          <template v-else>
+            <a class="public-action public-action--secondary" :href="merchantLoginHref">商户登录</a>
+            <a class="public-action public-action--primary" :href="merchantRegisterHref">注册商户</a>
+          </template>
 
           <button
             type="button"
-            class="index99-mobile-toggle"
+            class="public-mobile-toggle"
             :aria-expanded="mobileMenuOpen ? 'true' : 'false'"
             aria-label="展开导航"
             @click="mobileMenuOpen = !mobileMenuOpen"
@@ -58,40 +49,40 @@
       </div>
     </header>
 
-    <transition name="index99-mobile-sheet">
-      <div v-if="mobileMenuOpen" class="index99-mobile">
-        <div class="index99-mobile__mask" @click="mobileMenuOpen = false"></div>
+    <transition name="public-mobile-sheet">
+      <div v-if="mobileMenuOpen" class="public-mobile">
+        <div class="public-mobile__mask" @click="mobileMenuOpen = false"></div>
 
-        <div class="index99-mobile__panel">
-          <div class="index99-mobile__head">
+        <div class="public-mobile__panel">
+          <div class="public-mobile__head">
             <div>
               <strong>{{ siteName }}</strong>
               <p>{{ pageLabel }}</p>
             </div>
 
-            <button type="button" class="index99-mobile__close" @click="mobileMenuOpen = false">
-              ×
+            <button type="button" class="public-mobile__close" @click="mobileMenuOpen = false">
+              关闭
             </button>
           </div>
 
-          <div class="index99-mobile__links">
+          <div class="public-mobile__links">
             <a
               v-for="item in displayNavs"
               :key="`mobile-${item.key}`"
               :href="item.href"
               :target="item.newWindow ? '_blank' : undefined"
               :rel="item.newWindow ? 'noreferrer' : undefined"
-              :class="['index99-mobile__link', { 'is-active': isActiveNav(item.href) }]"
+              :class="['public-mobile__link', { 'is-active': isActiveNav(item.href) }]"
               @click="mobileMenuOpen = false"
             >
               {{ item.name }}
             </a>
           </div>
 
-          <div class="index99-mobile__actions">
+          <div class="public-mobile__actions">
             <a
               v-if="isLoggedIn"
-              class="index99-mobile__auth index99-mobile__auth--primary"
+              class="public-mobile__action public-mobile__action--primary"
               :href="merchantCenterHref"
               @click="mobileMenuOpen = false"
             >
@@ -100,15 +91,14 @@
 
             <template v-else>
               <a
-                class="index99-mobile__auth index99-mobile__auth--ghost"
+                class="public-mobile__action public-mobile__action--secondary"
                 :href="merchantLoginHref"
                 @click="mobileMenuOpen = false"
               >
                 商户登录
               </a>
-
               <a
-                class="index99-mobile__auth index99-mobile__auth--primary"
+                class="public-mobile__action public-mobile__action--primary"
                 :href="merchantRegisterHref"
                 @click="mobileMenuOpen = false"
               >
@@ -120,18 +110,18 @@
       </div>
     </transition>
 
-    <main class="index99-main">
+    <main class="public-main">
       <slot></slot>
     </main>
 
-    <footer class="index99-footer">
-      <div class="index99-footer__inner">
-        <div>
+    <footer class="public-footer">
+      <div class="public-footer__inner">
+        <div class="public-footer__copy">
           <strong>{{ siteName }}</strong>
           <p>{{ footerNote }}</p>
         </div>
 
-        <div class="index99-footer__links">
+        <div class="public-footer__links">
           <a
             v-for="item in footerNavs"
             :key="`footer-${item.key}`"
@@ -148,7 +138,6 @@
 </template>
 
 <script setup lang="ts">
-  import { Icon } from '@iconify/vue'
   import type { PublicNavItem } from '@/api/public-site'
 
   defineOptions({ name: 'PublicShell' })
@@ -182,8 +171,8 @@
       siteName: 'AiPay',
       navs: () => [],
       isLoggedIn: false,
-      pageLabel: '聚合支付前台',
-      footerNote: '8132 统一承载游客首页、开发文档、公告中心、支付测试与商户入口。',
+      pageLabel: '游客前台',
+      footerNote: '统一提供首页介绍、开发文档、公告中心、支付测试与商户入口。',
       merchantLoginUrl: '/#/merchant/login',
       merchantRegisterUrl: '/#/merchant/register',
       merchantCenterUrl: '/#/merchant/dashboard'
@@ -247,11 +236,17 @@
   )
 
   watch(mobileMenuOpen, (opened) => {
+    if (typeof document === 'undefined') {
+      return
+    }
+
     document.body.style.overflow = opened ? 'hidden' : ''
   })
 
   onBeforeUnmount(() => {
-    document.body.style.overflow = ''
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = ''
+    }
   })
 
   function resolveAppHref(url: string) {
@@ -360,12 +355,22 @@
     font-style: normal;
   }
 
-  .index99-shell {
-    position: relative;
+  .public-shell {
+    --public-bg: #f5f7fb;
+    --public-surface: #ffffff;
+    --public-surface-soft: #f8fafc;
+    --public-border: rgba(15, 23, 42, 0.08);
+    --public-border-strong: rgba(15, 23, 42, 0.12);
+    --public-title: #18202f;
+    --public-text: #526073;
+    --public-muted: #8390a3;
+    --public-accent: #2850f0;
+    --public-shadow: 0 20px 40px rgba(15, 23, 42, 0.04);
     min-height: 100vh;
-    overflow-x: hidden;
-    background: linear-gradient(90deg, #edf4ff 0%, #f6eef4 100%);
-    color: #1f2937;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 247, 251, 1) 28%),
+      #f5f7fb;
+    color: var(--public-title);
     font-family:
       'MiSans',
       -apple-system,
@@ -376,413 +381,318 @@
       sans-serif;
   }
 
-  .index99-shell__glow {
-    position: fixed;
-    inset: auto;
-    z-index: 0;
-    pointer-events: none;
-    border-radius: 999px;
-    filter: blur(48px);
-    opacity: 0.45;
-  }
-
-  .index99-shell__glow--left {
-    top: 90px;
-    left: -80px;
-    width: 280px;
-    height: 280px;
-    background: rgba(103, 80, 255, 0.14);
-  }
-
-  .index99-shell__glow--right {
-    top: 180px;
-    right: -120px;
-    width: 320px;
-    height: 320px;
-    background: rgba(59, 130, 246, 0.12);
-  }
-
-  .index99-header {
+  .public-header {
     position: sticky;
     top: 0;
     z-index: 30;
-    padding: 10px 16px 0;
+    background: rgba(245, 247, 251, 0.86);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
   }
 
-  .index99-header__inner {
+  .public-header__inner,
+  .public-main,
+  .public-footer__inner {
+    width: min(1160px, calc(100% - 32px));
+    margin: 0 auto;
+  }
+
+  .public-header__inner {
     display: flex;
     align-items: center;
-    gap: 26px;
     justify-content: space-between;
-    width: min(1360px, 100%);
-    margin: 0 auto;
-    padding: 18px 36px;
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.56);
-    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.06);
-    backdrop-filter: blur(16px);
+    gap: 28px;
+    min-height: 76px;
   }
 
-  .index99-brand {
+  .public-brand {
     display: inline-flex;
     flex-direction: column;
     gap: 4px;
-    text-decoration: none;
     color: inherit;
+    text-decoration: none;
     white-space: nowrap;
   }
 
-  .index99-brand strong {
-    font-size: 2.1rem;
-    font-weight: 700;
+  .public-brand strong {
+    font-size: 1.42rem;
     line-height: 1;
     letter-spacing: -0.04em;
-    color: #4b5563;
   }
 
-  .index99-brand small {
-    color: #7c8aa5;
-    font-size: 0.8rem;
-    line-height: 1;
+  .public-brand small {
+    color: var(--public-muted);
+    font-size: 0.84rem;
   }
 
-  .index99-nav {
+  .public-nav {
     display: flex;
     align-items: center;
-    gap: 34px;
+    gap: 28px;
     flex: 1;
+    justify-content: center;
   }
 
-  .index99-nav__item {
+  .public-nav__item {
     position: relative;
-    color: #334155;
-    font-size: 1rem;
-    font-weight: 500;
+    padding: 6px 0;
+    color: #364152;
     text-decoration: none;
     transition: color 0.2s ease;
   }
 
-  .index99-nav__item::after {
+  .public-nav__item::after {
     content: '';
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -8px;
+    bottom: -2px;
     height: 2px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #4f7cff, #7367ff);
-    opacity: 0;
-    transform: scaleX(0.2);
-    transition:
-      opacity 0.2s ease,
-      transform 0.2s ease;
+    background: var(--public-title);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 0.2s ease;
   }
 
-  .index99-nav__item:hover,
-  .index99-nav__item.is-active {
-    color: #2563eb;
+  .public-nav__item:hover,
+  .public-nav__item.is-active {
+    color: var(--public-title);
   }
 
-  .index99-nav__item:hover::after,
-  .index99-nav__item.is-active::after {
-    opacity: 1;
+  .public-nav__item:hover::after,
+  .public-nav__item.is-active::after {
     transform: scaleX(1);
   }
 
-  .index99-actions {
+  .public-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex-shrink: 0;
   }
 
-  .index99-accent-pill {
+  .public-action,
+  .public-mobile__action {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 44px;
-    padding: 0 14px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.88);
-    color: #6173ff;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
-    font-size: 1rem;
-    font-weight: 700;
-  }
-
-  .index99-accent-pill em {
-    font-style: normal;
-    color: #4b5563;
-    font-size: 0.88rem;
-  }
-
-  .index99-auth {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 44px;
-    padding: 0 20px;
-    border-radius: 12px;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid transparent;
     text-decoration: none;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 700;
     transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      background 0.2s ease;
+      border-color 0.2s ease,
+      background 0.2s ease,
+      color 0.2s ease;
   }
 
-  .index99-auth--primary {
-    background: linear-gradient(135deg, #6173ff 0%, #5b6cff 35%, #6f67ff 100%);
+  .public-action--primary,
+  .public-mobile__action--primary {
+    background: #18202f;
     color: #fff;
-    box-shadow: 0 12px 26px rgba(97, 115, 255, 0.3);
   }
 
-  .index99-auth--primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 16px 34px rgba(97, 115, 255, 0.34);
+  .public-action--secondary,
+  .public-mobile__action--secondary {
+    border-color: var(--public-border);
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--public-title);
   }
 
-  .index99-mobile-toggle {
+  .public-mobile-toggle {
     display: none;
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--public-border);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.88);
+    cursor: pointer;
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap: 5px;
-    border: 0;
-    cursor: pointer;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #6173ff 0%, #6f67ff 100%);
-    box-shadow: 0 12px 24px rgba(97, 115, 255, 0.22);
+    gap: 4px;
   }
 
-  .index99-mobile-toggle span {
-    width: 18px;
+  .public-mobile-toggle span {
+    width: 16px;
     height: 2px;
     border-radius: 999px;
-    background: #fff;
+    background: var(--public-title);
   }
 
-  .index99-mobile {
+  .public-mobile {
     position: fixed;
     inset: 0;
     z-index: 40;
   }
 
-  .index99-mobile__mask {
+  .public-mobile__mask {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.34);
-    backdrop-filter: blur(3px);
+    background: rgba(15, 23, 42, 0.24);
   }
 
-  .index99-mobile__panel {
+  .public-mobile__panel {
     position: absolute;
     top: 0;
     right: 0;
-    width: min(78vw, 300px);
+    width: min(78vw, 320px);
     height: 100%;
-    padding: 22px 18px 20px;
-    background: rgba(255, 255, 255, 0.96);
-    box-shadow: -12px 0 30px rgba(15, 23, 42, 0.12);
+    padding: 20px;
+    background: #fff;
+    box-shadow: -20px 0 40px rgba(15, 23, 42, 0.08);
     display: flex;
     flex-direction: column;
     gap: 18px;
   }
 
-  .index99-mobile__head {
+  .public-mobile__head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
   }
 
-  .index99-mobile__head strong {
+  .public-mobile__head strong {
     display: block;
-    font-size: 1.25rem;
-    color: #4b5563;
+    font-size: 1.12rem;
   }
 
-  .index99-mobile__head p {
-    margin: 4px 0 0;
-    color: #7c8aa5;
-    font-size: 0.82rem;
+  .public-mobile__head p {
+    margin: 6px 0 0;
+    color: var(--public-muted);
+    font-size: 0.84rem;
   }
 
-  .index99-mobile__close {
-    width: 34px;
-    height: 34px;
-    border: 0;
-    border-radius: 10px;
-    background: #eef2ff;
-    color: #4f46e5;
-    font-size: 1.4rem;
+  .public-mobile__close {
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--public-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--public-title);
     cursor: pointer;
   }
 
-  .index99-mobile__links {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .index99-mobile__link,
-  .index99-mobile__auth {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 46px;
-    padding: 0 16px;
-    border-radius: 12px;
-    text-decoration: none;
-    font-weight: 600;
-  }
-
-  .index99-mobile__link {
-    background: #f8fafc;
-    color: #334155;
-  }
-
-  .index99-mobile__link.is-active {
-    background: #eef2ff;
-    color: #4f46e5;
-  }
-
-  .index99-mobile__actions {
-    display: flex;
-    flex-direction: column;
+  .public-mobile__links,
+  .public-mobile__actions {
+    display: grid;
     gap: 10px;
+  }
+
+  .public-mobile__link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 14px;
+    background: var(--public-surface-soft);
+    color: var(--public-title);
+    text-decoration: none;
+  }
+
+  .public-mobile__link.is-active {
+    background: #eef2ff;
+    color: var(--public-accent);
+  }
+
+  .public-mobile__actions {
     margin-top: auto;
   }
 
-  .index99-mobile__auth--ghost {
-    border: 1px solid #dbe4ff;
-    background: #fff;
-    color: #334155;
+  .public-main {
+    padding: 46px 0 80px;
   }
 
-  .index99-mobile__auth--primary {
-    background: linear-gradient(135deg, #6173ff 0%, #6f67ff 100%);
-    color: #fff;
+  .public-footer {
+    border-top: 1px solid rgba(15, 23, 42, 0.06);
+    background: rgba(255, 255, 255, 0.72);
   }
 
-  .index99-main {
-    position: relative;
-    z-index: 1;
-    width: min(1360px, calc(100% - 32px));
-    margin: 0 auto;
-    padding: 42px 0 80px;
-  }
-
-  .index99-footer {
-    position: relative;
-    z-index: 1;
-    padding: 0 16px 28px;
-  }
-
-  .index99-footer__inner {
+  .public-footer__inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    width: min(1360px, 100%);
-    margin: 0 auto;
-    padding: 20px 28px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.58);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(14px);
+    padding: 22px 0 28px;
   }
 
-  .index99-footer strong {
+  .public-footer__copy strong {
     display: block;
     font-size: 1rem;
-    color: #334155;
   }
 
-  .index99-footer p {
+  .public-footer__copy p {
     margin: 6px 0 0;
-    color: #64748b;
+    color: var(--public-text);
     font-size: 0.9rem;
+    line-height: 1.7;
   }
 
-  .index99-footer__links {
+  .public-footer__links {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 18px;
   }
 
-  .index99-footer__links a {
-    color: #475569;
+  .public-footer__links a {
+    color: #4b5563;
     text-decoration: none;
     font-size: 0.92rem;
   }
 
-  .index99-mobile-sheet-enter-active,
-  .index99-mobile-sheet-leave-active {
-    transition: opacity 0.24s ease;
+  .public-mobile-sheet-enter-active,
+  .public-mobile-sheet-leave-active {
+    transition: opacity 0.2s ease;
   }
 
-  .index99-mobile-sheet-enter-from,
-  .index99-mobile-sheet-leave-to {
+  .public-mobile-sheet-enter-from,
+  .public-mobile-sheet-leave-to {
     opacity: 0;
   }
 
-  @media (max-width: 1120px) {
-    .index99-header__inner {
-      padding: 16px 24px;
-    }
-
-    .index99-nav {
-      gap: 22px;
-    }
-  }
-
   @media (max-width: 960px) {
-    .index99-nav,
-    .index99-accent-pill,
-    .index99-auth {
+    .public-nav,
+    .public-action {
       display: none;
     }
 
-    .index99-mobile-toggle {
+    .public-mobile-toggle {
       display: inline-flex;
     }
 
-    .index99-header__inner {
-      padding: 16px 18px;
+    .public-header__inner,
+    .public-main,
+    .public-footer__inner {
+      width: min(100%, calc(100% - 24px));
     }
 
-    .index99-brand strong {
-      font-size: 1.9rem;
+    .public-main {
+      padding: 28px 0 56px;
     }
   }
 
   @media (max-width: 640px) {
-    .index99-header {
-      padding: 10px 12px 0;
+    .public-header__inner {
+      min-height: 68px;
     }
 
-    .index99-main {
-      width: min(100%, calc(100% - 24px));
-      padding: 26px 0 56px;
+    .public-brand strong {
+      font-size: 1.26rem;
     }
 
-    .index99-footer {
-      padding: 0 12px 18px;
-    }
-
-    .index99-footer__inner {
+    .public-footer__inner {
       flex-direction: column;
       align-items: flex-start;
-      padding: 18px 16px;
+      padding: 18px 0 20px;
     }
 
-    .index99-footer__links {
+    .public-footer__links {
       justify-content: flex-start;
     }
   }

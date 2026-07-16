@@ -302,7 +302,14 @@ function checkPaymentPlugins(string $projectRoot, array &$passes, array &$failur
     $pluginsRoot = $projectRoot . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . 'payments';
     $pluginDirectories = array_values(array_filter(
         glob($pluginsRoot . DIRECTORY_SEPARATOR . '*') ?: [],
-        static fn(string $path): bool => is_dir($path)
+        static function (string $path): bool {
+            if (!is_dir($path)) {
+                return false;
+            }
+
+            $name = basename($path);
+            return $name !== '' && $name[0] !== '_' && $name[0] !== '.';
+        }
     ));
 
     if ($pluginDirectories === []) {

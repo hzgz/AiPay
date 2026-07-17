@@ -58,11 +58,19 @@ function Remove-PathSafely {
 
     Remove-Item -LiteralPath $resolved -Recurse -Force -ErrorAction SilentlyContinue
     if (Test-Path -LiteralPath $resolved) {
-        Get-ChildItem -LiteralPath $resolved -Directory -Recurse -ErrorAction SilentlyContinue |
-            Sort-Object FullName -Descending |
-            ForEach-Object {
-                Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue
+        try {
+            if ((Get-Item -LiteralPath $resolved -ErrorAction SilentlyContinue) -is [System.IO.DirectoryInfo]) {
+                [System.IO.Directory]::Delete($resolved, $true)
             }
+            else {
+                [System.IO.File]::Delete($resolved)
+            }
+        }
+        catch {
+        }
+    }
+
+    if (Test-Path -LiteralPath $resolved) {
         Remove-Item -LiteralPath $resolved -Force -ErrorAction SilentlyContinue
     }
 

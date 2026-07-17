@@ -138,6 +138,33 @@ function New-PortableZipArchive {
     }
 }
 
+function Remove-StaleReleaseArtifacts {
+    param(
+        [string]$ReleaseRoot,
+        [string]$CurrentPackageName
+    )
+
+    if (-not (Test-Path -LiteralPath $ReleaseRoot)) {
+        return
+    }
+
+    Get-ChildItem -LiteralPath $ReleaseRoot -Force -ErrorAction SilentlyContinue | ForEach-Object {
+        $name = $_.Name
+        $keep = @(
+            $CurrentPackageName,
+            "$CurrentPackageName.zip",
+            "$CurrentPackageName.zip.sha256",
+            "$CurrentPackageName.release.txt"
+        ) -contains $name
+
+        if ($keep) {
+            return
+        }
+
+        Remove-IfExists -LiteralPath $_.FullName -BestEffort
+    }
+}
+
 function Invoke-WorkspaceCleanup {
     Write-Host '[release] cleaning workspace residue'
 
@@ -243,6 +270,7 @@ function Prepare-Stage {
     $stageDatabase = Join-Path $stageRoot 'database'
     $stageInstall = Join-Path $stageDatabase 'install'
 
+    New-Directory -LiteralPath $stageRoot
     New-Directory -LiteralPath $stageBackend
     New-Directory -LiteralPath $stageConsole
     New-Directory -LiteralPath $stageDocs
@@ -386,6 +414,9 @@ function Verify-StagePackage {
 if (-not $SkipWorkspaceCleanup) {
     Invoke-WorkspaceCleanup
 }
+
+New-Directory -LiteralPath $releaseRoot
+Remove-StaleReleaseArtifacts -ReleaseRoot $releaseRoot -CurrentPackageName $packageName
 
 Build-Frontend
 Prepare-Stage

@@ -520,7 +520,7 @@
       return
     }
 
-    let pendingWindow: Window | null = window.open('', '_blank')
+    let pendingWindow: Window | null = window.open('about:blank', '_blank')
     impersonatingMerchant.value = true
 
     try {
@@ -529,9 +529,7 @@
         return
       }
 
-      pendingWindow.document.write(
-        '<!doctype html><title>Opening merchant center</title><body style="font:14px/1.6 sans-serif;padding:24px;">正在进入商户中心...</body>'
-      )
+      pendingWindow.document.title = '商户中心'
 
       const response = await fetchGetMerchantImpersonationAudit(activeMerchant.value.id)
       const audit = response.audit

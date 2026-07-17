@@ -8,14 +8,20 @@
               <p class="hero-eyebrow">AiPay 控制台</p>
               <h2 class="hero-title">支付经营总览</h2>
               <p class="hero-desc">
-                这套控制台直接读取新支付接口，优先展示订单规模、成交金额、待处理订单和支付方式分布。
+                这套控制台直接读取正式支付接口，优先展示成交走势、待处理事务、账号在线情况和支付方式分布。
               </p>
               <div class="hero-tags">
                 <ElTag type="warning" effect="plain">
                   待支付 {{ summary.pending_order_count }} 笔
                 </ElTag>
+                <ElTag type="danger" effect="plain">
+                  待充值 {{ dutyBoard.pending_recharge_count }} 笔
+                </ElTag>
+                <ElTag type="info" effect="plain">
+                  待处理工单 {{ dutyBoard.pending_ticket_count }} 个
+                </ElTag>
                 <ElTag type="success" effect="plain">
-                  成功率 {{ summary.success_rate }}%
+                  在线账号 {{ dutyBoard.online_account_count }} 个
                 </ElTag>
                 <ElTag effect="plain">数据更新 {{ overview?.generated_at || '--' }}</ElTag>
               </div>
@@ -38,9 +44,11 @@
 
       <ElCol :xs="24" :sm="12" :lg="4">
         <ElCard class="highlight-card success" shadow="never" v-loading="loading">
-          <p class="highlight-label">商户规模</p>
-          <strong class="highlight-value">{{ summary.merchant_count }}</strong>
-          <span class="highlight-sub">当前系统内已接入商户数</span>
+          <p class="highlight-label">待处理工单</p>
+          <strong class="highlight-value">{{ dutyBoard.pending_ticket_count }}</strong>
+          <span class="highlight-sub">
+            新工单 {{ dutyBoard.new_ticket_count }} / 处理中 {{ dutyBoard.processing_ticket_count }}
+          </span>
         </ElCard>
       </ElCol>
     </ElRow>
@@ -149,34 +157,17 @@
           <div class="panel-head">
             <div>
               <h3>值班摘要</h3>
-              <p>把最常看的经营指标压缩成一组可扫读信息。</p>
+              <p>把值班时优先要处理的事务独立出来，方便快速确认处理顺序。</p>
             </div>
           </div>
 
           <div class="brief-list">
-            <div class="brief-item">
-              <span>今日订单</span>
-              <strong>{{ summary.today_order_count }}</strong>
-            </div>
-            <div class="brief-item">
-              <span>今日成功</span>
-              <strong>{{ summary.today_paid_order_count }}</strong>
-            </div>
-            <div class="brief-item">
-              <span>今日成交</span>
-              <strong>{{ formatAmount(summary.today_paid_amount) }}</strong>
-            </div>
-            <div class="brief-item">
-              <span>今日手续费</span>
-              <strong>{{ formatAmount(summary.today_fee_amount, 3) }}</strong>
-            </div>
-            <div class="brief-item">
-              <span>累计成交</span>
-              <strong>{{ formatAmount(summary.total_paid_amount) }}</strong>
-            </div>
-            <div class="brief-item">
-              <span>累计手续费</span>
-              <strong>{{ formatAmount(summary.total_fee_amount, 3) }}</strong>
+            <div v-for="item in briefItems" :key="item.key" class="brief-item">
+              <div class="brief-copy">
+                <span>{{ item.label }}</span>
+                <p class="brief-note">{{ item.note }}</p>
+              </div>
+              <strong>{{ item.value }}</strong>
             </div>
           </div>
         </ElCard>
@@ -211,6 +202,20 @@
         pending_order_count: 0,
         merchant_count: 0,
         success_rate: 0
+      }
+    )
+  })
+
+  const dutyBoard = computed<Api.Dashboard.DutyBoard>(() => {
+    return (
+      overview.value?.duty_board ?? {
+        pending_recharge_count: 0,
+        pending_recharge_amount: 0,
+        new_ticket_count: 0,
+        processing_ticket_count: 0,
+        pending_ticket_count: 0,
+        online_account_count: 0,
+        enabled_account_count: 0
       }
     )
   })
@@ -294,6 +299,57 @@
       value: `${summary.value.merchant_count} 个`,
       note: '平台当前可服务商户',
       icon: 'ri:user-star-line'
+    }
+  ])
+
+  const briefItems = computed(() => [
+    {
+      key: 'pending-orders',
+      label: '待支付订单',
+      value: `${summary.value.pending_order_count} 笔`,
+      note: '等待用户完成付款'
+    },
+    {
+      key: 'pending-recharges',
+      label: '待充值订单',
+      value: `${dutyBoard.value.pending_recharge_count} 笔`,
+      note: `待充值金额 ${formatAmount(dutyBoard.value.pending_recharge_amount)}`
+    },
+    {
+      key: 'pending-tickets',
+      label: '待处理工单',
+      value: `${dutyBoard.value.pending_ticket_count} 个`,
+      note: `新工单 ${dutyBoard.value.new_ticket_count} / 处理中 ${dutyBoard.value.processing_ticket_count}`
+    },
+    {
+      key: 'online-accounts',
+      label: '在线账号',
+      value: `${dutyBoard.value.online_account_count} 个`,
+      note: `已启用 ${dutyBoard.value.enabled_account_count} 个`
+    },
+    {
+      key: 'today-orders',
+      label: '今日订单',
+      value: `${summary.value.today_order_count} 笔`,
+      note: `成功 ${summary.value.today_paid_order_count} 笔`
+    },
+    {
+      key: 'today-amount',
+      label: '今日成交',
+      value: formatAmount(summary.value.today_paid_amount),
+      note: `手续费 ${formatAmount(summary.value.today_fee_amount, 3)}`
+    },
+    {
+      key: 'total-orders',
+      label: '累计订单',
+      value: `${summary.value.total_order_count} 笔`,
+      note: `已支付 ${summary.value.total_paid_order_count} 笔`
+    },
+    {
+      key: 'total-amount',
+      label: '累计成交',
+      value: formatAmount(summary.value.total_paid_amount),
+      note: `累计手续费 ${formatAmount(summary.value.total_fee_amount, 3)}`
     }
   ])
 
@@ -530,8 +586,23 @@
     font-weight: 600;
   }
 
+  .brief-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .brief-note {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
   .brief-item strong {
     font-size: 16px;
+    text-align: right;
   }
 
   .order-main p {

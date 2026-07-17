@@ -2560,6 +2560,16 @@ declare namespace Api {
       success_rate: number
     }
 
+    interface DutyBoard {
+      pending_recharge_count: number
+      pending_recharge_amount: number
+      new_ticket_count: number
+      processing_ticket_count: number
+      pending_ticket_count: number
+      online_account_count: number
+      enabled_account_count: number
+    }
+
     interface Trend {
       labels: string[]
       order_counts: number[]
@@ -2610,6 +2620,7 @@ declare namespace Api {
 
     interface OverviewResponse {
       summary: Summary
+      duty_board: DutyBoard
       trend: Trend
       payment_distribution: PaymentDistributionItem[]
       recent_orders: RecentOrderItem[]

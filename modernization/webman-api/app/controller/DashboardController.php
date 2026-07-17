@@ -49,6 +49,7 @@ class DashboardController
                 'merchant_count' => $merchantCount,
                 'success_rate' => $successRate,
             ],
+            'duty_board' => $this->dutyBoard(),
             'trend' => $this->trend(),
             'payment_distribution' => $this->paymentDistribution($totalOrderCount),
             'recent_orders' => $this->recentOrders(),
@@ -159,6 +160,30 @@ class DashboardController
             },
             $rows
         );
+    }
+
+    private function dutyBoard(): array
+    {
+        $pendingRechargeQuery = Db::table('ypay_recharge')->where('status', 0);
+        $pendingRechargeCount = (int)(clone $pendingRechargeQuery)->count();
+        $pendingRechargeRow = (array)((clone $pendingRechargeQuery)
+            ->selectRaw('COALESCE(SUM(money), 0) as amount')
+            ->first() ?? []);
+
+        $newTicketCount = (int)Db::table('ypay_ticket')->where('status', 0)->count();
+        $processingTicketCount = (int)Db::table('ypay_ticket')->where('status', 1)->count();
+        $onlineAccountCount = (int)Db::table('ypay_account')->where('status', 1)->count();
+        $enabledAccountCount = (int)Db::table('ypay_account')->where('is_status', 1)->count();
+
+        return [
+            'pending_recharge_count' => $pendingRechargeCount,
+            'pending_recharge_amount' => AdminOrderFormatter::toFloat($pendingRechargeRow['amount'] ?? 0),
+            'new_ticket_count' => $newTicketCount,
+            'processing_ticket_count' => $processingTicketCount,
+            'pending_ticket_count' => $newTicketCount + $processingTicketCount,
+            'online_account_count' => $onlineAccountCount,
+            'enabled_account_count' => $enabledAccountCount,
+        ];
     }
 
     private function recentOrders(): array

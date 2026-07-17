@@ -2,7 +2,6 @@
 
 namespace app\controller;
 
-use app\payment\managed\AbstractManagedGatewayOrderService;
 use app\payment\PaymentPluginManager;
 use app\service\order\OrderReconcileTaskService;
 use app\support\AdminFixtureTextNormalizer;
@@ -17,6 +16,7 @@ use app\support\SystemConfig;
 use app\support\UploadWorkspace;
 use Illuminate\Database\Query\Builder;
 use Plugins\Payments\Shared\Support\JiaofeiyiSupport;
+use Plugins\Payments\Shared\Managed\AbstractManagedGatewayOrderService;
 use support\Db;
 use Throwable;
 use Plugins\Payments\AlipayOfficial\Support\AlipayOfficialGatewayService;

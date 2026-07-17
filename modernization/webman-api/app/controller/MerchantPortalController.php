@@ -13,11 +13,12 @@ use app\support\AdminSmtpMailer;
 use app\support\AdminTicketFormatter;
 use app\support\AdminVipFormatter;
 use app\support\ApiResponse;
-use app\support\DatabaseColumnInspector;
 use app\support\GoogleAuthenticator;
 use app\support\LegacyPassword;
 use app\support\LegacyMojibakeGuard;
 use app\support\MerchantFrontSession;
+use app\support\MerchantPortalAccountSupport;
+use app\support\MerchantPortalCancellationSupport;
 use app\support\MerchantPortalHtmlLocalizer;
 use app\support\MerchantPortalMessageCatalog;
 use app\support\MerchantPortalReadOnlyGuard;
@@ -922,44 +923,44 @@ HTML;
         if (strtoupper($request->method()) === 'GET') {
             if ($this->wantsJson($request)) {
                 return $this->merchantJson(405, '请使用 POST 提交账号注销', 405, [
-                    'account_cancellation' => $this->merchantAccountCancellationPayload($merchant),
+                    'account_cancellation' => MerchantPortalCancellationSupport::payload($merchant),
                 ]);
             }
 
             return $this->merchantSpaRedirectForCurrentRequest($request);
         }
 
-        if (!$this->merchantCancellationFeatureEnabled()) {
+        if (!MerchantPortalCancellationSupport::featureEnabled()) {
             return $this->merchantJson(202, '商户账号注销功能未开启', 403, [
-                'account_cancellation' => $this->merchantAccountCancellationPayload($merchant),
+                'account_cancellation' => MerchantPortalCancellationSupport::payload($merchant),
             ]);
         }
 
-        $audit = $this->merchantCancellationAudit($merchant);
+        $audit = MerchantPortalCancellationSupport::audit($merchant);
         $payload = $this->requestPayload($request);
         $confirmation = trim((string)($payload['confirmation'] ?? $payload['confirm'] ?? $payload['phrase'] ?? ''));
 
         if ($confirmation === '') {
             return $this->merchantJson(422, '请输入注销确认口令', 422, [
-                'account_cancellation' => $this->merchantAccountCancellationPayload($merchant, $audit),
+                'account_cancellation' => MerchantPortalCancellationSupport::payload($merchant, $audit),
             ]);
         }
 
         if (!hash_equals((string)($audit['confirmation_phrase'] ?? ''), $confirmation)) {
             return $this->merchantJson(422, '注销确认口令不正确', 422, [
-                'account_cancellation' => $this->merchantAccountCancellationPayload($merchant, $audit),
+                'account_cancellation' => MerchantPortalCancellationSupport::payload($merchant, $audit),
             ]);
         }
 
         if (!($audit['can_delete'] ?? false)) {
             return $this->merchantJson(422, '当前账号暂不满足注销条件，请先处理拦截项', 422, [
-                'account_cancellation' => $this->merchantAccountCancellationPayload($merchant, $audit),
+                'account_cancellation' => MerchantPortalCancellationSupport::payload($merchant, $audit),
             ]);
         }
 
         $merchantId = (int)($merchant['id'] ?? 0);
         Db::transaction(function () use ($merchantId): void {
-            $this->deleteMerchantOwnedRowsForCancellation($merchantId);
+            MerchantPortalCancellationSupport::deleteOwnedRows($merchantId);
         });
 
         return $this->merchantJson(200, '商户账号已注销', 200, [
@@ -1004,9 +1005,9 @@ HTML;
             return $merchant;
         }
 
-        $merchantId = (int)($merchant['id'] ?? 0);
-        $this->ensureMerchantBasicRecord($merchantId);
         $key = $this->generateMerchantSecret(32);
+        $merchantId = (int)($merchant['id'] ?? 0);
+        MerchantPortalAccountSupport::ensureBasicRecord($merchantId, $key);
         Db::table('ypay_userbasic')
             ->where('user_id', $merchantId)
             ->update(['appkey' => $key]);
@@ -2340,7 +2341,15 @@ HTML;
             return $this->blockedWriteResponse('api_key');
         }
 
-        $payload = $this->merchantApiPayload($request, $merchant);
+        $payload = MerchantPortalAccountSupport::apiPayload(
+            $merchant,
+            MerchantPortalAccountSupport::basic((int)($merchant['id'] ?? 0)),
+            $this->requestOrigin($request),
+            $this->gatewayLines($request),
+            fn (string $secret): ?string => $this->maskSecret($secret),
+            fn (mixed $value): ?string => $this->nullableString($value),
+            fn (int $method): string => $this->timeoutMethodLabel($method)
+        );
         if ($this->wantsJson($request)) {
             return json([
                 'code' => 0,
@@ -2365,7 +2374,7 @@ HTML;
         }
 
         $merchantId = (int)($merchant['id'] ?? 0);
-        $basic = $this->merchantBasic($merchantId);
+        $basic = MerchantPortalAccountSupport::basic($merchantId);
         $appkey = trim((string)($basic['appkey'] ?? ''));
         $appkeyGenerated = false;
         if ($appkey === '') {
@@ -2374,8 +2383,8 @@ HTML;
                 return $this->merchantJson(422, '通讯密钥未配置，请先生成后再展示商户二维码', 422);
             }
 
-            $this->ensureMerchantBasicRecord($merchantId);
             $key = $this->generateMerchantSecret(32);
+            MerchantPortalAccountSupport::ensureBasicRecord($merchantId, $key);
             Db::table('ypay_userbasic')
                 ->where('user_id', $merchantId)
                 ->update(['appkey' => $key]);
@@ -3183,7 +3192,7 @@ HTML;
     private function merchantProfilePayload(Request $request, array $merchant): array
     {
         $merchantId = (int)($merchant['id'] ?? 0);
-        $basic = $this->merchantBasic($merchantId);
+        $basic = MerchantPortalAccountSupport::basic($merchantId);
         $currentVip = $this->merchantCurrentVip($merchant);
 
         return [
@@ -3223,7 +3232,7 @@ HTML;
     private function merchantNotificationsPayload(array $merchant): array
     {
         $merchantId = (int)($merchant['id'] ?? 0);
-        $basic = $this->merchantNotificationBasic($merchantId);
+        $basic = MerchantPortalAccountSupport::notificationBasic($merchantId, self::DEFAULT_VOICE_TIPS);
         $channels = $this->notificationChannels();
         $settings = [];
         foreach ($this->notificationSettingDefinitions() as $definition) {
@@ -3403,7 +3412,12 @@ HTML;
     private function merchantConnectionsPayload(array $merchant): array
     {
         $config = SystemConfig::all();
-        $quickLogins = $this->merchantQuickLoginBindings($merchant, $config);
+        $quickLogins = MerchantPortalAccountSupport::quickLoginBindings(
+            $merchant,
+            $config,
+            fn (string $value): ?string => $this->maskIdentifier($value),
+            fn (mixed $value): ?string => $this->nullableString($value)
+        );
         $contactBindings = $this->merchantContactBindings($merchant, $config);
         $wxPusherEnrollment = $this->merchantWxPusherEnrollmentPayload($merchant, $config);
         $boundQuickLoginCount = 0;
@@ -3578,7 +3592,7 @@ HTML;
         $googleSetupAccount = $this->googleAuthAccountLabel($merchant);
         $googleSetupIssuer = $this->googleAuthIssuer($config);
         $google = $pendingGoogleSecret !== null ? new GoogleAuthenticator() : null;
-        $cancellation = $this->merchantAccountCancellationPayload($merchant);
+        $cancellation = MerchantPortalCancellationSupport::payload($merchant);
 
         return [
             'merchant_id' => $merchantId,
@@ -3678,7 +3692,7 @@ HTML;
         $googleSetupAccount = $this->googleAuthAccountLabel($merchant);
         $googleSetupIssuer = $this->googleAuthIssuer($config);
         $google = $pendingGoogleSecret !== null ? new GoogleAuthenticator() : null;
-        $cancellation = $this->merchantAccountCancellationPayload($merchant);
+        $cancellation = MerchantPortalCancellationSupport::payload($merchant);
 
         return [
             'merchant_id' => $merchantId,
@@ -3761,282 +3775,6 @@ HTML;
                 ])),
             ],
         ];
-    }
-
-    private function merchantCancellationFeatureEnabled(): bool
-    {
-        return trim((string)SystemConfig::get('is_logOff', '0')) === '1';
-    }
-
-    private function merchantAccountCancellationPayload(array $merchant, ?array $audit = null): array
-    {
-        $featureEnabled = $this->merchantCancellationFeatureEnabled();
-        $audit = $audit ?? $this->merchantCancellationAudit($merchant);
-        $canSubmit = $featureEnabled && (bool)($audit['can_delete'] ?? false);
-        $summary = (array)($audit['summary'] ?? []);
-
-        return [
-            'feature_enabled' => $featureEnabled,
-            'can_submit' => $canSubmit,
-            'confirmation_phrase' => $featureEnabled ? (string)($audit['confirmation_phrase'] ?? '') : '',
-            'merchant_username' => (string)($audit['merchant_username'] ?? ($merchant['username'] ?? '')),
-            'balance_amount' => number_format((float)($merchant['money'] ?? 0), 2, '.', ''),
-            'blocking_reasons' => array_values(array_map('strval', (array)($audit['blocking_reasons'] ?? []))),
-            'warnings' => array_values(array_map('strval', (array)($audit['warnings'] ?? []))),
-            'related_counts' => array_values((array)($audit['related_counts'] ?? [])),
-            'summary' => [
-                'delete_row_count' => (int)($summary['delete_row_count'] ?? 0),
-                'non_empty_target_count' => (int)($summary['non_empty_target_count'] ?? 0),
-                'blocking_reference_count' => (int)($summary['blocking_reference_count'] ?? 0),
-                'balance_blocked' => (bool)($summary['balance_blocked'] ?? false),
-                'pending_order_count' => (int)($summary['pending_order_count'] ?? 0),
-                'pending_recharge_count' => (int)($summary['pending_recharge_count'] ?? 0),
-                'subordinate_count' => (int)($summary['subordinate_count'] ?? 0),
-            ],
-            'write_message' => !$featureEnabled
-                ? '系统未开启商户账号注销功能。'
-                : ($canSubmit
-                    ? '账号注销已开放，提交后会清理当前商户及其归属数据，并立即退出登录。'
-                    : '当前账号暂不满足注销条件，请先处理拦截项后再提交。'),
-        ];
-    }
-
-    private function merchantCancellationAudit(array $merchant): array
-    {
-        $merchantId = (int)($merchant['id'] ?? 0);
-        $subordinateCount = $this->countMerchantCancellationRows('ypay_user', 'superior_id', $merchantId);
-        $pendingOrderCount = $this->merchantCancellationPendingCount('ypay_order', 'user_id', $merchantId);
-        $pendingRechargeCount = $this->merchantCancellationPendingCount('ypay_recharge', 'user_id', $merchantId);
-        $balanceAmount = round((float)($merchant['money'] ?? 0), 3);
-        $relatedCounts = [
-            [
-                'key' => 'subordinate_merchants',
-                'label' => '下级商户',
-                'table_name' => 'ypay_user',
-                'column_name' => 'superior_id',
-                'count' => $subordinateCount,
-                'delete_action' => 'block',
-                'help_text' => '存在下级商户时不允许自助注销，避免留下悬空的上级关系。',
-            ],
-            [
-                'key' => 'pending_orders',
-                'label' => '未完成订单',
-                'table_name' => 'ypay_order',
-                'column_name' => 'user_id',
-                'count' => $pendingOrderCount,
-                'delete_action' => 'block',
-                'help_text' => '请先处理未完成订单，避免支付回调或补单流程中断。',
-            ],
-            [
-                'key' => 'pending_recharges',
-                'label' => '未完成充值',
-                'table_name' => 'ypay_recharge',
-                'column_name' => 'user_id',
-                'count' => $pendingRechargeCount,
-                'delete_action' => 'block',
-                'help_text' => '请先处理未完成充值记录，避免后续到账与对账异常。',
-            ],
-        ];
-
-        $deleteRowCount = 0;
-        $nonEmptyTargetCount = 0;
-        foreach ($this->merchantCancellationTargets() as $target) {
-            $count = $this->countMerchantCancellationRows($target['table'], $target['column'], $merchantId);
-            if ($count > 0) {
-                $deleteRowCount += $count;
-                $nonEmptyTargetCount++;
-            }
-
-            $relatedCounts[] = [
-                'key' => $target['key'],
-                'label' => $target['label'],
-                'table_name' => $target['table'],
-                'column_name' => $target['column'],
-                'count' => $count,
-                'delete_action' => 'delete',
-                'help_text' => $target['help_text'],
-            ];
-        }
-
-        $blockingReasons = [];
-        if ($balanceAmount > 0) {
-            $blockingReasons[] = sprintf('当前账户仍有 %.2f 元余额，请先处理余额后再注销。', $balanceAmount);
-        }
-        if ($subordinateCount > 0) {
-            $blockingReasons[] = sprintf('当前账户仍绑定 %d 个下级商户，请先调整上下级关系。', $subordinateCount);
-        }
-        if ($pendingOrderCount > 0) {
-            $blockingReasons[] = sprintf('当前账户仍有 %d 笔未完成订单，请先处理。', $pendingOrderCount);
-        }
-        if ($pendingRechargeCount > 0) {
-            $blockingReasons[] = sprintf('当前账户仍有 %d 笔未完成充值，请先处理。', $pendingRechargeCount);
-        }
-
-        return [
-            'merchant_id' => $merchantId,
-            'merchant_username' => trim((string)($merchant['username'] ?? '')),
-            'confirmation_phrase' => $this->merchantCancellationConfirmationPhrase($merchantId),
-            'can_delete' => $blockingReasons === [],
-            'blocking_reasons' => $blockingReasons,
-            'related_counts' => $relatedCounts,
-            'summary' => [
-                'delete_row_count' => $deleteRowCount,
-                'non_empty_target_count' => $nonEmptyTargetCount,
-                'blocking_reference_count' => $subordinateCount + $pendingOrderCount + $pendingRechargeCount,
-                'balance_blocked' => $balanceAmount > 0,
-                'pending_order_count' => $pendingOrderCount,
-                'pending_recharge_count' => $pendingRechargeCount,
-                'subordinate_count' => $subordinateCount,
-            ],
-            'warnings' => [
-                '账号注销不可恢复，将同步清理当前商户归属的通道、订单、日志、工单等数据。',
-                '请务必先确认余额、下级关系和未完成交易都已处理完毕。',
-            ],
-        ];
-    }
-
-    private function merchantCancellationTargets(): array
-    {
-        return [
-            [
-                'key' => 'userbasic',
-                'label' => '商户基础配置',
-                'table' => 'ypay_userbasic',
-                'column' => 'user_id',
-                'help_text' => '删除通讯密钥、超时回调、通知偏好等商户基础设置。',
-            ],
-            [
-                'key' => 'payment_accounts',
-                'label' => '商户本地通道',
-                'table' => 'ypay_account',
-                'column' => 'user_id',
-                'help_text' => '删除当前商户名下的本地收款通道记录。',
-            ],
-            [
-                'key' => 'merchant_paylists',
-                'label' => '商户上游通道',
-                'table' => 'ypay_paylist',
-                'column' => 'user_id',
-                'help_text' => '删除当前商户配置的上游支付通道凭据。',
-            ],
-            [
-                'key' => 'payment_pools',
-                'label' => '轮询池',
-                'table' => 'ypay_poll_pool',
-                'column' => 'user_id',
-                'help_text' => '删除当前商户创建的轮询池配置。',
-            ],
-            [
-                'key' => 'payment_pool_items',
-                'label' => '轮询池通道',
-                'table' => 'ypay_poll_pool_item',
-                'column' => 'user_id',
-                'help_text' => '删除轮询池内已绑定的通道选择记录。',
-            ],
-            [
-                'key' => 'orders',
-                'label' => '订单记录',
-                'table' => 'ypay_order',
-                'column' => 'user_id',
-                'help_text' => '删除当前商户的订单流水。',
-            ],
-            [
-                'key' => 'recharges',
-                'label' => '充值记录',
-                'table' => 'ypay_recharge',
-                'column' => 'user_id',
-                'help_text' => '删除当前商户的充值与付费注册记录。',
-            ],
-            [
-                'key' => 'money_logs',
-                'label' => '余额日志',
-                'table' => 'money_log',
-                'column' => 'user_id',
-                'help_text' => '删除当前商户的余额变动日志。',
-            ],
-            [
-                'key' => 'front_logs',
-                'label' => '前台日志',
-                'table' => 'admin_front_log',
-                'column' => 'uid',
-                'help_text' => '删除当前商户的前台访问与行为日志。',
-            ],
-            [
-                'key' => 'domains',
-                'label' => '域名记录',
-                'table' => 'ypay_domain',
-                'column' => 'user_id',
-                'help_text' => '删除当前商户提交的域名与审核结果。',
-            ],
-            [
-                'key' => 'risks',
-                'label' => '风控记录',
-                'table' => 'ypay_risk',
-                'column' => 'user_id',
-                'help_text' => '删除当前商户的风控命中记录。',
-            ],
-            [
-                'key' => 'tickets',
-                'label' => '工单记录',
-                'table' => 'ypay_ticket',
-                'column' => 'creator_id',
-                'help_text' => '删除当前商户提交的工单记录。',
-            ],
-            [
-                'key' => 'merchant_record',
-                'label' => '商户账号',
-                'table' => 'ypay_user',
-                'column' => 'id',
-                'help_text' => '删除当前商户账号本身。',
-            ],
-        ];
-    }
-
-    private function deleteMerchantOwnedRowsForCancellation(int $merchantId): void
-    {
-        foreach ($this->merchantCancellationTargets() as $target) {
-            if (!$this->merchantCancellationTargetAvailable($target['table'], $target['column'])) {
-                continue;
-            }
-
-            Db::table($target['table'])
-                ->where($target['column'], $merchantId)
-                ->delete();
-        }
-    }
-
-    private function countMerchantCancellationRows(string $table, string $column, int $merchantId): int
-    {
-        if (!$this->merchantCancellationTargetAvailable($table, $column)) {
-            return 0;
-        }
-
-        return (int)Db::table($table)->where($column, $merchantId)->count();
-    }
-
-    private function merchantCancellationTargetAvailable(string $table, string $column): bool
-    {
-        return DatabaseColumnInspector::hasColumn($table, $column);
-    }
-
-    private function merchantCancellationPendingCount(string $table, string $column, int $merchantId): int
-    {
-        if (
-            !$this->merchantCancellationTargetAvailable($table, $column)
-            || !DatabaseColumnInspector::hasColumn($table, 'status')
-        ) {
-            return 0;
-        }
-
-        return (int)Db::table($table)
-            ->where($column, $merchantId)
-            ->where('status', 0)
-            ->count();
-    }
-
-    private function merchantCancellationConfirmationPhrase(int $merchantId): string
-    {
-        return 'DELETE ACCOUNT ' . $merchantId;
     }
 
     private function buildMerchantGoogleAuthPayload(
@@ -4319,242 +4057,6 @@ HTML;
                 'blocked_actions' => [],
             ],
         ];
-    }
-
-    private function merchantApiPayload(Request $request, array $merchant): array
-    {
-        $merchantId = (int)($merchant['id'] ?? 0);
-        $basic = $this->merchantBasic($merchantId);
-        $signKey = trim((string)($merchant['user_key'] ?? ''));
-        $appkey = trim((string)($basic['appkey'] ?? ''));
-        $origin = $this->requestOrigin($request);
-        $timeoutMethod = (int)($basic['timeout_method'] ?? 0);
-        $gatewayLines = $this->gatewayLines($request);
-
-        return [
-            'merchant_id' => $merchantId,
-            'merchant_username' => trim((string)($merchant['username'] ?? '')),
-            'gateway_lines' => $gatewayLines,
-            'default_gateway_url' => rtrim((string)($gatewayLines[0]['url'] ?? ($origin . '/')), '/'),
-            'endpoints' => [
-                'submit' => [
-                    'method' => 'GET/POST',
-                    'path' => '/submit.php',
-                    'url' => $origin . '/submit.php',
-                    'description' => '易支付网关的浏览器表单下单入口。',
-                ],
-                'mapi' => [
-                    'method' => 'GET/POST',
-                    'path' => '/mapi.php',
-                    'url' => $origin . '/mapi.php',
-                    'description' => '易支付网关的接口下单入口。',
-                ],
-                'notify' => [
-                    'method' => 'GET/POST',
-                    'path' => '/Notify/epay_notifyzj',
-                    'url' => $origin . '/Notify/epay_notifyzj',
-                    'description' => '上游支付结果异步回调入口。',
-                ],
-                'return' => [
-                    'method' => 'GET',
-                    'path' => '/Notify/epay_returnzj',
-                    'url' => $origin . '/Notify/epay_returnzj',
-                    'description' => '上游支付结果同步跳转入口。',
-                ],
-            ],
-            'sign_key_configured' => $signKey !== '',
-            'sign_key_masked' => $this->maskSecret($signKey),
-            'sign_key_length' => strlen($signKey),
-            'appkey_configured' => $appkey !== '',
-            'appkey_masked' => $this->maskSecret($appkey),
-            'appkey_length' => strlen($appkey),
-            'timeout_time' => (int)($basic['timeout_time'] ?? 0),
-            'timeout_url' => $this->nullableString($basic['timeout_url'] ?? null) ?? '/',
-            'timeout_method' => $timeoutMethod,
-            'timeout_method_label' => $this->timeoutMethodLabel($timeoutMethod),
-            'signing' => [
-                'algorithm' => 'MD5',
-                'secret_source' => 'ypay_user.user_key',
-                'raw_secret_exposed' => false,
-                'note' => '支付请求签名请使用当前商户已配置的签名密钥，原始密钥默认保持脱敏。',
-            ],
-            'write_actions' => [
-                'key_reset' => true,
-                'sign_key_reset' => true,
-                'appkey_reset' => true,
-                'qrcode' => true,
-                'secret_export' => false,
-            ],
-            'migration_guard' => [
-                'read_only' => false,
-                'blocked_actions' => ['raw_secret_export'],
-            ],
-        ];
-    }
-
-    private function merchantBasic(int $merchantId): array
-    {
-        $row = Db::table('ypay_userbasic')
-            ->select('user_id', 'appkey', 'timeout_url', 'timeout_time', 'timeout_method')
-            ->where('user_id', $merchantId)
-            ->first();
-
-        if (!$row) {
-            return [
-                'user_id' => $merchantId,
-                'appkey' => '',
-                'timeout_url' => '/',
-                'timeout_time' => '180',
-                'timeout_method' => 2,
-            ];
-        }
-
-        return array_merge([
-            'user_id' => $merchantId,
-            'appkey' => '',
-            'timeout_url' => '/',
-            'timeout_time' => '180',
-            'timeout_method' => 2,
-        ], (array)$row);
-    }
-
-    private function ensureMerchantBasicRecord(int $merchantId): void
-    {
-        $exists = Db::table('ypay_userbasic')->where('user_id', $merchantId)->exists();
-        if ($exists) {
-            return;
-        }
-
-        Db::table('ypay_userbasic')->insert([
-            'user_id' => $merchantId,
-            'timeout_method' => 2,
-            'timeout_url' => '/',
-            'timeout_time' => '180',
-            'loginfailure' => 0,
-            'appkey' => $this->generateMerchantSecret(32),
-            'order_tips' => 'close',
-            'is_money_tips' => 'close',
-            'money_tips' => '0',
-            'is_rate' => 0,
-            'callback_hiddenName' => 0,
-        ]);
-    }
-
-    private function merchantNotificationBasic(int $merchantId): array
-    {
-        $defaults = [
-            'user_id' => $merchantId,
-            'order_tips' => 'close',
-            'lose_tips' => 'close',
-            'login_tips' => 'close',
-            'is_money_tips' => 'close',
-            'money_tips' => '0',
-            'console_notity' => null,
-            'is_voice_tips' => 0,
-            'voice_tips' => self::DEFAULT_VOICE_TIPS,
-        ];
-
-        $row = Db::table('ypay_userbasic')
-            ->select(
-                'user_id',
-                'order_tips',
-                'lose_tips',
-                'login_tips',
-                'is_money_tips',
-                'money_tips',
-                'console_notity',
-                'is_voice_tips',
-                'voice_tips'
-            )
-            ->where('user_id', $merchantId)
-            ->first();
-
-        if (!$row) {
-            return $defaults;
-        }
-
-        $basic = array_merge($defaults, (array)$row);
-        $voiceTips = trim((string)($basic['voice_tips'] ?? ''));
-        $basic['voice_tips'] = LegacyMojibakeGuard::normalizeVoiceTipsTemplate(
-            $basic['voice_tips'] ?? null,
-            self::DEFAULT_VOICE_TIPS
-        );
-
-        return $basic;
-    }
-
-    private function merchantQuickLoginBindings(array $merchant, array $config): array
-    {
-        $definitions = [
-            [
-                'id' => 'qq',
-                'label' => 'QQ 登录',
-                'config_key' => 'qq_login',
-                'bind_flag' => 'is_bindqq',
-                'sid_field' => 'qq_sid',
-            ],
-            [
-                'id' => 'wx',
-                'label' => '微信登录',
-                'config_key' => 'wechat_login',
-                'bind_flag' => 'is_bindwx',
-                'sid_field' => 'wx_sid',
-            ],
-        ];
-
-        $configIds = [];
-        foreach ($definitions as $definition) {
-            $configId = (int)($config[$definition['config_key']] ?? 0);
-            if ($configId > 0) {
-                $configIds[] = $configId;
-            }
-        }
-
-        $quickLoginRows = [];
-        if ($configIds !== []) {
-            foreach (
-                Db::table('ypay_quicklogin')
-                    ->select('id', 'type', 'status', 'name', 'url', 'appid', 'appkey', 'create_time')
-                    ->whereIn('id', array_values(array_unique($configIds)))
-                    ->get()
-                    ->toArray() as $row
-            ) {
-                $item = (array)$row;
-                $quickLoginRows[(int)($item['id'] ?? 0)] = $item;
-            }
-        }
-
-        $bindings = [];
-        foreach ($definitions as $definition) {
-            $configId = (int)($config[$definition['config_key']] ?? 0);
-            $record = $configId > 0 ? ($quickLoginRows[$configId] ?? null) : null;
-            $status = (int)($record['status'] ?? 0);
-            $sid = trim((string)($merchant[$definition['sid_field']] ?? ''));
-            $bound = (int)($merchant[$definition['bind_flag']] ?? 0) === 1 || $sid !== '';
-
-            $bindings[] = [
-                'id' => $definition['id'],
-                'label' => $definition['label'],
-                'config_id' => $configId > 0 ? $configId : null,
-                'available' => $configId > 0 && is_array($record) && $status === 1,
-                'status_label' => $configId > 0 && is_array($record) && $status === 1 ? '可用' : '未开启',
-                'status_type' => $configId > 0 && is_array($record) && $status === 1 ? 'success' : 'warning',
-                'bound' => $bound,
-                'bound_label' => $bound ? '已绑定' : '未绑定',
-                'bound_type' => $bound ? 'success' : 'info',
-                'identifier_present' => $sid !== '',
-                'identifier_masked' => $this->maskIdentifier($sid),
-                'config_name' => trim((string)($record['name'] ?? $definition['label'])),
-                'config_type' => trim((string)($record['type'] ?? '')),
-                'credential_ready' => trim((string)($record['appid'] ?? '')) !== '' && trim((string)($record['appkey'] ?? '')) !== '',
-                'url' => $this->nullableString($record['url'] ?? null),
-                'callback_entry' => $definition['id'] === 'qq' ? '/User/qqlogin' : '/User/OAuthAccountLogin?type=wx',
-                'unbind_allowed' => $bound,
-                'write_message' => '快捷登录解绑已生效；当前页面仅展示已接入状态，不再提供新的授权绑定入口。',
-            ];
-        }
-
-        return $bindings;
     }
 
     private function merchantContactBindings(array $merchant, array $config): array

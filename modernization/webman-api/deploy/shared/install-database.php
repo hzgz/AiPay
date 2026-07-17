@@ -37,27 +37,40 @@ if ($options['with-base-schema']) {
     }
 }
 
+$coreInstallPath = firstExistingPath([
+    $releaseRoot . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'install' . DIRECTORY_SEPARATOR . 'core-install.sql',
+    $repoRoot . DIRECTORY_SEPARATOR . 'modernization' . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'install' . DIRECTORY_SEPARATOR . 'core-install.sql',
+]);
 $baseSchemaPath = firstExistingPath([
     $releaseRoot . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'install' . DIRECTORY_SEPARATOR . 'base-schema.sql',
-    $repoRoot . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'install' . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'data.sql',
+    $repoRoot . DIRECTORY_SEPARATOR . 'modernization' . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'install' . DIRECTORY_SEPARATOR . 'base-schema.sql',
 ]);
 $adminAuthSeedPath = firstExistingPath([
     $releaseRoot . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'install' . DIRECTORY_SEPARATOR . 'admin-auth-seed.sql',
     $repoRoot . DIRECTORY_SEPARATOR . 'modernization' . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'install' . DIRECTORY_SEPARATOR . 'admin-auth-seed.sql',
 ]);
 if ($needsBaseSchema) {
-    if ($baseSchemaPath === null) {
-        fail('Base schema file was not found. Checked source tree and release-package locations.');
+    if ($coreInstallPath !== null) {
+        applySqlAsset(
+            $pdo,
+            $trackerTable,
+            'base',
+            'core-install.sql',
+            $coreInstallPath,
+            $options['dry-run']
+        );
+    } elseif ($baseSchemaPath !== null) {
+        applySqlAsset(
+            $pdo,
+            $trackerTable,
+            'base',
+            'base-schema.sql',
+            $baseSchemaPath,
+            $options['dry-run']
+        );
+    } else {
+        fail('Core install SQL was not found. Checked source tree and release-package locations.');
     }
-
-    applySqlAsset(
-        $pdo,
-        $trackerTable,
-        'base',
-        'base-schema.sql',
-        $baseSchemaPath,
-        $options['dry-run']
-    );
 }
 
 applyAdminAuthorizationSeed($pdo, $adminAuthSeedPath, $options['dry-run']);
@@ -112,7 +125,7 @@ Usage:
   php deploy/shared/install-database.php [--with-base-schema] [--dry-run]
 
 Options:
-  --with-base-schema  Import the legacy base schema when the target database is empty.
+  --with-base-schema  Import the clean-install core schema when the target database is empty.
   --dry-run           Show what would be executed without writing to the database.
   --help              Show this help message.
 TEXT;

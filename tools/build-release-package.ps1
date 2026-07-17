@@ -18,6 +18,7 @@ $stageRoot = Join-Path $releaseRoot $packageName
 $zipPath = "$stageRoot.zip"
 $hashPath = "$zipPath.sha256"
 $summaryPath = "$stageRoot.release.txt"
+$rootCoreInstallPath = Join-Path $repoRoot 'modernization\database\install\core-install.sql'
 $rootSchemaPath = Join-Path $repoRoot 'modernization\database\install\base-schema.sql'
 $rootAdminAuthSeedPath = Join-Path $repoRoot 'modernization\database\install\admin-auth-seed.sql'
 
@@ -295,6 +296,9 @@ function Prepare-Stage {
     Copy-Item -LiteralPath (Join-Path $backendRoot 'docs\aapanel-install.md') -Destination (Join-Path $stageDocs 'aapanel-install.md') -Force
     Copy-Item -LiteralPath (Join-Path $backendRoot 'docs\production-profile.example.json') -Destination (Join-Path $stageDocs 'production-profile.example.json') -Force
 
+    if (Test-Path -LiteralPath $rootCoreInstallPath) {
+        Copy-Item -LiteralPath $rootCoreInstallPath -Destination (Join-Path $stageInstall 'core-install.sql') -Force
+    }
     if (Test-Path -LiteralPath $rootSchemaPath) {
         Copy-Item -LiteralPath $rootSchemaPath -Destination (Join-Path $stageInstall 'base-schema.sql') -Force
     }
@@ -319,6 +323,7 @@ function Prepare-Stage {
         built_at = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
         backend = 'backend'
         console = 'console'
+        database_core_install = 'database/install/core-install.sql'
         database_schema = 'database/install/base-schema.sql'
         database_admin_seed = 'database/install/admin-auth-seed.sql'
         plugins = (Get-ChildItem -LiteralPath (Join-Path $backendRoot 'plugins\payments') -Directory | Select-Object -ExpandProperty Name)
@@ -351,6 +356,7 @@ function Prepare-Stage {
         'Package layout:',
         '  backend/',
         '  console/',
+        '  database/install/core-install.sql',
         '  database/install/base-schema.sql',
         '  docs/'
     )

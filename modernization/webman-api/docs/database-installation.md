@@ -4,7 +4,7 @@
 
 发布包内的数据库安装脚本负责三件事：
 
-1. 在空库时导入基础表结构
+1. 在空库时优先导入单一核心安装文件
 2. 执行 `backend/database/migrations/*.sql`
 3. 执行 `backend/plugins/payments/*/migrations/*.sql`
 
@@ -27,6 +27,7 @@
 - `backend/deploy/shared/install-database.php`
 - `backend/deploy/windows/install-database.ps1`
 - `backend/deploy/linux/install-database.sh`
+- `database/install/core-install.sql`
 - `database/install/base-schema.sql`
 - `database/install/admin-auth-seed.sql`
 
@@ -49,7 +50,9 @@ bash deploy/linux/install-database.sh --with-base-schema
 说明：
 
 - `--with-base-schema` 只建议用于空库
-- 脚本会先导入基础结构，再跑核心迁移和插件迁移
+- 脚本会优先导入 `core-install.sql`
+- 如果没有单文件，则回退为 `base-schema.sql + admin-auth-seed.sql`
+- 插件表不会塞进核心安装文件，仍按插件迁移独立安装
 
 ## 已有库补迁移
 
@@ -104,6 +107,28 @@ bash deploy/linux/install-database.sh --with-base-schema --dry-run
 
 - 同一份迁移被重复执行
 - 迁移文件被改动后仍然悄悄继续跑
+
+## 为什么还保留多份 SQL
+
+原因不是“库结构没收干净”，而是职责不同：
+
+- `database/install/core-install.sql`
+  - 给全新空库安装使用
+  - 一份文件就能导入核心系统表和后台权限种子
+- `database/install/base-schema.sql`
+  - 保留拆分版核心表结构，便于人工排查
+- `database/install/admin-auth-seed.sql`
+  - 保留后台权限种子，便于单独补权限
+- `backend/database/migrations/*.sql`
+  - 只负责 Webman 后续版本升级补丁
+- `backend/plugins/payments/*/migrations/*.sql`
+  - 只负责各支付插件自己的库表，保持插件可装可卸、可清理无残留
+
+也就是说：
+
+- 核心系统现在适合收成一个安装 SQL
+- 插件数据库不应该强行并进核心安装文件
+- 升级补丁也不应该混进首装 SQL
 
 ## 安全规则
 

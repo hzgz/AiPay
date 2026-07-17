@@ -6,7 +6,7 @@
 
 - `backend/`：Webman 后端，只负责 API、支付、回调、插件运行
 - `console/`：前端壳，统一承载游客首页、商户端、管理员端
-- `database/install/`：基础库结构和后台权限种子
+- `database/install/`：核心单文件安装 SQL、拆分结构 SQL 和后台权限种子
 - `docs/`：部署、验收、交付说明
 
 发布包默认遵循下面这套架构：
@@ -30,6 +30,7 @@ aipay-release-YYYYMMDD-HHmmss/
   console/
   database/
     install/
+      core-install.sql
       base-schema.sql
       admin-auth-seed.sql
   docs/
@@ -100,6 +101,29 @@ aipay-release-YYYYMMDD-HHmmss/
 - 前后端同域，无需额外处理 CORS
 - `VITE_API_URL=/api` 可直接使用
 - 部署最简单，最适合正式商用
+
+## 数据库文件说明
+
+`database/install/` 现在分为两层：
+
+- `core-install.sql`
+  - 面向纯净安装包
+  - 一份文件导入核心系统表和默认后台权限
+- `base-schema.sql` + `admin-auth-seed.sql`
+  - 面向排查、维护和拆分导入
+
+而下面两类文件继续保留拆分状态，不并入单文件：
+
+- `backend/database/migrations/*.sql`
+  - Webman 后续升级补丁
+- `backend/plugins/payments/*/migrations/*.sql`
+  - 每个支付插件自己的独立库表
+
+这样做的好处是：
+
+- 全新安装足够简单
+- 升级补丁不会污染首装 SQL
+- 支付插件继续保持独立、可卸载、可清理
 
 ### 方案 B：分离 API 域名，可选
 

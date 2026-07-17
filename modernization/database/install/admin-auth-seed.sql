@@ -1,6 +1,6 @@
--- Generated from app/install/data/data.sql
--- Minimal admin authorization seed for clean installs.
--- Safe to rerun; duplicate rows are skipped or filtered.
+-- AiPay admin authorization seed
+-- Generated from the current Webman database on 2026-07-17 12:28:57
+-- Safe to rerun on clean or existing databases.
 
 INSERT IGNORE INTO `admin_permission` (`id`, `pid`, `title`, `href`, `icon`, `sort`, `type`, `status`) VALUES
 (1, 0, '系统管理', '', 'layui-icon layui-icon layui-icon-username', 5, 0, 1),

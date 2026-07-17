@@ -31,8 +31,6 @@ aipay-release-YYYYMMDD-HHmmss/
   database/
     install/
       core-install.sql
-      base-schema.sql
-      admin-auth-seed.sql
   docs/
     release-package.md
     database-installation.md
@@ -109,8 +107,8 @@ aipay-release-YYYYMMDD-HHmmss/
 - `core-install.sql`
   - 面向纯净安装包
   - 一份文件导入核心系统表和默认后台权限
-- `base-schema.sql` + `admin-auth-seed.sql`
-  - 面向排查、维护和拆分导入
+- 仓库内仍保留 `base-schema.sql` + `admin-auth-seed.sql`
+  - 只用于开发排查、拆分导入和生成单文件安装资产
 
 而下面两类文件继续保留拆分状态，不并入单文件：
 

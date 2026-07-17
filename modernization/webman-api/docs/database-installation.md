@@ -28,8 +28,8 @@
 - `backend/deploy/windows/install-database.ps1`
 - `backend/deploy/linux/install-database.sh`
 - `database/install/core-install.sql`
-- `database/install/base-schema.sql`
-- `database/install/admin-auth-seed.sql`
+- 仓库开发资产：`database/install/base-schema.sql`
+- 仓库开发资产：`database/install/admin-auth-seed.sql`
 
 ## 全新空库安装
 
@@ -53,6 +53,7 @@ bash deploy/linux/install-database.sh --with-base-schema
 - 脚本会优先导入 `core-install.sql`
 - 如果没有单文件，则回退为 `base-schema.sql + admin-auth-seed.sql`
 - 插件表不会塞进核心安装文件，仍按插件迁移独立安装
+- 正式发布包默认只携带 `core-install.sql`
 
 ## 已有库补迁移
 
@@ -127,6 +128,7 @@ bash deploy/linux/install-database.sh --with-base-schema --dry-run
 也就是说：
 
 - 核心系统现在适合收成一个安装 SQL
+- 正式发布包现在只需要携带 `core-install.sql`
 - 插件数据库不应该强行并进核心安装文件
 - 升级补丁也不应该混进首装 SQL
 

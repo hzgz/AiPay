@@ -19,8 +19,6 @@ $zipPath = "$stageRoot.zip"
 $hashPath = "$zipPath.sha256"
 $summaryPath = "$stageRoot.release.txt"
 $rootCoreInstallPath = Join-Path $repoRoot 'modernization\database\install\core-install.sql'
-$rootSchemaPath = Join-Path $repoRoot 'modernization\database\install\base-schema.sql'
-$rootAdminAuthSeedPath = Join-Path $repoRoot 'modernization\database\install\admin-auth-seed.sql'
 
 function Remove-IfExists {
     param(
@@ -299,12 +297,6 @@ function Prepare-Stage {
     if (Test-Path -LiteralPath $rootCoreInstallPath) {
         Copy-Item -LiteralPath $rootCoreInstallPath -Destination (Join-Path $stageInstall 'core-install.sql') -Force
     }
-    if (Test-Path -LiteralPath $rootSchemaPath) {
-        Copy-Item -LiteralPath $rootSchemaPath -Destination (Join-Path $stageInstall 'base-schema.sql') -Force
-    }
-    if (Test-Path -LiteralPath $rootAdminAuthSeedPath) {
-        Copy-Item -LiteralPath $rootAdminAuthSeedPath -Destination (Join-Path $stageInstall 'admin-auth-seed.sql') -Force
-    }
 
     New-Directory -LiteralPath (Join-Path $stageBackend 'runtime')
     New-Directory -LiteralPath (Join-Path $stageBackend 'runtime\cache')
@@ -324,8 +316,6 @@ function Prepare-Stage {
         backend = 'backend'
         console = 'console'
         database_core_install = 'database/install/core-install.sql'
-        database_schema = 'database/install/base-schema.sql'
-        database_admin_seed = 'database/install/admin-auth-seed.sql'
         plugins = (Get-ChildItem -LiteralPath (Join-Path $backendRoot 'plugins\payments') -Directory | Select-Object -ExpandProperty Name)
     } | ConvertTo-Json -Depth 4
     Set-Content -LiteralPath (Join-Path $stageRoot 'release-manifest.json') -Value $manifest -Encoding utf8
@@ -357,7 +347,6 @@ function Prepare-Stage {
         '  backend/',
         '  console/',
         '  database/install/core-install.sql',
-        '  database/install/base-schema.sql',
         '  docs/'
     )
     Set-Content -LiteralPath (Join-Path $stageRoot 'README-FIRST.txt') -Value $quickStart -Encoding ascii

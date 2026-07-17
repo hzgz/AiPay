@@ -544,7 +544,7 @@ abstract class AbstractManagedGatewayOrderService
 
         $order = $this->orders->findByTradeNo($tradeNo);
         if (!$order) {
-            throw new \RuntimeException('order was created but could not be reloaded');
+            throw new \RuntimeException('订单已创建，但重新加载失败');
         }
 
         return $order;
@@ -618,7 +618,7 @@ abstract class AbstractManagedGatewayOrderService
 
         $reloaded = $this->orders->findById((int)($order['id'] ?? 0));
         if (!$reloaded) {
-            throw new \RuntimeException('order gateway fields were updated but the order could not be reloaded');
+            throw new \RuntimeException('订单网关字段已更新，但重新加载失败');
         }
 
         return $reloaded;

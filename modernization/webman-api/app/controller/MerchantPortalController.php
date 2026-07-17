@@ -3287,7 +3287,7 @@ HTML;
             'console_notice' => $this->nullableString($basic['console_notity'] ?? null),
             'voice_tips' => [
                 'enabled' => (int)($basic['is_voice_tips'] ?? 0) === 1,
-                'template' => $this->nullableString($basic['voice_tips'] ?? null) ?? '尊敬的用户，你本次交易金额为[money]',
+                'template' => $this->nullableString($basic['voice_tips'] ?? null) ?? '尊敬的用户，您本次交易金额为[money]',
             ],
             'write_actions' => [
                 'save_notifications' => true,
@@ -6481,7 +6481,7 @@ HTML;
           </div>
           <div class="field" style="margin-top:14px">
             <label for="voiceTemplate">语音模板</label>
-            <textarea id="voiceTemplate" name="voice_tips" placeholder="尊敬的用户，你本次交易金额为[money]">{$voiceTemplate}</textarea>
+            <textarea id="voiceTemplate" name="voice_tips" placeholder="尊敬的用户，您本次交易金额为[money]">{$voiceTemplate}</textarea>
           </div>
           <div class="toolbar">
             <button class="btn primary" type="submit">保存通知设置</button>

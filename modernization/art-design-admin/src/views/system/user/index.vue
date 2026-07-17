@@ -515,6 +515,111 @@
     statusVisible.value = true
   }
 
+  function renderImpersonationLoadingWindow(targetWindow: Window) {
+    targetWindow.document.open()
+    targetWindow.document.write(`<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>商户中心</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --accent: #27ae60;
+        --accent-soft: rgba(39, 174, 96, 0.16);
+        --text-main: #1f2937;
+        --text-subtle: #6b7280;
+        --surface: rgba(255, 255, 255, 0.92);
+        --border: rgba(15, 23, 42, 0.08);
+        --shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(circle at top, rgba(39, 174, 96, 0.12), transparent 34%),
+          linear-gradient(180deg, #f7faf8 0%, #eef6f0 100%);
+        color: var(--text-main);
+        font-family:
+          "PingFang SC",
+          "Microsoft YaHei",
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+      }
+
+      .loading-shell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        min-width: 300px;
+        padding: 34px 42px;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .spinner {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        border: 4px solid var(--accent-soft);
+        border-top-color: var(--accent);
+        animation: merchant-impersonation-spin 0.9s linear infinite;
+      }
+
+      .loading-text {
+        font-size: 17px;
+        line-height: 1.6;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      .loading-tip {
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--text-subtle);
+      }
+
+      @keyframes merchant-impersonation-spin {
+        from {
+          transform: rotate(0deg);
+        }
+
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="loading-shell" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="loading-text">代登录商户加载中~~~</div>
+      <div class="loading-tip">正在安全跳转到商户中心</div>
+    </main>
+  </body>
+</html>`)
+    targetWindow.document.close()
+  }
+
   async function handleImpersonateMerchant() {
     if (!activeMerchant.value) {
       return
@@ -529,7 +634,7 @@
         return
       }
 
-      pendingWindow.document.title = '商户中心'
+      renderImpersonationLoadingWindow(pendingWindow)
 
       const response = await fetchGetMerchantImpersonationAudit(activeMerchant.value.id)
       const audit = response.audit

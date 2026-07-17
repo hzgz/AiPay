@@ -108,13 +108,19 @@ class AdminConfigCatalog
         'reportTitle' => '举报标题',
         'reportUrl' => '举报跳转地址',
         'reportYes' => '举报确认文案',
-        'rsaPrivateKey' => 'RSA ˽Կ',
+        'alipayrsaPublicKey' => '支付宝公钥',
+        'rsaPrivateKey' => '站点私钥',
         'securityBindTips' => '安全绑定提示',
         'securityIcon' => '安全验证图标',
         'securityName' => '安全验证名称',
         'securityPopContent' => '安全弹窗内容',
         'securityPopTitle' => '安全弹窗标题',
         'sh_notice' => '首页公告说明',
+        'SmtpSecure' => 'SMTP 加密方式',
+        'smtp-host' => 'SMTP 服务器',
+        'smtp-port' => 'SMTP 端口',
+        'smtp-user' => 'SMTP 账号',
+        'smtp-pass' => 'SMTP 密码',
         'smsbao-api' => '短信宝 API 地址',
         'td_notice' => '支付说明',
         'tg_admin_id' => 'Telegram 管理员 ID',
@@ -126,6 +132,11 @@ class AdminConfigCatalog
         'wechat' => '微信收款开关',
         'wxpusher_appToken' => 'WxPusher 应用令牌',
         'imageSize' => '图片压缩大小',
+        'api_url' => '接口地址',
+        'code_switch' => '短信验证开关',
+        'key' => '站点关键词',
+        'shield_tips' => '风控提示',
+        'web_url' => '前台地址',
     ];
     private const EDITABLE_FORM_GROUPS = [
         'basic_display' => [
@@ -1875,7 +1886,7 @@ https://api2.example.com/",
     {
         $editor = (string)($definition['editor'] ?? 'input');
         $valueType = (string)($definition['value_type'] ?? 'text');
-        $label = self::displayLabel($key);
+        $label = self::normalizeUiText((string)($definition['label'] ?? ''), self::displayLabel($key));
 
         $definition['label'] = $label;
         $definition['placeholder'] = self::sanitizeDefinitionPlaceholder(
@@ -2759,6 +2770,10 @@ https://api2.example.com/",
 
         if (str_starts_with($key, 'qiniu-')) {
             return self::normalizeUiText('七牛云' . self::storageSuffixLabel(substr($key, 6)), self::humanize($key));
+        }
+
+        if (str_starts_with($key, 'smtp-')) {
+            return self::normalizeUiText('SMTP ' . self::providerSuffixLabel(substr($key, 5)), self::humanize($key));
         }
 
         return self::normalizeUiText(self::DISPLAY_LABELS[$key] ?? '', self::humanize($key));

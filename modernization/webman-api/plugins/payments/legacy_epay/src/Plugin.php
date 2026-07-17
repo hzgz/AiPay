@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Plugins\Payments\LegacyEpay;
 
-use app\payment\Contracts\PaymentPluginCleanupHookInterface;
-use app\payment\Contracts\PaymentPluginInterface;
+use Plugins\Payments\Shared\Contracts\PaymentPluginCleanupHookInterface;
+use Plugins\Payments\Shared\Contracts\PaymentPluginInterface;
 use Plugins\Payments\Shared\Legacy\LegacyEpayService;
 use RuntimeException;
 use support\Db;

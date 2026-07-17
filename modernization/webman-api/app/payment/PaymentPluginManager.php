@@ -2,12 +2,12 @@
 
 namespace app\payment;
 
-use app\payment\Contracts\PaymentPluginCleanupHookInterface;
-use app\payment\Contracts\PaymentPluginInterface;
 use app\support\CorePaymentMethodCatalog;
 use app\support\DatabaseColumnInspector;
 use DomainException;
 use InvalidArgumentException;
+use Plugins\Payments\Shared\Contracts\PaymentPluginCleanupHookInterface;
+use Plugins\Payments\Shared\Contracts\PaymentPluginInterface;
 use RuntimeException;
 use support\Db;
 use function base_path;

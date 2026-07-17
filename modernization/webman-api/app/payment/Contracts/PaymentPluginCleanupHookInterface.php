@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\payment\Contracts;
 
-interface PaymentPluginCleanupHookInterface
+use Plugins\Payments\Shared\Contracts\PaymentPluginCleanupHookInterface as SharedPaymentPluginCleanupHookInterface;
+
+interface PaymentPluginCleanupHookInterface extends SharedPaymentPluginCleanupHookInterface
 {
-    public function cleanup(string $mode, array $context = []): array;
 }

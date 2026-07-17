@@ -816,8 +816,8 @@ PHP;
 
 namespace {$namespace};
 
-use app\payment\Contracts\PaymentPluginCleanupHookInterface;
-use app\payment\Contracts\PaymentPluginInterface;
+        use Plugins\Payments\Shared\Contracts\PaymentPluginCleanupHookInterface;
+        use Plugins\Payments\Shared\Contracts\PaymentPluginInterface;
 use RuntimeException;
 use support\Db;
 use function runtime_path;

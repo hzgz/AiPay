@@ -7,6 +7,7 @@ namespace app\controller;
 use app\support\ApiResponse;
 use app\support\FrontendUrlBuilder;
 use app\support\MerchantFrontSession;
+use app\support\MerchantPortalMessageCatalog;
 use app\support\SystemConfig;
 use support\Db;
 use Webman\Http\Request;
@@ -770,11 +771,7 @@ class LegacyUserCompatibilityController
 
     private function normalizeMerchantMessage(string $message): string
     {
-        return match (trim($message)) {
-            'merchant login is required' => '请先登录商户账号',
-            'merchant is frozen' => '商户账户已冻结',
-            default => $message,
-        };
+        return MerchantPortalMessageCatalog::normalizeMessage($message);
     }
 
     private function publicCompatibilityPage(

@@ -18,6 +18,7 @@ use app\support\GoogleAuthenticator;
 use app\support\LegacyPassword;
 use app\support\LegacyMojibakeGuard;
 use app\support\MerchantFrontSession;
+use app\support\MerchantPortalMessageCatalog;
 use app\support\MerchantPortalReadOnlyGuard;
 use app\support\MerchantSmsCodeSender;
 use app\support\RequestPayload;
@@ -39,7 +40,7 @@ class MerchantPortalController
     private const MERCHANT_CONNECTION_VERIFY_TTL = 300;
     private const MERCHANT_CONNECTION_RESEND_SECONDS = 60;
     private const FRONT_LOG_DUPLICATE_WINDOW_SECONDS = 30;
-    private const DEFAULT_VOICE_TIPS = '尊敬的用户，你本次交易金额为[money]';
+    private const DEFAULT_VOICE_TIPS = MerchantPortalMessageCatalog::DEFAULT_VOICE_TIPS;
 
     public function login(Request $request): Response
     {
@@ -6602,133 +6603,7 @@ HTML;
 
     private function normalizeMerchantMessage(string $message): string
     {
-        $message = trim($message);
-
-        $translations = [
-            'merchant login is required' => '请先登录商户账号',
-            'merchant is frozen' => '商户账户已被冻结',
-            'merchant ticket feature is disabled' => '工单功能未开启',
-            'merchant domain feature is disabled' => '域名功能未开启',
-            'merchant real-name feature is disabled' => '实名认证功能未开启',
-            'merchant cdk recharge feature is disabled' => '卡密充值功能未开启',
-            'merchant affiliate feature is disabled' => '推广返佣功能未开启',
-            'merchant affiliate page is read-only in the Webman merchant center' => '当前推广返佣页仅提供统计查看与邀请链接复制，不提供重置邀请链接或返佣提现。',
-            'merchant ticket create/delete flows are not migrated for Webman merchant center yet' => '当前工单列表入口仅提供总览查询，请使用工单创建或删除入口操作。',
-            'merchant domain create/edit/delete flows are not migrated for Webman merchant center yet' => '当前域名列表入口仅提供总览查询，请使用域名新增、编辑或删除入口操作。',
-            'merchant connection bind-code, QR enrollment, and email/mobile verification flows are not migrated for Webman merchant center yet' => '当前绑定中心总览入口仅提供状态查看，请使用绑定、解绑、验证码和扫码入口操作。',
-            'merchant Google Auth, real-name, and account-cancellation flows are not migrated for Webman merchant center yet' => '当前安全中心总览入口仅提供状态查看，请使用修改密码、谷歌验证、实名认证和账号注销入口操作。',
-            'merchant recharge creation and payment handoff are not migrated for Webman merchant center yet' => '当前充值总览入口仅提供查询，请使用充值创建与支付跳转入口操作。',
-            'merchant real-name verification flows are not migrated for Webman merchant center yet' => '当前实名认证总览入口仅提供状态查看，请使用实名认证入口操作。',
-            'merchant cdk redemption is not migrated for Webman merchant center yet' => '当前充值总览入口不处理卡密兑换，请使用卡密兑换入口操作。',
-            'merchant order callback replay and status reset flows are not migrated for Webman merchant center yet' => '当前商户中心仅保留订单回调重放，状态重置已下线。',
-            'merchant api key maintenance is not migrated for Webman merchant center yet' => '当前接口信息总览入口仅提供查看，请使用密钥重置入口操作。',
-            'vip purchase is not migrated for Webman merchant center yet' => '当前会员页面仅展示套餐信息，购买与续费暂未开放。',
-            'vip package is required' => '请选择会员套餐',
-            'vip package not found' => '会员套餐不存在或已下架',
-            'merchant balance is insufficient for vip purchase' => '余额不足，请先充值',
-            'merchant vip purchase completed successfully' => '会员套餐购买成功',
-            'username and password are required' => '请输入账号和密码',
-            'captcha verification is not migrated for Webman merchant login yet' => '当前暂未开放验证码登录，请直接使用账号密码登录',
-            'only username/password merchant login is migrated in Webman' => '当前仅支持账号密码登录',
-            'username or password is incorrect' => '账号或密码错误',
-            'google verification is required before Webman direct merchant login can continue' => '当前账号需先完成谷歌验证后才可继续登录',
-            'order id is required' => '请输入订单编号',
-            'order not found' => '订单不存在',
-            'login success' => '登录成功',
-            'connection unbound successfully' => '绑定已解除',
-            'merchant quick-login OAuth bind and WxPusher QR enrollment flows are not migrated for Webman merchant center yet' => '当前绑定中心总览入口仅提供状态查看，请使用绑定、解绑、验证码和扫码入口操作。',
-            'merchant password change is live in the Webman merchant center and will require a fresh login after save' => '商户密码修改已生效，保存后需要重新登录',
-            'merchant google auth bind is live in webman. login-time verification still follows the migration guard.' => '谷歌验证绑定功能已接入当前系统；登录时是否校验仍由系统安全开关决定。',
-            'merchant google auth unbind is live in webman. login-time verification still follows the migration guard.' => '谷歌验证解绑功能已接入当前系统；登录时是否校验仍由系统安全开关决定。',
-            'merchant email verification feature is disabled' => '邮箱验证码功能未开启',
-            'merchant mobile verification feature is disabled' => '手机验证码功能未开启',
-            'connection verification channel is invalid' => '绑定验证码通道无效',
-            'connection verification action is invalid' => '绑定验证码操作无效',
-            'please wait before requesting another verification code' => '请求过于频繁，请稍后再获取验证码',
-            'merchant connection verification code sent successfully' => '绑定验证码已发送',
-            'merchant connection verification code sending failed' => '绑定验证码发送失败',
-            'email address is required' => '请输入邮箱地址',
-            'mobile number is required' => '请输入手机号码',
-            'system email switch is disabled' => '系统邮箱开关未开启',
-            'smtp configuration is incomplete' => 'SMTP 配置不完整',
-            'system mobile verification switch is disabled' => '系统手机验证码开关未开启',
-            'sms package is not installed for webman merchant center' => '商户后台未安装短信依赖包',
-            'sms verification provider is not supported' => '当前短信验证码服务商不受支持',
-            'sms verification provider configuration is incomplete' => '短信验证码服务商配置不完整',
-            'sms verification code sending failed' => '短信验证码发送失败',
-            'current merchant email is not configured yet' => '当前商户尚未绑定邮箱',
-            'current merchant mobile is not configured yet' => '当前商户尚未绑定手机号',
-            'current merchant email is already configured, please use unbind flow' => '当前商户已绑定邮箱，请先解绑后再重新绑定',
-            'current merchant mobile is already configured, please use unbind flow' => '当前商户已绑定手机号，请先解绑后再重新绑定',
-            'verification code is invalid' => '验证码不正确',
-            'verification code has expired' => '验证码已过期',
-            'verification target does not match the current request' => '验证码目标与当前请求不匹配',
-            'email is too long' => '邮箱长度不能超过 50 个字符',
-            'email format is invalid' => '邮箱格式不正确',
-            'email is already in use by another merchant' => '该邮箱已被其他商户使用',
-            'mobile number is too long' => '手机号长度不能超过 50 个字符',
-            'mobile format is invalid' => '手机号格式不正确',
-            'mobile number is already in use by another merchant' => '该手机号已被其他商户使用',
-            'merchant email bind completed successfully' => '邮箱绑定成功',
-            'merchant email unbind completed successfully' => '邮箱解绑成功',
-            'merchant mobile bind completed successfully' => '手机绑定成功',
-            'merchant mobile unbind completed successfully' => '手机解绑成功',
-            'telegram chat id is required' => '请输入电报会话标识',
-            'telegram chat id format is invalid' => '电报会话标识格式不正确',
-            'wxpusher uid saved successfully' => '微信推送标识已保存',
-            'telegram chat id saved successfully' => '电报会话标识已保存',
-            'merchant password updated successfully, please sign in again' => '密码修改成功，请重新登录',
-            'current merchant account already has Google Auth bound' => '当前商户账号已绑定谷歌验证器',
-            'current merchant account already has google auth bound' => '当前商户账号已绑定谷歌验证器',
-            'google auth qr code generated successfully' => '谷歌验证二维码已生成',
-            'google verification code is required' => '请输入 6 位谷歌验证码',
-            'google verification code is invalid' => '谷歌验证码不正确',
-            'merchant Google Auth bound successfully' => '谷歌验证器绑定成功',
-            'merchant google auth bound successfully' => '谷歌验证器绑定成功',
-            'current merchant account has not bound Google Auth yet' => '当前商户账号尚未绑定谷歌验证器',
-            'current merchant account has not bound google auth yet' => '当前商户账号尚未绑定谷歌验证器',
-            'merchant Google Auth unbound successfully' => '谷歌验证器解绑成功',
-            'merchant google auth unbound successfully' => '谷歌验证器解绑成功',
-            'real-name full name is required' => '请输入真实姓名',
-            'real-name id card is required' => '请输入身份证号',
-            'real-name id card format is invalid' => '身份证号格式不正确',
-            'real-name verification channel is invalid' => '实名认证通道无效',
-            'real-name provider app code is not configured' => '实名认证服务应用编码未配置',
-            'real-name alipay app credentials are not configured' => '支付宝实名认证应用配置不完整',
-            'merchant real-name verification started successfully' => '实名认证已发起，请继续完成认证',
-            'merchant real-name verification fee balance is insufficient' => '余额不足，无法支付实名认证费用',
-            'merchant real-name verification completed successfully' => '实名认证完成成功',
-            'merchant real-name verification is pending' => '实名认证处理中',
-            'merchant real-name verification is already completed' => '当前商户已完成实名认证。',
-            'merchant real-name verification is live in webman merchant center' => '实名认证发起已接入当前商户后台。',
-            'merchant real-name verification initiation is not migrated for the webman merchant center yet' => '管理员尚未配置可用的实名认证通道。',
-            'merchant real-name verification request failed' => '实名认证发起失败，请稍后重试',
-            'merchant real-name verification status query failed' => '实名认证状态查询失败，请稍后重试',
-            'api qrcode generation is not migrated because it would expose the raw merchant secret' => '商户二维码已支持按所选线路即时生成，接口默认只返回二维码地址与 base64 密文。',
-            'ticket title is required' => '请输入工单标题',
-            'ticket title is too long' => '工单标题过长',
-            'ticket content is required' => '请输入工单内容',
-            'ticket category is invalid or disabled' => '工单分类无效或已禁用',
-            'ticket id is required' => '请输入工单 ID',
-            'ticket not found' => '工单不存在',
-            'merchant ticket created successfully' => '工单创建成功',
-            'merchant ticket deleted successfully' => '工单删除成功',
-            'daily merchant domain submission limit has been reached' => '已达到当日域名提交上限',
-            'domain id is required' => '请输入域名 ID',
-            'domain not found' => '域名不存在',
-            'merchant domain created successfully' => '域名提交成功',
-            'merchant domain updated successfully' => '域名更新成功',
-            'merchant domain deleted successfully' => '域名删除成功',
-            'email or mobile is required' => '邮箱或手机号至少填写一项',
-            'at least one notification setting is required' => '至少需要保留一项通知设置',
-            'merchant notification settings saved successfully' => '通知设置保存成功',
-            'merchant profile updated successfully' => '商户资料更新成功',
-            'merchant sign key reset successfully' => '商户签名密钥重置成功',
-            'merchant api key reset successfully' => '商户接口密钥重置成功',
-            'merchant appkey reset successfully' => '商户通讯密钥重置成功',
-        ];
-
-        return ApiResponse::normalizeText($translations[$message] ?? $message);
+        return MerchantPortalMessageCatalog::normalizeMessage($message);
     }
 
     private function htmlResponse(string $html, int $status = 200): Response

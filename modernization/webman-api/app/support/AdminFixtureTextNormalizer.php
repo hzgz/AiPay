@@ -112,7 +112,7 @@ class AdminFixtureTextNormalizer
         'plugin-editor-upload' => '插件编辑器上传图片',
         'news-editor-upload.png' => '公告编辑器上传图片',
         'plugin-editor-upload.png' => '插件编辑器上传图片',
-        'rsa ˽Կ' => '站点私钥',
+        'rsa 私钥' => '站点私钥',
         'think 验证码密钥' => '验证码密钥',
         '短信宝 api' => '短信宝接口密钥',
         '支付宝 rsa 公钥' => '支付宝公钥',
@@ -190,6 +190,8 @@ class AdminFixtureTextNormalizer
             return '';
         }
 
+        $normalized = str_replace(['rsa ˽Կ', 'RSA ˽Կ'], ['rsa 私钥', 'RSA 私钥'], $normalized);
+
         $lower = strtolower($normalized);
         if (isset(self::EXACT_MAP[$lower])) {
             return self::applyInlineReplacements(self::EXACT_MAP[$lower]);
@@ -237,8 +239,8 @@ class AdminFixtureTextNormalizer
             preg_match('/^plugin-editor-upload(?:-\d+)?\.(png|jpg|jpeg|webp|gif)$/i', $normalized) === 1 => '插件编辑器上传图片',
             preg_match('/^[0-9a-f]{20,}\.(png|jpg|jpeg|webp|gif)$/i', $normalized) === 1 => '系统素材图片',
             default => str_replace(
-                ['example.test', 'AiPay Smoke', 'Puple'],
-                ['示例邮箱', 'AiPay 演示站', '紫色主题'],
+                ['example.test', 'AiPay Smoke', 'Purple', 'Puple'],
+                ['示例邮箱', 'AiPay 演示站', '紫色主题', '紫色主题'],
                 $normalized
             ),
         };
@@ -567,7 +569,7 @@ class AdminFixtureTextNormalizer
         $result = self::inlinePatternReplace($result, '/\/menu\.[a-z0-9]+\/index/i', '菜单示例入口路径');
         $result = self::inlinePatternReplace($result, '/支付宝\s+RSA\s+公钥/u', '支付宝公钥');
         $result = self::inlinePatternReplace($result, '/\bindex99\b/i', '经典支付风格首页');
-        $result = self::inlinePatternReplace($result, '/\bRSA\s+˽Կ\b/u', '站点私钥');
+        $result = self::inlinePatternReplace($result, '/\brsa\s+(?:私钥|˽Կ)\b/iu', '站点私钥');
         $result = self::inlinePatternReplace($result, '/\bThink\s+验证码密钥\b/u', '验证码密钥');
         $result = self::inlinePatternReplace($result, '/\b短信宝\s+api\b/i', '短信宝接口密钥');
         $result = self::inlinePatternReplace($result, '/\[code\]/i', '【验证码】');

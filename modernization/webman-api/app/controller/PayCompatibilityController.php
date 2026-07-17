@@ -7,6 +7,7 @@ namespace app\controller;
 use app\support\ApiResponse;
 use app\support\FrontendUrlBuilder;
 use app\support\LegacyMojibakeGuard;
+use app\support\MerchantPortalMessageCatalog;
 use support\Db;
 use Webman\Http\Request;
 use Webman\Http\Response;
@@ -14,7 +15,7 @@ use Webman\Http\Response;
 class PayCompatibilityController
 {
     private const ALIPAY_DEEP_LINK_CODES = ['alipay_mck'];
-    private const DEFAULT_VOICE_TIPS = '尊敬的用户，你本次交易金额为[money]';
+    private const DEFAULT_VOICE_TIPS = MerchantPortalMessageCatalog::DEFAULT_VOICE_TIPS;
 
     public function console(Request $request): Response
     {

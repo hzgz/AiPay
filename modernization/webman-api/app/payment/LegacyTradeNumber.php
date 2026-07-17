@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\payment;
 
-class LegacyTradeNumber
+use Plugins\Payments\Shared\Support\LegacyTradeNumber as SharedLegacyTradeNumber;
+
+class LegacyTradeNumber extends SharedLegacyTradeNumber
 {
-    public static function make(string $prefix = 'Y'): string
-    {
-        return $prefix . date('YmdHis') . random_int(11111, 99999);
-    }
 }

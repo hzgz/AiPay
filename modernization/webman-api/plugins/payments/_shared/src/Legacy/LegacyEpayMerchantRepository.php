@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Plugins\Payments\Shared\Legacy;
 
-use app\payment\PaymentPluginException;
 use app\support\MerchantChannelMetadata;
+use Plugins\Payments\Shared\Support\PaymentPluginException;
 use support\Db;
 
 class LegacyEpayMerchantRepository

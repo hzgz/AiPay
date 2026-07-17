@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Plugins\Payments\Shared\Legacy;
 
-use app\payment\PaymentPluginException;
 use app\service\order\OrderCallbackBuilder;
 use app\service\order\OrderCallbackTaskService;
 use app\support\SystemConfig;
+use Plugins\Payments\Shared\Support\PaymentPluginException;
 
 class LegacyEpayService
 {

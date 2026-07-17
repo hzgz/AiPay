@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Plugins\Payments\WxpayV3\Support;
 
-use app\payment\managed\AbstractManagedGatewayOrderService;
 use app\support\SystemConfig;
 use app\support\WxpayV3SdkAutoloader;
+use Plugins\Payments\Shared\Managed\AbstractManagedGatewayOrderService;
 
 final class WxpayV3GatewayService extends AbstractManagedGatewayOrderService
 {

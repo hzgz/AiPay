@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Plugins\Payments\AlipayOfficial\Support;
 
-use app\payment\managed\AbstractManagedGatewayOrderService;
 use app\support\LegacyPaymentSdkAutoloader;
+use Plugins\Payments\Shared\Managed\AbstractManagedGatewayOrderService;
 
 final class AlipayOfficialGatewayService extends AbstractManagedGatewayOrderService
 {

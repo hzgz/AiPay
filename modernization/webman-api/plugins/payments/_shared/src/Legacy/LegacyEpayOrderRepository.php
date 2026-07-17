@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Plugins\Payments\Shared\Legacy;
 
-use app\payment\LegacyTradeNumber;
-use app\payment\PaymentPluginException;
+use Plugins\Payments\Shared\Support\LegacyTradeNumber;
+use Plugins\Payments\Shared\Support\PaymentPluginException;
 use support\Db;
 
 class LegacyEpayOrderRepository

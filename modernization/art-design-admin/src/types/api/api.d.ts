@@ -1073,7 +1073,6 @@ declare namespace Api {
       merchant_id: number
       merchant_username: string
       can_impersonate: boolean
-      confirmation_phrase: string
       target_url: string
       warnings: string[]
       possible_redirects: string[]
@@ -1229,9 +1228,7 @@ declare namespace Api {
       confirmation_phrase: string
     }
 
-    interface UserImpersonationExecutePayload {
-      confirmation_phrase: string
-    }
+    interface UserImpersonationExecutePayload {}
 
     interface UserBatchDeleteAuditPayload {
       merchant_ids: number[]

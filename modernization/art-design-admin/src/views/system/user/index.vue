@@ -520,15 +520,26 @@
       return
     }
 
-    let pendingWindow: Window | null = null
+    let pendingWindow: Window | null = window.open('', '_blank')
     impersonatingMerchant.value = true
 
     try {
+      if (!pendingWindow) {
+        ElMessage.error('浏览器拦截了新窗口，请允许弹窗后重试。')
+        return
+      }
+
+      pendingWindow.document.write(
+        '<!doctype html><title>Opening merchant center</title><body style="font:14px/1.6 sans-serif;padding:24px;">正在进入商户中心...</body>'
+      )
+
       const response = await fetchGetMerchantImpersonationAudit(activeMerchant.value.id)
       const audit = response.audit
       const title = displayMerchantName(activeMerchant.value)
 
       if (!audit.can_impersonate) {
+        pendingWindow.close()
+        pendingWindow = null
         await ElMessageBox.alert(buildImpersonationBlockedMessage(title, audit), '当前无法代登录', {
           type: 'warning',
           confirmButtonText: '我知道了'
@@ -536,32 +547,7 @@
         return
       }
 
-      const { value } = await ElMessageBox.prompt(
-        buildImpersonationPromptMessage(title, audit),
-        '商户代登录确认',
-        {
-          confirmButtonText: '打开商户中心',
-          cancelButtonText: '取消',
-          type: 'warning',
-          inputPlaceholder: audit.confirmation_phrase,
-          inputPattern: new RegExp(`^${escapeRegExp(audit.confirmation_phrase)}$`),
-          inputErrorMessage: `请输入 ${audit.confirmation_phrase} 后继续。`
-        }
-      )
-
-      pendingWindow = window.open('', '_blank')
-      if (!pendingWindow) {
-        ElMessage.error('浏览器拦截了新窗口，请允许弹窗后重试。')
-        return
-      }
-
-      pendingWindow.document.write(
-        '<!doctype html><title>Opening merchant center</title><body style="font:14px/1.6 sans-serif;padding:24px;">Opening merchant center...</body>'
-      )
-
-      const impersonation = await fetchImpersonateMerchant(activeMerchant.value.id, {
-        confirmation_phrase: String(value || '')
-      })
+      const impersonation = await fetchImpersonateMerchant(activeMerchant.value.id)
 
       pendingWindow.location.replace(impersonation.redirect_url)
       pendingWindow.focus()
@@ -1071,19 +1057,6 @@
       ...buildImpersonationWarningLines(audit),
       '',
       `目标地址：${audit.target_url}`
-    ].join('\n')
-  }
-
-  function buildImpersonationPromptMessage(title: string, audit: UserImpersonationAudit) {
-    return [
-      `商户：${title}`,
-      `目标地址：${audit.target_url}`,
-      ...(audit.possible_redirects.length > 0
-        ? ['', `可能跳转：${audit.possible_redirects.join(' , ')}`]
-        : []),
-      ...(audit.warnings.length > 0 ? ['', ...audit.warnings] : []),
-      '',
-      `请输入 ${audit.confirmation_phrase} 后继续。`
     ].join('\n')
   }
 

@@ -47,7 +47,10 @@ export function fetchGetMerchantImpersonationAudit(id: number) {
   })
 }
 
-export function fetchImpersonateMerchant(id: number, params: Api.Users.UserImpersonationExecutePayload) {
+export function fetchImpersonateMerchant(
+  id: number,
+  params: Api.Users.UserImpersonationExecutePayload = {}
+) {
   return request.post<Api.Users.UserImpersonationExecuteResponse>({
     url: `/api/admin/users/${id}/impersonate`,
     params,

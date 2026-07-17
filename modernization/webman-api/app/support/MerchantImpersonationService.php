@@ -2,6 +2,7 @@
 
 namespace app\support;
 
+use Webman\Http\Request;
 use Webman\Http\Response;
 use support\Db;
 
@@ -53,7 +54,6 @@ class MerchantImpersonationService
             'merchant_id' => $merchantId,
             'merchant_username' => (string)($merchant['username'] ?? ''),
             'can_impersonate' => !$isFrozen,
-            'confirmation_phrase' => $this->confirmationPhrase($merchantId),
             'target_url' => trim($merchantCenterTargetUrl),
             'warnings' => $warnings,
             'possible_redirects' => array_values(array_unique($possibleRedirects)),
@@ -72,7 +72,7 @@ class MerchantImpersonationService
         return $audit;
     }
 
-    public function issue(array $audit, array $admin, string $webmanBaseUrl): array
+    public function issue(array $audit, array $admin, string $webmanBaseUrl, Request $request): array
     {
         if (empty($audit['can_impersonate'])) {
             throw new \InvalidArgumentException('merchant cannot be impersonated');
@@ -87,6 +87,8 @@ class MerchantImpersonationService
         $merchantUsername = trim((string)($merchant['username'] ?? ($audit['merchant_username'] ?? '')));
         $newToken = $this->rotateMerchantToken($merchantId);
         $expiresAtTs = time() + self::TICKET_TTL;
+        $issuedIp = trim((string)$request->getRealIp());
+        $issuedUserAgent = trim((string)$request->header('user-agent', ''));
 
         $ticket = $this->createTicket([
             'merchant_id' => $merchantId,
@@ -98,6 +100,8 @@ class MerchantImpersonationService
             'issued_at' => date('Y-m-d H:i:s'),
             'expires_at' => date('Y-m-d H:i:s', $expiresAtTs),
             'expires_at_ts' => $expiresAtTs,
+            'issued_ip' => $issuedIp,
+            'issued_user_agent_hash' => $this->userAgentHash($issuedUserAgent),
         ]);
 
         return [
@@ -110,10 +114,14 @@ class MerchantImpersonationService
         ];
     }
 
-    public function consume(string $ticket): Response
+    public function consume(string $ticket, Request $request): Response
     {
         $payload = $this->consumeTicket($ticket);
         if ($payload === null) {
+            return $this->invalidTicketResponse();
+        }
+
+        if (!$this->matchesRequestFingerprint($payload, $request)) {
             return $this->invalidTicketResponse();
         }
 
@@ -167,14 +175,33 @@ class MerchantImpersonationService
             . str_replace('.', '', sprintf('%.6f', microtime(true)));
     }
 
-    private function confirmationPhrase(int $merchantId): string
-    {
-        return 'LOGIN AS MERCHANT ' . $merchantId;
-    }
-
     private function configEnabled(array $config, string $key): bool
     {
         return trim((string)($config[$key] ?? '0')) === '1';
+    }
+
+    private function matchesRequestFingerprint(array $payload, Request $request): bool
+    {
+        $expectedIp = trim((string)($payload['issued_ip'] ?? ''));
+        $requestIp = trim((string)$request->getRealIp());
+        if ($expectedIp !== '' && $requestIp !== '' && !hash_equals($expectedIp, $requestIp)) {
+            return false;
+        }
+
+        $expectedUserAgentHash = trim((string)($payload['issued_user_agent_hash'] ?? ''));
+        if ($expectedUserAgentHash === '') {
+            return true;
+        }
+
+        return hash_equals(
+            $expectedUserAgentHash,
+            $this->userAgentHash(trim((string)$request->header('user-agent', '')))
+        );
+    }
+
+    private function userAgentHash(string $userAgent): string
+    {
+        return hash('sha256', trim($userAgent));
     }
 
     private function createTicket(array $payload): string

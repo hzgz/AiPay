@@ -503,19 +503,13 @@ class UserController
             );
         }
 
-        $payload = RequestPayload::all($request);
-        $confirmationPhrase = trim((string)($payload['confirmation_phrase'] ?? ''));
-        if ($confirmationPhrase !== (string)($audit['confirmation_phrase'] ?? '')) {
-            return ApiResponse::error(
-                'confirmation phrase mismatch',
-                422,
-                ['audit' => $service->publicAudit($audit)],
-                422
-            );
-        }
-
         try {
-            $result = $service->issue($audit, (array)($request->admin ?? []), $this->webmanPublicBaseUrl($request));
+            $result = $service->issue(
+                $audit,
+                (array)($request->admin ?? []),
+                $this->webmanPublicBaseUrl($request),
+                $request
+            );
         } catch (\Throwable $exception) {
             return ApiResponse::error($exception->getMessage(), 500, null, 500);
         }
@@ -529,7 +523,7 @@ class UserController
     {
         $ticket = trim((string)($request->route ? $request->route->param('ticket', '') : ''));
 
-        return $this->merchantImpersonation()->consume($ticket);
+        return $this->merchantImpersonation()->consume($ticket, $request);
     }
 
     public function batchDeleteAudit(Request $request): Response

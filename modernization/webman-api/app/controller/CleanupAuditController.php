@@ -150,7 +150,7 @@ class CleanupAuditController
         $payload = RequestPayload::all($request);
         $confirmationPhrase = trim((string)($payload['confirmation_phrase'] ?? ''));
         if ($confirmationPhrase !== (string)($audit['confirmation_phrase'] ?? '')) {
-            return ApiResponse::error('confirmation phrase mismatch', 422, ['audit' => $audit], 422);
+            return ApiResponse::error('确认短语不匹配', 422, ['audit' => $audit], 422);
         }
 
         $deletedCount = $this->executeCleanupAction($item);
@@ -461,7 +461,7 @@ class CleanupAuditController
             (string)($item['latest_record_time'] ?? ''),
         ])), 0, 6));
 
-        return sprintf('CLEANUP %s %d-%s', $key, $targetCount, $digest);
+        return sprintf('执行清理 %s %d-%s', $key, $targetCount, $digest);
     }
 
     private function authorizeWrite(Request $request, string $authMark): ?Response

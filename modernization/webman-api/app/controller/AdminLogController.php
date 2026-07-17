@@ -49,12 +49,12 @@ class AdminLogController
     {
         $id = $this->logIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('admin log id is required', 422, null, 422);
+            return ApiResponse::error('后台日志编号不能为空', 422, null, 422);
         }
 
         $record = $this->logRecord($id);
         if ($record === null) {
-            return ApiResponse::error('admin log not found', 404, null, 404);
+            return ApiResponse::error('后台日志不存在', 404, null, 404);
         }
 
         return ApiResponse::success([
@@ -83,12 +83,12 @@ class AdminLogController
 
         $audit = $this->adminLogCleanupAudit();
         if (empty($audit['can_cleanup'])) {
-            return ApiResponse::error('no admin logs are available for cleanup', 422, ['audit' => $audit], 422);
+            return ApiResponse::error('当前没有可清理的后台日志记录', 422, ['audit' => $audit], 422);
         }
 
         $confirmationPhrase = trim((string)(RequestPayload::all($request)['confirmation_phrase'] ?? ''));
         if ($confirmationPhrase !== (string)($audit['confirmation_phrase'] ?? '')) {
-            return ApiResponse::error('confirmation phrase mismatch', 422, ['audit' => $audit], 422);
+            return ApiResponse::error('确认短语不匹配', 422, ['audit' => $audit], 422);
         }
 
         Db::transaction(function () use ($request, $audit): void {
@@ -99,7 +99,7 @@ class AdminLogController
         return ApiResponse::success([
             'deleted_count' => (int)(($audit['summary'] ?? [])['total_count'] ?? 0),
             'audit' => $audit,
-        ], 'admin logs cleaned up');
+        ], '后台日志已清理');
     }
 
     private function adminLogQuery(): Builder
@@ -199,14 +199,14 @@ class AdminLogController
 
             if ($summary['payload_log_count'] > 0) {
                 $warnings[] = sprintf(
-                    '%d row(s) include captured request payload text that will be removed by this cleanup.',
+                    '本次清理会删除 %d 条包含请求载荷文本的后台日志记录。',
                     $summary['payload_log_count']
                 );
             }
 
             if ($summary['admin_count'] > 0) {
                 $warnings[] = sprintf(
-                    '%d admin account(s) have activity in the current cleanup scope.',
+                    '当前清理范围涉及 %d 个有操作记录的管理员账号。',
                     $summary['admin_count']
                 );
             }
@@ -230,7 +230,7 @@ class AdminLogController
     private function adminLogCleanupConfirmationPhrase(array $summary): string
     {
         return sprintf(
-            'CLEAN ADMIN LOGS %d-%s',
+            '清理后台日志 %d-%s',
             (int)($summary['total_count'] ?? 0),
             strtoupper(substr(md5(implode('|', [
                 (int)($summary['total_count'] ?? 0),

@@ -46,12 +46,12 @@ class CdkController
     {
         $id = $this->cdkIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('cdk id is required', 422, null, 422);
+            return ApiResponse::error('CDK 编号不能为空', 422, null, 422);
         }
 
         $row = $this->loadCdkRow($id);
         if ($row === null) {
-            return ApiResponse::error('cdk not found', 404, null, 404);
+            return ApiResponse::error('CDK 记录不存在', 404, null, 404);
         }
 
         return ApiResponse::success([
@@ -129,7 +129,7 @@ class CdkController
             'generated_codes' => $generatedCodes,
             'generated_cards' => $generatedCards,
             'records' => $formattedCards,
-        ], 'cdk batch created');
+        ], 'CDK 已批量创建');
     }
 
     public function deleteAudit(Request $request): Response
@@ -141,12 +141,12 @@ class CdkController
 
         $id = $this->cdkIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('cdk id is required', 422, null, 422);
+            return ApiResponse::error('CDK 编号不能为空', 422, null, 422);
         }
 
         $record = $this->loadCdkRow($id);
         if ($record === null) {
-            return ApiResponse::error('cdk not found', 404, null, 404);
+            return ApiResponse::error('CDK 记录不存在', 404, null, 404);
         }
 
         return ApiResponse::success([
@@ -164,18 +164,18 @@ class CdkController
 
         $id = $this->cdkIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('cdk id is required', 422, null, 422);
+            return ApiResponse::error('CDK 编号不能为空', 422, null, 422);
         }
 
         $record = $this->loadCdkRow($id);
         if ($record === null) {
-            return ApiResponse::error('cdk not found', 404, null, 404);
+            return ApiResponse::error('CDK 记录不存在', 404, null, 404);
         }
 
         $audit = $this->buildCdkDeleteAudit($record);
         $confirmationPhrase = trim((string)(RequestPayload::all($request)['confirmation_phrase'] ?? ''));
         if ($confirmationPhrase !== (string)($audit['confirmation_phrase'] ?? '')) {
-            return ApiResponse::error('confirmation phrase mismatch', 422, ['audit' => $audit], 422);
+            return ApiResponse::error('确认短语不匹配', 422, ['audit' => $audit], 422);
         }
 
         Db::transaction(function () use ($id): void {
@@ -188,7 +188,7 @@ class CdkController
             'deleted_cdk_id' => $id,
             'deleted_cdk_label' => (string)($audit['cdk_label'] ?? ''),
             'audit' => $audit,
-        ], 'cdk deleted');
+        ], 'CDK 已删除');
     }
 
     public function batchDeleteAudit(Request $request): Response
@@ -231,7 +231,7 @@ class CdkController
         $audit = $this->batchCdkDeleteAudit($cdkIds);
         if (empty($audit['can_delete_all'])) {
             return ApiResponse::error(
-                'selected cdks cannot be batch deleted until the selection is refreshed',
+                '所选 CDK 已发生变化，请刷新选择后再执行批量删除',
                 422,
                 ['audit' => $audit],
                 422
@@ -240,7 +240,7 @@ class CdkController
 
         $confirmationPhrase = trim((string)($payload['confirmation_phrase'] ?? ''));
         if ($confirmationPhrase !== (string)($audit['confirmation_phrase'] ?? '')) {
-            return ApiResponse::error('confirmation phrase mismatch', 422, ['audit' => $audit], 422);
+            return ApiResponse::error('确认短语不匹配', 422, ['audit' => $audit], 422);
         }
 
         Db::transaction(function () use ($audit): void {
@@ -255,7 +255,7 @@ class CdkController
             'deleted_cdk_ids' => array_values(array_map('intval', (array)($audit['deletable_cdk_ids'] ?? []))),
             'deleted_count' => (int)(($audit['summary'] ?? [])['deletable_count'] ?? 0),
             'audit' => $audit,
-        ], 'cdk batch delete completed');
+        ], 'CDK 已批量删除');
     }
 
     public function cleanupUsedAudit(Request $request): Response
@@ -279,12 +279,12 @@ class CdkController
 
         $audit = $this->usedCleanupAudit();
         if (empty($audit['can_cleanup'])) {
-            return ApiResponse::error('no used cdks are available for cleanup', 422, ['audit' => $audit], 422);
+            return ApiResponse::error('当前没有可清理的已使用 CDK', 422, ['audit' => $audit], 422);
         }
 
         $confirmationPhrase = trim((string)(RequestPayload::all($request)['confirmation_phrase'] ?? ''));
         if ($confirmationPhrase !== (string)($audit['confirmation_phrase'] ?? '')) {
-            return ApiResponse::error('confirmation phrase mismatch', 422, ['audit' => $audit], 422);
+            return ApiResponse::error('确认短语不匹配', 422, ['audit' => $audit], 422);
         }
 
         Db::transaction(function (): void {
@@ -298,7 +298,7 @@ class CdkController
         return ApiResponse::success([
             'deleted_count' => (int)(($audit['summary'] ?? [])['used_count'] ?? 0),
             'audit' => $audit,
-        ], 'used cdks cleaned up');
+        ], '已使用 CDK 已清理');
     }
 
     private function cdkQuery(): Builder
@@ -440,7 +440,7 @@ class CdkController
             ->first();
 
         if (!$vip) {
-            throw new \InvalidArgumentException('selected vip package was not found');
+            throw new \InvalidArgumentException('所选 VIP 套餐不存在');
         }
 
         return [
@@ -459,11 +459,11 @@ class CdkController
         } elseif (is_string($value) && ctype_digit(trim($value))) {
             $type = (int)trim($value);
         } else {
-            throw new \InvalidArgumentException('cdk type must be 1 or 2');
+            throw new \InvalidArgumentException('CDK 类型只能为 1 或 2');
         }
 
         if (!in_array($type, [1, 2], true)) {
-            throw new \InvalidArgumentException('cdk type must be 1 or 2');
+            throw new \InvalidArgumentException('CDK 类型只能为 1 或 2');
         }
 
         return $type;
@@ -476,11 +476,11 @@ class CdkController
         } elseif (is_string($value) && ctype_digit(trim($value))) {
             $count = (int)trim($value);
         } else {
-            throw new \InvalidArgumentException('cdk create count must be an integer');
+            throw new \InvalidArgumentException('CDK 生成数量必须是整数');
         }
 
         if ($count < 1 || $count > 200) {
-            throw new \InvalidArgumentException('cdk create count must be between 1 and 200');
+            throw new \InvalidArgumentException('CDK 生成数量必须在 1 到 200 之间');
         }
 
         return $count;
@@ -489,16 +489,16 @@ class CdkController
     private function normalizeAmount(mixed $value): float
     {
         if (!is_numeric($value)) {
-            throw new \InvalidArgumentException('balance amount must be numeric');
+            throw new \InvalidArgumentException('余额面值必须是数字');
         }
 
         $amount = round((float)$value, 2);
         if ($amount <= 0) {
-            throw new \InvalidArgumentException('balance amount must be greater than 0');
+            throw new \InvalidArgumentException('余额面值必须大于 0');
         }
 
         if ($amount > 99999999) {
-            throw new \InvalidArgumentException('balance amount is too large');
+            throw new \InvalidArgumentException('余额面值超出允许范围');
         }
 
         return $amount;
@@ -511,11 +511,11 @@ class CdkController
         } elseif (is_string($value) && ctype_digit(trim($value))) {
             $vipId = (int)trim($value);
         } else {
-            throw new \InvalidArgumentException('vip package id is required');
+            throw new \InvalidArgumentException('VIP 套餐编号不能为空');
         }
 
         if ($vipId <= 0) {
-            throw new \InvalidArgumentException('vip package id is required');
+            throw new \InvalidArgumentException('VIP 套餐编号不能为空');
         }
 
         return $vipId;
@@ -531,11 +531,11 @@ class CdkController
         $prefix = preg_replace('/[^A-Z0-9_-]+/', '', $prefix) ?? '';
         $prefix = trim($prefix, '_-');
         if ($prefix === '') {
-            throw new \InvalidArgumentException('cdk prefix must contain letters or numbers');
+            throw new \InvalidArgumentException('CDK 前缀必须包含字母或数字');
         }
 
         if (strlen($prefix) > 20) {
-            throw new \InvalidArgumentException('cdk prefix must be 20 characters or fewer');
+            throw new \InvalidArgumentException('CDK 前缀长度不能超过 20 个字符');
         }
 
         return $prefix;
@@ -555,7 +555,7 @@ class CdkController
             }
         }
 
-        throw new \RuntimeException('failed to generate a unique cdk code');
+        throw new \RuntimeException('生成唯一 CDK 编码失败，请稍后重试');
     }
 
     private function buildCdkDeleteAudit(array $record): array
@@ -567,13 +567,13 @@ class CdkController
         $warnings = [];
 
         if ($status === 0) {
-            $warnings[] = 'This unused card can no longer be redeemed after deletion.';
+            $warnings[] = '这张未使用的卡删除后将无法继续兑换。';
         } else {
-            $warnings[] = 'This used card record will be permanently removed from the audit trail.';
+            $warnings[] = '这张已使用的卡删除后会从历史记录中永久移除。';
         }
 
         if (!empty($formatted['code_masked'])) {
-            $warnings[] = 'The list and detail views keep the code masked even though the record is deletable.';
+            $warnings[] = '即使允许删除，列表和详情中的卡密仍会保持掩码显示。';
         }
 
         return [
@@ -623,12 +623,12 @@ class CdkController
                     'exists' => false,
                     'can_delete' => false,
                     'type' => null,
-                    'type_label' => 'Missing',
+                    'type_label' => '已缺失',
                     'status' => null,
-                    'status_label' => 'Missing',
+                    'status_label' => '已缺失',
                     'is_used' => false,
-                    'blocking_reasons' => ['This cdk record no longer exists in the live table.'],
-                    'warnings' => ['Refresh the selection before retrying the batch delete.'],
+                    'blocking_reasons' => ['这条 CDK 记录已不在当前数据表中。'],
+                    'warnings' => ['请先刷新选择结果，再重新执行批量删除。'],
                     'summary' => [
                         'delete_row_count' => 0,
                         'used_count' => 0,
@@ -670,19 +670,19 @@ class CdkController
         $warnings = [];
         if ($summary['missing_count'] > 0) {
             $warnings[] = sprintf(
-                '%d selected cdk record(s) are already missing and must be reselected before deletion.',
+                '%d 条所选 CDK 记录已缺失，删除前请先重新选择。',
                 $summary['missing_count']
             );
         }
         if ($summary['unused_count'] > 0) {
             $warnings[] = sprintf(
-                '%d unused cdk record(s) will lose their redemption codes permanently.',
+                '%d 条未使用的 CDK 记录删除后将永久失去兑换能力。',
                 $summary['unused_count']
             );
         }
         if ($summary['used_count'] > 0) {
             $warnings[] = sprintf(
-                '%d used cdk record(s) will be removed from the historical ledger.',
+                '%d 条已使用的 CDK 记录将从历史台账中移除。',
                 $summary['used_count']
             );
         }
@@ -746,10 +746,10 @@ class CdkController
             'summary' => $summary,
             'warnings' => $summary['used_count'] > 0
                 ? [
-                    sprintf('%d used cdk record(s) will be permanently removed.', $summary['used_count']),
-                    'Cleanup affects only rows where status = 1 and does not touch unused cards.',
+                    sprintf('将永久删除 %d 条已使用的 CDK 记录。', $summary['used_count']),
+                    '本次清理只会影响状态为 1 的已使用卡，不会处理未使用卡。',
                 ]
-                : ['No used cdk records are currently available for cleanup.'],
+                : ['当前没有可清理的已使用 CDK 记录。'],
         ];
     }
 
@@ -767,7 +767,7 @@ class CdkController
     private function normalizeCdkIds(mixed $value, int $maxCount = 500): array
     {
         if (!is_array($value)) {
-            throw new \InvalidArgumentException('cdk ids are required');
+            throw new \InvalidArgumentException('CDK 编号列表不能为空');
         }
 
         $cdkIds = [];
@@ -791,11 +791,11 @@ class CdkController
         sort($cdkIds);
 
         if ($cdkIds === []) {
-            throw new \InvalidArgumentException('cdk ids are required');
+            throw new \InvalidArgumentException('CDK 编号列表不能为空');
         }
 
         if (count($cdkIds) > $maxCount) {
-            throw new \InvalidArgumentException('too many cdks were selected for one batch action');
+            throw new \InvalidArgumentException('单次批量操作选择的 CDK 数量过多');
         }
 
         return $cdkIds;
@@ -824,7 +824,7 @@ class CdkController
 
     private function cdkDeleteConfirmationPhrase(int $cdkId): string
     {
-        return 'DELETE CDK ' . $cdkId;
+        return '删除CDK ' . $cdkId;
     }
 
     /**
@@ -833,7 +833,7 @@ class CdkController
     private function batchCdkDeleteConfirmationPhrase(array $cdkIds): string
     {
         return sprintf(
-            'DELETE CDK BATCH %d-%s',
+            '批量删除CDK %d-%s',
             count($cdkIds),
             strtoupper(substr(md5(implode(',', $cdkIds)), 0, 6))
         );
@@ -845,7 +845,7 @@ class CdkController
     private function cleanupUsedConfirmationPhrase(array $usedIds): string
     {
         return sprintf(
-            'CLEAN USED CDKS %d-%s',
+            '清理已使用CDK %d-%s',
             count($usedIds),
             strtoupper(substr(md5(implode(',', $usedIds)), 0, 6))
         );

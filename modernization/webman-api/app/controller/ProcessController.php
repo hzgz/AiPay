@@ -21,7 +21,7 @@ class ProcessController
         try {
             return ApiResponse::success($this->inspector()->snapshot());
         } catch (Throwable $exception) {
-            return ApiResponse::error('process snapshot failed', 500, [
+            return ApiResponse::error('进程快照获取失败', 500, [
                 'exception' => $exception->getMessage(),
             ], 500);
         }
@@ -35,9 +35,9 @@ class ProcessController
         }
 
         try {
-            return ApiResponse::success($this->inspector()->pauseMonitor(), 'monitor paused');
+            return ApiResponse::success($this->inspector()->pauseMonitor(), '进程监控已暂停');
         } catch (Throwable $exception) {
-            return ApiResponse::error('pause monitor failed', 500, [
+            return ApiResponse::error('暂停进程监控失败', 500, [
                 'exception' => $exception->getMessage(),
             ], 500);
         }
@@ -51,9 +51,9 @@ class ProcessController
         }
 
         try {
-            return ApiResponse::success($this->inspector()->resumeMonitor(), 'monitor resumed');
+            return ApiResponse::success($this->inspector()->resumeMonitor(), '进程监控已恢复');
         } catch (Throwable $exception) {
-            return ApiResponse::error('resume monitor failed', 500, [
+            return ApiResponse::error('恢复进程监控失败', 500, [
                 'exception' => $exception->getMessage(),
             ], 500);
         }
@@ -69,10 +69,10 @@ class ProcessController
         try {
             return ApiResponse::success(
                 $this->inspector()->cleanupDuplicateSupervisors(),
-                'duplicate supervisor cleanup completed'
+                '重复守护进程已清理'
             );
         } catch (Throwable $exception) {
-            return ApiResponse::error('duplicate supervisor cleanup failed', 500, [
+            return ApiResponse::error('清理重复守护进程失败', 500, [
                 'exception' => $exception->getMessage(),
             ], 500);
         }

@@ -4,17 +4,17 @@
       <section class="demo-hero">
         <div>
           <span class="demo-eyebrow">支付测试</span>
-          <h1>公开前台仅展示支付方式和测试说明</h1>
-          <p>真实下单、通道测试与回调验证请进入商户端完成。这里保留方式预览、示例金额和商户入口。</p>
+          <h1>快速查看支付方式与收银台展示</h1>
+          <p>用于预览支付方式、测试金额与基础展示效果。</p>
         </div>
 
         <div class="demo-hero__meta">
           <div>
-            <small>示例订单号</small>
+            <small>测试订单号</small>
             <strong>{{ demoOrderNo }}</strong>
           </div>
           <div>
-            <small>示例金额</small>
+            <small>测试金额</small>
             <strong>￥{{ demoMoney }}</strong>
           </div>
           <div>
@@ -24,19 +24,17 @@
         </div>
       </section>
 
-      <div v-if="error" class="demo-alert">
-        支付测试数据暂时不可用，当前展示为默认内容。{{ error }}
-      </div>
+      <div v-if="error" class="demo-alert">支付测试内容暂时无法刷新，请稍后再试。</div>
 
       <section class="demo-layout">
         <article class="demo-main">
           <div class="demo-main__head">
             <div>
               <span class="demo-eyebrow">方式列表</span>
-              <h2>选择一个支付方式查看展示说明</h2>
+              <h2>选择支付方式查看展示效果</h2>
             </div>
 
-            <a class="demo-link" href="/#/doc">查看开发文档</a>
+            <a class="demo-link" href="/#/doc">查看文档</a>
           </div>
 
           <div class="demo-methods">
@@ -66,11 +64,11 @@
           </div>
 
           <div class="demo-side__section">
-            <span class="demo-eyebrow">示例信息</span>
+            <span class="demo-eyebrow">测试信息</span>
 
             <div class="demo-side__rows">
               <div class="demo-side__row">
-                <small>示例金额</small>
+                <small>测试金额</small>
                 <strong>￥{{ demoMoney }}</strong>
               </div>
               <div class="demo-side__row">
@@ -86,7 +84,7 @@
 
           <div class="demo-side__section">
             <span class="demo-eyebrow">下一步</span>
-            <p>如需继续测试通道、真实支付和回调流程，请先登录商户端。</p>
+            <p>如需发起真实订单或验证回调，请登录商户端继续操作。</p>
 
             <div class="demo-side__actions">
               <a class="demo-button demo-button--primary" :href="merchantLoginUrl">进入商户端</a>
@@ -144,7 +142,7 @@
   const siteName = computed(() => payload.value?.site_name || 'AiPay')
   const navs = computed(() => payload.value?.navs || [])
   const merchantLoginUrl = computed(() => payload.value?.merchant_login_url || '/#/merchant/login')
-  const demoName = computed(() => payload.value?.demo_name || '支付测试订单')
+  const demoName = computed(() => payload.value?.demo_name || '测试订单')
   const demoMoney = computed(() => payload.value?.demo_money || '0.01')
   const gatewayConfigured = computed(() => Boolean(payload.value?.gateway_configured))
 
@@ -186,7 +184,7 @@
       demoOrderNo.value = createDemoOrderNo()
       scrollPublicPageToTop()
     } catch (err) {
-      error.value = resolvePublicErrorMessage(err, '支付测试动态数据暂时不可用。')
+      error.value = resolvePublicErrorMessage(err, '支付测试内容暂时无法刷新。')
       demoOrderNo.value = createDemoOrderNo()
     } finally {
       loading.value = false

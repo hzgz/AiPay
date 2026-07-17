@@ -172,7 +172,7 @@
       navs: () => [],
       isLoggedIn: false,
       pageLabel: '游客前台',
-      footerNote: '统一提供首页介绍、开发文档、公告中心、支付测试与商户入口。',
+      footerNote: '可商用聚合支付与商户接入平台。',
       merchantLoginUrl: '/#/merchant/login',
       merchantRegisterUrl: '/#/merchant/register',
       merchantCenterUrl: '/#/merchant/dashboard'

@@ -32,9 +32,7 @@
         </div>
       </section>
 
-      <div v-if="error" class="docs-alert">
-        文档数据暂时不可用，当前展示为默认内容。{{ error }}
-      </div>
+      <div v-if="error" class="docs-alert">文档内容暂时无法刷新，请稍后再试。</div>
 
       <section class="docs-layout">
         <aside class="docs-side">
@@ -179,22 +177,22 @@
       overview: {
         title: '页面跳转支付文档',
         shortLabel: '跳转支付',
-        description: '整理公开前台、支付跳转地址、基础参数与商户接入入口。'
+        description: '整理网页支付入口、基础参数与回调地址。'
       },
       api: {
         title: 'API 接口支付文档',
         shortLabel: 'API 支付',
-        description: '集中展示 MAPI、聚合下单接口、订单查询与商户常用辅助地址。'
+        description: '集中展示接口下单、查单与常用地址。'
       },
       result: {
         title: '支付结果通知文档',
         shortLabel: '结果通知',
-        description: '说明异步通知、同步返回、回调字段与商户验签规则。'
+        description: '说明异步通知、同步返回与商户验签规则。'
       },
       findorder: {
         title: '订单查询文档',
         shortLabel: '订单查询',
-        description: '说明查单入口、参数格式、返回字段以及商户后台订单入口。'
+        description: '说明查单入口、参数格式与返回字段。'
       }
     }
 
@@ -214,7 +212,7 @@
       payload.value = await fetchPublicDoc(activeSection.value === 'overview' ? undefined : activeSection.value)
       scrollPublicPageToTop()
     } catch (err) {
-      error.value = resolvePublicErrorMessage(err, '开发文档动态数据暂时不可用。')
+      error.value = resolvePublicErrorMessage(err, '开发文档内容暂时无法刷新。')
     } finally {
       loading.value = false
     }
@@ -255,7 +253,7 @@
           id: 'api-endpoints',
           eyebrow: '接口地址',
           title: 'API 下单入口',
-          description: '保留兼容下单地址，同时提供当前标准聚合接口入口。',
+          description: '提供接口下单、支付创建与订单查询入口。',
           items: [
             { label: '兼容 MAPI', value: backendUrl('/mapi.php') },
             { label: '聚合接口', value: backendUrl('/Api/mapi') },
@@ -274,7 +272,7 @@
           id: 'api-helper',
           eyebrow: '商户入口',
           title: '商户常用地址',
-          description: '公开前台只保留真实有用的商户入口和配置页面。',
+          description: '商户登录、控制台与接口配置入口。',
           items: [
             { label: '商户登录', value: frontendHash('/merchant/login') },
             { label: '商户控制台', value: frontendHash('/merchant/dashboard') },
@@ -362,7 +360,7 @@
           id: 'findorder-console',
           eyebrow: '后台入口',
           title: '商户订单中心',
-          description: '除了兼容接口，也可以直接在商户后台查看订单列表和详情。',
+          description: '也可直接在商户后台查看订单列表和详情。',
           items: [
             { label: '商户订单列表', value: frontendHash('/merchant/orders') },
             { label: '商户控制台', value: frontendHash('/merchant/dashboard') },
@@ -376,8 +374,8 @@
       {
         id: 'overview-entry',
         eyebrow: '基础入口',
-        title: '公开前台与商户入口',
-        description: '首页、商户登录、注册和支付测试都从统一前台入口访问。',
+        title: '访客入口与商户入口',
+        description: '常用公开入口与商户入口如下。',
         items: [
           { label: '前台首页', value: frontend || '/' },
           { label: '商户登录', value: frontendHash('/merchant/login') },
@@ -389,7 +387,7 @@
         id: 'overview-submit',
         eyebrow: '跳转支付',
         title: '页面提交与回调地址',
-        description: '兼容旧系统页面支付入口，同时保留当前标准提交通道。',
+        description: '提供网页支付提交地址与回调地址。',
         items: [
           { label: '兼容提交地址', value: backendUrl('/submit.php') },
           { label: '当前提交地址', value: backendUrl('/Pay/submit') },

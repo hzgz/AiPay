@@ -58,15 +58,10 @@
 
           <aside class="detail-side">
             <div class="detail-side__section">
-              <span class="detail-eyebrow">快捷跳转</span>
+              <span class="detail-eyebrow">相关入口</span>
               <RouterLink :to="`/news/categories/${article.type}`">返回 {{ resolveTypeTitle(article.type) }}</RouterLink>
               <RouterLink to="/news/index">公告中心</RouterLink>
               <RouterLink to="/doc">开发文档</RouterLink>
-            </div>
-
-            <div class="detail-side__section">
-              <span class="detail-eyebrow">页面说明</span>
-              <p>当前页面仅展示公告正文、发布时间和所属栏目，避免与其它公共内容混杂在一起。</p>
             </div>
           </aside>
         </section>

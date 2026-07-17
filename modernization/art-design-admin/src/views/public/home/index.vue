@@ -12,9 +12,9 @@
       <section class="home-hero">
         <div class="home-hero__copy">
           <span class="home-eyebrow">AiPay</span>
-          <h1>{{ siteName }} 为商户提供统一的支付接入入口</h1>
+          <h1>{{ siteName }} 为商户提供稳定清晰的支付接入入口</h1>
           <p>
-            从游客浏览、商户注册，到文档查阅、公告查看与支付测试，公开前台只保留真正有用的入口与说明。
+            在这里了解平台能力、查看公告与文档，并完成商户注册或登录。
           </p>
 
           <div class="home-hero__actions">
@@ -26,7 +26,7 @@
           </div>
 
           <p v-if="error" class="home-hero__notice">
-            当前数据暂时不可用，页面已切换为默认展示。{{ error }}
+            当前内容暂时无法刷新，请稍后再试。
           </p>
         </div>
 
@@ -171,9 +171,9 @@
 
   const featureCards = [
     {
-      eyebrow: '统一前台',
+      eyebrow: '统一入口',
       title: '首页、文档、公告与测试保持同一套产品页语言',
-      description: '访问者看到的是一套连续的公开前台，而不是被后台式布局和技术说明打断。'
+      description: '访问者看到的是一套连续清晰的产品页面，不会被后台式布局和杂乱提示打断。'
     },
     {
       eyebrow: '信息收敛',
@@ -211,7 +211,7 @@
     {
       eyebrow: '支付展示',
       title: '支付测试',
-      description: '查看可用支付方式和示例金额，了解前台展示效果。',
+      description: '查看可用支付方式和测试金额，了解展示效果。',
       href: demoUrl.value
     }
   ])
@@ -243,7 +243,7 @@
       payload.value = await fetchPublicHome()
       scrollPublicPageToTop()
     } catch (err) {
-      error.value = resolvePublicErrorMessage(err, '首页数据暂时不可用，请稍后再试。')
+      error.value = resolvePublicErrorMessage(err, '首页内容暂时无法刷新。')
     } finally {
       loading.value = false
     }

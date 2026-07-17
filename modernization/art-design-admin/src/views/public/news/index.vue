@@ -46,7 +46,7 @@
       </section>
 
       <section v-else-if="error" class="news-state">
-        <h2>公告列表加载失败</h2>
+        <h2>暂时无法加载公告</h2>
         <p>{{ error }}</p>
         <button type="button" class="news-state__button" @click="loadPage">重新加载</button>
       </section>
@@ -72,7 +72,7 @@
               <h3>
                 <RouterLink :to="`/news/detail/${item.id}`">{{ item.title }}</RouterLink>
               </h3>
-              <p>{{ item.excerpt || '点击查看完整公告内容。' }}</p>
+              <p>{{ item.excerpt || '点击查看全文。' }}</p>
             </div>
 
             <div class="news-row__action">
@@ -80,7 +80,7 @@
             </div>
           </article>
 
-          <div v-if="!records.length" class="news-empty">当前栏目暂无公告内容</div>
+          <div v-if="!records.length" class="news-empty">当前栏目暂无内容</div>
         </div>
 
         <div v-if="(payload?.total || 0) > (payload?.size || 10)" class="news-pagination">
@@ -135,19 +135,19 @@
     {
       type: 1,
       title: '平台公告',
-      description: '查看平台更新、通知和站点公告',
+      description: '平台更新与站点通知',
       to: '/news/categories/1'
     },
     {
       type: 2,
       title: '行业资讯',
-      description: '查看行业动态和支付环境变化',
+      description: '行业动态与环境变化',
       to: '/news/categories/2'
     },
     {
       type: 3,
       title: '常见问题',
-      description: '查看接入和使用过程中的高频问题',
+      description: '接入与使用常见问题',
       to: '/news/categories/3'
     }
   ]
@@ -163,8 +163,8 @@
   const pageTitle = computed(() => (isCategoryMode.value ? currentTypeTitle.value : '公告中心'))
   const pageDescription = computed(() =>
     isCategoryMode.value
-      ? `${currentTypeTitle.value}统一在这里对外展示。`
-      : '平台公告、行业资讯与常见问题统一从这里对外展示。'
+      ? `集中查看${currentTypeTitle.value}内容。`
+      : '查看平台公告、行业资讯与常见问题。'
   )
   const listTitle = computed(() => (isCategoryMode.value ? currentTypeTitle.value : '最新公告'))
 

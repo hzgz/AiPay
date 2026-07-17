@@ -3,7 +3,7 @@
     :site-name="siteName"
     :navs="navs"
     :is-logged-in="isLoggedIn"
-    page-label="游客首页"
+    page-label="首页"
     :merchant-login-url="merchantLoginUrl"
     :merchant-register-url="merchantRegisterUrl"
     :merchant-center-url="merchantDashboardUrl"
@@ -59,7 +59,7 @@
         <div class="home-band__head">
           <div>
             <span class="home-eyebrow">平台能力</span>
-            <h2>游客前台只讲清楚入口、说明和下一步</h2>
+            <h2>接入说明、公告与商户入口集中呈现</h2>
           </div>
         </div>
 
@@ -76,7 +76,7 @@
         <div class="home-band__head">
           <div>
             <span class="home-eyebrow">常用入口</span>
-            <h2>游客浏览与商户接入从这里开始</h2>
+            <h2>平台说明查看与商户接入从这里开始</h2>
           </div>
         </div>
 
@@ -158,7 +158,7 @@
 
   const heroMetrics = computed(() => [
     { label: '商户服务', value: isLoggedIn.value ? '已登录可用' : '开放接入' },
-    { label: '公开栏目', value: '文档 / 公告 / 测试' },
+    { label: '栏目入口', value: '文档 / 公告 / 测试' },
     { label: '公告总数', value: String(payload.value?.summary.news_count ?? 0) },
     { label: '导航数量', value: String(payload.value?.summary.nav_count ?? 4) }
   ])
@@ -172,18 +172,18 @@
   const featureCards = [
     {
       eyebrow: '统一入口',
-      title: '首页、文档、公告与测试保持同一套产品页语言',
-      description: '访问者看到的是一套连续清晰的产品页面，不会被后台式布局和杂乱提示打断。'
+      title: '首页、文档、公告与测试保持统一体验',
+      description: '访问者进入站点后，可以在一套连续清晰的页面里完成了解、查看与接入。'
     },
     {
       eyebrow: '信息收敛',
-      title: '每个页面只保留对游客与商户真正有用的内容',
-      description: '不塞无意义说明，不堆杂乱卡片，公开页面只承担清晰展示和引导职责。'
+      title: '每个页面只保留真正有用的内容',
+      description: '不堆无意义说明，不塞杂乱提示，让平台介绍、公告与指引保持干净直接。'
     },
     {
       eyebrow: '接入顺畅',
-      title: '从游客浏览到商户进入控制台的路径保持简洁',
-      description: '注册、登录、文档和测试入口都在同一前台语境中完成，不暴露无关路径。'
+      title: '从了解平台到进入商户端路径简洁',
+      description: '注册、登录、文档和测试入口都集中在首页上下文中，减少跳转和理解成本。'
     }
   ]
 

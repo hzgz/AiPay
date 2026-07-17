@@ -80,7 +80,10 @@
             </div>
           </article>
 
-          <div v-if="!records.length" class="news-empty">当前栏目暂无内容</div>
+          <div v-if="!records.length" class="news-empty">
+            <strong>当前栏目暂无内容</strong>
+            <p>这里会展示平台公告、行业资讯或常见问题，暂时还没有可发布的内容。</p>
+          </div>
         </div>
 
         <div v-if="(payload?.total || 0) > (payload?.size || 10)" class="news-pagination">
@@ -430,6 +433,16 @@
   .news-empty {
     padding: 24px 0 4px;
     color: var(--public-text);
+  }
+
+  .news-empty strong {
+    display: block;
+    color: var(--public-title);
+  }
+
+  .news-empty p {
+    margin: 10px 0 0;
+    line-height: 1.82;
   }
 
   .news-pagination {

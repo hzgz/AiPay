@@ -171,7 +171,7 @@
       siteName: 'AiPay',
       navs: () => [],
       isLoggedIn: false,
-      pageLabel: '游客前台',
+      pageLabel: '首页',
       footerNote: '可商用聚合支付与商户接入平台。',
       merchantLoginUrl: '/#/merchant/login',
       merchantRegisterUrl: '/#/merchant/register',

@@ -2,7 +2,7 @@
 
 namespace Plugins\Payments\WxpayV3;
 
-use app\payment\AbstractManagedPaymentPlugin;
+use Plugins\Payments\Shared\AbstractManagedPaymentPlugin;
 use Plugins\Payments\WxpayV3\Support\WxpayV3GatewayService;
 
 class Plugin extends AbstractManagedPaymentPlugin

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Plugins\Payments\Usdt;
 
-use app\payment\AbstractManagedPaymentPlugin;
+use Plugins\Payments\Shared\AbstractManagedPaymentPlugin;
 
 class Plugin extends AbstractManagedPaymentPlugin
 {

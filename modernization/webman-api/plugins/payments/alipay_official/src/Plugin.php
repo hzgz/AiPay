@@ -2,7 +2,7 @@
 
 namespace Plugins\Payments\AlipayOfficial;
 
-use app\payment\AbstractManagedPaymentPlugin;
+use Plugins\Payments\Shared\AbstractManagedPaymentPlugin;
 use Plugins\Payments\AlipayOfficial\Support\AlipayOfficialGatewayService;
 
 class Plugin extends AbstractManagedPaymentPlugin

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Plugins\Payments\Shared;
 
-use app\payment\AbstractManagedPaymentPlugin;
-
 abstract class AbstractJiaofeiyiManagedPlugin extends AbstractManagedPaymentPlugin
 {
     abstract protected function displayName(): string;

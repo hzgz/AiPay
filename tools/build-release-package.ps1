@@ -158,10 +158,12 @@ function Invoke-WorkspaceCleanup {
         (Join-Path $frontendRoot '.codex-logs'),
         (Join-Path $frontendRoot 'vite-8132.log'),
         (Join-Path $frontendRoot 'vite-8132.err.log'),
+        (Join-Path $frontendRoot '.vite-8132-local.log'),
         (Join-Path $frontendRoot '.vite-8132.stderr.log'),
         (Join-Path $frontendRoot '.vite-8132.stdout.log'),
         (Join-Path $backendRoot '.webman.stderr.log'),
         (Join-Path $backendRoot '.webman.stdout.log'),
+        (Join-Path $backendRoot '.webman-local.log'),
         (Join-Path $backendRoot '.webman.stderr.20260708181041.log'),
         (Join-Path $backendRoot '.webman.stdout.20260708181041.log'),
         (Join-Path $backendRoot 'runtime\tmp-config-audit.php'),
@@ -261,6 +263,7 @@ function Prepare-Stage {
     ) -ExcludeFiles @(
         '.webman.stderr.log',
         '.webman.stdout.log',
+        '.webman-local.log',
         '.webman.stderr.*.log',
         '.webman.stdout.*.log',
         'tmp-config-audit.php',
@@ -271,8 +274,15 @@ function Prepare-Stage {
     # Strip legacy demo/theme residue that is not needed in the production package.
     Remove-IfExists -LiteralPath (Join-Path $stageBackend 'theme-assets\demo')
     Remove-IfExists -LiteralPath (Join-Path $stageBackend 'app\model\Test.php')
+    Remove-IfExists -LiteralPath (Join-Path $stageBackend 'console.__backup')
+    Get-ChildItem -LiteralPath $stageBackend -Directory -Recurse -Force -ErrorAction SilentlyContinue | Where-Object {
+        $_.Name -in @('.git', '.github')
+    } | ForEach-Object {
+        Remove-IfExists -LiteralPath $_.FullName -BestEffort
+    }
 
     Invoke-RobocopyMirror -Source (Join-Path $frontendRoot 'dist') -Destination $stageConsole
+    Remove-IfExists -LiteralPath (Join-Path $stageConsole 'console.__backup')
 
     Copy-Item -LiteralPath (Join-Path $backendRoot '.env.example') -Destination (Join-Path $stageBackend '.env.example') -Force
     Copy-Item -LiteralPath (Join-Path $backendRoot '.env.example') -Destination (Join-Path $stageBackend '.env') -Force

@@ -18,6 +18,7 @@ use app\support\GoogleAuthenticator;
 use app\support\LegacyPassword;
 use app\support\LegacyMojibakeGuard;
 use app\support\MerchantFrontSession;
+use app\support\MerchantPortalReadOnlyGuard;
 use app\support\MerchantSmsCodeSender;
 use app\support\RequestPayload;
 use app\support\SystemConfig;
@@ -183,7 +184,7 @@ class MerchantPortalController
         }
 
         if (strtoupper($request->method()) !== 'GET') {
-            return $this->blockedConnectionsWriteResponse();
+            return $this->blockedWriteResponse('connections');
         }
 
         $payload = $this->merchantConnectionsPayload($merchant);
@@ -849,7 +850,7 @@ HTML;
         }
 
         if (strtoupper($request->method()) !== 'GET') {
-            return $this->blockedSecurityWriteResponse();
+            return $this->blockedWriteResponse('security');
         }
 
         $payload = $this->merchantSecurityPayloadV2($request, $merchant);
@@ -1037,7 +1038,7 @@ HTML;
         }
 
         if (strtoupper($request->method()) !== 'GET') {
-            return $this->blockedSecurityWriteResponse();
+            return $this->blockedWriteResponse('security');
         }
 
         $payload = $this->merchantSecurityPayloadV2($request, $merchant);
@@ -2334,7 +2335,7 @@ HTML;
         }
 
         if (strtoupper($request->method()) !== 'GET') {
-            return $this->blockedApiKeyWriteResponse();
+            return $this->blockedWriteResponse('api_key');
         }
 
         $payload = $this->merchantApiPayload($request, $merchant);
@@ -2461,7 +2462,7 @@ HTML;
         }
 
         if (strtoupper($request->method()) !== 'GET') {
-            return $this->blockedTicketWriteResponse();
+            return $this->blockedWriteResponse('ticket');
         }
 
         if ($this->wantsJson($request)) {
@@ -2616,7 +2617,7 @@ HTML;
         }
 
         if (strtoupper($request->method()) !== 'GET') {
-            return $this->blockedDomainWriteResponse();
+            return $this->blockedWriteResponse('domain');
         }
 
         if ($this->wantsJson($request)) {
@@ -6173,7 +6174,7 @@ HTML;
             return $merchant;
         }
 
-        return $this->blockedConnectionsWriteResponse();
+        return $this->blockedWriteResponse('connections');
     }
 
     private function securityMerchantGuard(Request $request): array|Response
@@ -6197,7 +6198,7 @@ HTML;
             return $merchant;
         }
 
-        return $this->blockedSecurityWriteResponse();
+        return $this->blockedWriteResponse('security');
     }
 
     private function googleAuthIssuer(array $config): string
@@ -6321,7 +6322,7 @@ HTML;
             return $this->merchantJson(201, 'merchant is frozen', 403);
         }
 
-        return $this->blockedRechargeWriteResponse();
+        return $this->blockedWriteResponse('recharge');
     }
 
     private function cdkWriteGuard(Request $request): Response
@@ -6339,7 +6340,7 @@ HTML;
             return $this->merchantJson(202, 'merchant cdk recharge feature is disabled', 403);
         }
 
-        return $this->blockedCdkWriteResponse();
+        return $this->blockedWriteResponse('cdk');
     }
 
     private function orderWriteGuard(Request $request): Response
@@ -6353,7 +6354,7 @@ HTML;
             return $this->merchantJson(201, 'merchant is frozen', 403);
         }
 
-        return $this->blockedOrderWriteResponse();
+        return $this->blockedWriteResponse('order');
     }
 
     private function merchantOrderCallbackUrls(array $order, array $merchant): array
@@ -6454,7 +6455,18 @@ HTML;
             return $merchant;
         }
 
-        return $this->blockedApiKeyWriteResponse();
+        return $this->blockedWriteResponse('api_key');
+    }
+
+    private function blockedWriteResponse(string $scope): Response
+    {
+        $payload = MerchantPortalReadOnlyGuard::response($scope);
+
+        return $this->merchantJson(
+            (int)($payload['code'] ?? 202),
+            (string)($payload['message'] ?? ''),
+            (int)($payload['status'] ?? 405)
+        );
     }
 
     private function blockedTicketWriteResponse(): Response

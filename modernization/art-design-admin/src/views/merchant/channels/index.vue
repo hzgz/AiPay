@@ -1149,7 +1149,6 @@
     }
 
     if (!supportsCredentialEditCode(target.code)) {
-      ElMessage.warning('当前通道类型暂未开放凭证编辑。')
       return
     }
 

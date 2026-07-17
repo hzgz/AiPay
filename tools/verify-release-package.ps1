@@ -27,6 +27,40 @@ function Assert-NotExists {
     }
 }
 
+function Assert-NoRecursiveResidue {
+    param(
+        [string[]]$DirectoryNames = @(),
+        [string[]]$FileNames = @(),
+        [string[]]$FilePatterns = @()
+    )
+
+    Get-ChildItem -LiteralPath $resolvedRoot -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {
+        $relativePath = $_.FullName.Substring($resolvedRoot.Length).TrimStart('\')
+        if ($relativePath -eq '') {
+            return
+        }
+
+        if ($_.PSIsContainer) {
+            if ($DirectoryNames -contains $_.Name) {
+                $failures.Add("unexpected directory residue: $relativePath")
+            }
+            return
+        }
+
+        if ($FileNames -contains $_.Name) {
+            $failures.Add("unexpected file residue: $relativePath")
+            return
+        }
+
+        foreach ($pattern in $FilePatterns) {
+            if ($_.Name -like $pattern) {
+                $failures.Add("unexpected file residue: $relativePath")
+                break
+            }
+        }
+    }
+}
+
 Assert-Exists 'backend'
 Assert-Exists 'backend\.env'
 Assert-Exists 'backend\.env.example'
@@ -77,6 +111,11 @@ Assert-NotExists 'backend\.webman.stderr.log'
 Assert-NotExists 'backend\.webman.stdout.log'
 Assert-NotExists 'backend\theme-assets\demo'
 Assert-NotExists 'backend\app\model\Test.php'
+
+Assert-NoRecursiveResidue `
+    -DirectoryNames @('node_modules', '.git', '.github', 'console.__backup', '__pycache__') `
+    -FileNames @('Thumbs.db', '.DS_Store') `
+    -FilePatterns @('*.log', '*.zip', '*.sha256', '*.release.txt', '.codex*', 'vite-*.log')
 
 $manifestPath = Join-Path $resolvedRoot 'release-manifest.json'
 if (Test-Path -LiteralPath $manifestPath) {

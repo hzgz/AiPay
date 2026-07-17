@@ -1,240 +1,135 @@
-<!-- 注册页面 -->
 <template>
-  <div class="flex w-full h-screen">
-    <LoginLeftView />
-
-    <div class="relative flex-1">
-      <AuthTopBar />
-
-      <div class="auth-right-wrap">
-        <div class="form">
-          <h3 class="title">{{ $t('register.title') }}</h3>
-          <p class="sub-title">{{ $t('register.subTitle') }}</p>
-          <ElForm
-            class="mt-7.5"
-            ref="formRef"
-            :model="formData"
-            :rules="rules"
-            label-position="top"
-            :key="formKey"
-          >
-            <ElFormItem prop="username">
-              <ElInput
-                class="custom-height"
-                v-model.trim="formData.username"
-                :placeholder="$t('register.placeholder.username')"
-              />
-            </ElFormItem>
-
-            <ElFormItem prop="password">
-              <ElInput
-                class="custom-height"
-                v-model.trim="formData.password"
-                :placeholder="$t('register.placeholder.password')"
-                type="password"
-                autocomplete="off"
-                show-password
-              />
-            </ElFormItem>
-
-            <ElFormItem prop="confirmPassword">
-              <ElInput
-                class="custom-height"
-                v-model.trim="formData.confirmPassword"
-                :placeholder="$t('register.placeholder.confirmPassword')"
-                type="password"
-                autocomplete="off"
-                @keyup.enter="register"
-                show-password
-              />
-            </ElFormItem>
-
-            <ElFormItem prop="agreement">
-              <ElCheckbox v-model="formData.agreement">
-                {{ $t('register.agreeText') }}
-                <RouterLink
-                  style="color: var(--theme-color); text-decoration: none"
-                  to="/privacy-policy"
-                  >{{ $t('register.privacyPolicy') }}</RouterLink
-                >
-              </ElCheckbox>
-            </ElFormItem>
-
-            <div style="margin-top: 15px">
-              <ElButton
-                class="w-full custom-height"
-                type="primary"
-                @click="register"
-                :loading="loading"
-                v-ripple
-              >
-                {{ $t('register.submitBtnText') }}
-              </ElButton>
-            </div>
-
-            <div class="mt-5 text-sm text-g-600">
-              <span>{{ $t('register.hasAccount') }}</span>
-              <RouterLink class="text-theme" :to="{ name: 'Login' }">{{
-                $t('register.toLogin')
-              }}</RouterLink>
-            </div>
-          </ElForm>
-        </div>
-      </div>
+  <div class="register-closed-page">
+    <div class="register-closed-card">
+      <ElResult
+        icon="warning"
+        title="管理员注册未开放"
+        sub-title="当前系统不提供公共管理员注册入口，请使用已创建的管理员账号登录。"
+      >
+        <template #extra>
+          <div class="register-closed-actions">
+            <ElButton type="primary" @click="goLogin">返回管理员登录</ElButton>
+            <ElButton plain @click="goHome">返回首页</ElButton>
+          </div>
+          <p class="register-closed-tip">页面将在 {{ countdown }} 秒后自动跳转到管理员登录页。</p>
+        </template>
+      </ElResult>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { useI18n } from 'vue-i18n'
-  import type { FormInstance, FormRules } from 'element-plus'
+  import { ElButton, ElResult } from 'element-plus'
 
   defineOptions({ name: 'Register' })
 
-  interface RegisterForm {
-    username: string
-    password: string
-    confirmPassword: string
-    agreement: boolean
-  }
-
-  const USERNAME_MIN_LENGTH = 3
-  const USERNAME_MAX_LENGTH = 20
-  const PASSWORD_MIN_LENGTH = 6
-  const REDIRECT_DELAY = 1000
-
-  const { t, locale } = useI18n()
   const router = useRouter()
-  const formRef = ref<FormInstance>()
+  const countdown = ref(3)
+  let redirectTimer: ReturnType<typeof setInterval> | null = null
 
-  const loading = ref(false)
-  const formKey = ref(0)
-
-  // 监听语言切换，重置表单
-  watch(locale, () => {
-    formKey.value++
-  })
-
-  const formData = reactive<RegisterForm>({
-    username: '',
-    password: '',
-    confirmPassword: '',
-    agreement: false
-  })
-
-  /**
-   * 验证密码
-   * 当密码输入后，如果确认密码已填写，则触发确认密码的验证
-   */
-  const validatePassword = (_rule: any, value: string, callback: (error?: Error) => void) => {
-    if (!value) {
-      callback(new Error(t('register.placeholder.password')))
-      return
-    }
-
-    if (formData.confirmPassword) {
-      formRef.value?.validateField('confirmPassword')
-    }
-
-    callback()
+  function goLogin() {
+    router.replace({ name: 'Login' })
   }
 
-  /**
-   * 验证确认密码
-   * 检查确认密码是否与密码一致
-   */
-  const validateConfirmPassword = (
-    _rule: any,
-    value: string,
-    callback: (error?: Error) => void
-  ) => {
-    if (!value) {
-      callback(new Error(t('register.rule.confirmPasswordRequired')))
-      return
-    }
-
-    if (value !== formData.password) {
-      callback(new Error(t('register.rule.passwordMismatch')))
-      return
-    }
-
-    callback()
+  function goHome() {
+    router.replace('/')
   }
 
-  /**
-   * 验证用户协议
-   * 确保用户已勾选同意协议
-   */
-  const validateAgreement = (_rule: any, value: boolean, callback: (error?: Error) => void) => {
-    if (!value) {
-      callback(new Error(t('register.rule.agreementRequired')))
-      return
-    }
-    callback()
-  }
-
-  const rules = computed<FormRules<RegisterForm>>(() => ({
-    username: [
-      { required: true, message: t('register.placeholder.username'), trigger: 'blur' },
-      {
-        min: USERNAME_MIN_LENGTH,
-        max: USERNAME_MAX_LENGTH,
-        message: t('register.rule.usernameLength'),
-        trigger: 'blur'
+  onMounted(() => {
+    redirectTimer = setInterval(() => {
+      if (countdown.value <= 1) {
+        if (redirectTimer) {
+          clearInterval(redirectTimer)
+          redirectTimer = null
+        }
+        goLogin()
+        return
       }
-    ],
-    password: [
-      { required: true, validator: validatePassword, trigger: 'blur' },
-      { min: PASSWORD_MIN_LENGTH, message: t('register.rule.passwordLength'), trigger: 'blur' }
-    ],
-    confirmPassword: [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }],
-    agreement: [{ validator: validateAgreement, trigger: 'change' }]
-  }))
 
-  /**
-   * 注册用户
-   * 验证表单后提交注册请求
-   */
-  const register = async () => {
-    if (!formRef.value) return
+      countdown.value -= 1
+    }, 1000)
+  })
 
-    try {
-      await formRef.value.validate()
-      loading.value = true
-
-      // TODO: 替换为真实 API 调用
-      // const params = {
-      //   username: formData.username,
-      //   password: formData.password
-      // }
-      // const res = await AuthService.register(params)
-      // if (res.code === ApiStatus.success) {
-      //   ElMessage.success('注册成功')
-      //   toLogin()
-      // }
-
-      // 模拟注册请求
-      setTimeout(() => {
-        loading.value = false
-        ElMessage.success('注册成功')
-        toLogin()
-      }, REDIRECT_DELAY)
-    } catch (error) {
-      console.error('表单验证失败:', error)
-      loading.value = false
+  onBeforeUnmount(() => {
+    if (redirectTimer) {
+      clearInterval(redirectTimer)
+      redirectTimer = null
     }
-  }
-
-  /**
-   * 跳转到登录页面
-   */
-  const toLogin = () => {
-    setTimeout(() => {
-      router.push({ name: 'Login' })
-    }, REDIRECT_DELAY)
-  }
+  })
 </script>
 
 <style scoped>
-  @import '../login/style.css';
+  .register-closed-page {
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    background:
+      radial-gradient(circle at top, rgb(59 130 246 / 0.14), transparent 36%),
+      linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
+  }
+
+  .register-closed-card {
+    width: min(100%, 620px);
+    border: 1px solid rgb(226 232 240 / 0.95);
+    border-radius: 28px;
+    background: rgb(255 255 255 / 0.96);
+    box-shadow: 0 26px 80px rgb(15 23 42 / 0.12);
+  }
+
+  .register-closed-card :deep(.el-result) {
+    padding: 52px 36px 40px;
+  }
+
+  .register-closed-card :deep(.el-result__title) {
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .register-closed-card :deep(.el-result__subtitle) {
+    max-width: 420px;
+    margin: 0 auto;
+    color: rgb(71 85 105);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .register-closed-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .register-closed-actions :deep(.el-button) {
+    min-width: 144px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .register-closed-tip {
+    margin: 14px 0 0;
+    color: rgb(100 116 139);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .register-closed-card :deep(.el-result) {
+      padding: 40px 20px 28px;
+    }
+
+    .register-closed-card :deep(.el-result__title) {
+      font-size: 24px;
+    }
+
+    .register-closed-actions {
+      flex-direction: column;
+    }
+
+    .register-closed-actions :deep(.el-button) {
+      width: 100%;
+    }
+  }
 </style>

@@ -805,7 +805,6 @@
     }
 
     if (!supportsCredentialEditCode(target.code)) {
-      ElMessage.warning('当前收款账户类型暂未开放凭证编辑。')
       return
     }
 

@@ -476,7 +476,7 @@ final class MerchantPortalHtmlLocalizer
     private static function repairReplacementText(string $value): string
     {
         $value = ApiResponse::normalizeText($value);
-        $converted = @mb_convert_encoding($value, 'GB18030', 'UTF-8');
+        $converted = @mb_convert_encoding($value, 'UTF-8', 'GB18030');
         if (is_string($converted) && $converted !== '' && mb_check_encoding($converted, 'UTF-8')) {
             if (self::mojibakeScore($converted) < self::mojibakeScore($value)) {
                 $value = $converted;

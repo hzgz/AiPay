@@ -2860,7 +2860,7 @@ https://api2.example.com/",
         }
 
         $normalized = $text;
-        $repaired = @mb_convert_encoding($normalized, 'GB18030', 'UTF-8');
+        $repaired = @mb_convert_encoding($normalized, 'UTF-8', 'GB18030');
         if (is_string($repaired) && $repaired !== '' && mb_check_encoding($repaired, 'UTF-8')) {
             if (self::mojibakeScore($repaired) < self::mojibakeScore($normalized)) {
                 $normalized = $repaired;

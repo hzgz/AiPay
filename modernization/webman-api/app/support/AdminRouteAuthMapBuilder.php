@@ -644,7 +644,7 @@ class AdminRouteAuthMapBuilder
             return $fallback;
         }
 
-        $repaired = @mb_convert_encoding($text, 'GB18030', 'UTF-8');
+        $repaired = @mb_convert_encoding($text, 'UTF-8', 'GB18030');
         if (is_string($repaired) && $repaired !== '' && mb_check_encoding($repaired, 'UTF-8')) {
             if ($this->mojibakeScore($repaired) < $this->mojibakeScore($text)) {
                 $text = $repaired;

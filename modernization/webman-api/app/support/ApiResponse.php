@@ -292,7 +292,7 @@ class ApiResponse
             return $message;
         }
 
-        $repaired = @mb_convert_encoding($message, 'GB18030', 'UTF-8');
+        $repaired = @mb_convert_encoding($message, 'UTF-8', 'GB18030');
         if (is_string($repaired) && $repaired !== '' && mb_check_encoding($repaired, 'UTF-8')) {
             if (self::mojibakeScore($repaired) < self::mojibakeScore($message)) {
                 $message = $repaired;

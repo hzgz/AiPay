@@ -704,7 +704,7 @@ INSERT IGNORE INTO `admin_permission` (`id`, `pid`, `title`, `href`, `icon`, `so
 (172, 167, '支付方式回收站', '/aipay.payment/recycle', NULL, 99, 1, 1),
 (173, 174, '主题模板', '/aipay.user_theme/index', 'layui-icon layui-icon-username', 99, 1, 1),
 (174, 0, '主题模板', '', 'layui-icon layui-icon-layouts', 4, 0, 1),
-(175, 174, '主题模板', '/aipay.pay_theme/index', 'layui-icon layui-icon-face-smile', 99, 1, 1),
+(175, 174, '主题模板', '/aipay.pay_theme/index', 'layui-icon layui-icon-face-smile', 99, 1, 1)
 
 INSERT IGNORE INTO `admin_role` (`id`, `name`, `desc`, `create_time`, `update_time`, `delete_time`) VALUES
 (1, '超级管理员', '默认超级管理员角色', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL);

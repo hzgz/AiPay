@@ -28,6 +28,7 @@ import {
 import {
   ACCOUNT_CODE_META,
   ACCOUNT_METHOD_TYPE_MAP,
+  ACCOUNT_METHOD_TYPES_MAP,
   PAYMENT_METHOD_DISPLAY_ORDER,
   PAYMENT_METHOD_LABEL_MAP,
   getAccountCodeMeta,
@@ -283,13 +284,13 @@ export function usePaymentAccountFormState({
             return []
           }
 
-          const fallbackMethodType = ACCOUNT_METHOD_TYPE_MAP[code]
+          const fallbackMethodTypes = ACCOUNT_METHOD_TYPES_MAP[code] || [ACCOUNT_METHOD_TYPE_MAP[code]]
           const methodTypes = Array.from(
             new Set(
               (
                 Array.isArray(item.supported_payment_types) && item.supported_payment_types.length > 0
                   ? item.supported_payment_types
-                  : [fallbackMethodType]
+                  : fallbackMethodTypes
               )
                 .map((value) => normalizeSupportedMethodType(value))
                 .filter((value): value is CreatePaymentMethodType => Boolean(value))

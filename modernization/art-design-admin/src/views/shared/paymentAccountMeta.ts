@@ -450,6 +450,23 @@ export const ACCOUNT_METHOD_TYPE_MAP: Record<PaymentAccountCreateCode, PaymentAc
   jiaofeiyi_wxpay: 'wxpay'
 }
 
+export const ACCOUNT_METHOD_TYPES_MAP: Record<
+  PaymentAccountCreateCode,
+  PaymentAccountMethodType[]
+> = {
+  alipay_software: ['alipay'],
+  wxpay_software: ['wxpay'],
+  qqpay_software: ['qqpay'],
+  usdt: ['usdt'],
+  alipay_bill: ['alipay'],
+  alipay_official: ['alipay'],
+  wxpay_v3: ['wxpay'],
+  alipay_mck: ['alipay'],
+  universal_epay: ['alipay', 'wxpay', 'qqpay'],
+  jiaofeiyi_alipay: ['alipay'],
+  jiaofeiyi_wxpay: ['wxpay']
+}
+
 export function getAccountCodeMeta(code?: string | null): PaymentAccountCodeMeta | null {
   if (!code) {
     return null

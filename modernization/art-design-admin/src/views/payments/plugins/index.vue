@@ -201,9 +201,11 @@
     overviewMigrationValue,
     pluginAccessLabel,
     pluginPaymentLabel,
+    pluginPaymentLabels,
     pluginPaymentTagType,
     residueManagedChannelBlockSummary,
     resolvePluginPaymentFilter,
+    resolvePluginPaymentFilters,
     type PluginConfigSection,
     type PluginOverviewCardTone,
     type PluginPaymentFilterKey
@@ -580,7 +582,7 @@
         item.description,
         item.provider,
         item.state_audit.health,
-        pluginPaymentLabel(item.code),
+        pluginPaymentLabel(item),
         ...(item.capabilities || [])
       ]
       return fields.some((field) =>
@@ -600,7 +602,7 @@
           item.key === 'all'
             ? keywordFilteredPlugins.value.length
             : keywordFilteredPlugins.value.filter(
-                (plugin) => resolvePluginPaymentFilter(plugin.code) === item.key
+                (plugin) => resolvePluginPaymentFilters(plugin).includes(item.key)
               ).length
       }))
       .filter((item) => item.key === 'all' || item.count > 0)
@@ -610,8 +612,13 @@
       return keywordFilteredPlugins.value
     }
 
+    const activePaymentFilter = activePluginPaymentFilter.value as Exclude<
+      PluginPaymentFilterKey,
+      'all'
+    >
+
     return keywordFilteredPlugins.value.filter(
-      (item) => resolvePluginPaymentFilter(item.code) === activePluginPaymentFilter.value
+      (item) => resolvePluginPaymentFilters(item).includes(activePaymentFilter)
     )
   })
 
@@ -733,14 +740,12 @@
       label: '接入',
       minWidth: 150,
       formatter: (row) => {
-        const paymentLabel = pluginPaymentLabel(row.code)
+        const paymentLabels = pluginPaymentLabels(row)
         const accessLabel = pluginAccessLabel(row.code)
 
         return h('div', { class: 'capability-cell capability-summary-cell' }, [
-          h(
-            ElTag,
-            { effect: 'plain', type: pluginPaymentTagType(paymentLabel) },
-            () => paymentLabel
+          ...paymentLabels.map((label) =>
+            h(ElTag, { effect: 'plain', type: pluginPaymentTagType(label) }, () => label)
           ),
           h(ElTag, { effect: 'plain', type: 'info' }, () => accessLabel)
         ])

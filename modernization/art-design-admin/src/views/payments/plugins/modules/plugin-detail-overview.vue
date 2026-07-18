@@ -22,8 +22,12 @@
       <div class="overview-item">
         <span>支付方式</span>
         <div class="overview-item-tags">
-          <ElTag :type="pluginPaymentTagType(pluginPaymentLabel(detail.manifest.code))">
-            {{ pluginPaymentLabel(detail.manifest.code) }}
+          <ElTag
+            v-for="label in pluginPaymentLabels(detail.manifest)"
+            :key="label"
+            :type="pluginPaymentTagType(label)"
+          >
+            {{ label }}
           </ElTag>
         </div>
       </div>
@@ -146,7 +150,7 @@
     historyActionLabel,
     normalizePluginCopy,
     overviewAuditTone,
-    pluginPaymentLabel,
+    pluginPaymentLabels,
     pluginPaymentTagType,
     statusLabel,
     statusTagType,

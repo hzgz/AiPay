@@ -26,6 +26,19 @@ export type PluginPaymentFilterKey = 'all' | 'alipay' | 'wxpay' | 'qqpay' | 'usd
 
 export type PluginOverviewCardTone = 'info' | 'success' | 'warning' | 'danger'
 
+type PluginPaymentSource = {
+  code?: string | null | undefined
+  supported_payment_types?: string[] | null | undefined
+}
+
+const PLUGIN_PAYMENT_LABELS: Record<Exclude<PluginPaymentFilterKey, 'all'>, string> = {
+  alipay: '支付宝',
+  wxpay: '微信',
+  qqpay: 'QQ',
+  usdt: 'USDT',
+  other: '其他'
+}
+
 const legacyProfileForCode = (code: string | null | undefined) =>
   getPaymentPluginLegacyProfile(code)
 
@@ -406,7 +419,7 @@ export const pluginAccessLabel = (code: string | null | undefined) => {
   return '独立接入'
 }
 
-export const resolvePluginPaymentFilter = (
+const fallbackPluginPaymentFilter = (
   code: string | null | undefined
 ): Exclude<PluginPaymentFilterKey, 'all'> => {
   const normalized = String(code || '')
@@ -417,19 +430,71 @@ export const resolvePluginPaymentFilter = (
   if (normalized.startsWith('wxpay_') || normalized === 'jiaofeiyi_wxpay') return 'wxpay'
   if (normalized.startsWith('qqpay_')) return 'qqpay'
   if (normalized === 'usdt') return 'usdt'
+  if (normalized === 'universal_epay') return 'alipay'
   return 'other'
 }
 
-export const pluginPaymentLabel = (code: string | null | undefined) => {
-  const labels: Record<Exclude<PluginPaymentFilterKey, 'all'>, string> = {
-    alipay: '支付宝',
-    wxpay: '微信',
-    qqpay: 'QQ',
-    usdt: 'USDT',
-    other: '其他'
+const normalizePluginPaymentFilterKey = (
+  value: string | null | undefined
+): Exclude<PluginPaymentFilterKey, 'all'> | '' => {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+
+  if (!normalized) {
+    return ''
   }
 
-  return labels[resolvePluginPaymentFilter(code)] || '其他'
+  if (normalized === 'alipay') return 'alipay'
+  if (normalized === 'wxpay' || normalized === 'wechat' || normalized === 'weixin') return 'wxpay'
+  if (normalized === 'qqpay' || normalized === 'qq') return 'qqpay'
+  if (normalized === 'usdt') return 'usdt'
+  return ''
+}
+
+export const resolvePluginPaymentFilters = (
+  source: string | PluginPaymentSource | null | undefined
+): Array<Exclude<PluginPaymentFilterKey, 'all'>> => {
+  const payload =
+    typeof source === 'string'
+      ? { code: source, supported_payment_types: [] }
+      : source || { code: '', supported_payment_types: [] }
+
+  const declaredTypes = Array.isArray(payload.supported_payment_types)
+    ? payload.supported_payment_types
+    : []
+
+  const keys = Array.from(
+    new Set(
+      declaredTypes
+        .map((value) => normalizePluginPaymentFilterKey(value))
+        .filter((value): value is Exclude<PluginPaymentFilterKey, 'all'> => Boolean(value))
+    )
+  )
+
+  if (keys.length > 0) {
+    return keys
+  }
+
+  return [fallbackPluginPaymentFilter(payload.code)]
+}
+
+export const resolvePluginPaymentFilter = (
+  source: string | PluginPaymentSource | null | undefined
+): Exclude<PluginPaymentFilterKey, 'all'> => {
+  return resolvePluginPaymentFilters(source)[0] || 'other'
+}
+
+export const pluginPaymentLabels = (
+  source: string | PluginPaymentSource | null | undefined
+): string[] => {
+  return resolvePluginPaymentFilters(source).map((key) => PLUGIN_PAYMENT_LABELS[key] || '其他')
+}
+
+export const pluginPaymentLabel = (
+  source: string | PluginPaymentSource | null | undefined
+) => {
+  return pluginPaymentLabels(source).join(' / ') || '其他'
 }
 
 export const pluginPaymentTagType = (

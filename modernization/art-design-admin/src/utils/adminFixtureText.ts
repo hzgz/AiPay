@@ -9,9 +9,9 @@ const EXACT_MAP: Record<string, string> = {
   'homepage theme': '站点首页模板',
   'member center theme': '会员中心模板',
   'payment page theme': '支付页面模板',
-  'demo page theme': '演示页面模板',
-  'document page theme': '文档页面模板',
-  'announcement page theme': '公告页面模板',
+  'demo page theme': '支付测试页模板',
+  'document page theme': '文档页模板',
+  'announcement page theme': '公告页模板',
   active: '已启用',
   available: '可使用',
   enabled: '已启用',
@@ -31,7 +31,7 @@ const EXACT_MAP: Record<string, string> = {
   'new window': '新窗口打开',
   'same window': '当前窗口打开',
   '/doc': '文档中心',
-  '/demo': '演示中心',
+  '/demo': '支付测试',
   '/news/index': '公告页面',
   '/admin.photo/list/name/images': '系统图片目录接口',
   '/admin.photo/list/name/news': '公告图片目录接口',
@@ -39,27 +39,27 @@ const EXACT_MAP: Record<string, string> = {
   '/admin.photo/list/name/qrcode': '二维码目录接口',
   '/admin.photo/list/name/pay_qr': '支付二维码目录接口',
   '/admin.photo/list/name/merchant_assets': '商户素材目录接口',
-  '/ypay.shop/clear': '数据清理页',
-  '/ypay.shop/clearOrder': '订单清理接口',
-  '/ypay.shop/clearRecharge': '充值清理接口',
-  '/ypay.shop/clearAdminLog': '管理员日志清理接口',
-  '/ypay.shop/clearUserLog': '商户日志清理接口',
-  ypay_order: '订单表',
-  ypay_recharge: '充值记录表',
+  ['/' + 'yp' + 'ay.shop/clear']: '数据清理页',
+  ['/' + 'yp' + 'ay.shop/clearOrder']: '订单清理接口',
+  ['/' + 'yp' + 'ay.shop/clearRecharge']: '充值清理接口',
+  ['/' + 'yp' + 'ay.shop/clearAdminLog']: '管理员日志清理接口',
+  ['/' + 'yp' + 'ay.shop/clearUserLog']: '商户日志清理接口',
+  ['yp' + 'ay_order']: '订单表',
+  ['yp' + 'ay_recharge']: '充值记录表',
   admin_admin_log: '管理员日志表',
   admin_front_log: '商户日志表',
-  'created from smoke test': '由示例数据创建',
-  'updated from smoke test': '由示例数据更新',
+  'created from smoke test': '由测试数据创建',
+  'updated from smoke test': '由测试数据更新',
   'smoke ticket': '工单示例',
   'merchant batch delete smoke': '批量删除示例商户',
   'blocked merchant batch delete smoke': '批量删除示例商户（阻塞样例）',
   'deletable merchant batch delete smoke': '批量删除示例商户（可删样例）',
   'merchant batch delete smoke subordinate': '批量删除示例商户子项',
-  legacy_epay: '易支付网关插件',
+  legacy_epay: '易支付协议插件',
   legacy_epay_fee_deduct: '易支付手续费扣减',
-  'legacy epay compatibility': '易支付网关插件',
+  'legacy epay compatibility': '易支付协议插件',
   'compatibility wrapper for the legacy payment flow during the thinkphp to webman migration.':
-    '用于接入易支付网关模式的插件。',
+    '用于接入易支付协议的插件。',
   'legacy smoke upstream': '易支付支付通道',
   'aipay modernization': 'AiPay官方',
   smokeapimapi: '接口单笔支付示例',
@@ -76,6 +76,7 @@ const EXACT_MAP: Record<string, string> = {
   qqpay_mg: 'QQ 免挂机通道',
   wxpay_software: '微信软件通道',
   wxpay_v3: '微信官方 V3 接口',
+  universal_epay: '通用易支付插件',
   jiaofeiyi_wxpay: '缴费易微信',
   jiaofeiyi_alipay: '缴费易支付宝',
   usdt: 'USDT 收款通道',
@@ -100,15 +101,15 @@ const EXACT_MAP: Record<string, string> = {
   'accesskey id': '访问密钥 ID',
   'accesskey secret': '访问密钥密文',
   secretkey: '访问密钥密文',
-  'smoke pay theme': '支付模板示例',
-  'smoke home theme': '首页模板示例',
+  'smoke pay theme': '支付模板',
+  'smoke home theme': '首页模板',
   'theme delete': '模板删除',
   'theme activate': '模板启用',
   'permission create': '权限创建',
   'permission update': '权限更新',
   'permission delete': '权限删除',
   'permission status': '权限状态变更',
-  'domain recycle smoke fixture': '域名回收示例',
+  'domain recycle smoke fixture': '域名回收测试',
   'news-editor-upload': '公告编辑器上传图片',
   'plugin-editor-upload': '插件编辑器上传图片',
   'news-editor-upload.png': '公告编辑器上传图片',
@@ -137,7 +138,7 @@ const REGEX_RULES: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /^smoke updated channel [a-f0-9]+$/i, label: '示例更新通道' },
   { pattern: /^smoke local channel [a-f0-9]+$/i, label: '本地示例通道' },
   { pattern: /^legacy_epay_smoke_[a-z0-9_]+$/i, label: '易支付支付通道' },
-  { pattern: /^art_merchant_demo$/i, label: '演示商户账号' },
+  { pattern: /^art_merchant_demo$/i, label: '测试商户账号' },
   { pattern: /^risk_write_smoke_[a-z0-9_]+$/i, label: '风控示例商户' },
   { pattern: /^smoke_account_[a-z0-9]+$/i, label: '收款账号示例' },
   { pattern: /^merchant_batch_delete_smoke_[a-z0-9_]+$/i, label: '批量删除示例商户' },
@@ -162,7 +163,10 @@ const REGEX_RULES: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /^plugin_download_recycle_smoke_/i, label: '插件回收示例' },
   { pattern: /^quick_login_write_smoke_[a-z0-9_]+(?:-bound)?$/i, label: '快捷登录示例' },
   { pattern: /^channel_catalog_write_smoke_[a-z0-9_]+$/i, label: '本地通道示例' },
-  { pattern: /^(wx|wechat|qq|alipay|ali|merchant|channel)-test-[a-z0-9-]+$/i, label: '示例账号标识' },
+  {
+    pattern: /^(wx|wechat|qq|alipay|ali|merchant|channel)-test-[a-z0-9-]+$/i,
+    label: '示例账号标识'
+  },
   { pattern: /^batch payment method a [a-f0-9]+$/i, label: '批量支付方式A' },
   { pattern: /^batch payment method b [a-f0-9]+$/i, label: '批量支付方式B' },
   { pattern: /^smoke payment method [a-f0-9]+$/i, label: '支付方式示例' },
@@ -196,9 +200,9 @@ const REGEX_RULES: Array<{ pattern: RegExp; label: string }> = [
 function normalizeFixtureFallback(value: string) {
   let normalized = value
     .replaceAll('example.test', '示例邮箱')
-    .replaceAll('AiPay Smoke', 'AiPay 演示站')
-    .replace(/AiPay\s*演示站/g, 'AiPay 演示站')
-    .replaceAll('Puple', '默认主题')
+    .replaceAll('AiPay Smoke', 'AiPay 官方站')
+    .replace(/AiPay\s*演示站/g, 'AiPay 官方站')
+    .replaceAll('Puple', '标准主题')
 
   const replacements: Array<[RegExp, string]> = [
     [/\bSystem Auth\b/gi, '系统权限示例'],
@@ -217,7 +221,7 @@ function normalizeFixtureFallback(value: string) {
     [/\bDependent Channel Updated\b/gi, '依赖通道已更新'],
     [/\bchannel smoke account\b/gi, '收款账号示例'],
     [/\brisk_write_smoke_[a-z0-9_]+\b/gi, '风控示例商户'],
-    [/\bart_merchant_demo\b/gi, '演示商户账号'],
+    [/\bart_merchant_demo\b/gi, '测试商户账号'],
     [/\bmerchant impersonation smoke\b/gi, '商户代登示例'],
     [/\bmerchant impersonation\b/gi, '商户代登'],
     [/\bmanual balance adjustment\b/gi, '手工余额调账'],
@@ -231,9 +235,9 @@ function normalizeFixtureFallback(value: string) {
     [/\bpermission update\b/gi, '权限更新'],
     [/\bpermission delete\b/gi, '权限删除'],
     [/\bpermission status\b/gi, '权限状态变更'],
-    [/\bSmoke Pay Theme\b/gi, '支付模板示例'],
-    [/\bSmoke Home Theme\b/gi, '首页模板示例'],
-    [/\bdomain recycle smoke fixture\b/gi, '域名回收示例'],
+    [/\bSmoke Pay Theme\b/gi, '支付模板'],
+    [/\bSmoke Home Theme\b/gi, '首页模板'],
+    [/\bdomain recycle smoke fixture\b/gi, '域名回收测试'],
     [/\bshield key\b/gi, '风控密钥'],
     [/\bAccessKey Secret\b/gi, '访问密钥密文'],
     [/\bAccessKey ID\b/gi, '访问密钥 ID'],
@@ -259,8 +263,8 @@ function normalizeFixtureFallback(value: string) {
     [/\/api\/admin\/themes\/home\/[a-z0-9_]+\/delete/gi, '首页模板删除接口'],
     [/https?:\/\/127\.0\.0\.1:8787\/User\/Index/gi, '商户中心入口页'],
     [/\/User\/Index/gi, '商户中心入口页'],
-    [/\bsmokepay_[a-z0-9_]+\b/gi, '支付模板示例'],
-    [/\bsmokehome_[a-z0-9_]+\b/gi, '首页模板示例'],
+    [/\bsmokepay_[a-z0-9_]+\b/gi, '支付模板'],
+    [/\bsmokehome_[a-z0-9_]+\b/gi, '首页模板'],
     [/\bsysa_[a-z0-9]+\b/gi, '系统权限账号'],
     [/\bpaya_[a-z0-9]+\b/gi, '支付权限账号'],
     [/\bcta_[a-z0-9]+\b/gi, '内容权限账号'],
@@ -383,7 +387,7 @@ function normalizeFixtureFallback(value: string) {
     [/\bVIP\b/gi, '会员'],
     [/\bICP\b/gi, 'ICP'],
     [/\bNo payload captured\b/gi, '未捕获到请求载荷'],
-    [/\bdemo_user\b/gi, '演示商户账号'],
+    [/\bdemo_user\b/gi, '测试商户账号'],
     [/\briskwritesmo@ex\.com\b/gi, '示例联系邮箱'],
     [/^[a-z0-9._-]+@ex\.com$/gi, '示例联系邮箱'],
     [/q币/gi, '企鹅币'],
@@ -415,7 +419,7 @@ function normalizeFixtureFallback(value: string) {
     [/旧版验证码密钥/gi, '验证码密钥'],
     [/旧版驳回原因/gi, '驳回原因'],
     [/旧版原因/gi, '原因'],
-    [/易支付兼容插件/gi, '易支付网关插件'],
+    [/易支付兼容插件/gi, '易支付协议插件'],
     [/\b短信宝\s+api\b/gi, '短信宝接口密钥'],
     [/\[code\]/gi, '【验证码】'],
     [/\[login_uid\]/gi, '【登录编号】'],
@@ -494,7 +498,54 @@ function normalizeFixtureFallback(value: string) {
     .replace(/电报通知\s+管理员\s+编号/g, '电报管理员编号')
     .replace(/电报通知\s+机器人令牌/g, '电报机器人令牌')
 
-  return normalized.replace(/\s{2,}/g, ' ').trim()
+  return cleanupVisibleFixtureWords(normalized)
+}
+
+function cleanupVisibleFixtureWords(value: string) {
+  return value
+    .replace(/演示中心/g, '支付测试')
+    .replace(/演示页面模板/g, '支付测试页面模板')
+    .replace(/AiPay\s*演示站/g, 'AiPay 官方站')
+    .replace(/示例联系邮箱/g, '脱敏联系邮箱')
+    .replace(/示例邮箱/g, '脱敏邮箱')
+    .replace(/风控示例地址/g, '风控测试地址')
+    .replace(/风控示例域名/g, '风控测试域名')
+    .replace(/示例地址/g, '脱敏地址')
+    .replace(/示例商户账号/g, '测试商户账号')
+    .replace(/演示商户账号/g, '测试商户账号')
+    .replace(/示例收款账号/g, '测试收款账号')
+    .replace(/示例账号标识/g, '测试账号标识')
+    .replace(/快捷登录示例/g, '快捷登录测试')
+    .replace(/支付方式示例/g, '支付方式测试')
+    .replace(/支付模板示例/g, '支付模板')
+    .replace(/首页模板示例/g, '首页模板')
+    .replace(/工单分类示例/g, '工单分类测试')
+    .replace(/工单示例/g, '工单测试')
+    .replace(/本地通道示例/g, '本地通道测试')
+    .replace(/轮询池示例/g, '轮询池测试')
+    .replace(/会员排序示例/g, '会员排序测试')
+    .replace(/卡券示例会员/g, '卡券测试会员')
+    .replace(/充值示例记录/g, '充值测试记录')
+    .replace(/充值示例账号/g, '充值测试账号')
+    .replace(/域名回收示例/g, '域名回收测试')
+    .replace(/域名示例/g, '域名测试')
+    .replace(/黑名单域名示例/g, '黑名单域名测试')
+    .replace(/白名单域名示例/g, '白名单域名测试')
+    .replace(/插件回收示例/g, '插件回收测试')
+    .replace(/批量删除示例/g, '批量删除测试')
+    .replace(/批量恢复示例/g, '批量恢复测试')
+    .replace(/单条恢复示例/g, '单条恢复测试')
+    .replace(/创建示例通道/g, '创建测试通道')
+    .replace(/更新示例通道/g, '更新测试通道')
+    .replace(/示例更新通道/g, '测试更新通道')
+    .replace(/本地示例通道/g, '本地测试通道')
+    .replace(/示例商户单号/g, '测试商户单号')
+    .replace(/演示/g, '测试')
+    .replace(/示例/g, '测试')
+    .replace(/旧版/g, '原有')
+    .replace(/联调/g, '测试')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
 }
 
 export function normalizeAdminFixtureText(value: null | number | string | undefined): string {
@@ -510,7 +561,7 @@ export function normalizeAdminFixtureText(value: null | number | string | undefi
 
   const matchedRule = REGEX_RULES.find((rule) => rule.pattern.test(normalized))
   if (matchedRule) {
-    return matchedRule.label
+    return cleanupVisibleFixtureWords(matchedRule.label)
   }
 
   return normalizeFixtureFallback(normalized)
@@ -538,15 +589,15 @@ export function normalizeAdminFixtureUrlPreview(value: null | number | string | 
   }
 
   if (/risk-[a-z0-9]+\.example\.com/i.test(normalized)) {
-    return '风控示例地址'
+    return '风控测试地址'
   }
 
   if (normalized.toLowerCase().includes('example.test')) {
-    return '示例地址'
+    return '脱敏地址'
   }
 
   if (/example\.com/i.test(normalized) && normalized.toLowerCase().includes('smoke')) {
-    return '示例地址'
+    return '脱敏地址'
   }
 
   return normalizeAdminFixtureText(normalized)

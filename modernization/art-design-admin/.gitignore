@@ -4,6 +4,11 @@ dist
 dist-ssr
 *.local
 .cursorrules
+.vite-8132-local.err.log
+.vite-8132-local.out.log
+.vite-8132-local.log
+*.err
+*.out
 
 # Auto-generated files
 src/types/import/auto-imports.d.ts

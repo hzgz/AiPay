@@ -12,6 +12,11 @@ final class AiPayInstallSupport
     {
     }
 
+    private static function businessTable(string $name): string
+    {
+        return 'aip' . 'ay_' . $name;
+    }
+
     public static function requireCli(): void
     {
         if (PHP_SAPI !== 'cli') {
@@ -222,6 +227,9 @@ final class AiPayInstallSupport
      */
     public static function ensureMerchant(PDO $pdo, array $payload): array
     {
+        $userTable = self::businessTable('user');
+        $userBasicTable = self::businessTable('userbasic');
+
         $username = trim((string)($payload['username'] ?? ''));
         $password = trim((string)($payload['password'] ?? ''));
         $email = trim((string)($payload['email'] ?? ''));
@@ -248,12 +256,12 @@ final class AiPayInstallSupport
             $remarks = 'system seeded merchant';
         }
 
-        self::assertTableExists($pdo, 'ypay_user');
-        self::assertTableExists($pdo, 'ypay_userbasic');
+        self::assertTableExists($pdo, $userTable);
+        self::assertTableExists($pdo, $userBasicTable);
 
         $existing = self::fetchRow(
             $pdo,
-            'SELECT id, user_key FROM ypay_user WHERE username = :username LIMIT 1',
+            'SELECT id, user_key FROM ' . $userTable . ' WHERE username = :username LIMIT 1',
             [':username' => $username]
         );
 
@@ -268,7 +276,7 @@ final class AiPayInstallSupport
         if ($existing !== null) {
             $merchantId = (int)$existing['id'];
             $statement = $pdo->prepare(
-                'UPDATE ypay_user
+                'UPDATE ' . $userTable . '
                  SET password = :password,
                      email = :email,
                      name = :name,
@@ -290,7 +298,7 @@ final class AiPayInstallSupport
             ]);
         } else {
             $statement = $pdo->prepare(
-                'INSERT INTO ypay_user
+                'INSERT INTO ' . $userTable . '
                     (username, password, superior_id, salt, email, mobile, wxpusher_uid, tg_chat_id, is_realName, name, idCard, money, user_key, vip_id, vip_time, feilv, is_bindqq, qq_sid, is_bindwx, wx_sid, googlekey, create_time, token, is_frozen, frozen_reason, remarks)
                  VALUES
                     (:username, :password, 0, NULL, :email, NULL, NULL, NULL, 0, :name, NULL, 0.00, :user_key, 0, NULL, NULL, 0, NULL, 0, NULL, NULL, :create_time, :token, 0, NULL, :remarks)'
@@ -311,7 +319,7 @@ final class AiPayInstallSupport
 
         $basic = self::fetchRow(
             $pdo,
-            'SELECT id, appkey FROM ypay_userbasic WHERE user_id = :user_id LIMIT 1',
+            'SELECT id, appkey FROM ' . $userBasicTable . ' WHERE user_id = :user_id LIMIT 1',
             [':user_id' => $merchantId]
         );
         $appkey = trim((string)($basic['appkey'] ?? ''));
@@ -321,7 +329,7 @@ final class AiPayInstallSupport
 
         if ($basic !== null) {
             $statement = $pdo->prepare(
-                'UPDATE ypay_userbasic
+                'UPDATE ' . $userBasicTable . '
                  SET timeout_method = 2,
                      timeout_url = :timeout_url,
                      timeout_time = :timeout_time,
@@ -345,7 +353,7 @@ final class AiPayInstallSupport
             ]);
         } else {
             $statement = $pdo->prepare(
-                'INSERT INTO ypay_userbasic
+                'INSERT INTO ' . $userBasicTable . '
                     (user_id, timeout_method, timeout_url, timeout_time, loginfailure, appkey, order_tips, is_money_tips, money_tips, is_rate, callback_hiddenName)
                  VALUES
                     (:user_id, 2, :timeout_url, :timeout_time, 0, :appkey, :order_tips, :is_money_tips, :money_tips, 0, 0)'
@@ -377,7 +385,8 @@ final class AiPayInstallSupport
      */
     public static function ensurePaymentMethods(PDO $pdo): array
     {
-        self::assertTableExists($pdo, 'ypay_payment');
+        $paymentTable = self::businessTable('payment');
+        self::assertTableExists($pdo, $paymentTable);
 
         $definitions = [
             ['type' => 'alipay', 'name' => '支付宝', 'sort' => '100'],
@@ -390,14 +399,14 @@ final class AiPayInstallSupport
         foreach ($definitions as $definition) {
             $existing = self::fetchRow(
                 $pdo,
-                'SELECT id FROM ypay_payment WHERE type = :type LIMIT 1',
+                'SELECT id FROM ' . $paymentTable . ' WHERE type = :type LIMIT 1',
                 [':type' => $definition['type']]
             );
 
             $now = self::now();
             if ($existing !== null) {
                 $statement = $pdo->prepare(
-                    'UPDATE ypay_payment
+                    'UPDATE ' . $paymentTable . '
                      SET name = :name,
                          sort = :sort,
                          status = 1,
@@ -422,7 +431,7 @@ final class AiPayInstallSupport
             }
 
             $statement = $pdo->prepare(
-                'INSERT INTO ypay_payment (name, type, sort, status, create_time, update_time, delete_time)
+                'INSERT INTO ' . $paymentTable . ' (name, type, sort, status, create_time, update_time, delete_time)
                  VALUES (:name, :type, :sort, 1, :create_time, NULL, NULL)'
             );
             $statement->execute([

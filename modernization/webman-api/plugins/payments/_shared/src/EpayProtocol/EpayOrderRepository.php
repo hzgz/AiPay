@@ -2,19 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Plugins\Payments\Shared\Legacy;
+namespace Plugins\Payments\Shared\EpayProtocol;
 
+use app\support\BusinessTable;
 use Plugins\Payments\Shared\Support\LegacyTradeNumber;
 use Plugins\Payments\Shared\Support\PaymentPluginException;
 use support\Db;
 
-class LegacyEpayOrderRepository
+class EpayOrderRepository
 {
     private const SETTLEMENT_MEMO = 'legacy_epay_fee_deduct';
 
     public function findByOutTradeNo(string $outTradeNo): ?array
     {
-        $orders = Db::table('ypay_order')
+        $orders = Db::table(BusinessTable::order())
             ->select(
                 'id',
                 'name',
@@ -60,7 +61,7 @@ class LegacyEpayOrderRepository
             return null;
         }
 
-        $order = Db::table('ypay_order')
+        $order = Db::table(BusinessTable::order())
             ->select(
                 'id',
                 'name',
@@ -95,7 +96,7 @@ class LegacyEpayOrderRepository
 
     public function findByTradeNo(string $tradeNo): ?array
     {
-        $order = Db::table('ypay_order')
+        $order = Db::table(BusinessTable::order())
             ->select(
                 'id',
                 'name',
@@ -132,12 +133,12 @@ class LegacyEpayOrderRepository
     {
         $outTradeNo = trim((string)($payload['out_trade_no'] ?? ''));
         if ($outTradeNo === '') {
-            throw PaymentPluginException::validation('out_trade_no is required');
+            throw PaymentPluginException::validation('商户订单号不能为空');
         }
 
         $existing = $this->findByOutTradeNo($outTradeNo);
         if ($existing) {
-            throw PaymentPluginException::conflict('duplicated out_trade_no');
+            throw PaymentPluginException::conflict('商户订单号重复');
         }
     }
 
@@ -148,11 +149,11 @@ class LegacyEpayOrderRepository
         $insert = $draft;
         unset($insert['migration_state']);
 
-        Db::table('ypay_order')->insert($insert);
+        Db::table(BusinessTable::order())->insert($insert);
 
         $order = $this->findByTradeNo((string)$draft['trade_no']);
         if (!$order) {
-            throw new \RuntimeException('order was created but could not be reloaded');
+            throw new \RuntimeException('订单创建成功后重新加载失败');
         }
 
         return $order;
@@ -205,10 +206,10 @@ class LegacyEpayOrderRepository
         return Db::transaction(function () use ($order, $merchant, $payload): array {
             $orderId = (int)($order['id'] ?? 0);
             if ($orderId <= 0) {
-                throw PaymentPluginException::notFound('order was not found');
+                throw PaymentPluginException::notFound('订单不存在');
             }
 
-            $current = Db::table('ypay_order')
+            $current = Db::table(BusinessTable::order())
                 ->select(
                     'id',
                     'user_id',
@@ -228,7 +229,7 @@ class LegacyEpayOrderRepository
                 ->lockForUpdate()
                 ->first();
             if (!$current) {
-                throw PaymentPluginException::notFound('order was not found');
+                throw PaymentPluginException::notFound('订单不存在');
             }
 
             $current = (array)$current;
@@ -238,7 +239,7 @@ class LegacyEpayOrderRepository
                 ($expectedOutTradeNo !== '' && !hash_equals((string)$current['out_trade_no'], $expectedOutTradeNo))
                 || ($expectedTradeNo !== '' && !hash_equals((string)$current['trade_no'], $expectedTradeNo))
             ) {
-                throw new \RuntimeException('Order identity changed before settlement');
+                throw new \RuntimeException('订单标识在落账前发生变化');
             }
 
             $alreadyPaid = (int)($current['status'] ?? 0) === 1;
@@ -250,7 +251,7 @@ class LegacyEpayOrderRepository
                     $current
                 );
 
-                Db::table('ypay_order')
+                Db::table(BusinessTable::order())
                     ->where('id', (int)$current['id'])
                     ->update([
                         'status' => 1,
@@ -264,7 +265,7 @@ class LegacyEpayOrderRepository
 
             $settled = $this->findById($orderId);
             if (!$settled) {
-                throw PaymentPluginException::notFound('order was not found');
+                throw PaymentPluginException::notFound('订单不存在');
             }
 
             return [
@@ -281,8 +282,8 @@ class LegacyEpayOrderRepository
             return 0;
         }
 
-        Db::table('ypay_order')->where('id', $orderId)->increment('return_num');
-        $order = Db::table('ypay_order')->select('return_num')->where('id', $orderId)->first();
+        Db::table(BusinessTable::order())->where('id', $orderId)->increment('return_num');
+        $order = Db::table(BusinessTable::order())->select('return_num')->where('id', $orderId)->first();
 
         return (int)(($order ? (array)$order : [])['return_num'] ?? 0);
     }
@@ -294,7 +295,7 @@ class LegacyEpayOrderRepository
             return;
         }
 
-        $merchant = Db::table('ypay_user')
+        $merchant = Db::table(BusinessTable::user())
             ->select('id', 'money')
             ->where('id', $merchantId)
             ->lockForUpdate()
@@ -307,7 +308,7 @@ class LegacyEpayOrderRepository
         $before = round((float)($merchant['money'] ?? 0), 3);
         $after = round($before - $fee, 3);
 
-        Db::table('ypay_user')
+        Db::table(BusinessTable::user())
             ->where('id', $merchantId)
             ->update([
                 'money' => number_format($after, 2, '.', ''),
@@ -393,7 +394,7 @@ class LegacyEpayOrderRepository
         }
 
         $now = date('Y-m-d H:i:s');
-        $inserted = (int)Db::table('ypay_payment_transaction_claim')->insertOrIgnore([
+        $inserted = (int)Db::table(BusinessTable::paymentTransactionClaim())->insertOrIgnore([
             'provider' => $provider,
             'transaction_id' => $transactionId,
             'order_id' => (int)($order['id'] ?? 0),
@@ -406,7 +407,7 @@ class LegacyEpayOrderRepository
             return;
         }
 
-        $claim = Db::table('ypay_payment_transaction_claim')
+        $claim = Db::table(BusinessTable::paymentTransactionClaim())
             ->select('order_id')
             ->where('provider', $provider)
             ->where('transaction_id', $transactionId)

@@ -366,7 +366,7 @@
     {
       label: '充值订单数',
       value: String(summary.value.total_count ?? 0),
-      hint: '历史充值订单总数',
+      hint: '累计充值订单总数',
       icon: 'ri:file-list-3-line'
     },
     {
@@ -533,7 +533,7 @@
         }
         cashierStatus.title = '等待支付'
         cashierStatus.hint =
-          messageMap[String(result.msg || '')] || '支付状态暂不可用，请稍后重试。'
+          messageMap[String(result.msg || '')] || '支付状态暂未返回，请稍后刷新或重试。'
       }
     } catch {
       cashierStatus.title = '轮询暂时失败'

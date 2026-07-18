@@ -6,7 +6,7 @@ namespace Plugins\Payments\LegacyEpay;
 
 use Plugins\Payments\Shared\Contracts\PaymentPluginCleanupHookInterface;
 use Plugins\Payments\Shared\Contracts\PaymentPluginInterface;
-use Plugins\Payments\Shared\Legacy\LegacyEpayService;
+use Plugins\Payments\Shared\EpayProtocol\EpayProtocolService;
 use RuntimeException;
 use support\Db;
 use function runtime_path;
@@ -157,9 +157,9 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
         return $this->service()->handleNotify($payload);
     }
 
-    private function service(): LegacyEpayService
+    private function service(): EpayProtocolService
     {
-        return new LegacyEpayService();
+        return new EpayProtocolService();
     }
 
     private function seedConfigSkeleton(): void
@@ -212,11 +212,11 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
         }
 
         if (file_exists($directory)) {
-            throw new RuntimeException('payment plugin runtime path is not a directory');
+            throw new RuntimeException('支付插件运行目录目标不是文件夹');
         }
 
         if (!mkdir($directory, 0777, true) && !is_dir($directory)) {
-            throw new RuntimeException('failed to create payment plugin runtime directory');
+            throw new RuntimeException('创建支付插件运行目录失败');
         }
     }
 
@@ -239,11 +239,11 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
 
         $encoded = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($encoded === false) {
-            throw new RuntimeException('failed to encode payment plugin lifecycle metadata');
+            throw new RuntimeException('编码支付插件生命周期元数据失败');
         }
 
         if (file_put_contents($metadataPath, $encoded . PHP_EOL) === false) {
-            throw new RuntimeException('failed to write payment plugin lifecycle metadata');
+            throw new RuntimeException('写入支付插件生命周期元数据失败');
         }
     }
 

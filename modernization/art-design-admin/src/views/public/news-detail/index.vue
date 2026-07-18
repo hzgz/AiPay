@@ -1,70 +1,49 @@
 <template>
-  <PublicShell
-    :site-name="siteName"
-    :navs="navs"
-    :is-logged-in="isLoggedIn"
-    page-label="公告详情"
-  >
+  <PublicShell :site-name="siteName" :navs="navs" :is-logged-in="isLoggedIn" page-label="公告详情">
     <div class="public-news-detail-page">
       <section v-if="loading && !article" class="detail-state">
         <ElSkeleton animated :rows="12" />
       </section>
 
       <section v-else-if="notFound" class="detail-state">
-        <h1>公告不存在</h1>
-        <p>当前访问的公告可能已经删除、下线，或者链接地址已经失效。</p>
+        <h1>内容不存在</h1>
+        <p>当前内容可能已删除或链接已失效。</p>
         <div class="detail-state__actions">
-          <RouterLink class="detail-link detail-link--primary" to="/news/index">返回公告中心</RouterLink>
+          <RouterLink class="detail-link detail-link--primary" to="/news/index"
+            >返回公告中心</RouterLink
+          >
           <RouterLink class="detail-link" to="/">返回首页</RouterLink>
         </div>
       </section>
 
       <section v-else-if="error" class="detail-state">
-        <h1>公告详情加载失败</h1>
+        <h1>内容加载失败</h1>
         <p>{{ error }}</p>
-        <button type="button" class="detail-link detail-link--primary detail-link--button" @click="loadPage">
+        <button
+          type="button"
+          class="detail-link detail-link--primary detail-link--button"
+          @click="loadPage"
+        >
           重新加载
         </button>
       </section>
 
       <template v-else-if="article">
         <section class="detail-hero">
-          <div>
-            <span class="detail-eyebrow">{{ resolveTypeTitle(article.type) }}</span>
-            <h1>{{ article.title }}</h1>
-            <p>{{ article.excerpt || `发布时间 ${article.date_label}` }}</p>
+          <span class="detail-eyebrow">{{ resolveTypeTitle(article.type) }}</span>
+          <h1>{{ article.title }}</h1>
+          <p>{{ detailSummary }}</p>
+
+          <div class="detail-hero__links">
+            <span>{{ article.date_label }}</span>
+            <RouterLink to="/news/index">返回列表</RouterLink>
+            <RouterLink to="/doc">开发文档</RouterLink>
           </div>
-
-          <aside class="detail-hero__meta">
-            <div>
-              <small>栏目</small>
-              <strong>{{ resolveTypeTitle(article.type) }}</strong>
-            </div>
-            <div>
-              <small>发布时间</small>
-              <strong>{{ article.date_label }}</strong>
-            </div>
-            <div>
-              <small>站点</small>
-              <strong>{{ siteName }}</strong>
-            </div>
-          </aside>
         </section>
 
-        <section class="detail-layout">
-          <article class="detail-content">
-            <div class="detail-content__body" v-html="article.content_html"></div>
-          </article>
-
-          <aside class="detail-side">
-            <div class="detail-side__section">
-              <span class="detail-eyebrow">相关入口</span>
-              <RouterLink :to="`/news/categories/${article.type}`">返回 {{ resolveTypeTitle(article.type) }}</RouterLink>
-              <RouterLink to="/news/index">公告中心</RouterLink>
-              <RouterLink to="/doc">开发文档</RouterLink>
-            </div>
-          </aside>
-        </section>
+        <article class="detail-content">
+          <div class="detail-content__body" v-html="article.content_html"></div>
+        </article>
       </template>
     </div>
   </PublicShell>
@@ -88,6 +67,9 @@
   const siteName = computed(() => payload.value?.site_name || 'AiPay')
   const navs = computed(() => payload.value?.navs || [])
   const isLoggedIn = computed(() => Boolean(payload.value?.is_logged_in))
+  const detailSummary = computed(() =>
+    article.value ? `发布时间：${article.value.date_label}` : ''
+  )
 
   async function loadPage() {
     const id = Number(route.params.id || 0)
@@ -106,7 +88,7 @@
         return
       }
 
-      error.value = resolvePublicErrorMessage(err, '公告详情暂时不可用，请稍后再试。')
+      error.value = resolvePublicErrorMessage(err, '当前内容暂时不可用，请稍后再试。')
     } finally {
       loading.value = false
     }
@@ -114,12 +96,14 @@
 
   function resolveTypeTitle(type: number) {
     return (
-      {
-        1: '平台公告',
-        2: '行业资讯',
-        3: '常见问题'
-      } as Record<number, string>
-    )[type] || '公告中心'
+      (
+        {
+          1: '平台公告',
+          2: '行业资讯',
+          3: '常见问题'
+        } as Record<number, string>
+      )[type] || '公告中心'
+    )
   }
 
   watch(
@@ -148,10 +132,9 @@
 
   .detail-state,
   .detail-hero,
-  .detail-content,
-  .detail-side__section {
+  .detail-content {
     border-top: 1px solid var(--public-border-strong);
-    padding-top: 14px;
+    padding-top: 16px;
   }
 
   .detail-state h1 {
@@ -197,13 +180,6 @@
     cursor: pointer;
   }
 
-  .detail-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1.45fr) minmax(250px, 0.65fr);
-    gap: 30px;
-    align-items: end;
-  }
-
   .detail-hero h1 {
     margin: 14px 0 14px;
     color: var(--public-title);
@@ -219,26 +195,24 @@
     line-height: 1.9;
   }
 
-  .detail-hero__meta {
-    display: grid;
-    gap: 14px;
+  .detail-hero__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
   }
 
-  .detail-hero__meta small {
-    display: block;
-    color: var(--public-muted);
-  }
-
-  .detail-hero__meta strong {
-    display: block;
-    margin-top: 8px;
-    color: var(--public-title);
-  }
-
-  .detail-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1.65fr) minmax(250px, 0.7fr);
-    gap: 32px;
+  .detail-hero__links span,
+  .detail-hero__links a {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #445167;
+    font-size: 0.94rem;
+    text-decoration: none;
   }
 
   .detail-content__body {
@@ -291,44 +265,5 @@
   .detail-content__body :deep(td) {
     padding: 12px;
     border: 1px solid #e5e7eb;
-  }
-
-  .detail-side {
-    position: sticky;
-    top: 96px;
-    display: grid;
-    gap: 24px;
-    align-self: start;
-  }
-
-  .detail-side__section a {
-    display: block;
-    padding: 14px 0;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-    color: var(--public-title);
-    font-weight: 700;
-    text-decoration: none;
-  }
-
-  .detail-side__section a:last-child {
-    padding-bottom: 0;
-    border-bottom: 0;
-  }
-
-  .detail-side__section p {
-    margin: 10px 0 0;
-    color: var(--public-text);
-    line-height: 1.82;
-  }
-
-  @media (max-width: 980px) {
-    .detail-hero,
-    .detail-layout {
-      grid-template-columns: 1fr;
-    }
-
-    .detail-side {
-      position: static;
-    }
   }
 </style>

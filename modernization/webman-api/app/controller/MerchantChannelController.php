@@ -2,12 +2,13 @@
 
 namespace app\controller;
 
-use app\payment\PaymentPluginManager;
+use app\service\payment\PaymentPluginManager;
 use app\service\order\OrderReconcileTaskService;
 use app\support\AdminFixtureTextNormalizer;
 use app\support\AdminOrderFormatter;
 use app\support\AdminPaymentAccountFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\FrontendUrlBuilder;
 use app\support\MerchantFrontSession;
 use app\support\QrCodeService;
@@ -17,6 +18,7 @@ use app\support\UploadWorkspace;
 use Illuminate\Database\Query\Builder;
 use Plugins\Payments\Shared\Support\JiaofeiyiSupport;
 use Plugins\Payments\Shared\Managed\AbstractManagedGatewayOrderService;
+use Plugins\Payments\UniversalEpay\Support\UniversalEpayGatewayService;
 use support\Db;
 use Throwable;
 use Plugins\Payments\AlipayOfficial\Support\AlipayOfficialGatewayService;
@@ -56,9 +58,9 @@ class MerchantChannelController
         $this->applyFilters($query, $request);
 
         $summary = $this->buildSummary($merchant, clone $query);
-        $total = (int)(clone $query)->count('ypay_account.id');
+        $total = (int)(clone $query)->count('account.id');
         $rows = $query
-            ->orderByDesc('ypay_account.id')
+            ->orderByDesc('account.id')
             ->offset(($current - 1) * $size)
             ->limit($size)
             ->get()
@@ -130,7 +132,7 @@ class MerchantChannelController
         try {
             $accountId = (int)Db::transaction(function () use ($writePayload, $merchantId, $payload): int {
                 $now = date('Y-m-d H:i:s');
-                $accountId = (int)Db::table('ypay_account')->insertGetId([
+                $accountId = (int)Db::table(BusinessTable::account())->insertGetId([
                     'code' => $writePayload['code'],
                     'type' => $writePayload['type'],
                     'user_id' => $merchantId,
@@ -355,7 +357,7 @@ class MerchantChannelController
             return $this->merchantError($exception->getMessage(), 422, 201);
         }
 
-        Db::table('ypay_account')
+        Db::table(BusinessTable::account())
             ->where('id', $id)
             ->where('user_id', $merchantId)
             ->update([
@@ -408,7 +410,7 @@ class MerchantChannelController
 
         try {
             Db::transaction(function () use ($merchantId, $id, $writePayload, $record, $payload, $updates): void {
-                Db::table('ypay_account')
+                Db::table(BusinessTable::account())
                     ->where('id', $id)
                     ->where('user_id', $merchantId)
                     ->update($writePayload);
@@ -474,7 +476,7 @@ class MerchantChannelController
             return $this->merchantError($exception->getMessage(), 422, 201);
         }
 
-        Db::table('ypay_account')
+        Db::table(BusinessTable::account())
             ->where('id', $id)
             ->where('user_id', $merchantId)
             ->update($updates);
@@ -552,7 +554,7 @@ class MerchantChannelController
 
         $now = date('Y-m-d H:i:s');
         Db::transaction(function () use ($merchantId, $id, $now, $record): void {
-            Db::table('ypay_poll_pool')
+            Db::table(BusinessTable::pollPool())
                 ->where('user_id', $merchantId)
                 ->where('last_account_id', $id)
                 ->update([
@@ -562,7 +564,7 @@ class MerchantChannelController
 
             $this->detachInactiveOrderReferences($merchantId, [$id]);
 
-            Db::table('ypay_account')
+            Db::table(BusinessTable::account())
                 ->where('id', $id)
                 ->where('user_id', $merchantId)
                 ->delete();
@@ -647,7 +649,7 @@ class MerchantChannelController
             $now = date('Y-m-d H:i:s');
             $rows = $this->loadAccountRowsByIds($merchantId, $deletableAccountIds);
             Db::transaction(function () use ($merchantId, $deletableAccountIds, $now, $rows): void {
-                Db::table('ypay_poll_pool')
+                Db::table(BusinessTable::pollPool())
                     ->where('user_id', $merchantId)
                     ->whereIn('last_account_id', $deletableAccountIds)
                     ->update([
@@ -657,7 +659,7 @@ class MerchantChannelController
 
                 $this->detachInactiveOrderReferences($merchantId, $deletableAccountIds);
 
-                Db::table('ypay_account')
+                Db::table(BusinessTable::account())
                     ->where('user_id', $merchantId)
                     ->whereIn('id', $deletableAccountIds)
                     ->delete();
@@ -808,6 +810,18 @@ class MerchantChannelController
                 $payload,
                 new WxpayV3GatewayService()
             ),
+            'universal_epay' => $this->buildManagedGatewayTestPayOrder(
+                $merchant,
+                $account,
+                $request,
+                $tradeNo,
+                $outTradeNo,
+                $baseAmount,
+                $resolvedAmount,
+                $orderType,
+                $payload,
+                new UniversalEpayGatewayService()
+            ),
             'wxpay_software' => $this->buildStaticQrTestPayOrder(
                 $merchant,
                 $account,
@@ -860,13 +874,13 @@ class MerchantChannelController
             default => throw new \InvalidArgumentException('当前插件暂不支持测试支付'),
         };
 
-        Db::table('ypay_order')->insert($orderPayload['insert']);
+        Db::table(BusinessTable::order())->insert($orderPayload['insert']);
 
         if (isset($orderPayload['after_create']) && is_callable($orderPayload['after_create'])) {
             try {
                 $orderPayload['after_create']();
             } catch (\Throwable $exception) {
-                Db::table('ypay_order')->where('trade_no', $tradeNo)->delete();
+                Db::table(BusinessTable::order())->where('trade_no', $tradeNo)->delete();
                 throw new \RuntimeException($exception->getMessage(), previous: $exception);
             }
         }
@@ -877,7 +891,7 @@ class MerchantChannelController
         }
 
         if (in_array($code, ['alipay_bill', 'alipay_mck', 'usdt', 'jiaofeiyi_alipay', 'jiaofeiyi_wxpay', 'wxpay_v3'], true)) {
-            $reconcileOrder = Db::table('ypay_order')
+            $reconcileOrder = Db::table(BusinessTable::order())
                 ->select(
                     'id',
                     'user_id',
@@ -1175,7 +1189,7 @@ class MerchantChannelController
                     $updates['alipay_order_no'] = $storeNo;
                 }
 
-                Db::table('ypay_order')->where('trade_no', $tradeNo)->update($updates);
+                Db::table(BusinessTable::order())->where('trade_no', $tradeNo)->update($updates);
 
                 return;
 
@@ -1252,7 +1266,7 @@ class MerchantChannelController
                     $updates['alipay_order_no'] = $storeNo;
                 }
 
-                Db::table('ypay_order')->where('trade_no', $tradeNo)->update($updates);
+                Db::table(BusinessTable::order())->where('trade_no', $tradeNo)->update($updates);
             },
         ];
     }
@@ -1361,7 +1375,7 @@ class MerchantChannelController
             $timeout = 180;
         }
 
-        $basic = Db::table('ypay_userbasic')
+        $basic = Db::table(BusinessTable::userBasic())
             ->select('timeout_time')
             ->where('user_id', $merchantId)
             ->first();
@@ -1389,7 +1403,7 @@ class MerchantChannelController
         $reservationCutoff = time() - $graceSeconds;
 
         for ($attempt = 1; $attempt <= $maxRetry; $attempt++) {
-            $exists = Db::table('ypay_order')
+            $exists = Db::table(BusinessTable::order())
                 ->where('account_id', $accountId)
                 ->where('status', 0)
                 ->where('out_time', '>', $reservationCutoff)
@@ -1409,7 +1423,7 @@ class MerchantChannelController
 
     private function merchantCashierMode(int $merchantId): string
     {
-        $row = Db::table('ypay_userbasic')
+        $row = Db::table(BusinessTable::userBasic())
             ->select('cashierMode')
             ->where('user_id', $merchantId)
             ->first();
@@ -1460,26 +1474,26 @@ class MerchantChannelController
 
     private function findMerchantTestPayOrder(int $merchantId, string $outTradeNo): ?array
     {
-        $row = Db::table('ypay_order')
-            ->leftJoin('ypay_account', 'ypay_order.account_id', '=', 'ypay_account.id')
+        $row = Db::table(BusinessTable::order('orders'))
+            ->leftJoin(BusinessTable::account('account'), 'orders.account_id', '=', 'account.id')
             ->select(
-                'ypay_order.id',
-                'ypay_order.trade_no',
-                'ypay_order.out_trade_no',
-                'ypay_order.money',
-                'ypay_order.truemoney',
-                'ypay_order.status',
-                'ypay_order.out_time',
-                'ypay_order.qrcode',
-                'ypay_order.h5_qrurl',
-                'ypay_order.type',
-                'ypay_order.account_id',
-                'ypay_account.code as account_code'
+                'orders.id',
+                'orders.trade_no',
+                'orders.out_trade_no',
+                'orders.money',
+                'orders.truemoney',
+                'orders.status',
+                'orders.out_time',
+                'orders.qrcode',
+                'orders.h5_qrurl',
+                'orders.type',
+                'orders.account_id',
+                'account.code as account_code'
             )
-            ->where('ypay_order.user_id', $merchantId)
-            ->whereIn('ypay_order.api_memo', self::TEST_PAY_ORDER_MEMOS)
-            ->where('ypay_order.out_trade_no', $outTradeNo)
-            ->orderByDesc('ypay_order.id')
+            ->where('orders.user_id', $merchantId)
+            ->whereIn('orders.api_memo', self::TEST_PAY_ORDER_MEMOS)
+            ->where('orders.out_trade_no', $outTradeNo)
+            ->orderByDesc('orders.id')
             ->first();
 
         return $row ? (array)$row : null;
@@ -1487,26 +1501,26 @@ class MerchantChannelController
 
     private function findMerchantTestPayOrderByTradeNo(int $merchantId, string $tradeNo): ?array
     {
-        $row = Db::table('ypay_order')
-            ->leftJoin('ypay_account', 'ypay_order.account_id', '=', 'ypay_account.id')
+        $row = Db::table(BusinessTable::order('orders'))
+            ->leftJoin(BusinessTable::account('account'), 'orders.account_id', '=', 'account.id')
             ->select(
-                'ypay_order.id',
-                'ypay_order.trade_no',
-                'ypay_order.out_trade_no',
-                'ypay_order.money',
-                'ypay_order.truemoney',
-                'ypay_order.status',
-                'ypay_order.out_time',
-                'ypay_order.qrcode',
-                'ypay_order.h5_qrurl',
-                'ypay_order.type',
-                'ypay_order.account_id',
-                'ypay_account.code as account_code'
+                'orders.id',
+                'orders.trade_no',
+                'orders.out_trade_no',
+                'orders.money',
+                'orders.truemoney',
+                'orders.status',
+                'orders.out_time',
+                'orders.qrcode',
+                'orders.h5_qrurl',
+                'orders.type',
+                'orders.account_id',
+                'account.code as account_code'
             )
-            ->where('ypay_order.user_id', $merchantId)
-            ->whereIn('ypay_order.api_memo', self::TEST_PAY_ORDER_MEMOS)
-            ->where('ypay_order.trade_no', $tradeNo)
-            ->orderByDesc('ypay_order.id')
+            ->where('orders.user_id', $merchantId)
+            ->whereIn('orders.api_memo', self::TEST_PAY_ORDER_MEMOS)
+            ->where('orders.trade_no', $tradeNo)
+            ->orderByDesc('orders.id')
             ->first();
 
         return $row ? (array)$row : null;
@@ -1873,38 +1887,38 @@ class MerchantChannelController
 
     private function accountQuery(int $merchantId): Builder
     {
-        return Db::table('ypay_account')
-            ->leftJoin('admin_channel', 'ypay_account.code', '=', 'admin_channel.code')
-            ->leftJoin('ypay_user', 'ypay_account.user_id', '=', 'ypay_user.id')
+        return Db::table(BusinessTable::account('account'))
+            ->leftJoin('admin_channel', 'account.code', '=', 'admin_channel.code')
+            ->leftJoin(BusinessTable::user('merchant'), 'account.user_id', '=', 'merchant.id')
             ->select(
-                'ypay_account.id',
-                'ypay_account.code',
-                'ypay_account.type',
-                'ypay_account.user_id',
-                'ypay_account.qr_url',
-                'ypay_account.qr_type',
-                'ypay_account.wxname',
-                'ypay_account.zfb_pid',
-                'ypay_account.wx_guid',
-                'ypay_account.cloud_id',
-                'ypay_account.qq',
-                'ypay_account.status',
-                'ypay_account.is_status',
-                'ypay_account.create_time',
-                'ypay_account.update_time',
-                'ypay_account.memo',
-                'ypay_account.cookie',
-                'ypay_account.allmaxcount',
-                'ypay_account.allmaxmoney',
-                'ypay_account.daymaxcount',
-                'ypay_account.daymaxmoney',
-                'ypay_account.remark',
-                'ypay_account.money',
+                'account.id',
+                'account.code',
+                'account.type',
+                'account.user_id',
+                'account.qr_url',
+                'account.qr_type',
+                'account.wxname',
+                'account.zfb_pid',
+                'account.wx_guid',
+                'account.cloud_id',
+                'account.qq',
+                'account.status',
+                'account.is_status',
+                'account.create_time',
+                'account.update_time',
+                'account.memo',
+                'account.cookie',
+                'account.allmaxcount',
+                'account.allmaxmoney',
+                'account.daymaxcount',
+                'account.daymaxmoney',
+                'account.remark',
+                'account.money',
                 'admin_channel.name as channel_name',
-                'ypay_user.username as merchant_username',
-                'ypay_user.name as merchant_name'
+                'merchant.username as merchant_username',
+                'merchant.name as merchant_name'
             )
-            ->where('ypay_account.user_id', $merchantId);
+            ->where('account.user_id', $merchantId);
     }
 
     private function applyFilters(Builder $query, Request $request): void
@@ -1913,47 +1927,47 @@ class MerchantChannelController
         if ($keyword !== '') {
             $query->where(function (Builder $builder) use ($keyword) {
                 $builder
-                    ->where('ypay_account.code', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_account.type', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_account.zfb_pid', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_account.wxname', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_account.qq', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_account.memo', 'like', '%' . $keyword . '%')
+                    ->where('account.code', 'like', '%' . $keyword . '%')
+                    ->orWhere('account.type', 'like', '%' . $keyword . '%')
+                    ->orWhere('account.zfb_pid', 'like', '%' . $keyword . '%')
+                    ->orWhere('account.wxname', 'like', '%' . $keyword . '%')
+                    ->orWhere('account.qq', 'like', '%' . $keyword . '%')
+                    ->orWhere('account.memo', 'like', '%' . $keyword . '%')
                     ->orWhere('admin_channel.name', 'like', '%' . $keyword . '%');
 
                 if (ctype_digit($keyword)) {
-                    $builder->orWhere('ypay_account.id', (int)$keyword);
+                    $builder->orWhere('account.id', (int)$keyword);
                 }
             });
         }
 
         $type = trim((string)$request->get('type', ''));
         if ($type !== '') {
-            $query->where('ypay_account.type', $type);
+            $query->where('account.type', $type);
         }
 
         $status = trim((string)$request->get('status', ''));
         if ($status !== '' && in_array($status, ['0', '1'], true)) {
-            $query->where('ypay_account.status', (int)$status);
+            $query->where('account.status', (int)$status);
         }
 
         $enabled = trim((string)$request->get('is_status', ''));
         if ($enabled !== '' && in_array($enabled, ['0', '1', '2'], true)) {
-            $query->where('ypay_account.is_status', (int)$enabled);
+            $query->where('account.is_status', (int)$enabled);
         }
 
         $startDate = $this->normalizeDate((string)$request->get('start_date', ''));
         $endDate = $this->normalizeDate((string)$request->get('end_date', ''));
         if ($startDate !== null && $endDate !== null) {
             $query
-                ->where('ypay_account.create_time', '>=', $startDate . ' 00:00:00')
-                ->where('ypay_account.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
+                ->where('account.create_time', '>=', $startDate . ' 00:00:00')
+                ->where('account.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
         }
     }
 
     private function buildSummary(array $merchant, Builder $query): array
     {
-        $accountIds = (clone $query)->pluck('ypay_account.id')->toArray();
+        $accountIds = (clone $query)->pluck('account.id')->toArray();
         $amountStats = $this->summaryOrderStats(array_map('intval', $accountIds));
         $vipLabel = AdminFixtureTextNormalizer::normalize(trim((string)($merchant['vip_name'] ?? '')));
 
@@ -1961,50 +1975,50 @@ class MerchantChannelController
             'merchant_id' => (int)($merchant['id'] ?? 0),
             'merchant_username' => trim((string)($merchant['username'] ?? '')),
             'vip_label' => $vipLabel !== '' ? $vipLabel : '普通商户',
-            'total_count' => (int)(clone $query)->count('ypay_account.id'),
-            'online_count' => (int)(clone $query)->where('ypay_account.status', 1)->count('ypay_account.id'),
-            'offline_count' => (int)(clone $query)->where('ypay_account.status', '<>', 1)->count('ypay_account.id'),
-            'enabled_count' => (int)(clone $query)->where('ypay_account.is_status', 1)->count('ypay_account.id'),
-            'disabled_count' => (int)(clone $query)->where('ypay_account.is_status', '<>', 1)->count('ypay_account.id'),
+            'total_count' => (int)(clone $query)->count('account.id'),
+            'online_count' => (int)(clone $query)->where('account.status', 1)->count('account.id'),
+            'offline_count' => (int)(clone $query)->where('account.status', '<>', 1)->count('account.id'),
+            'enabled_count' => (int)(clone $query)->where('account.is_status', 1)->count('account.id'),
+            'disabled_count' => (int)(clone $query)->where('account.is_status', '<>', 1)->count('account.id'),
             'identifier_ready_count' => (int)(clone $query)
                 ->where(function (Builder $builder) {
                     $builder
-                        ->whereNotNull('ypay_account.zfb_pid')
-                        ->where('ypay_account.zfb_pid', '<>', '')
+                        ->whereNotNull('account.zfb_pid')
+                        ->where('account.zfb_pid', '<>', '')
                         ->orWhere(function (Builder $nested) {
                             $nested
-                                ->whereNotNull('ypay_account.wxname')
-                                ->where('ypay_account.wxname', '<>', '');
+                                ->whereNotNull('account.wxname')
+                                ->where('account.wxname', '<>', '');
                         })
                         ->orWhere(function (Builder $nested) {
                             $nested
-                                ->whereNotNull('ypay_account.qq')
-                                ->where('ypay_account.qq', '<>', '');
+                                ->whereNotNull('account.qq')
+                                ->where('account.qq', '<>', '');
                         });
                 })
-                ->count('ypay_account.id'),
+                ->count('account.id'),
             'credential_ready_count' => (int)(clone $query)
                 ->where(function (Builder $builder) {
                     $builder
-                        ->whereNotNull('ypay_account.cookie')
-                        ->where('ypay_account.cookie', '<>', '')
+                        ->whereNotNull('account.cookie')
+                        ->where('account.cookie', '<>', '')
                         ->orWhere(function (Builder $nested) {
                             $nested
-                                ->whereNotNull('ypay_account.qr_url')
-                                ->where('ypay_account.qr_url', '<>', '');
+                                ->whereNotNull('account.qr_url')
+                                ->where('account.qr_url', '<>', '');
                         })
                         ->orWhere(function (Builder $nested) {
                             $nested
-                                ->whereNotNull('ypay_account.remark')
-                                ->where('ypay_account.remark', '<>', '');
+                                ->whereNotNull('account.remark')
+                                ->where('account.remark', '<>', '');
                         })
                         ->orWhere(function (Builder $nested) {
                             $nested
-                                ->whereNotNull('ypay_account.wx_guid')
-                                ->where('ypay_account.wx_guid', '<>', '');
+                                ->whereNotNull('account.wx_guid')
+                                ->where('account.wx_guid', '<>', '');
                         });
                 })
-                ->count('ypay_account.id'),
+                ->count('account.id'),
             'paid_order_count' => $amountStats['paid_order_count'],
             'paid_amount' => $amountStats['paid_amount'],
         ];
@@ -2041,7 +2055,7 @@ class MerchantChannelController
 
         $knownTypes = array_merge(
             array_keys($availableMethodTypes),
-            Db::table('ypay_account')
+            Db::table(BusinessTable::account())
                 ->where('user_id', $merchantId)
                 ->select('type')
                 ->distinct()
@@ -2075,7 +2089,7 @@ class MerchantChannelController
 
     private function paymentMethodMap(): array
     {
-        $rows = Db::table('ypay_payment')
+        $rows = Db::table(BusinessTable::payment())
             ->select('id', 'name', 'type', 'status', 'sort')
             ->where('status', 1)
             ->orderBy('sort')
@@ -2110,7 +2124,7 @@ class MerchantChannelController
             return [];
         }
 
-        $rows = Db::table('ypay_order')
+        $rows = Db::table(BusinessTable::order())
             ->select('account_id')
             ->selectRaw('COUNT(*) as order_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as paid_order_count')
@@ -2141,7 +2155,7 @@ class MerchantChannelController
             ];
         }
 
-        $row = Db::table('ypay_order')
+        $row = Db::table(BusinessTable::order())
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as paid_order_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN truemoney ELSE 0 END) as paid_amount')
             ->where('pay_type', 1)
@@ -2164,7 +2178,7 @@ class MerchantChannelController
     private function accountRecord(int $merchantId, int $id): ?array
     {
         $row = $this->accountQuery($merchantId)
-            ->where('ypay_account.id', $id)
+            ->where('account.id', $id)
             ->first();
 
         return $row ? (array)$row : null;
@@ -2322,7 +2336,7 @@ class MerchantChannelController
         return array_merge(
             [
                 'code' => $code,
-                'type' => trim((string)($channel['type'] ?? '')),
+                'type' => $context['payment_method_type'],
                 'user_id' => $merchantId,
                 'qr_url' => $qrUrl,
                 'qr_type' => '',
@@ -2351,6 +2365,9 @@ class MerchantChannelController
                 'remark' => $remark,
                 'wx_guid' => $wxGuid,
                 'cloud_id' => $cloudId,
+                'payment_method_type' => $context['payment_method_type'],
+                'payment_method_label' => $context['payment_method_label'],
+                'plugin_name' => $context['plugin_name'],
                 'payment_method_type' => $context['payment_method_type'],
                 'payment_method_label' => $context['payment_method_label'],
                 'plugin_name' => $context['plugin_name'],
@@ -2441,6 +2458,33 @@ class MerchantChannelController
             }
 
             return $updates;
+        }
+
+        if ($code === 'universal_epay') {
+            $gatewayUrl = $this->normalizeOptionalHttpUrl(
+                $payload['qr_url'] ?? ($record['qr_url'] ?? ''),
+                2500,
+                '接口地址'
+            );
+            if ($gatewayUrl === '') {
+                throw new \InvalidArgumentException('接口地址不能为空');
+            }
+
+            return array_merge($updates, [
+                'zfb_pid' => '',
+                'cookie' => $this->normalizeRequiredText(
+                    $payload['cookie'] ?? ($record['cookie'] ?? ''),
+                    12000,
+                    '商户密钥'
+                ),
+                'qr_url' => $gatewayUrl,
+                'qr_type' => $this->normalizeUniversalEpayMode(
+                    $payload['qr_type'] ?? ($record['qr_type'] ?? '0')
+                ),
+                'wx_guid' => '',
+                'cloud_id' => '',
+                'qq' => '',
+            ]);
         }
 
         if ($code === 'alipay_bill') {
@@ -3087,7 +3131,7 @@ class MerchantChannelController
         return array_map(
             static fn($row): array => (array)$row,
             $this->accountQuery($merchantId)
-                ->whereIn('ypay_account.id', $accountIds)
+                ->whereIn('account.id', $accountIds)
                 ->get()
                 ->toArray()
         );
@@ -3121,7 +3165,7 @@ class MerchantChannelController
         $now = time();
         $activePendingCondition = $this->activePendingOrderConditionSql($now);
         $detachableCondition = $this->detachableOrderConditionSql($now);
-        $orderRow = Db::table('ypay_order')
+        $orderRow = Db::table(BusinessTable::order())
             ->selectRaw('COUNT(*) as order_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as paid_order_count')
             ->selectRaw('SUM(CASE WHEN ' . $activePendingCondition . ' THEN 1 ELSE 0 END) as active_pending_order_count')
@@ -3131,14 +3175,14 @@ class MerchantChannelController
             ->whereIn('account_id', $accountIds)
             ->first();
 
-        $poolItemRow = Db::table('ypay_poll_pool_item')
+        $poolItemRow = Db::table(BusinessTable::pollPoolItem())
             ->selectRaw('COUNT(*) as pool_item_count')
             ->selectRaw('COUNT(DISTINCT pool_id) as pool_count')
             ->where('user_id', $merchantId)
             ->whereIn('account_id', $accountIds)
             ->first();
 
-        $lastPoolRow = Db::table('ypay_poll_pool')
+        $lastPoolRow = Db::table(BusinessTable::pollPool())
             ->selectRaw('COUNT(*) as last_selected_pool_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active_last_selected_pool_count')
             ->where('user_id', $merchantId)
@@ -3193,7 +3237,7 @@ class MerchantChannelController
         $now = time();
         $detachableCondition = $this->detachableOrderConditionSql($now);
 
-        return Db::table('ypay_order')
+        return Db::table(BusinessTable::order())
             ->where('user_id', $merchantId)
             ->where('pay_type', 1)
             ->whereIn('account_id', $accountIds)
@@ -3271,6 +3315,11 @@ class MerchantChannelController
                 'identifier_field' => 'wxname',
                 'identifier_label' => '应用 ID',
             ],
+            'universal_epay' => [
+                'type' => 'alipay',
+                'identifier_field' => 'wxname',
+                'identifier_label' => '商户ID',
+            ],
             'jiaofeiyi_alipay' => [
                 'type' => 'alipay',
                 'identifier_field' => 'wxname',
@@ -3306,6 +3355,10 @@ class MerchantChannelController
         }
 
         $record = (array)$row;
+        if ($code === 'universal_epay') {
+            return $record;
+        }
+
         $expectedType = (string)($this->createCodeCatalog()[$code]['type'] ?? '');
         if ($expectedType !== '' && trim((string)($record['type'] ?? '')) !== $expectedType) {
             return null;
@@ -3447,7 +3500,7 @@ class MerchantChannelController
 
     private function resolvePaymentMethod(string $type): array
     {
-        $row = Db::table('ypay_payment')
+        $row = Db::table(BusinessTable::payment())
             ->select('id', 'name', 'type', 'status')
             ->where('type', $type)
             ->where('status', 1)
@@ -3894,6 +3947,25 @@ class MerchantChannelController
         return in_array($normalized, ['1', '2', '3'], true) ? $normalized : '2';
     }
 
+    private function normalizeUniversalEpayMode(mixed $value): string
+    {
+        if (is_object($value)) {
+            throw new \InvalidArgumentException('接口模式格式不正确');
+        }
+
+        if (is_array($value)) {
+            $value = reset($value);
+        }
+
+        $normalized = strtolower(trim((string)$value));
+
+        return match ($normalized) {
+            '', '0', 'submit', 'page', 'web' => '0',
+            '1', 'mapi', 'api' => '1',
+            default => throw new \InvalidArgumentException('接口模式仅支持普通接口或 MAPI 接口'),
+        };
+    }
+
     private function normalizeOptionalHttpUrl(mixed $value, int $maxLength, string $field): string
     {
         $normalized = $this->normalizeOptionalText($value, $maxLength, $field);
@@ -4106,18 +4178,18 @@ class MerchantChannelController
             return null;
         }
 
-        $row = Db::table('ypay_user')
-            ->leftJoin('ypay_vip', 'ypay_user.vip_id', '=', 'ypay_vip.id')
+        $row = Db::table(BusinessTable::user('merchant'))
+            ->leftJoin(BusinessTable::vip('vip'), 'merchant.vip_id', '=', 'vip.id')
             ->select(
-                'ypay_user.id',
-                'ypay_user.username',
-                'ypay_user.vip_id',
-                'ypay_user.vip_time',
-                'ypay_user.is_frozen',
-                'ypay_user.frozen_reason',
-                'ypay_vip.name as vip_name'
+                'merchant.id',
+                'merchant.username',
+                'merchant.vip_id',
+                'merchant.vip_time',
+                'merchant.is_frozen',
+                'merchant.frozen_reason',
+                'vip.name as vip_name'
             )
-            ->where('ypay_user.token', $token)
+            ->where('merchant.token', $token)
             ->first();
 
         return $row ? (array)$row : null;

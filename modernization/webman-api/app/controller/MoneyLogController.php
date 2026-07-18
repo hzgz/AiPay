@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use app\support\AdminMoneyLogFormatter;
 use app\support\AdminRouteAuthorization;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\RequestPayload;
 use Illuminate\Database\Query\Builder;
 use support\Db;
@@ -100,7 +101,7 @@ class MoneyLogController
                     throw new DomainException('merchant balance cannot go below 0');
                 }
 
-                Db::table('ypay_user')
+                Db::table(BusinessTable::user())
                     ->where('id', $payload['user_id'])
                     ->update([
                         'money' => $this->formatAccountMoney($balanceAfter),
@@ -152,7 +153,7 @@ class MoneyLogController
     private function moneyLogQuery(): Builder
     {
         return Db::table('money_log')
-            ->leftJoin('ypay_user', 'money_log.user_id', '=', 'ypay_user.id')
+            ->leftJoin(BusinessTable::user('merchant'), 'money_log.user_id', '=', 'merchant.id')
             ->select(
                 'money_log.id',
                 'money_log.user_id',
@@ -162,8 +163,8 @@ class MoneyLogController
                 'money_log.after',
                 'money_log.create_time',
                 'money_log.memo',
-                'ypay_user.username as merchant_username',
-                'ypay_user.name as merchant_name'
+                'merchant.username as merchant_username',
+                'merchant.name as merchant_name'
             );
     }
 
@@ -174,8 +175,8 @@ class MoneyLogController
             $query->where(function (Builder $builder) use ($keyword) {
                 $builder
                     ->where('money_log.memo', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.username', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.name', 'like', '%' . $keyword . '%');
+                    ->orWhere('merchant.username', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.name', 'like', '%' . $keyword . '%');
 
                 if (ctype_digit($keyword)) {
                     $builder
@@ -335,7 +336,7 @@ class MoneyLogController
      */
     private function loadAdjustmentMerchant(int $userId): array
     {
-        $row = Db::table('ypay_user')
+        $row = Db::table(BusinessTable::user())
             ->select('id', 'username', 'name', 'money')
             ->where('id', $userId)
             ->lockForUpdate()

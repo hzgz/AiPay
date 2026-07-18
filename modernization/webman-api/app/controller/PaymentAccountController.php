@@ -2,10 +2,13 @@
 
 namespace app\controller;
 
-use app\payment\PaymentPluginManager;
+use app\service\payment\PaymentPluginManager;
+use app\support\AdminFixtureTextNormalizer;
+use app\support\AdminOrderFormatter;
 use app\support\AdminPaymentAccountFormatter;
 use app\support\AdminRouteAuthorization;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\QrCodeService;
 use app\support\RequestPayload;
 use app\support\SystemConfig;
@@ -31,9 +34,9 @@ class PaymentAccountController
         $this->applyFilters($query, $request);
 
         $summary = $this->summary(clone $query);
-        $total = (int)(clone $query)->count('ypay_account.id');
+        $total = (int)(clone $query)->count('account.id');
         $rows = $query
-            ->orderByDesc('ypay_account.id')
+            ->orderByDesc('account.id')
             ->offset(($current - 1) * $size)
             ->limit($size)
             ->get()
@@ -86,7 +89,8 @@ class PaymentAccountController
         $payload = RequestPayload::all($request);
 
         try {
-            $writePayload = $this->normalizeCreatePayload($payload);
+            $context = $this->resolveAdminCreateContext($payload);
+            $writePayload = $this->normalizeCreatePayload($payload, $context);
         } catch (\InvalidArgumentException $exception) {
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
@@ -94,7 +98,7 @@ class PaymentAccountController
         try {
             $accountId = (int)Db::transaction(function () use ($writePayload, $payload): int {
                 $now = date('Y-m-d H:i:s');
-                $accountId = (int)Db::table('ypay_account')->insertGetId([
+                $accountId = (int)Db::table(BusinessTable::account())->insertGetId([
                     'code' => $writePayload['code'],
                     'type' => $writePayload['type'],
                     'user_id' => $writePayload['user_id'],
@@ -327,7 +331,7 @@ class PaymentAccountController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_account')
+        Db::table(BusinessTable::account())
             ->where('id', $id)
             ->update([
                 'memo' => $memo === '' ? null : $memo,
@@ -376,7 +380,7 @@ class PaymentAccountController
 
         try {
             Db::transaction(function () use ($id, $writePayload, $record, $payload, $updates): void {
-                Db::table('ypay_account')
+                Db::table(BusinessTable::account())
                     ->where('id', $id)
                     ->update($writePayload);
 
@@ -437,7 +441,7 @@ class PaymentAccountController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_account')
+        Db::table(BusinessTable::account())
             ->where('id', $id)
             ->update($updates);
 
@@ -512,7 +516,7 @@ class PaymentAccountController
 
         $now = date('Y-m-d H:i:s');
         Db::transaction(function () use ($id, $now, $record): void {
-            Db::table('ypay_poll_pool')
+            Db::table(BusinessTable::pollPool())
                 ->where('last_account_id', $id)
                 ->update([
                     'last_account_id' => 0,
@@ -521,7 +525,7 @@ class PaymentAccountController
 
             $this->detachInactiveOrderReferences([$id]);
 
-            Db::table('ypay_account')
+            Db::table(BusinessTable::account())
                 ->where('id', $id)
                 ->delete();
 
@@ -600,7 +604,7 @@ class PaymentAccountController
             $now = date('Y-m-d H:i:s');
             $rows = $this->loadAccountRowsByIds($deletableAccountIds);
             Db::transaction(function () use ($deletableAccountIds, $now, $rows): void {
-                Db::table('ypay_poll_pool')
+                Db::table(BusinessTable::pollPool())
                     ->whereIn('last_account_id', $deletableAccountIds)
                     ->update([
                         'last_account_id' => 0,
@@ -609,7 +613,7 @@ class PaymentAccountController
 
                 $this->detachInactiveOrderReferences($deletableAccountIds);
 
-                Db::table('ypay_account')
+                Db::table(BusinessTable::account())
                     ->whereIn('id', $deletableAccountIds)
                     ->delete();
 
@@ -626,36 +630,36 @@ class PaymentAccountController
 
     private function accountQuery(): Builder
     {
-        return Db::table('ypay_account')
-            ->leftJoin('admin_channel', 'ypay_account.code', '=', 'admin_channel.code')
-            ->leftJoin('ypay_user', 'ypay_account.user_id', '=', 'ypay_user.id')
+        return Db::table(BusinessTable::account('account'))
+            ->leftJoin('admin_channel', 'account.code', '=', 'admin_channel.code')
+            ->leftJoin(BusinessTable::user('merchant'), 'account.user_id', '=', 'merchant.id')
             ->select(
-                'ypay_account.id',
-                'ypay_account.code',
-                'ypay_account.type',
-                'ypay_account.user_id',
-                'ypay_account.qr_url',
-                'ypay_account.qr_type',
-                'ypay_account.wxname',
-                'ypay_account.zfb_pid',
-                'ypay_account.wx_guid',
-                'ypay_account.cloud_id',
-                'ypay_account.qq',
-                'ypay_account.status',
-                'ypay_account.is_status',
-                'ypay_account.create_time',
-                'ypay_account.update_time',
-                'ypay_account.memo',
-                'ypay_account.cookie',
-                'ypay_account.allmaxcount',
-                'ypay_account.allmaxmoney',
-                'ypay_account.daymaxcount',
-                'ypay_account.daymaxmoney',
-                'ypay_account.remark',
-                'ypay_account.money',
+                'account.id',
+                'account.code',
+                'account.type',
+                'account.user_id',
+                'account.qr_url',
+                'account.qr_type',
+                'account.wxname',
+                'account.zfb_pid',
+                'account.wx_guid',
+                'account.cloud_id',
+                'account.qq',
+                'account.status',
+                'account.is_status',
+                'account.create_time',
+                'account.update_time',
+                'account.memo',
+                'account.cookie',
+                'account.allmaxcount',
+                'account.allmaxmoney',
+                'account.daymaxcount',
+                'account.daymaxmoney',
+                'account.remark',
+                'account.money',
                 'admin_channel.name as channel_name',
-                'ypay_user.username as merchant_username',
-                'ypay_user.name as merchant_name'
+                'merchant.username as merchant_username',
+                'merchant.name as merchant_name'
             );
     }
 
@@ -665,102 +669,102 @@ class PaymentAccountController
         if ($keyword !== '') {
             $query->where(function (Builder $builder) use ($keyword) {
                 $builder
-                    ->where('ypay_account.code', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_account.type', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_account.zfb_pid', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_account.wxname', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_account.qq', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_account.memo', 'like', '%' . $keyword . '%')
+                    ->where('account.code', 'like', '%' . $keyword . '%')
+                    ->orWhere('account.type', 'like', '%' . $keyword . '%')
+                    ->orWhere('account.zfb_pid', 'like', '%' . $keyword . '%')
+                    ->orWhere('account.wxname', 'like', '%' . $keyword . '%')
+                    ->orWhere('account.qq', 'like', '%' . $keyword . '%')
+                    ->orWhere('account.memo', 'like', '%' . $keyword . '%')
                     ->orWhere('admin_channel.name', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.username', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.name', 'like', '%' . $keyword . '%');
+                    ->orWhere('merchant.username', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.name', 'like', '%' . $keyword . '%');
 
                 if (ctype_digit($keyword)) {
                     $builder
-                        ->orWhere('ypay_account.id', (int)$keyword)
-                        ->orWhere('ypay_account.user_id', (int)$keyword);
+                        ->orWhere('account.id', (int)$keyword)
+                        ->orWhere('account.user_id', (int)$keyword);
                 }
             });
         }
 
         $userId = trim((string)$request->get('user_id', ''));
         if ($userId !== '') {
-            $query->where('ypay_account.user_id', 'like', '%' . $userId . '%');
+            $query->where('account.user_id', 'like', '%' . $userId . '%');
         }
 
         $type = trim((string)$request->get('type', ''));
         if ($type !== '') {
-            $query->where('ypay_account.type', $type);
+            $query->where('account.type', $type);
         }
 
         $status = trim((string)$request->get('status', ''));
         if ($status !== '' && in_array($status, ['0', '1'], true)) {
-            $query->where('ypay_account.status', (int)$status);
+            $query->where('account.status', (int)$status);
         }
 
         $enabled = trim((string)$request->get('is_status', ''));
         if ($enabled !== '' && in_array($enabled, ['1', '2', '0'], true)) {
-            $query->where('ypay_account.is_status', (int)$enabled);
+            $query->where('account.is_status', (int)$enabled);
         }
 
         $startDate = $this->normalizeDate((string)$request->get('start_date', ''));
         $endDate = $this->normalizeDate((string)$request->get('end_date', ''));
         if ($startDate !== null && $endDate !== null) {
             $query
-                ->where('ypay_account.create_time', '>=', $startDate . ' 00:00:00')
-                ->where('ypay_account.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
+                ->where('account.create_time', '>=', $startDate . ' 00:00:00')
+                ->where('account.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
         }
     }
 
     private function summary(Builder $query): array
     {
-        $accountIds = (clone $query)->pluck('ypay_account.id')->toArray();
+        $accountIds = (clone $query)->pluck('account.id')->toArray();
         $amountStats = $this->summaryOrderStats(array_map('intval', $accountIds));
 
         return [
-            'online_count' => (int)(clone $query)->where('ypay_account.status', 1)->count('ypay_account.id'),
-            'offline_count' => (int)(clone $query)->where('ypay_account.status', '<>', 1)->count('ypay_account.id'),
-            'enabled_count' => (int)(clone $query)->where('ypay_account.is_status', 1)->count('ypay_account.id'),
-            'disabled_count' => (int)(clone $query)->where('ypay_account.is_status', '<>', 1)->count('ypay_account.id'),
+            'online_count' => (int)(clone $query)->where('account.status', 1)->count('account.id'),
+            'offline_count' => (int)(clone $query)->where('account.status', '<>', 1)->count('account.id'),
+            'enabled_count' => (int)(clone $query)->where('account.is_status', 1)->count('account.id'),
+            'disabled_count' => (int)(clone $query)->where('account.is_status', '<>', 1)->count('account.id'),
             'identifier_ready_count' => (int)(clone $query)
                 ->where(function (Builder $builder) {
                     $builder
-                        ->whereNotNull('ypay_account.zfb_pid')
-                        ->where('ypay_account.zfb_pid', '<>', '')
+                        ->whereNotNull('account.zfb_pid')
+                        ->where('account.zfb_pid', '<>', '')
                         ->orWhere(function (Builder $nested) {
                             $nested
-                                ->whereNotNull('ypay_account.wxname')
-                                ->where('ypay_account.wxname', '<>', '');
+                                ->whereNotNull('account.wxname')
+                                ->where('account.wxname', '<>', '');
                         })
                         ->orWhere(function (Builder $nested) {
                             $nested
-                                ->whereNotNull('ypay_account.qq')
-                                ->where('ypay_account.qq', '<>', '');
+                                ->whereNotNull('account.qq')
+                                ->where('account.qq', '<>', '');
                         });
                 })
-                ->count('ypay_account.id'),
+                ->count('account.id'),
             'credential_ready_count' => (int)(clone $query)
                 ->where(function (Builder $builder) {
                     $builder
-                        ->whereNotNull('ypay_account.cookie')
-                        ->where('ypay_account.cookie', '<>', '')
+                        ->whereNotNull('account.cookie')
+                        ->where('account.cookie', '<>', '')
                         ->orWhere(function (Builder $nested) {
                             $nested
-                                ->whereNotNull('ypay_account.qr_url')
-                                ->where('ypay_account.qr_url', '<>', '');
+                                ->whereNotNull('account.qr_url')
+                                ->where('account.qr_url', '<>', '');
                         })
                         ->orWhere(function (Builder $nested) {
                             $nested
-                                ->whereNotNull('ypay_account.remark')
-                                ->where('ypay_account.remark', '<>', '');
+                                ->whereNotNull('account.remark')
+                                ->where('account.remark', '<>', '');
                         })
                         ->orWhere(function (Builder $nested) {
                             $nested
-                                ->whereNotNull('ypay_account.wx_guid')
-                                ->where('ypay_account.wx_guid', '<>', '');
+                                ->whereNotNull('account.wx_guid')
+                                ->where('account.wx_guid', '<>', '');
                         });
                 })
-                ->count('ypay_account.id'),
+                ->count('account.id'),
             'paid_order_count' => $amountStats['paid_order_count'],
             'paid_amount' => $amountStats['paid_amount'],
         ];
@@ -855,7 +859,7 @@ class PaymentAccountController
 
         if ($sizeBytes > $maxSizeBytes) {
             throw new \InvalidArgumentException(sprintf(
-                'uploaded file "%s" exceeds the configured limit of %d KB',
+                '上传文件“%s”超过了 %d KB 的大小限制',
                 $displayName,
                 (int)ceil($maxSizeBytes / 1024)
             ));
@@ -863,7 +867,7 @@ class PaymentAccountController
 
         $uploadExtension = strtolower(trim((string)$file->getUploadExtension()));
         if ($uploadExtension !== '' && !in_array($uploadExtension, ['jpg', 'jpeg', 'png', 'bmp', 'gif'], true)) {
-            throw new \InvalidArgumentException(sprintf('uploaded file "%s" has an unsupported extension', $displayName));
+            throw new \InvalidArgumentException(sprintf('上传文件“%s”的扩展名不受支持', $displayName));
         }
 
         $imageInfo = @getimagesize($file->getPathname());
@@ -972,7 +976,7 @@ class PaymentAccountController
             return [];
         }
 
-        $rows = Db::table('ypay_order')
+        $rows = Db::table(BusinessTable::order())
             ->select('account_id')
             ->selectRaw('COUNT(*) as order_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as paid_order_count')
@@ -1003,7 +1007,7 @@ class PaymentAccountController
             ];
         }
 
-        $row = Db::table('ypay_order')
+        $row = Db::table(BusinessTable::order())
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as paid_order_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN truemoney ELSE 0 END) as paid_amount')
             ->where('pay_type', 1)
@@ -1026,7 +1030,7 @@ class PaymentAccountController
     private function accountRecord(int $id): ?array
     {
         $row = $this->accountQuery()
-            ->where('ypay_account.id', $id)
+            ->where('account.id', $id)
             ->first();
 
         return $row ? (array)$row : null;
@@ -1072,9 +1076,85 @@ class PaymentAccountController
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    private function normalizeCreatePayload(array $payload): array
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{code: string, payment_method_type: string, payment_method_label: string, plugin_name: string}
+     */
+    private function resolveAdminCreateContext(array $payload): array
     {
-        $code = $this->normalizeCreateCode($payload['code'] ?? '');
+        $pluginCode = strtolower(trim((string)($payload['plugin_code'] ?? ($payload['code'] ?? ''))));
+        if ($pluginCode === '') {
+            throw new \InvalidArgumentException('请选择支付插件');
+        }
+
+        if (!isset($this->createCodeCatalog()[$pluginCode])) {
+            throw new \InvalidArgumentException('当前支付插件暂不支持后台创建收款账户');
+        }
+
+        try {
+            $detail = (new PaymentPluginManager())->detail($pluginCode);
+        } catch (\Throwable) {
+            throw new \InvalidArgumentException('所选支付插件不可用或尚未安装');
+        }
+
+        $state = is_array($detail['state'] ?? null) ? $detail['state'] : [];
+        if (empty($state['installed']) || empty($state['enabled'])) {
+            throw new \InvalidArgumentException('所选支付插件尚未安装或未启用');
+        }
+
+        $manifest = is_array($detail['manifest'] ?? null) ? $detail['manifest'] : [];
+        $methodTypes = array_values(array_unique(array_filter(array_map(
+            static function ($value): string {
+                $normalized = strtolower(trim((string)$value));
+
+                return match ($normalized) {
+                    'wechat' => 'wxpay',
+                    'qq' => 'qqpay',
+                    default => $normalized,
+                };
+            },
+            (array)($manifest['supported_payment_types'] ?? [])
+        ))));
+
+        if ($methodTypes === []) {
+            $fallbackType = strtolower(trim((string)($this->createCodeCatalog()[$pluginCode]['type'] ?? '')));
+            if ($fallbackType !== '') {
+                $methodTypes[] = $fallbackType;
+            }
+        }
+
+        $paymentMethodType = strtolower(trim((string)($payload['payment_method_type'] ?? '')));
+        if ($paymentMethodType === '') {
+            $paymentMethodType = $methodTypes[0] ?? '';
+        }
+
+        if ($paymentMethodType === '') {
+            throw new \InvalidArgumentException('所选插件未声明可用支付方式');
+        }
+
+        if (!in_array($paymentMethodType, $methodTypes, true)) {
+            throw new \InvalidArgumentException('所选插件不支持当前支付方式');
+        }
+
+        $paymentMethodMap = $this->paymentMethodMap();
+        $paymentMethod = $paymentMethodMap[$paymentMethodType] ?? $this->resolvePaymentMethod($paymentMethodType);
+
+        return [
+            'code' => $pluginCode,
+            'payment_method_type' => $paymentMethodType,
+            'payment_method_label' => trim((string)($paymentMethod['label'] ?? '')),
+            'plugin_name' => trim((string)($manifest['name'] ?? $pluginCode)),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array{code: string, payment_method_type: string, payment_method_label: string, plugin_name: string} $context
+     * @return array<string, mixed>
+     */
+    private function normalizeCreatePayload(array $payload, array $context): array
+    {
+        $code = $context['code'];
         $channel = $this->findCreatableChannel($code);
         if ($channel === null) {
             throw new \InvalidArgumentException('当前收款账号类型未启用或对应通道不可用');
@@ -1169,7 +1249,7 @@ class PaymentAccountController
         return array_merge(
             [
                 'code' => $code,
-                'type' => trim((string)($channel['type'] ?? '')),
+                'type' => $context['payment_method_type'],
                 'user_id' => $merchantUserId,
                 'qr_url' => $qrUrl,
                 'qr_type' => '',
@@ -1202,6 +1282,9 @@ class PaymentAccountController
                 'remark' => $remark,
                 'wx_guid' => $wxGuid,
                 'cloud_id' => $cloudId,
+                'payment_method_type' => $context['payment_method_type'],
+                'payment_method_label' => $context['payment_method_label'],
+                'plugin_name' => $context['plugin_name'],
             ],
             $identifierFields,
             $credentialUpdates
@@ -1289,6 +1372,33 @@ class PaymentAccountController
             }
 
             return $updates;
+        }
+
+        if ($code === 'universal_epay') {
+            $gatewayUrl = $this->normalizeOptionalHttpUrl(
+                $payload['qr_url'] ?? ($record['qr_url'] ?? ''),
+                2500,
+                '接口地址'
+            );
+            if ($gatewayUrl === '') {
+                throw new \InvalidArgumentException('接口地址不能为空');
+            }
+
+            return array_merge($updates, [
+                'zfb_pid' => '',
+                'cookie' => $this->normalizeRequiredText(
+                    $payload['cookie'] ?? ($record['cookie'] ?? ''),
+                    12000,
+                    '商户密钥'
+                ),
+                'qr_url' => $gatewayUrl,
+                'qr_type' => $this->normalizeUniversalEpayMode(
+                    $payload['qr_type'] ?? ($record['qr_type'] ?? '0')
+                ),
+                'wx_guid' => '',
+                'cloud_id' => '',
+                'qq' => '',
+            ]);
         }
 
         if ($code === 'alipay_bill') {
@@ -1737,7 +1847,7 @@ class PaymentAccountController
         return array_map(
             static fn($row): array => (array)$row,
             $this->accountQuery()
-                ->whereIn('ypay_account.id', $accountIds)
+                ->whereIn('account.id', $accountIds)
                 ->get()
                 ->toArray()
         );
@@ -1990,7 +2100,7 @@ class PaymentAccountController
         $now = time();
         $activePendingCondition = $this->activePendingOrderConditionSql($now);
         $detachableCondition = $this->detachableOrderConditionSql($now);
-        $orderRow = Db::table('ypay_order')
+        $orderRow = Db::table(BusinessTable::order())
             ->selectRaw('COUNT(*) as order_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as paid_order_count')
             ->selectRaw('SUM(CASE WHEN ' . $activePendingCondition . ' THEN 1 ELSE 0 END) as active_pending_order_count')
@@ -2000,13 +2110,13 @@ class PaymentAccountController
             ->whereIn('account_id', $accountIds)
             ->first();
 
-        $poolItemRow = Db::table('ypay_poll_pool_item')
+        $poolItemRow = Db::table(BusinessTable::pollPoolItem())
             ->selectRaw('COUNT(*) as pool_item_count')
             ->selectRaw('COUNT(DISTINCT pool_id) as pool_count')
             ->whereIn('account_id', $accountIds)
             ->first();
 
-        $lastPoolRow = Db::table('ypay_poll_pool')
+        $lastPoolRow = Db::table(BusinessTable::pollPool())
             ->selectRaw('COUNT(*) as last_selected_pool_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active_last_selected_pool_count')
             ->whereIn('last_account_id', $accountIds)
@@ -2060,7 +2170,7 @@ class PaymentAccountController
         $now = time();
         $detachableCondition = $this->detachableOrderConditionSql($now);
 
-        return Db::table('ypay_order')
+        return Db::table(BusinessTable::order())
             ->where('pay_type', 1)
             ->whereIn('account_id', $accountIds)
             ->whereRaw($detachableCondition)
@@ -2140,6 +2250,11 @@ class PaymentAccountController
                 'type' => 'wxpay',
                 'identifier_field' => 'wxname',
                 'identifier_label' => '应用ID',
+            ],
+            'universal_epay' => [
+                'type' => 'alipay',
+                'identifier_field' => 'wxname',
+                'identifier_label' => '商户ID',
             ],
             'jiaofeiyi_alipay' => [
                 'type' => 'alipay',
@@ -2238,6 +2353,10 @@ class PaymentAccountController
         }
 
         $record = (array)$row;
+        if ($code === 'universal_epay') {
+            return $record;
+        }
+
         $expectedType = (string)($this->createCodeCatalog()[$code]['type'] ?? '');
         if ($expectedType !== '' && trim((string)($record['type'] ?? '')) !== $expectedType) {
             return null;
@@ -2246,13 +2365,65 @@ class PaymentAccountController
         return $record;
     }
 
+    private function paymentMethodMap(): array
+    {
+        $rows = Db::table(BusinessTable::payment())
+            ->select('id', 'name', 'type', 'status', 'sort')
+            ->where('status', 1)
+            ->orderBy('sort')
+            ->orderBy('id')
+            ->get()
+            ->toArray();
+
+        $items = [];
+        foreach ($rows as $row) {
+            $record = (array)$row;
+            $type = trim((string)($record['type'] ?? ''));
+            if ($type === '') {
+                continue;
+            }
+
+            $name = AdminFixtureTextNormalizer::normalize(trim((string)($record['name'] ?? '')));
+            $items[$type] = [
+                'id' => (int)($record['id'] ?? 0),
+                'value' => $type,
+                'label' => $name !== '' ? $name : AdminOrderFormatter::paymentTypeLabel($type),
+                'type_label' => AdminOrderFormatter::paymentTypeLabel($type),
+                'sort' => (int)($record['sort'] ?? 0),
+            ];
+        }
+
+        return $items;
+    }
+
+    private function resolvePaymentMethod(string $type): array
+    {
+        $row = Db::table(BusinessTable::payment())
+            ->select('id', 'name', 'type', 'status')
+            ->where('type', $type)
+            ->where('status', 1)
+            ->first();
+
+        if (!$row) {
+            throw new \InvalidArgumentException('所选支付方式不可用');
+        }
+
+        $record = (array)$row;
+
+        return [
+            'id' => (int)($record['id'] ?? 0),
+            'type' => trim((string)($record['type'] ?? '')),
+            'label' => AdminFixtureTextNormalizer::normalize(trim((string)($record['name'] ?? ''))),
+        ];
+    }
+
     private function merchantExists(int $userId): bool
     {
         if ($userId <= 0) {
             return false;
         }
 
-        return Db::table('ypay_user')
+        return Db::table(BusinessTable::user())
             ->where('id', $userId)
             ->exists();
     }
@@ -2529,6 +2700,25 @@ class PaymentAccountController
         $normalized = trim((string)$value);
 
         return in_array($normalized, ['1', '2', '3'], true) ? $normalized : '2';
+    }
+
+    private function normalizeUniversalEpayMode(mixed $value): string
+    {
+        if (is_object($value)) {
+            throw new \InvalidArgumentException('接口模式格式不正确');
+        }
+
+        if (is_array($value)) {
+            $value = reset($value);
+        }
+
+        $normalized = strtolower(trim((string)$value));
+
+        return match ($normalized) {
+            '', '0', 'submit', 'page', 'web' => '0',
+            '1', 'mapi', 'api' => '1',
+            default => throw new \InvalidArgumentException('接口模式仅支持普通接口或 MAPI 接口'),
+        };
     }
 
     private function normalizeOptionalHttpUrl(mixed $value, int $maxLength, string $field): string

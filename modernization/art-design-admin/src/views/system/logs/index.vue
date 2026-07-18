@@ -16,7 +16,7 @@
       >
         <template #left>
           <ElSpace wrap>
-            <ElTag effect="plain">管理员日志 {{ pagination.total }}</ElTag>
+            <ElTag effect="plain">后台日志 {{ pagination.total }}</ElTag>
             <ElButton
               v-if="hasAdminLogCleanupAuth"
               plain
@@ -24,7 +24,7 @@
               :loading="cleanupLoading"
               @click="handleCleanupAdminLogs"
             >
-              清空日志
+              清理日志
             </ElButton>
           </ElSpace>
         </template>
@@ -47,7 +47,7 @@
       :title="
         activeLog
           ? `${displayLogText(activeLog.admin_display, '管理员')} / #${activeLog.id}`
-          : '管理员日志详情'
+          : '后台日志详情'
       "
     >
       <div v-loading="detailLoading" class="log-detail">
@@ -102,7 +102,6 @@
               readonly
             />
           </div>
-
         </template>
       </div>
     </ElDrawer>
@@ -274,8 +273,8 @@
     try {
       const response = await fetchGetAdminLogDetail(row.id)
       activeLog.value = response.item
-    } catch (_error) {
-      ElMessage.error('加载管理员日志详情失败。')
+    } catch {
+      ElMessage.error('加载后台日志详情失败。')
     } finally {
       detailLoading.value = false
     }
@@ -283,7 +282,7 @@
 
   async function handleCleanupAdminLogs() {
     if (!hasAdminLogCleanupAuth.value) {
-      ElMessage.warning('当前没有清理管理员日志的权限。')
+      ElMessage.warning('当前没有日志清理权限。')
       return
     }
 
@@ -293,7 +292,7 @@
       const audit = response.audit
 
       if (!audit.can_cleanup) {
-        await ElMessageBox.alert(audit.warnings.join('\n'), '暂无可清理日志', {
+        await ElMessageBox.alert(audit.warnings.join('\n'), '当前没有可清理日志', {
           type: 'info',
           confirmButtonText: '知道了'
         })
@@ -302,9 +301,9 @@
 
       const { value } = await ElMessageBox.prompt(
         buildAdminLogCleanupPromptMessage(audit),
-        '清空管理员日志',
+        '清理后台日志',
         {
-          confirmButtonText: '立即清空',
+          confirmButtonText: '立即清理',
           cancelButtonText: '取消',
           type: 'warning',
           inputPlaceholder: audit.confirmation_phrase,
@@ -320,13 +319,13 @@
       detailVisible.value = false
       activeLog.value = null
       await getData()
-      ElMessage.success(`已清理 ${cleanupResponse.deleted_count} 条管理员日志。`)
+      ElMessage.success(`已清理 ${cleanupResponse.deleted_count} 条后台日志。`)
     } catch (error) {
       if (isDialogCancel(error)) {
         return
       }
 
-      ElMessage.error('清理管理员日志失败。')
+      ElMessage.error('日志清理失败。')
     } finally {
       cleanupLoading.value = false
     }
@@ -335,14 +334,14 @@
   function buildAdminLogCleanupPromptMessage(audit: Api.AdminLogs.LogCleanupAudit) {
     const summary = audit.summary
     return [
-      '清空后会永久删除当前管理员日志记录。',
+      '清理后会永久删除当前后台日志。',
       '',
       `日志条数：${summary.total_count}`,
       `涉及管理员：${summary.admin_count}`,
       `包含负载：${summary.payload_log_count}`,
       `ID 范围：${summary.first_log_id || 0} -> ${summary.last_log_id || 0}`,
       '',
-      '删除后会自动写入一条新的清理回执，保证可追溯。',
+      '系统会保留一条清理记录，便于追溯。',
       '',
       `请输入 ${audit.confirmation_phrase} 继续。`,
       ...audit.warnings.map((item) => `- ${item}`)

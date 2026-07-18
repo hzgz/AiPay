@@ -21,21 +21,23 @@
     <div v-if="activeCleanupPanel === 'safe'" class="plan-card safe">
       <p class="plan-summary-copy">仅清理插件私有资源。</p>
       <div class="plan-meta">
-        <ElTag effect="plain">现存文件 {{ detail.uninstall_plan.summary.existing_file_count }}</ElTag>
-        <ElTag effect="plain">
-          现存数据表 {{ detail.uninstall_plan.summary.existing_table_count }}
-        </ElTag>
+        <ElTag effect="plain">文件 {{ detail.uninstall_plan.summary.existing_file_count }}</ElTag>
+        <ElTag effect="plain"
+          >数据表 {{ detail.uninstall_plan.summary.existing_table_count }}</ElTag
+        >
         <ElTag
-          :type="detail.uninstall_plan.summary.existing_managed_channel_count > 0 ? 'primary' : 'info'"
+          :type="
+            detail.uninstall_plan.summary.existing_managed_channel_count > 0 ? 'primary' : 'info'
+          "
           effect="plain"
         >
           通道 {{ detail.uninstall_plan.summary.existing_managed_channel_count }}/{{
             detail.uninstall_plan.summary.managed_channel_count
           }}
         </ElTag>
-        <ElTag type="warning" effect="plain">
-          数据行 {{ detail.uninstall_plan.summary.table_row_count }}
-        </ElTag>
+        <ElTag type="warning" effect="plain"
+          >记录 {{ detail.uninstall_plan.summary.table_row_count }}</ElTag
+        >
       </div>
 
       <div class="plan-actions">
@@ -45,7 +47,7 @@
           :loading="cleanupLoading"
           @click="emit('runSafeCleanup', detail.manifest.code)"
         >
-          执行安全清理
+          安全清理
         </ElButton>
         <ElTag v-else effect="plain" type="info">
           {{
@@ -53,13 +55,13 @@
               ? '当前账号没有安全清理权限。'
               : detail.state.installed || detail.state.enabled
                 ? '请先卸载插件后再清理。'
-                : '当前没有可执行安全清理的残留项。'
+                : '当前没有可清理项。'
           }}
         </ElTag>
       </div>
 
       <div v-if="detail.state.last_cleanup_report" class="plan-result">
-        <span>最近清理 {{ detail.state.last_cleanup_report.finished_at }}</span>
+        <span>清理时间 {{ detail.state.last_cleanup_report.finished_at }}</span>
         <div class="audit-tags">
           <ElTag type="success" effect="plain">
             文件 {{ detail.state.last_cleanup_report.removed_file_count }}
@@ -67,7 +69,9 @@
           <ElTag type="warning" effect="plain">
             数据表 {{ detail.state.last_cleanup_report.removed_table_count }}
           </ElTag>
-          <ElTag effect="plain">数据行 {{ detail.state.last_cleanup_report.removed_row_count }}</ElTag>
+          <ElTag effect="plain"
+            >记录 {{ detail.state.last_cleanup_report.removed_row_count }}</ElTag
+          >
           <ElTag
             v-if="lastCleanupManagedChannelSummary.total > 0"
             :type="lastCleanupManagedChannelSummary.blocked > 0 ? 'warning' : 'primary'"
@@ -131,7 +135,9 @@
           @click="emit('toggleVisibility', 'safeNotes')"
         >
           {{
-            cleanupVisibility.safeNotes ? '收起说明' : `说明（${detail.uninstall_plan.notes.length}）`
+            cleanupVisibility.safeNotes
+              ? '收起说明'
+              : `说明（${detail.uninstall_plan.notes.length}）`
           }}
         </ElButton>
       </div>
@@ -146,7 +152,9 @@
             <ElTag v-if="file.kind !== 'missing'" type="warning" effect="plain">
               {{ resourceKindLabel(file.kind) }}
             </ElTag>
-            <ElTag v-if="file.entry_count !== null" effect="plain">条目 {{ file.entry_count }}</ElTag>
+            <ElTag v-if="file.entry_count !== null" effect="plain"
+              >条目 {{ file.entry_count }}</ElTag
+            >
             <ElTag v-else-if="file.size_bytes !== null" effect="plain">
               大小 {{ formatBytes(file.size_bytes) }}
             </ElTag>
@@ -162,7 +170,7 @@
               {{ table.exists ? '存在' : '缺失' }}
             </ElTag>
             <ElTag v-if="table.row_count !== null" type="warning" effect="plain">
-              数据行 {{ table.row_count }}
+              记录 {{ table.row_count }}
             </ElTag>
           </div>
         </li>
@@ -179,7 +187,7 @@
               {{ channel.exists ? '存在' : '缺失' }}
             </ElTag>
             <ElTag :type="channel.can_cleanup ? 'success' : 'warning'" effect="plain">
-              {{ channel.can_cleanup ? '安全清理可执行' : '已阻塞' }}
+              {{ channel.can_cleanup ? '可清理' : '已阻塞' }}
             </ElTag>
             <ElTag v-if="managedChannelDriftCount(channel) > 0" type="warning" effect="plain">
               漂移 {{ managedChannelDriftCount(channel) }}
@@ -208,10 +216,10 @@
     </div>
 
     <div v-else class="plan-card purge">
-      <p class="plan-summary-copy">永久移除插件目录与相关残留。</p>
+      <p class="plan-summary-copy">永久移除插件目录与相关运行数据。</p>
       <div class="plan-meta">
-        <ElTag effect="plain">现存文件 {{ detail.purge_plan.summary.existing_file_count }}</ElTag>
-        <ElTag effect="plain">现存数据表 {{ detail.purge_plan.summary.existing_table_count }}</ElTag>
+        <ElTag effect="plain">文件 {{ detail.purge_plan.summary.existing_file_count }}</ElTag>
+        <ElTag effect="plain">数据表 {{ detail.purge_plan.summary.existing_table_count }}</ElTag>
         <ElTag
           :type="detail.purge_plan.summary.existing_managed_channel_count > 0 ? 'primary' : 'info'"
           effect="plain"
@@ -220,7 +228,9 @@
             detail.purge_plan.summary.managed_channel_count
           }}
         </ElTag>
-        <ElTag type="warning" effect="plain">数据行 {{ detail.purge_plan.summary.table_row_count }}</ElTag>
+        <ElTag type="warning" effect="plain"
+          >记录 {{ detail.purge_plan.summary.table_row_count }}</ElTag
+        >
         <ElTag
           :type="detail.purge_plan.snapshot_guard.has_snapshot ? 'success' : 'danger'"
           effect="plain"
@@ -241,10 +251,10 @@
       <div class="purge-guard-card">
         <div class="purge-guard-copy">
           <strong>{{
-            detail.purge_plan.snapshot_guard.has_snapshot ? '恢复快照已就绪' : '暂无恢复快照'
+            detail.purge_plan.snapshot_guard.has_snapshot ? '恢复快照可用' : '还没有恢复快照'
           }}</strong>
           <p v-if="detail.purge_plan.snapshot_guard.has_snapshot">
-            最近恢复点：
+            最近快照：
             {{
               snapshotDisplayTitle(
                 detail.purge_plan.snapshot_guard.latest_snapshot_label,
@@ -279,7 +289,7 @@
           :loading="purgeCleanupLoading"
           @click="emit('runPurgeCleanup', detail.manifest.code)"
         >
-          执行彻底清理
+          彻底清理
         </ElButton>
         <ElTag v-else effect="plain" type="warning">
           {{ hasPluginCleanupPurgeAuth ? purgeActionHint : '当前账号没有彻底清理权限。' }}
@@ -326,9 +336,7 @@
           @click="emit('toggleVisibility', 'purgeNotes')"
         >
           {{
-            cleanupVisibility.purgeNotes
-              ? '收起说明'
-              : `说明（${detail.purge_plan.notes.length}）`
+            cleanupVisibility.purgeNotes ? '收起说明' : `说明（${detail.purge_plan.notes.length}）`
           }}
         </ElButton>
       </div>
@@ -343,7 +351,9 @@
             <ElTag v-if="file.kind !== 'missing'" type="warning" effect="plain">
               {{ resourceKindLabel(file.kind) }}
             </ElTag>
-            <ElTag v-if="file.entry_count !== null" effect="plain">条目 {{ file.entry_count }}</ElTag>
+            <ElTag v-if="file.entry_count !== null" effect="plain"
+              >条目 {{ file.entry_count }}</ElTag
+            >
             <ElTag v-else-if="file.size_bytes !== null" effect="plain">
               大小 {{ formatBytes(file.size_bytes) }}
             </ElTag>
@@ -359,7 +369,7 @@
               {{ table.exists ? '存在' : '缺失' }}
             </ElTag>
             <ElTag v-if="table.row_count !== null" type="warning" effect="plain">
-              数据行 {{ table.row_count }}
+              记录 {{ table.row_count }}
             </ElTag>
           </div>
         </li>
@@ -405,7 +415,12 @@
     </div>
 
     <div class="capability-list">
-      <ElTag v-for="scope in detail.uninstall_plan.retain_scopes" :key="`retain-${scope}`" effect="plain" type="info">
+      <ElTag
+        v-for="scope in detail.uninstall_plan.retain_scopes"
+        :key="`retain-${scope}`"
+        effect="plain"
+        type="info"
+      >
         保留 {{ retainScopeLabel(scope) }}
       </ElTag>
     </div>

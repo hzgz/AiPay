@@ -108,10 +108,7 @@
             </div>
 
             <ElFormItem label="语音模板">
-              <ElInput
-                v-model.trim="formData.voice_tips"
-                placeholder="到账【交易金额】"
-              />
+              <ElInput v-model.trim="formData.voice_tips" placeholder="到账【交易金额】" />
             </ElFormItem>
           </article>
         </section>
@@ -218,7 +215,7 @@
       close: '关闭',
       email: '邮箱',
       wxpusher: '微信推送',
-      tg: 'Telegram'
+      tg: '电报'
     }
 
     return mapping[channelId] || translateMerchantText(channelId)

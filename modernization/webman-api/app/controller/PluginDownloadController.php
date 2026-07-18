@@ -6,6 +6,7 @@ use app\controller\concerns\AdminControllerFormatSupport;
 use app\support\AdminPluginDownloadFormatter;
 use app\support\AdminRouteAuthorization;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\RequestPayload;
 use Illuminate\Database\Query\Builder;
 use support\Db;
@@ -82,7 +83,7 @@ class PluginDownloadController
         }
 
         $now = date('Y-m-d H:i:s');
-        $pluginId = (int)Db::table('ypay_plug')->insertGetId([
+        $pluginId = (int)Db::table(BusinessTable::plug())->insertGetId([
             'name' => $payload['name'],
             'downurl' => $payload['downurl'],
             'introduce' => $payload['introduce'],
@@ -133,7 +134,7 @@ class PluginDownloadController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_plug')
+        Db::table(BusinessTable::plug())
             ->where('id', $id)
             ->update([
                 'name' => $payload['name'],
@@ -186,7 +187,7 @@ class PluginDownloadController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_plug')
+        Db::table(BusinessTable::plug())
             ->where('id', $id)
             ->update([
                 'status' => $status,
@@ -490,7 +491,7 @@ class PluginDownloadController
 
     private function pluginQuery(): Builder
     {
-        return Db::table('ypay_plug')
+        return Db::table(BusinessTable::plug())
             ->select(
                 'id',
                 'name',
@@ -587,7 +588,7 @@ class PluginDownloadController
 
         return array_map(
             static fn($row): array => (array)$row,
-            Db::table('ypay_plug')
+            Db::table(BusinessTable::plug())
                 ->select('id', 'name', 'downurl', 'delete_time')
                 ->whereIn('id', $pluginIds)
                 ->get()
@@ -740,7 +741,7 @@ class PluginDownloadController
                     'downurl' => '',
                     'exists' => false,
                     'can_delete' => false,
-                    'blocking_reasons' => ['This plugin download record was not found in ypay_plug.'],
+                    'blocking_reasons' => ['This plugin download record was not found.'],
                     'summary' => [
                         'delete_row_count' => 0,
                         'blocked_count' => 1,
@@ -806,14 +807,14 @@ class PluginDownloadController
 
     private function deletePluginRow(int $id): void
     {
-        Db::table('ypay_plug')
+        Db::table(BusinessTable::plug())
             ->where('id', $id)
             ->update(['delete_time' => date('Y-m-d H:i:s')]);
     }
 
     private function restorePluginRow(int $id): void
     {
-        Db::table('ypay_plug')
+        Db::table(BusinessTable::plug())
             ->where('id', $id)
             ->update(['delete_time' => null]);
     }

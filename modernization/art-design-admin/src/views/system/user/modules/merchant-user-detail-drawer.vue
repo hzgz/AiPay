@@ -145,7 +145,7 @@
               :type="activeMerchant.wxpusher_uid_configured ? 'success' : 'info'"
               effect="plain"
             >
-              WxPusher
+              微信推送
               {{
                 activeMerchant.wxpusher_uid_configured
                   ? activeMerchant.wxpusher_uid_masked
@@ -153,7 +153,7 @@
               }}
             </ElTag>
             <ElTag :type="activeMerchant.tg_chat_id_configured ? 'success' : 'info'" effect="plain">
-              Telegram
+              电报通知
               {{
                 activeMerchant.tg_chat_id_configured ? activeMerchant.tg_chat_id_masked : '未绑定'
               }}

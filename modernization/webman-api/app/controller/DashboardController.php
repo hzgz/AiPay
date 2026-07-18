@@ -4,6 +4,7 @@ namespace app\controller;
 
 use app\support\AdminOrderFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use support\Db;
 use Webman\Http\Request;
 use Webman\Http\Response;
@@ -16,8 +17,8 @@ class DashboardController
         $tomorrowStart = date('Y-m-d 00:00:00', strtotime('+1 day'));
 
         $todayQuery = $this->windowOrderQuery($todayStart, $tomorrowStart);
-        $allOrdersQuery = Db::table('ypay_order');
-        $paidOrdersQuery = Db::table('ypay_order')->where('status', 1);
+        $allOrdersQuery = Db::table(BusinessTable::order());
+        $paidOrdersQuery = Db::table(BusinessTable::order())->where('status', 1);
 
         $todayOrderCount = (int)(clone $todayQuery)->count();
         $todayPaidOrderCount = (int)(clone $todayQuery)->where('status', 1)->count();
@@ -29,8 +30,8 @@ class DashboardController
         $totalPaidAmount = $this->sumSettledAmount(clone $paidOrdersQuery);
         $totalFeeAmount = $this->sumFeeAmount(clone $paidOrdersQuery);
 
-        $pendingOrderCount = (int)Db::table('ypay_order')->where('status', 0)->count();
-        $merchantCount = (int)Db::table('ypay_user')->count();
+        $pendingOrderCount = (int)Db::table(BusinessTable::order())->where('status', 0)->count();
+        $merchantCount = (int)Db::table(BusinessTable::user())->count();
         $successRate = $totalOrderCount > 0
             ? round(($totalPaidOrderCount / $totalOrderCount) * 100, 2)
             : 0.0;
@@ -59,7 +60,7 @@ class DashboardController
 
     private function windowOrderQuery(string $start, string $end)
     {
-        return Db::table('ypay_order')
+        return Db::table(BusinessTable::order())
             ->where('create_time', '>=', $start)
             ->where('create_time', '<', $end);
     }
@@ -89,7 +90,7 @@ class DashboardController
         $start = $trendStart->format('Y-m-d 00:00:00');
         $end = $trendEnd->format('Y-m-d 00:00:00');
 
-        $rows = Db::table('ypay_order')
+        $rows = Db::table(BusinessTable::order())
             ->selectRaw("DATE_FORMAT(create_time, '%Y-%m-%d') as date_key")
             ->selectRaw('COUNT(*) as order_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as paid_order_count')
@@ -131,7 +132,7 @@ class DashboardController
 
     private function paymentDistribution(int $totalOrderCount): array
     {
-        $rows = Db::table('ypay_order')
+        $rows = Db::table(BusinessTable::order())
             ->select('type')
             ->selectRaw('COUNT(*) as order_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as paid_order_count')
@@ -164,16 +165,16 @@ class DashboardController
 
     private function dutyBoard(): array
     {
-        $pendingRechargeQuery = Db::table('ypay_recharge')->where('status', 0);
+        $pendingRechargeQuery = Db::table(BusinessTable::recharge())->where('status', 0);
         $pendingRechargeCount = (int)(clone $pendingRechargeQuery)->count();
         $pendingRechargeRow = (array)((clone $pendingRechargeQuery)
             ->selectRaw('COALESCE(SUM(money), 0) as amount')
             ->first() ?? []);
 
-        $newTicketCount = (int)Db::table('ypay_ticket')->where('status', 0)->count();
-        $processingTicketCount = (int)Db::table('ypay_ticket')->where('status', 1)->count();
-        $onlineAccountCount = (int)Db::table('ypay_account')->where('status', 1)->count();
-        $enabledAccountCount = (int)Db::table('ypay_account')->where('is_status', 1)->count();
+        $newTicketCount = (int)Db::table(BusinessTable::ticket())->where('status', 0)->count();
+        $processingTicketCount = (int)Db::table(BusinessTable::ticket())->where('status', 1)->count();
+        $onlineAccountCount = (int)Db::table(BusinessTable::account())->where('status', 1)->count();
+        $enabledAccountCount = (int)Db::table(BusinessTable::account())->where('is_status', 1)->count();
 
         return [
             'pending_recharge_count' => $pendingRechargeCount,
@@ -188,35 +189,35 @@ class DashboardController
 
     private function recentOrders(): array
     {
-        $rows = Db::table('ypay_order')
-            ->leftJoin('ypay_user', 'ypay_order.user_id', '=', 'ypay_user.id')
-            ->leftJoin('ypay_paylist', 'ypay_order.account_id', '=', 'ypay_paylist.id')
+        $rows = Db::table(BusinessTable::order('orders'))
+            ->leftJoin(BusinessTable::user('merchant'), 'orders.user_id', '=', 'merchant.id')
+            ->leftJoin(BusinessTable::paylist('paylist'), 'orders.account_id', '=', 'paylist.id')
             ->select(
-                'ypay_order.id',
-                'ypay_order.name',
-                'ypay_order.sitename',
-                'ypay_order.trade_no',
-                'ypay_order.out_trade_no',
-                'ypay_order.alipay_order_no',
-                'ypay_order.user_id',
-                'ypay_order.account_id',
-                'ypay_order.type',
-                'ypay_order.pay_type',
-                'ypay_order.money',
-                'ypay_order.truemoney',
-                'ypay_order.feilvmoney',
-                'ypay_order.status',
-                'ypay_order.notify_url',
-                'ypay_order.return_url',
-                'ypay_order.ip',
-                'ypay_order.create_time',
-                'ypay_order.end_time',
-                'ypay_order.api_memo',
-                'ypay_user.username as merchant_username',
-                'ypay_paylist.type as paylist_type',
-                'ypay_paylist.name as paylist_name'
+                'orders.id',
+                'orders.name',
+                'orders.sitename',
+                'orders.trade_no',
+                'orders.out_trade_no',
+                'orders.alipay_order_no',
+                'orders.user_id',
+                'orders.account_id',
+                'orders.type',
+                'orders.pay_type',
+                'orders.money',
+                'orders.truemoney',
+                'orders.feilvmoney',
+                'orders.status',
+                'orders.notify_url',
+                'orders.return_url',
+                'orders.ip',
+                'orders.create_time',
+                'orders.end_time',
+                'orders.api_memo',
+                'merchant.username as merchant_username',
+                'paylist.type as paylist_type',
+                'paylist.name as paylist_name'
             )
-            ->orderByDesc('ypay_order.id')
+            ->orderByDesc('orders.id')
             ->limit(8)
             ->get()
             ->toArray();

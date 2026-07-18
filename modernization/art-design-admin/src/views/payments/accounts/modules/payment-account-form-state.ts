@@ -51,6 +51,19 @@ export type CreatePluginCatalogItem = {
   methodLabel: string
 }
 
+function normalizeSupportedMethodType(value: unknown): CreatePaymentMethodType | null {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+
+  const resolved =
+    normalized === 'wechat' ? 'wxpay' : normalized === 'qq' ? 'qqpay' : normalized
+
+  return Object.prototype.hasOwnProperty.call(PAYMENT_METHOD_LABEL_MAP, resolved)
+    ? (resolved as CreatePaymentMethodType)
+    : null
+}
+
 export type PaymentAccountCreateForm = {
   user_id: string
   payment_method_type: string
@@ -264,20 +277,31 @@ export function usePaymentAccountFormState({
       createPluginOptions.value = (Array.isArray(response.items) ? response.items : [])
         .flatMap((item) => {
           const code = String(item.code || '').trim() as '' | AccountCreateCode
-          const methodType = code ? ACCOUNT_METHOD_TYPE_MAP[code] : undefined
+          const meta = code ? getAccountCodeMeta(code) : null
 
-          if (!code || !methodType || !item.installed || !item.enabled || !getAccountCodeMeta(code)) {
+          if (!code || !meta || !item.installed || !item.enabled) {
             return []
           }
 
-          return [
-            {
-              code,
-              name: String(item.name || ACCOUNT_CODE_META[code].label || code).trim(),
-              methodType,
-              methodLabel: PAYMENT_METHOD_LABEL_MAP[methodType]
-            }
-          ]
+          const fallbackMethodType = ACCOUNT_METHOD_TYPE_MAP[code]
+          const methodTypes = Array.from(
+            new Set(
+              (
+                Array.isArray(item.supported_payment_types) && item.supported_payment_types.length > 0
+                  ? item.supported_payment_types
+                  : [fallbackMethodType]
+              )
+                .map((value) => normalizeSupportedMethodType(value))
+                .filter((value): value is CreatePaymentMethodType => Boolean(value))
+            )
+          )
+
+          return methodTypes.map((methodType) => ({
+            code,
+            name: String(item.name || ACCOUNT_CODE_META[code].label || code).trim(),
+            methodType,
+            methodLabel: PAYMENT_METHOD_LABEL_MAP[methodType]
+          }))
         })
         .sort((left, right) => {
           const methodOrder =

@@ -2,6 +2,7 @@
 
 namespace app\controller;
 
+use app\support\BusinessTable;
 use app\support\AdminPaymentFormatter;
 use app\support\AdminRouteAuthorization;
 use app\support\ApiResponse;
@@ -22,7 +23,7 @@ class PaymentController
         $size = max(1, min((int)$request->get('size', 20), 100));
         $recycleView = $this->isRecycleView($request);
 
-        $query = Db::table('ypay_payment')
+        $query = Db::table(BusinessTable::payment())
             ->select('id', 'name', 'type', 'sort', 'status', 'create_time', 'update_time', 'delete_time');
 
         if ($recycleView) {
@@ -106,7 +107,7 @@ class PaymentController
         }
 
         $now = date('Y-m-d H:i:s');
-        $paymentId = (int)Db::table('ypay_payment')->insertGetId([
+        $paymentId = (int)Db::table(BusinessTable::payment())->insertGetId([
             'name' => $name,
             'type' => $type,
             'sort' => $sort,
@@ -159,7 +160,7 @@ class PaymentController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_payment')
+        Db::table(BusinessTable::payment())
             ->where('id', $id)
             ->update([
                 'name' => $name,
@@ -204,7 +205,7 @@ class PaymentController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_payment')
+        Db::table(BusinessTable::payment())
             ->where('id', $id)
             ->update([
                 'status' => $status,
@@ -247,7 +248,7 @@ class PaymentController
             );
         }
 
-        Db::table('ypay_payment')
+        Db::table(BusinessTable::payment())
             ->where('id', $id)
             ->update([
                 'delete_time' => null,
@@ -338,7 +339,7 @@ class PaymentController
             $restorableRows
         ));
 
-        Db::table('ypay_payment')
+        Db::table(BusinessTable::payment())
             ->whereIn('id', $restoredPaymentIds)
             ->update([
                 'delete_time' => null,
@@ -416,7 +417,7 @@ class PaymentController
             );
         }
 
-        Db::table('ypay_payment')
+        Db::table(BusinessTable::payment())
             ->where('id', $id)
             ->update([
                 'delete_time' => date('Y-m-d H:i:s'),
@@ -487,7 +488,7 @@ class PaymentController
 
         $deletablePaymentIds = array_values(array_map('intval', (array)($audit['deletable_payment_ids'] ?? [])));
         if ($deletablePaymentIds !== []) {
-            Db::table('ypay_payment')
+            Db::table(BusinessTable::payment())
                 ->whereIn('id', $deletablePaymentIds)
                 ->update([
                     'delete_time' => date('Y-m-d H:i:s'),
@@ -571,7 +572,7 @@ class PaymentController
             return [];
         }
 
-        $rows = Db::table('ypay_order')
+        $rows = Db::table(BusinessTable::order())
             ->select('type')
             ->selectRaw('COUNT(*) as order_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as paid_order_count')
@@ -596,7 +597,7 @@ class PaymentController
             return [];
         }
 
-        $rows = Db::table('ypay_account')
+        $rows = Db::table(BusinessTable::account())
             ->select('type')
             ->selectRaw('COUNT(*) as account_count')
             ->selectRaw('SUM(CASE WHEN is_status = 1 THEN 1 ELSE 0 END) as enabled_account_count')
@@ -622,7 +623,7 @@ class PaymentController
 
     private function paymentRecord(int $id): ?array
     {
-        $row = Db::table('ypay_payment')
+        $row = Db::table(BusinessTable::payment())
             ->select('id', 'name', 'type', 'sort', 'status', 'create_time', 'update_time', 'delete_time')
             ->where('id', $id)
             ->first();
@@ -642,7 +643,7 @@ class PaymentController
 
         return array_map(
             static fn($row): array => (array)$row,
-            Db::table('ypay_payment')
+            Db::table(BusinessTable::payment())
                 ->select('id', 'name', 'type', 'sort', 'status', 'create_time', 'update_time', 'delete_time')
                 ->whereIn('id', $paymentIds)
                 ->get()
@@ -832,7 +833,7 @@ class PaymentController
 
     private function findMethodByType(string $type, ?int $exceptId = null): ?array
     {
-        $query = Db::table('ypay_payment')
+        $query = Db::table(BusinessTable::payment())
             ->select('id', 'name', 'type', 'sort', 'status', 'create_time', 'update_time', 'delete_time')
             ->where('type', $type)
             ->orderByDesc('id');
@@ -848,7 +849,7 @@ class PaymentController
 
     private function findActiveMethodByType(string $type, ?int $exceptId = null): ?array
     {
-        $query = Db::table('ypay_payment')
+        $query = Db::table(BusinessTable::payment())
             ->select('id', 'name', 'type', 'sort', 'status', 'create_time', 'update_time', 'delete_time')
             ->where('type', $type)
             ->whereNull('delete_time')

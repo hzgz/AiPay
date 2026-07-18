@@ -45,7 +45,7 @@ Options:
   --backend-port=PORT          Local Webman port. Default: 8787
   --db-host=HOST               Database host. Default: 127.0.0.1
   --db-port=PORT               Database port. Default: 3306
-  --db-name=NAME               Database name. Default: aipay_prod
+  --db-name=NAME               Database name. Default: pay
   --db-user=USER               Database user. Default: same as db name
   --db-password=PASS           Database password. Default: auto-generate
   --admin-user=NAME            Admin username. Default: adminroot
@@ -446,7 +446,27 @@ server
         proxy_set_header Connection "";
     }
 
-    location ~ ^/(Api|api|Pay|pay|User|user|My|my|Index|index|News|news|Doc|doc|Demo|demo|Notify|notify)(/|\$) {
+    location ^~ /Deal/ {
+        proxy_pass http://127.0.0.1:${BACKEND_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Connection "";
+    }
+
+    location ^~ /deal/ {
+        proxy_pass http://127.0.0.1:${BACKEND_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Connection "";
+    }
+
+    location ~ ^/(Api|api|Pay|pay|User|user|My|my|Deal|deal|Index|index|News|news|Doc|doc|Demo|demo|Notify|notify)(/|\$) {
         proxy_pass http://127.0.0.1:${BACKEND_PORT};
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
@@ -667,7 +687,7 @@ fi
 
 prompt_value PUBLIC_ROOT 'aaPanel public root' "${PUBLIC_ROOT}"
 prompt_value NGINX_CONF_PATH 'aaPanel nginx conf path' "${NGINX_CONF_PATH}"
-prompt_value DB_NAME 'Database name' 'aipay_prod'
+prompt_value DB_NAME 'Database name' 'pay'
 prompt_value DB_USER 'Database user' "${DB_NAME}"
 prompt_secret DB_PASSWORD 'Database password'
 prompt_value ADMIN_USER 'Admin username' 'adminroot'

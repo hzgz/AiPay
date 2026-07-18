@@ -1,97 +1,100 @@
 <template>
-  <PublicShell :site-name="siteName" :navs="navs" page-label="支付测试" :merchant-login-url="merchantLoginUrl">
+  <PublicShell
+    :site-name="siteName"
+    :navs="navs"
+    page-label="支付测试"
+    :merchant-login-url="merchantLoginUrl"
+  >
     <div class="public-demo-page">
       <section class="demo-hero">
-        <div>
+        <div class="demo-hero__copy">
           <span class="demo-eyebrow">支付测试</span>
-          <h1>快速查看支付方式与收银台展示</h1>
-          <p>用于预览支付方式、测试金额与基础展示效果。</p>
+          <h1>支付方式预览</h1>
+          <p>这里只展示当前开放的支付方式，可先快速预览。</p>
         </div>
 
-        <div class="demo-hero__meta">
-          <div>
-            <small>测试订单号</small>
-            <strong>{{ demoOrderNo }}</strong>
-          </div>
-          <div>
-            <small>测试金额</small>
-            <strong>￥{{ demoMoney }}</strong>
-          </div>
-          <div>
-            <small>可用方式</small>
-            <strong>{{ availableMethods.length }}</strong>
-          </div>
+        <div class="demo-hero__actions">
+          <a class="demo-link demo-link--primary" :href="merchantLoginUrl">商户登录</a>
+          <a class="demo-link" href="/#/doc">开发文档</a>
         </div>
       </section>
 
-      <div v-if="error" class="demo-alert">支付测试内容暂时无法刷新，请稍后再试。</div>
+      <div v-if="error" class="demo-alert">{{ error }}</div>
 
-      <section class="demo-layout">
-        <article class="demo-main">
-          <div class="demo-main__head">
-            <div>
-              <span class="demo-eyebrow">方式列表</span>
-              <h2>选择支付方式查看展示效果</h2>
+      <section class="demo-summary">
+        <div class="demo-summary__item">
+          <small>默认金额</small>
+          <strong>￥{{ demoMoney }}</strong>
+        </div>
+        <div class="demo-summary__item">
+          <small>订单名称</small>
+          <strong>{{ demoName }}</strong>
+        </div>
+        <div class="demo-summary__item">
+          <small>开放方式</small>
+          <strong>{{ availableMethods.length }}</strong>
+        </div>
+        <div class="demo-summary__item">
+          <small>网关状态</small>
+          <strong>{{ gatewayStatusLabel }}</strong>
+        </div>
+      </section>
+
+      <section v-if="availableMethods.length" class="demo-methods">
+        <button
+          v-for="method in availableMethods"
+          :key="method.id"
+          type="button"
+          :class="['demo-method-chip', { 'is-active': selectedMethodId === method.id }]"
+          @click="selectedMethodId = method.id"
+        >
+          {{ method.label }}
+        </button>
+      </section>
+
+      <section v-if="selectedMethod" class="demo-panel">
+        <article class="demo-focus">
+          <div class="demo-focus__badge">{{ selectedMethod.badge }}</div>
+
+          <div class="demo-focus__content">
+            <span class="demo-eyebrow">当前方式</span>
+            <h2>{{ selectedMethod.label }}</h2>
+            <p>{{ selectedMethod.description }}</p>
+
+            <div class="demo-focus__tips">
+              <span>测试订单号：{{ demoOrderNo }}</span>
+              <span>更多操作请进商户端</span>
             </div>
-
-            <a class="demo-link" href="/#/doc">查看文档</a>
-          </div>
-
-          <div class="demo-methods">
-            <button
-              v-for="method in availableMethods"
-              :key="method.id"
-              type="button"
-              :class="['demo-method', { 'is-active': selectedMethodId === method.id }]"
-              @click="selectedMethodId = method.id"
-            >
-              <span>{{ method.badge }}</span>
-              <div>
-                <strong>{{ method.label }}</strong>
-                <p>{{ method.description }}</p>
-              </div>
-            </button>
-
-            <div v-if="!availableMethods.length" class="demo-method demo-method--empty">当前暂无公开展示的支付方式</div>
           </div>
         </article>
 
-        <aside class="demo-side">
-          <div class="demo-side__section">
-            <span class="demo-eyebrow">当前方式</span>
-            <strong>{{ selectedMethod?.label || '未选择' }}</strong>
-            <p>{{ selectedMethod?.description || '请选择一种支付方式查看说明。' }}</p>
-          </div>
+        <aside class="demo-order">
+          <span class="demo-eyebrow">展示信息</span>
 
-          <div class="demo-side__section">
-            <span class="demo-eyebrow">测试信息</span>
-
-            <div class="demo-side__rows">
-              <div class="demo-side__row">
-                <small>测试金额</small>
-                <strong>￥{{ demoMoney }}</strong>
-              </div>
-              <div class="demo-side__row">
-                <small>订单名称</small>
-                <strong>{{ demoName }}</strong>
-              </div>
-              <div class="demo-side__row">
-                <small>网关状态</small>
-                <strong>{{ gatewayConfigured ? '已配置' : '待配置' }}</strong>
-              </div>
+          <div class="demo-order__rows">
+            <div class="demo-order__row">
+              <small>金额</small>
+              <strong>￥{{ demoMoney }}</strong>
             </div>
-          </div>
-
-          <div class="demo-side__section">
-            <span class="demo-eyebrow">下一步</span>
-            <p>如需发起真实订单或验证回调，请登录商户端继续操作。</p>
-
-            <div class="demo-side__actions">
-              <a class="demo-button demo-button--primary" :href="merchantLoginUrl">进入商户端</a>
-              <a class="demo-button demo-button--secondary" href="/#/doc">查看文档</a>
+            <div class="demo-order__row">
+              <small>名称</small>
+              <strong>{{ demoName }}</strong>
+            </div>
+            <div class="demo-order__row">
+              <small>订单号</small>
+              <strong>{{ demoOrderNo }}</strong>
+            </div>
+            <div class="demo-order__row">
+              <small>状态</small>
+              <strong>{{ gatewayStatusLabel }}</strong>
             </div>
           </div>
         </aside>
+      </section>
+
+      <section v-else class="demo-empty">
+        <strong>当前没有对外展示的支付方式</strong>
+        <p>请先在后台启用支付方式。</p>
       </section>
     </div>
   </PublicShell>
@@ -112,7 +115,6 @@
   }
 
   const route = useRoute()
-  const loading = ref(false)
   const error = ref('')
   const payload = ref<PublicDemoPayload | null>(null)
   const selectedMethodId = ref('')
@@ -127,13 +129,13 @@
     },
     alipay: {
       id: 'alipay',
-      label: '支付宝支付',
+      label: '支付宝',
       badge: 'AL',
-      description: '适合二维码、网页拉起和生活缴费等支付宝支付场景。'
+      description: '适合二维码、拉起支付和生活缴费等支付宝场景。'
     },
     qqpay: {
       id: 'qqpay',
-      label: 'QQ 支付',
+      label: 'QQ 钱包',
       badge: 'QQ',
       description: '适合 QQ 钱包相关的扫码和收款场景。'
     }
@@ -145,14 +147,20 @@
   const demoName = computed(() => payload.value?.demo_name || '测试订单')
   const demoMoney = computed(() => payload.value?.demo_money || '0.01')
   const gatewayConfigured = computed(() => Boolean(payload.value?.gateway_configured))
+  const gatewayStatusLabel = computed(() => (gatewayConfigured.value ? '已配置' : '未设置'))
 
   const availableMethods = computed<DemoMethodView[]>(() => {
     const source = payload.value?.available_methods || Object.values(fallbackMethodMap)
-    return source.map((method) => fallbackMethodMap[method.id] || {
-      id: method.id,
-      label: method.label,
-      badge: method.label.slice(0, 2).toUpperCase(),
-      description: method.description || '该方式已启用，可在商户端继续测试。'
+    return source.map((method) => {
+      const fallback = fallbackMethodMap[method.id]
+      if (fallback) return fallback
+
+      return {
+        id: method.id,
+        label: method.label,
+        badge: method.label.slice(0, 2).toUpperCase(),
+        description: method.description || '该方式已开放，可进入商户端继续测试。'
+      }
     })
   })
 
@@ -176,7 +184,6 @@
   )
 
   async function loadPage() {
-    loading.value = true
     error.value = ''
 
     try {
@@ -184,17 +191,14 @@
       demoOrderNo.value = createDemoOrderNo()
       scrollPublicPageToTop()
     } catch (err) {
-      error.value = resolvePublicErrorMessage(err, '支付测试内容暂时无法刷新。')
+      error.value = resolvePublicErrorMessage(err, '支付测试内容暂时无法加载，请稍后再试。')
       demoOrderNo.value = createDemoOrderNo()
-    } finally {
-      loading.value = false
     }
   }
 
   function createDemoOrderNo() {
     const now = new Date()
     const pad = (value: number) => String(value).padStart(2, '0')
-
     return `T${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
   }
 
@@ -222,11 +226,21 @@
     text-transform: uppercase;
   }
 
+  .demo-hero,
+  .demo-summary,
+  .demo-methods,
+  .demo-panel,
+  .demo-empty,
+  .demo-alert {
+    border-top: 1px solid var(--public-border-strong);
+    padding-top: 16px;
+  }
+
   .demo-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
-    gap: 30px;
-    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px;
   }
 
   .demo-hero h1 {
@@ -244,29 +258,56 @@
     line-height: 1.9;
   }
 
-  .demo-hero__meta,
-  .demo-side__rows {
+  .demo-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .demo-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--public-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--public-title);
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .demo-link:hover {
+    border-color: rgba(24, 32, 47, 0.16);
+    background: #f8fafc;
+  }
+
+  .demo-link--primary {
+    background: #18202f;
+    border-color: #18202f;
+    color: #fff;
+  }
+
+  .demo-summary {
     display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 14px;
   }
 
-  .demo-hero__meta div,
-  .demo-main,
-  .demo-side__section,
-  .demo-alert {
-    border-top: 1px solid var(--public-border-strong);
-    padding-top: 14px;
-  }
-
-  .demo-hero__meta small,
-  .demo-side__row small {
+  .demo-summary__item small,
+  .demo-order__row small {
     display: block;
     color: var(--public-muted);
   }
 
-  .demo-hero__meta strong,
-  .demo-side__row strong,
-  .demo-side__section > strong {
+  .demo-summary__item strong,
+  .demo-order__row strong {
     display: block;
     margin-top: 8px;
     color: var(--public-title);
@@ -274,164 +315,184 @@
     word-break: break-all;
   }
 
-  .demo-alert {
-    color: #b45309;
-    line-height: 1.8;
+  .demo-methods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
-  .demo-layout {
+  .demo-method-chip {
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--public-title);
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .demo-method-chip.is-active {
+    background: #18202f;
+    border-color: #18202f;
+    color: #fff;
+  }
+
+  .demo-panel {
     display: grid;
-    grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.82fr);
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.8fr);
     gap: 32px;
   }
 
-  .demo-main__head {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 16px;
+  .demo-focus {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
   }
 
-  .demo-main__head h2 {
-    margin: 10px 0 0;
+  .demo-focus__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 88px;
+    height: 88px;
+    border-radius: 26px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.08), rgba(15, 23, 42, 0.16));
+    color: var(--public-title);
+    font-size: 1.32rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  .demo-focus__content h2 {
+    margin: 12px 0 10px;
     color: var(--public-title);
     font-size: 1.72rem;
     line-height: 1.25;
     letter-spacing: -0.04em;
   }
 
-  .demo-link,
-  .demo-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 40px;
-    padding: 0 16px;
-    border-radius: 999px;
-    border: 1px solid transparent;
-    text-decoration: none;
-    font-weight: 700;
-  }
-
-  .demo-link,
-  .demo-button--secondary {
-    border-color: var(--public-border);
-    background: #fff;
-    color: var(--public-title);
-  }
-
-  .demo-button--primary {
-    background: #18202f;
-    color: #fff;
-  }
-
-  .demo-methods {
-    display: grid;
-  }
-
-  .demo-method {
-    display: grid;
-    grid-template-columns: 54px minmax(0, 1fr);
-    gap: 16px;
-    align-items: start;
-    padding: 18px 0;
-    border: 0;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-    background: transparent;
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .demo-method:last-child {
-    border-bottom: 0;
-    padding-bottom: 0;
-  }
-
-  .demo-method span {
-    display: inline-flex;
-    width: 44px;
-    height: 44px;
-    align-items: center;
-    justify-content: center;
-    border-radius: 14px;
-    background: #f3f5f8;
-    color: var(--public-title);
-    font-size: 0.86rem;
-    font-weight: 700;
-  }
-
-  .demo-method strong {
-    display: block;
-    color: var(--public-title);
-    font-size: 1.02rem;
-  }
-
-  .demo-method p {
-    margin: 8px 0 0;
+  .demo-focus__content p,
+  .demo-empty p {
+    margin: 0;
     color: var(--public-text);
-    line-height: 1.82;
+    line-height: 1.84;
   }
 
-  .demo-method.is-active span {
-    background: #18202f;
-    color: #fff;
-  }
-
-  .demo-method--empty {
-    grid-template-columns: 1fr;
-    color: var(--public-text);
-    cursor: default;
-  }
-
-  .demo-side {
-    display: grid;
-    gap: 24px;
-    align-self: start;
-  }
-
-  .demo-side__section p {
-    margin: 10px 0 0;
-    color: var(--public-text);
-    line-height: 1.82;
-  }
-
-  .demo-side__row {
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  }
-
-  .demo-side__row:last-child {
-    padding-bottom: 0;
-    border-bottom: 0;
-  }
-
-  .demo-side__actions {
-    display: grid;
+  .demo-focus__tips {
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
-    margin-top: 14px;
+    margin-top: 16px;
+  }
+
+  .demo-focus__tips span,
+  .detail-pill {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #445167;
+    font-size: 0.94rem;
+  }
+
+  .demo-order {
+    display: grid;
+    gap: 18px;
+  }
+
+  .demo-order__rows {
+    display: grid;
+  }
+
+  .demo-order__row {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  }
+
+  .demo-order__row:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .demo-empty strong {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--public-title);
+  }
+
+  .demo-alert {
+    color: #b45309;
+    line-height: 1.8;
   }
 
   @media (max-width: 980px) {
-    .demo-hero,
-    .demo-layout {
-      grid-template-columns: 1fr;
+    .demo-summary,
+    .demo-panel {
+      grid-template-columns: 1fr 1fr;
     }
   }
 
   @media (max-width: 720px) {
-    .demo-main__head {
-      flex-direction: column;
-      align-items: stretch;
+    .public-demo-page {
+      gap: 22px;
     }
 
-    .demo-link,
-    .demo-button {
+    .demo-summary {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .demo-panel,
+    .demo-focus {
+      grid-template-columns: 1fr;
+    }
+
+    .demo-hero__actions {
       width: 100%;
     }
 
-    .demo-method {
+    .demo-methods {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    .demo-methods::-webkit-scrollbar {
+      display: none;
+    }
+
+    .demo-method-chip {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
+    .demo-link {
+      flex: 1;
+    }
+
+    .demo-focus__badge {
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .demo-summary {
       grid-template-columns: 1fr;
+    }
+
+    .demo-link {
+      width: 100%;
+      flex: initial;
     }
   }
 </style>

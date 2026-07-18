@@ -2,13 +2,12 @@
 
 namespace app\controller;
 
-use app\payment\PaymentPluginException;
-use app\payment\PaymentPluginManager;
 use app\support\ApiResponse;
 use app\support\RequestPayload;
 use InvalidArgumentException;
+use Plugins\Payments\Shared\Support\PaymentGatewayResolutionSupport;
+use Plugins\Payments\Shared\Support\PaymentPluginException;
 use RuntimeException;
-use support\Db;
 use Throwable;
 use Webman\Http\Request;
 use Webman\Http\Response;
@@ -95,15 +94,9 @@ class PaymentGatewayController
         return is_array($query) ? $query : [];
     }
 
-    private function resolvePluginCode(array $payload): string
-    {
-        return strtolower(trim((string)($payload['plugin'] ?? $payload['plugin_code'] ?? '')));
-    }
-
     private function dispatchOrderCreation(array $payload): array
     {
-        $this->assertGatewayMerchantReference($payload);
-        $pluginResolution = $this->resolveGatewayPluginSelection($payload);
+        $pluginResolution = $this->gatewayResolution()->resolve($payload);
         $pluginCode = $pluginResolution['code'];
         $plugin = $pluginResolution['detail'];
         $pluginResult = $this->pluginInstance($plugin['manifest'])->createOrder(array_merge($payload, [
@@ -112,249 +105,6 @@ class PaymentGatewayController
         ]));
 
         return [$pluginCode, $plugin, $pluginResult, $pluginResolution];
-    }
-
-    private function resolveGatewayPluginSelection(array $payload): array
-    {
-        $requestedPluginCode = $this->resolvePluginCode($payload);
-        if ($requestedPluginCode !== '') {
-            return [
-                'code' => $requestedPluginCode,
-                'resolution' => 'explicit_request',
-                'detail' => $this->assertGatewayCapablePlugin($requestedPluginCode),
-            ];
-        }
-
-        $inferredPluginCode = $this->inferPluginCodeFromPayload($payload);
-        if ($inferredPluginCode !== '') {
-            return [
-                'code' => $inferredPluginCode,
-                'resolution' => 'merchant_channel_inference',
-                'detail' => $this->assertGatewayCapablePlugin($inferredPluginCode),
-            ];
-        }
-
-        $gatewayPlugins = $this->gatewayCapablePlugins();
-        if ($gatewayPlugins === []) {
-            throw new InvalidArgumentException('no enabled gateway payment plugin is available');
-        }
-
-        if (count($gatewayPlugins) > 1) {
-            throw new InvalidArgumentException('multiple gateway payment plugins are enabled; please specify plugin');
-        }
-
-        $pluginCode = trim((string)($gatewayPlugins[0]['code'] ?? ''));
-        if ($pluginCode === '') {
-            throw new RuntimeException('gateway plugin resolution returned an empty plugin code');
-        }
-
-        return [
-            'code' => $pluginCode,
-            'resolution' => 'implicit_single_gateway_plugin',
-            'detail' => $this->assertGatewayCapablePlugin($pluginCode),
-        ];
-    }
-
-    private function inferPluginCodeFromPayload(array $payload): string
-    {
-        $accountId = (int)($payload['account_id'] ?? ($payload['channel_id'] ?? 0));
-        if ($accountId > 0) {
-            $account = $this->loadPaymentAccount($accountId);
-            if ($account !== null && $this->isGatewayCapablePluginCode((string)($account['code'] ?? ''))) {
-                return strtolower(trim((string)($account['code'] ?? '')));
-            }
-        }
-
-        $poolId = (int)($payload['pool_id'] ?? ($payload['poll_id'] ?? 0));
-        if ($poolId > 0) {
-            $poolPluginCode = $this->inferPoolPluginCode($poolId);
-            if ($poolPluginCode !== '') {
-                return $poolPluginCode;
-            }
-        }
-
-        $merchantId = (int)($payload['pid'] ?? 0);
-        $paymentType = $this->normalizePaymentType((string)($payload['type'] ?? ''));
-        if ($merchantId <= 0 || $paymentType === '') {
-            return '';
-        }
-
-        $account = Db::table('ypay_account')
-            ->select('code')
-            ->where('user_id', $merchantId)
-            ->where('type', $paymentType)
-            ->where('status', 1)
-            ->where('is_status', 1)
-            ->orderByDesc('id')
-            ->first();
-
-        if ($account !== null) {
-            $pluginCode = strtolower(trim((string)((array)$account)['code']));
-            if ($this->isGatewayCapablePluginCode($pluginCode)) {
-                return $pluginCode;
-            }
-        }
-
-        if ($this->legacyPaylistExists($merchantId, $paymentType) && $this->isGatewayCapablePluginCode('legacy_epay')) {
-            return 'legacy_epay';
-        }
-
-        return '';
-    }
-
-    private function assertGatewayMerchantReference(array $payload): void
-    {
-        if ($this->resolvePluginCode($payload) !== '') {
-            return;
-        }
-
-        foreach (['account_id', 'channel_id', 'pool_id', 'poll_id'] as $field) {
-            if ((int)($payload[$field] ?? 0) > 0) {
-                return;
-            }
-        }
-
-        if ((int)($payload['pid'] ?? 0) > 0) {
-            return;
-        }
-
-        throw new InvalidArgumentException('pid is required');
-    }
-
-    private function inferPoolPluginCode(int $poolId): string
-    {
-        $row = Db::table('ypay_poll_pool_item as item')
-            ->join('ypay_account as account', 'account.id', '=', 'item.account_id')
-            ->select('account.code')
-            ->where('item.pool_id', $poolId)
-            ->where('account.status', 1)
-            ->where('account.is_status', 1)
-            ->orderBy('item.sort')
-            ->orderByDesc('account.id')
-            ->first();
-
-        if ($row === null) {
-            return '';
-        }
-
-        $pluginCode = strtolower(trim((string)((array)$row)['code']));
-        return $this->isGatewayCapablePluginCode($pluginCode) ? $pluginCode : '';
-    }
-
-    private function loadPaymentAccount(int $accountId): ?array
-    {
-        if ($accountId <= 0) {
-            return null;
-        }
-
-        $row = Db::table('ypay_account')
-            ->select('id', 'code', 'type', 'user_id', 'status', 'is_status')
-            ->where('id', $accountId)
-            ->first();
-
-        return $row ? (array)$row : null;
-    }
-
-    private function legacyPaylistExists(int $merchantId, string $paymentType): bool
-    {
-        if ($merchantId <= 0 || $paymentType === '') {
-            return false;
-        }
-
-        return Db::table('ypay_paylist')
-            ->where('user_id', $merchantId)
-            ->where('status', 1)
-            ->where('type', 'epay')
-            ->exists();
-    }
-
-    private function isGatewayCapablePluginCode(string $pluginCode): bool
-    {
-        $normalized = strtolower(trim($pluginCode));
-        if ($normalized === '') {
-            return false;
-        }
-
-        try {
-            $detail = $this->assertGatewayCapablePlugin($normalized);
-        } catch (Throwable) {
-            return false;
-        }
-
-        return !empty($detail);
-    }
-
-    private function normalizePaymentType(string $value): string
-    {
-        $normalized = strtolower(trim($value));
-
-        return match ($normalized) {
-            'alipay', 'alipay_official', 'alipay_bill', 'alipay_mck' => 'alipay',
-            'wxpay', 'wxpay_v3' => 'wxpay',
-            'qqpay' => 'qqpay',
-            default => $normalized,
-        };
-    }
-
-    private function assertGatewayCapablePlugin(string $pluginCode): array
-    {
-        $detail = $this->manager()->detail($pluginCode);
-        $manifest = is_array($detail['manifest'] ?? null) ? $detail['manifest'] : [];
-        $state = is_array($detail['state'] ?? null) ? $detail['state'] : [];
-        $capabilities = array_map(
-            static fn (mixed $value): string => strtolower(trim((string)$value)),
-            is_array($manifest['capabilities'] ?? null) ? $manifest['capabilities'] : []
-        );
-
-        if (!in_array('create_order', $capabilities, true)) {
-            throw new InvalidArgumentException("payment plugin [$pluginCode] does not support gateway order creation");
-        }
-
-        if (!(bool)($state['installed'] ?? false)) {
-            throw new InvalidArgumentException("payment plugin [$pluginCode] is not installed");
-        }
-
-        if (!(bool)($state['enabled'] ?? false)) {
-            throw new InvalidArgumentException("payment plugin [$pluginCode] is disabled");
-        }
-
-        return $detail;
-    }
-
-    private function gatewayCapablePlugins(): array
-    {
-        $plugins = [];
-
-        foreach ($this->manager()->all() as $plugin) {
-            if (!is_array($plugin)) {
-                continue;
-            }
-
-            $capabilities = array_map(
-                static fn (mixed $value): string => strtolower(trim((string)$value)),
-                is_array($plugin['capabilities'] ?? null) ? $plugin['capabilities'] : []
-            );
-
-            if (!in_array('create_order', $capabilities, true)) {
-                continue;
-            }
-
-            if (!(bool)($plugin['installed'] ?? false) || !(bool)($plugin['enabled'] ?? false)) {
-                continue;
-            }
-
-            $plugins[] = $plugin;
-        }
-
-        usort(
-            $plugins,
-            static fn (array $left, array $right): int => strcmp(
-                strtolower(trim((string)($left['code'] ?? ''))),
-                strtolower(trim((string)($right['code'] ?? '')))
-            )
-        );
-
-        return $plugins;
     }
 
     private function requestSummary(Request $request, array $payload): array
@@ -375,22 +125,17 @@ class PaymentGatewayController
     {
         $entryPath = base_path($manifest['entry']);
         if (!is_file($entryPath)) {
-            throw new RuntimeException('plugin entry file was not found: ' . $manifest['entry']);
+            throw new RuntimeException('插件入口文件不存在：' . $manifest['entry']);
         }
 
         require_once $entryPath;
 
         $className = (string)$manifest['class'];
         if ($className === '' || !class_exists($className)) {
-            throw new RuntimeException('plugin class was not found: ' . $className);
+            throw new RuntimeException('插件类不存在：' . $className);
         }
 
         return new $className();
-    }
-
-    private function manager(): PaymentPluginManager
-    {
-        return new PaymentPluginManager();
     }
 
     private function enrichPayload(Request $request, array $payload, string $entry): array
@@ -491,7 +236,7 @@ class PaymentGatewayController
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Payment Error</title>
+  <title>支付请求失败</title>
   <style>
     body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f6f7fb;color:#1f2937}
     .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -504,9 +249,9 @@ class PaymentGatewayController
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Payment Request Failed</h1>
+      <h1>支付请求失败</h1>
       <p>{$safeMessage}</p>
-      <a href="{$safeUrl}">Return</a>
+      <a href="{$safeUrl}">返回</a>
     </div>
   </div>
 </body>
@@ -528,7 +273,12 @@ HTML;
             return $exception->getMessage();
         }
 
-        return 'payment gateway migration entry failed';
+        return '支付网关处理失败';
+    }
+
+    private function gatewayResolution(): PaymentGatewayResolutionSupport
+    {
+        return new PaymentGatewayResolutionSupport();
     }
 
     private function handleException(Throwable $exception): Response
@@ -547,7 +297,7 @@ HTML;
             return ApiResponse::error($exception->getMessage(), 409, null, 409);
         }
 
-        return ApiResponse::error('payment gateway migration entry failed', 500, [
+        return ApiResponse::error('支付网关处理失败', 500, [
             'exception' => $exception->getMessage(),
         ], 500);
     }

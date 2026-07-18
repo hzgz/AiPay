@@ -13,7 +13,9 @@ export type PaymentAccountCodeMetaLike =
   | undefined
 
 export function isRequiredCredentialCode(code?: string | null) {
-  return Boolean(code && ['alipay_bill', 'alipay_mck', 'alipay_official'].includes(code))
+  return Boolean(
+    code && ['alipay_bill', 'alipay_mck', 'alipay_official', 'universal_epay'].includes(code)
+  )
 }
 
 export function isMultiModeCredentialCode(code?: string | null) {
@@ -256,6 +258,10 @@ export function resolveAccountFieldEditor(
     }
 
     if (code === 'jiaofeiyi_alipay' || code === 'jiaofeiyi_wxpay') {
+      return 'text'
+    }
+
+    if (code === 'universal_epay') {
       return 'text'
     }
 

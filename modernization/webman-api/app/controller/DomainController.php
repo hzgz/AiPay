@@ -6,6 +6,7 @@ use app\support\AdminRouteAuthorization;
 use app\support\AdminSmtpMailer;
 use app\support\AdminDomainFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\FrontendUrlBuilder;
 use app\support\RequestPayload;
 use app\support\SystemConfig;
@@ -29,9 +30,9 @@ class DomainController
         $query = clone $summaryQuery;
         $this->applyStatusFilter($query, $request);
 
-        $total = (int)(clone $query)->count('ypay_domain.id');
+        $total = (int)(clone $query)->count('domain.id');
         $rows = $query
-            ->orderByDesc('ypay_domain.id')
+            ->orderByDesc('domain.id')
             ->offset(($current - 1) * $size)
             ->limit($size)
             ->get()
@@ -82,7 +83,7 @@ class DomainController
         }
 
         $domainId = Db::transaction(function () use ($payload): int {
-            return (int)Db::table('ypay_domain')->insertGetId([
+            return (int)Db::table(BusinessTable::domain())->insertGetId([
                 'user_id' => $payload['user_id'],
                 'sitename' => $payload['sitename'],
                 'siteurl' => $payload['siteurl'],
@@ -134,7 +135,7 @@ class DomainController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_domain')
+        Db::table(BusinessTable::domain())
             ->where('id', $id)
             ->update([
                 'user_id' => $payload['user_id'],
@@ -526,21 +527,21 @@ class DomainController
 
     private function domainQuery(): Builder
     {
-        return Db::table('ypay_domain')
-            ->leftJoin('ypay_user', 'ypay_domain.user_id', '=', 'ypay_user.id')
+        return Db::table(BusinessTable::domain('domain'))
+            ->leftJoin(BusinessTable::user('merchant'), 'domain.user_id', '=', 'merchant.id')
             ->select(
-                'ypay_domain.id',
-                'ypay_domain.user_id',
-                'ypay_domain.sitename',
-                'ypay_domain.siteurl',
-                'ypay_domain.status',
-                'ypay_domain.reason',
-                'ypay_domain.create_time',
-                'ypay_domain.delete_time',
-                'ypay_user.username as merchant_username',
-                'ypay_user.name as merchant_name',
-                'ypay_user.email as merchant_email',
-                'ypay_user.mobile as merchant_mobile'
+                'domain.id',
+                'domain.user_id',
+                'domain.sitename',
+                'domain.siteurl',
+                'domain.status',
+                'domain.reason',
+                'domain.create_time',
+                'domain.delete_time',
+                'merchant.username as merchant_username',
+                'merchant.name as merchant_name',
+                'merchant.email as merchant_email',
+                'merchant.mobile as merchant_mobile'
             );
     }
 
@@ -550,35 +551,35 @@ class DomainController
         if ($keyword !== '') {
             $query->where(function (Builder $builder) use ($keyword): void {
                 $builder
-                    ->where('ypay_domain.sitename', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_domain.siteurl', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_domain.reason', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.username', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.name', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.email', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.mobile', 'like', '%' . $keyword . '%');
+                    ->where('domain.sitename', 'like', '%' . $keyword . '%')
+                    ->orWhere('domain.siteurl', 'like', '%' . $keyword . '%')
+                    ->orWhere('domain.reason', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.username', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.name', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.email', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.mobile', 'like', '%' . $keyword . '%');
 
                 if (ctype_digit($keyword)) {
                     $builder
-                        ->orWhere('ypay_domain.id', (int)$keyword)
-                        ->orWhere('ypay_domain.user_id', (int)$keyword);
+                        ->orWhere('domain.id', (int)$keyword)
+                        ->orWhere('domain.user_id', (int)$keyword);
                 }
             });
         }
 
         $userId = trim((string)$request->get('user_id', ''));
         if ($userId !== '') {
-            $query->where('ypay_domain.user_id', 'like', '%' . $userId . '%');
+            $query->where('domain.user_id', 'like', '%' . $userId . '%');
         }
 
         $siteName = trim((string)$request->get('sitename', ''));
         if ($siteName !== '') {
-            $query->where('ypay_domain.sitename', 'like', '%' . $siteName . '%');
+            $query->where('domain.sitename', 'like', '%' . $siteName . '%');
         }
 
         $siteUrl = trim((string)$request->get('siteurl', ''));
         if ($siteUrl !== '') {
-            $query->where('ypay_domain.siteurl', 'like', '%' . $siteUrl . '%');
+            $query->where('domain.siteurl', 'like', '%' . $siteUrl . '%');
         }
     }
 
@@ -586,14 +587,14 @@ class DomainController
     {
         $status = trim((string)$request->get('status', ''));
         if ($status === '-1' || strtolower($status) === 'deleted') {
-            $query->whereNotNull('ypay_domain.delete_time');
+            $query->whereNotNull('domain.delete_time');
             return;
         }
 
-        $query->whereNull('ypay_domain.delete_time');
+        $query->whereNull('domain.delete_time');
 
         if (in_array($status, ['0', '1', '2'], true)) {
-            $query->where('ypay_domain.status', (int)$status);
+            $query->where('domain.status', (int)$status);
         }
     }
 
@@ -601,27 +602,27 @@ class DomainController
     {
         return [
             'pending_count' => (int)(clone $query)
-                ->where('ypay_domain.status', 0)
-                ->whereNull('ypay_domain.delete_time')
-                ->count('ypay_domain.id'),
+                ->where('domain.status', 0)
+                ->whereNull('domain.delete_time')
+                ->count('domain.id'),
             'approved_count' => (int)(clone $query)
-                ->where('ypay_domain.status', 1)
-                ->whereNull('ypay_domain.delete_time')
-                ->count('ypay_domain.id'),
+                ->where('domain.status', 1)
+                ->whereNull('domain.delete_time')
+                ->count('domain.id'),
             'rejected_count' => (int)(clone $query)
-                ->where('ypay_domain.status', 2)
-                ->whereNull('ypay_domain.delete_time')
-                ->count('ypay_domain.id'),
+                ->where('domain.status', 2)
+                ->whereNull('domain.delete_time')
+                ->count('domain.id'),
             'deleted_count' => (int)(clone $query)
-                ->whereNotNull('ypay_domain.delete_time')
-                ->count('ypay_domain.id'),
+                ->whereNotNull('domain.delete_time')
+                ->count('domain.id'),
         ];
     }
 
     private function loadDomainRow(int $id): ?array
     {
         $row = $this->domainQuery()
-            ->where('ypay_domain.id', $id)
+            ->where('domain.id', $id)
             ->first();
 
         return $row ? (array)$row : null;
@@ -639,7 +640,7 @@ class DomainController
         return array_map(
             static fn($row): array => (array)$row,
             $this->domainQuery()
-                ->whereIn('ypay_domain.id', $domainIds)
+                ->whereIn('domain.id', $domainIds)
                 ->get()
                 ->toArray()
         );
@@ -647,21 +648,21 @@ class DomainController
 
     private function deleteDomainRow(int $id): void
     {
-        Db::table('ypay_domain')
+        Db::table(BusinessTable::domain())
             ->where('id', $id)
             ->update(['delete_time' => date('Y-m-d H:i:s')]);
     }
 
     private function restoreDomainRow(int $id): void
     {
-        Db::table('ypay_domain')
+        Db::table(BusinessTable::domain())
             ->where('id', $id)
             ->update(['delete_time' => null]);
     }
 
     private function writeDomainAuditState(int $id, int $status, ?string $reason): void
     {
-        Db::table('ypay_domain')
+        Db::table(BusinessTable::domain())
             ->where('id', $id)
             ->update([
                 'status' => $status,
@@ -671,7 +672,7 @@ class DomainController
 
     private function loadMerchantRecord(int $userId): ?array
     {
-        $row = Db::table('ypay_user')
+        $row = Db::table(BusinessTable::user())
             ->select('id', 'username', 'name', 'email', 'mobile')
             ->where('id', $userId)
             ->first();
@@ -684,7 +685,7 @@ class DomainController
         $userId = $this->normalizeMerchantId($payload['user_id'] ?? ($currentRecord['user_id'] ?? null));
         $merchant = $this->loadMerchantRecord($userId);
         if ($merchant === null) {
-            throw new \InvalidArgumentException('merchant was not found');
+            throw new \InvalidArgumentException('商户不存在');
         }
 
         $siteName = $this->normalizeSiteName($payload['sitename'] ?? ($currentRecord['sitename'] ?? null));
@@ -761,7 +762,7 @@ class DomainController
             return;
         }
 
-        $createdToday = (int)Db::table('ypay_domain')
+        $createdToday = (int)Db::table(BusinessTable::domain())
             ->where('user_id', $userId)
             ->whereDate('create_time', date('Y-m-d'))
             ->count('id');
@@ -1006,7 +1007,7 @@ class DomainController
                     'siteurl' => '',
                     'exists' => false,
                     'can_delete' => false,
-                    'blocking_reasons' => ['This domain was not found in ypay_domain.'],
+                    'blocking_reasons' => ['This domain record was not found.'],
                     'summary' => [
                         'delete_row_count' => 0,
                         'non_empty_target_count' => 0,

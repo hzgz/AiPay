@@ -149,7 +149,7 @@
           <div class="notification-option-head">
             <strong>{{ option.label }}</strong>
             <ElTag :type="notificationOptionType(option)" effect="plain">
-              {{ option.enabled ? (option.target_ready ? '可用' : '目标未就绪') : '系统未开启' }}
+              {{ option.enabled ? (option.target_ready ? '可用' : '待配置') : '系统未开启' }}
             </ElTag>
           </div>
           <p>{{ option.help_text || '—' }}</p>

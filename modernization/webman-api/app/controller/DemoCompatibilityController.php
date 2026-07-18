@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace app\controller;
 
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\FrontendUrlBuilder;
 use app\support\ProductionSecurity;
 use app\support\SystemConfig;
@@ -50,7 +51,7 @@ class DemoCompatibilityController
     public function doPay(Request $request): Response
     {
         return $this->blockedWriteResponse(
-            '演示支付页已正式下线，当前服务不开放测试订单创建或测试收银台跳转。',
+            '支付测试页已正式下线，当前服务不开放测试订单创建或收银台跳转。',
             ['demo_payment_create', 'demo_payment_handoff']
         );
     }
@@ -59,7 +60,7 @@ class DemoCompatibilityController
     {
         if ($this->wantsJson($request)) {
             return $this->blockedWriteResponse(
-                '演示支付异步回调已正式下线，当前服务不会处理测试回调写入。',
+                '支付测试异步回调已正式下线，当前服务不会处理测试回调写入。',
                 ['demo_notify_callback']
             );
         }
@@ -87,7 +88,7 @@ class DemoCompatibilityController
         $availableMethods = $this->demoMethods((string)($config['diy_demoPay'] ?? ''));
         $gatewayConfigured = $this->gatewayConfigured($config);
         $navs = $this->defaultPublicNavItems($request);
-        $demoName = trim((string)($config['demopay_name'] ?? '支付体验'));
+        $demoName = trim((string)($config['demopay_name'] ?? '支付测试'));
         $demoMoney = trim((string)($config['demopay_money'] ?? '0.01'));
         $demoRoutesAllowed = ProductionSecurity::demoRoutesAllowed();
 
@@ -150,9 +151,9 @@ class DemoCompatibilityController
             $enabled = ['wxpay', 'alipay', 'qqpay'];
         }
         $catalog = [
-            'alipay' => ['id' => 'alipay', 'label' => '支付宝', 'description' => '仅保留说明页，不再创建测试订单。'],
-            'wxpay' => ['id' => 'wxpay', 'label' => '微信支付', 'description' => '仅保留说明页，不再创建测试订单。'],
-            'qqpay' => ['id' => 'qqpay', 'label' => 'QQ 支付', 'description' => '仅保留说明页，不再创建测试订单。'],
+            'alipay' => ['id' => 'alipay', 'label' => '支付宝', 'description' => '当前仅展示状态，不创建测试订单。'],
+            'wxpay' => ['id' => 'wxpay', 'label' => '微信支付', 'description' => '当前仅展示状态，不创建测试订单。'],
+            'qqpay' => ['id' => 'qqpay', 'label' => 'QQ 支付', 'description' => '当前仅展示状态，不创建测试订单。'],
         ];
 
         $methods = [];
@@ -190,7 +191,7 @@ class DemoCompatibilityController
 
     private function navItems(): array
     {
-        $rows = Db::table('ypay_navs')
+        $rows = Db::table(BusinessTable::nav())
             ->select('id', 'name', 'url', 'is_target', 'sort')
             ->where('status', 1)
             ->whereNull('delete_time')
@@ -214,7 +215,7 @@ class DemoCompatibilityController
     private function demoPage(array $payload): string
     {
         $siteName = $this->escape((string)($payload['site_name'] ?? 'AiPay'));
-        $demoName = $this->escape((string)($payload['demo_name'] ?? '支付体验'));
+        $demoName = $this->escape((string)($payload['demo_name'] ?? '支付测试'));
         $demoMoney = $this->escape((string)($payload['demo_money'] ?? '0.01'));
         $publicHomeUrl = $this->escape((string)($payload['public_home_url'] ?? '/'));
         $merchantLoginUrl = $this->escape((string)($payload['merchant_login_url'] ?? '/User/Login'));
@@ -231,7 +232,7 @@ class DemoCompatibilityController
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>支付体验说明</title>
+  <title>支付测试说明</title>
   <style>
     body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#fff7ed,#ecfeff 48%,#f8fafc);color:#0f172a}
     .wrap{max-width:1080px;margin:0 auto;padding:36px 20px 48px}
@@ -266,14 +267,14 @@ class DemoCompatibilityController
 <body>
   <div class="wrap">
     <section class="hero">
-      <span class="eyebrow">演示支付已下线</span>
-      <h1>支付体验说明</h1>
-      <p style="margin-top:10px">演示支付入口已停用，不再承接测试下单、测试回调或测试收银流程。</p>
-      <p>{$siteName} 当前保留的是演示支付说明页，用于查看可展示的支付方式和公开导航信息。正式业务请使用已启用的支付链路完成下单、回调与结算。</p>
+      <span class="eyebrow">支付测试已下线</span>
+      <h1>支付测试说明</h1>
+      <p style="margin-top:10px">支付测试入口已停用，不再承接测试下单、测试回调或测试收银流程。</p>
+      <p>{$siteName} 当前展示的是支付测试状态页，用于查看可展示的支付方式和公开导航信息。正式业务请使用已启用的支付链路完成下单、回调与结算。</p>
       <div class="grid">
-        <div class="stat"><div class="label">演示项目</div><div class="value">{$demoName}</div></div>
+        <div class="stat"><div class="label">测试项目</div><div class="value">{$demoName}</div></div>
         <div class="stat"><div class="label">参考金额</div><div class="value">{$demoMoney}</div></div>
-        <div class="stat"><div class="label">演示配置</div><div class="value">{$gatewayStatus}</div></div>
+        <div class="stat"><div class="label">测试配置</div><div class="value">{$gatewayStatus}</div></div>
       </div>
       <div class="layout">
         <article class="card">
@@ -310,7 +311,7 @@ HTML;
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>演示支付完成说明</title>
+  <title>支付测试完成说明</title>
   <style>
     body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#ecfeff,#f8fafc);color:#0f172a}
     .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -326,9 +327,9 @@ HTML;
 <body>
   <div class="wrap">
     <main class="card">
-      <h1>该页面仅用于说明旧演示入口已停用</h1>
-      <p>旧版演示支付的完成落点仍保留可访问页面，避免历史书签或测试地址直接落到空白页，但它不代表当前系统已在这里执行任何入账或结算。</p>
-      <div class="notice">正式业务请使用已启用的支付插件和商户通道完成下单与回调处理，不要再依赖演示支付入口验证生产链路。</div>
+      <h1>支付测试入口已停用</h1>
+      <p>该地址当前只保留状态提示，用于承接已有书签和测试链接，避免直接出现空白页；当前不会在这里执行任何入账或结算。</p>
+      <div class="notice">正式业务请使用已启用的支付插件和商户通道完成下单与回调处理，不要再依赖支付测试入口验证生产链路。</div>
       <div class="actions">
         <a class="primary" href="{$publicHomeUrl}">返回公开首页</a>
         <a class="secondary" href="{$merchantLoginUrl}">商户登录</a>
@@ -351,7 +352,7 @@ HTML;
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>演示支付返回说明</title>
+  <title>支付测试返回说明</title>
   <style>
     body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f8fafc;color:#0f172a}
     .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -368,7 +369,7 @@ HTML;
   <div class="wrap">
     <main class="card">
       <h1>该返回页仅保留说明，不再参与任何测试支付流程</h1>
-      <p>浏览器返回地址继续保留，是为了照顾已有书签、历史教程和测试链接，避免直接出现 404 或空白页。</p>
+      <p>该返回地址当前只保留状态提示，用于承接已有书签和测试链接，避免直接出现 404 或空白页。</p>
       <div class="notice">当前返回页不会执行测试订单结算、余额回写、回调重放或支付成功确认。如需体验完整支付链路，请使用现有支付插件与商户通道功能。</div>
       <div class="actions">
         <a class="primary" href="{$successUrl}">返回公开首页</a>
@@ -384,7 +385,7 @@ HTML;
     private function methodCardsHtml(array $methods): string
     {
         if ($methods === []) {
-            return '<div class="method"><h3>当前没有启用演示展示方式</h3><p>如确实需要保留页面展示，可在系统配置中启用对应展示项，但它们仍不会创建测试订单。</p><span>未启用</span></div>';
+            return '<div class="method"><h3>当前没有启用展示方式</h3><p>如需在公开页展示测试方式，可在系统配置中启用对应展示项，但它们仍不会创建测试订单。</p><span>未启用</span></div>';
         }
 
         $html = '';
@@ -421,7 +422,7 @@ HTML;
         $normalized = strtolower(trim($theme));
 
         return match ($normalized) {
-            '', 'default' => '默认主题',
+            '', 'default' => '标准主题',
             'puple', 'purple' => '紫色主题',
             default => $theme,
         };
@@ -430,7 +431,7 @@ HTML;
     private function displaySiteName(string $siteName): string
     {
         $trimmed = trim($siteName);
-        if ($trimmed === '' || in_array($trimmed, ['AiPay', 'AiPay Smoke', 'AiPay 演示站', 'Puple'], true)) {
+        if ($trimmed === '' || in_array($trimmed, ['AiPay', 'AiPay Smoke', 'AiPay 演示站', 'Puple', 'Purple'], true)) {
             return 'AiPay';
         }
 
@@ -440,8 +441,8 @@ HTML;
     private function displayDemoName(string $demoName): string
     {
         $trimmed = trim($demoName);
-        if ($trimmed === '' || in_array($trimmed, ['演示支付', 'AiPay Smoke', 'AiPay 演示站'], true)) {
-            return '支付体验';
+        if ($trimmed === '' || in_array($trimmed, ['演示支付', 'AiPay Smoke', 'AiPay 演示站', '支付体验', '支付测试'], true)) {
+            return '支付测试';
         }
 
         return $trimmed;

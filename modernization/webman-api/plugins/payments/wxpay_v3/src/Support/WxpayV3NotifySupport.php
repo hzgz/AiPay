@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Plugins\Payments\WxpayV3\Support;
 
+use app\support\BusinessTable;
 use app\service\order\OrderCallbackTaskService;
 use JsonException;
-use Plugins\Payments\Shared\Legacy\LegacyEpayOrderRepository;
+use Plugins\Payments\Shared\EpayProtocol\EpayOrderRepository;
 use support\Db;
 
 final class WxpayV3NotifySupport
@@ -17,7 +18,7 @@ final class WxpayV3NotifySupport
     private const TRANSACTION_PROVIDER = 'wxpay_v3';
 
     public function __construct(
-        private readonly LegacyEpayOrderRepository $orders = new LegacyEpayOrderRepository(),
+        private readonly EpayOrderRepository $orders = new EpayOrderRepository(),
         private readonly OrderCallbackTaskService $callbackTasks = new OrderCallbackTaskService()
     ) {
     }
@@ -29,25 +30,25 @@ final class WxpayV3NotifySupport
     public function handle(string $body, array $headers): array
     {
         if (trim($body) === '') {
-            throw new WxpayV3NotifyException('empty_body', 'empty request body');
+            throw new WxpayV3NotifyException('empty_body', '请求体不能为空');
         }
 
         $envelope = $this->decodeJson($body, 'invalid_body');
         $resource = $envelope['resource'] ?? null;
         if (!is_array($resource)) {
-            throw new WxpayV3NotifyException('invalid_resource', 'payment resource is missing');
+            throw new WxpayV3NotifyException('invalid_resource', '支付资源数据缺失');
         }
 
         $algorithm = strtoupper(trim((string)($resource['algorithm'] ?? '')));
         if ($algorithm !== self::RESOURCE_ALGORITHM) {
-            throw new WxpayV3NotifyException('unsupported_algorithm', 'unsupported resource algorithm');
+            throw new WxpayV3NotifyException('unsupported_algorithm', '支付资源加密算法不受支持');
         }
 
         $ciphertext = trim((string)($resource['ciphertext'] ?? ''));
         $resourceNonce = trim((string)($resource['nonce'] ?? ''));
         $associatedData = (string)($resource['associated_data'] ?? '');
         if ($ciphertext === '' || $resourceNonce === '') {
-            throw new WxpayV3NotifyException('invalid_resource', 'encrypted payment resource is incomplete');
+            throw new WxpayV3NotifyException('invalid_resource', '加密支付资源不完整');
         }
 
         $timestamp = $this->header($headers, 'Wechatpay-Timestamp');
@@ -62,20 +63,20 @@ final class WxpayV3NotifySupport
             || $signature === ''
             || $serial === ''
         ) {
-            throw new WxpayV3NotifyException('missing_signature_headers', 'signature headers are incomplete');
+            throw new WxpayV3NotifyException('missing_signature_headers', '签名请求头不完整');
         }
         if (abs(time() - (int)$timestamp) > self::MAX_SIGNATURE_SKEW_SECONDS) {
-            throw new WxpayV3NotifyException('stale_timestamp', 'signature timestamp is outside the accepted window', 401);
+            throw new WxpayV3NotifyException('stale_timestamp', '签名时间戳超出允许范围', 401);
         }
 
-        $accounts = Db::table('ypay_account')
+        $accounts = Db::table(BusinessTable::account())
             ->select('id', 'user_id', 'code', 'wxname', 'zfb_pid', 'cookie', 'remark')
             ->where('code', self::CHANNEL_CODE)
             ->orderBy('id')
             ->get()
             ->toArray();
         if ($accounts === []) {
-            throw new WxpayV3NotifyException('account_not_found', 'wxpay v3 account was not found', 404);
+            throw new WxpayV3NotifyException('account_not_found', '未找到微信官方 V3 收款账号', 404);
         }
 
         foreach ($accounts as $row) {
@@ -118,10 +119,10 @@ final class WxpayV3NotifySupport
 
             $accountMerchantId = (int)($account['user_id'] ?? 0);
             if ($accountMerchantId > 0 && $accountMerchantId !== (int)($order['user_id'] ?? 0)) {
-                throw new WxpayV3NotifyException('merchant_binding_mismatch', 'merchant binding mismatch', 409);
+                throw new WxpayV3NotifyException('merchant_binding_mismatch', '商户绑定关系不匹配', 409);
             }
             if (strtolower(trim((string)($order['type'] ?? ''))) !== 'wxpay') {
-                throw new WxpayV3NotifyException('order_type_mismatch', 'order payment type mismatch', 409);
+                throw new WxpayV3NotifyException('order_type_mismatch', '订单支付方式不匹配', 409);
             }
 
             $this->assertProviderBinding($account, $notification);
@@ -166,7 +167,7 @@ final class WxpayV3NotifySupport
             ];
         }
 
-        throw new WxpayV3NotifyException('verification_failed', 'signature, resource, or order verification failed', 401);
+        throw new WxpayV3NotifyException('verification_failed', '签名、资源或订单校验失败', 401);
     }
 
     /**
@@ -188,7 +189,7 @@ final class WxpayV3NotifySupport
             || !hash_equals($configuredAppId, $notifiedAppId)
             || !hash_equals($configuredMerchantId, $notifiedMerchantId)
         ) {
-            throw new WxpayV3NotifyException('provider_binding_mismatch', 'appid or mchid binding mismatch', 409);
+            throw new WxpayV3NotifyException('provider_binding_mismatch', '应用ID或商户号绑定关系不匹配', 409);
         }
     }
 
@@ -200,23 +201,23 @@ final class WxpayV3NotifySupport
     {
         $transactionId = trim((string)($notification['transaction_id'] ?? ''));
         if ($transactionId === '') {
-            throw new WxpayV3NotifyException('transaction_id_missing', 'transaction id is missing');
+            throw new WxpayV3NotifyException('transaction_id_missing', '交易号缺失');
         }
 
         $amount = $notification['amount'] ?? null;
         if (!is_array($amount) || !array_key_exists('total', $amount)) {
-            throw new WxpayV3NotifyException('amount_missing', 'payment amount is missing');
+            throw new WxpayV3NotifyException('amount_missing', '支付金额缺失');
         }
 
         $notifiedTotal = $this->integerCents($amount['total']);
         $expectedTotal = $this->amountToCents((string)($order['truemoney'] ?? $order['money'] ?? '0'));
         if ($notifiedTotal <= 0 || $expectedTotal <= 0 || $notifiedTotal !== $expectedTotal) {
-            throw new WxpayV3NotifyException('amount_mismatch', 'payment amount does not match the order', 409);
+            throw new WxpayV3NotifyException('amount_mismatch', '支付金额与订单不一致', 409);
         }
 
         $currency = strtoupper(trim((string)($amount['currency'] ?? '')));
         if ($currency !== 'CNY') {
-            throw new WxpayV3NotifyException('currency_mismatch', 'payment currency does not match the order', 409);
+            throw new WxpayV3NotifyException('currency_mismatch', '支付币种与订单不一致', 409);
         }
 
         $storedTransactionId = trim((string)($order['alipay_order_no'] ?? ''));
@@ -225,7 +226,7 @@ final class WxpayV3NotifySupport
             && $storedTransactionId !== ''
             && !hash_equals($storedTransactionId, $transactionId)
         ) {
-            throw new WxpayV3NotifyException('transaction_mismatch', 'paid order transaction id mismatch', 409);
+            throw new WxpayV3NotifyException('transaction_mismatch', '已支付订单的交易号不一致', 409);
         }
 
         return $transactionId;
@@ -267,11 +268,11 @@ final class WxpayV3NotifySupport
         try {
             $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
-            throw new WxpayV3NotifyException($reason, 'invalid json payload', 400, $exception);
+            throw new WxpayV3NotifyException($reason, 'JSON 载荷无效', 400, $exception);
         }
 
         if (!is_array($decoded)) {
-            throw new WxpayV3NotifyException($reason, 'json payload must be an object');
+            throw new WxpayV3NotifyException($reason, 'JSON 载荷必须为对象');
         }
 
         return $decoded;

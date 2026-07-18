@@ -3,11 +3,13 @@
     <section class="merchant-page-header">
       <div class="merchant-page-header__title">
         <h1>安全中心</h1>
-        <p>统一查看商户安全策略、谷歌验证器状态、实名认证状态，并在这里直接完成密码更新。</p>
+        <p>查看账号安全状态并修改登录密码。</p>
       </div>
 
       <div v-if="payload" class="merchant-chip-row">
-        <span class="merchant-chip">安全中心 {{ merchantEnabledLabel(payload.security_center?.enabled) }}</span>
+        <span class="merchant-chip"
+          >安全中心 {{ merchantEnabledLabel(payload.security_center?.enabled) }}</span
+        >
         <span class="merchant-chip"
           >谷歌验证 {{ translateMerchantText(payload.google_auth?.status_label) }}</span
         >
@@ -45,7 +47,7 @@
           <div class="merchant-card__head">
             <div>
               <h2>安全策略概览</h2>
-              <p>这里集中展示当前商户账号的安全开关、登录校验要求以及实名认证状态。</p>
+              <p>查看安全开关、登录校验和实名状态。</p>
             </div>
           </div>
 
@@ -56,11 +58,15 @@
             </div>
             <div class="merchant-kv-item">
               <span>强制绑定</span>
-              <div>{{ merchantBooleanLabel(payload.security_center?.force_bind, ['开启', '关闭']) }}</div>
+              <div>{{
+                merchantBooleanLabel(payload.security_center?.force_bind, ['开启', '关闭'])
+              }}</div>
             </div>
             <div class="merchant-kv-item">
               <span>登录校验</span>
-              <div>{{ payload.security_center?.login_verification_required ? '已开启' : '已关闭' }}</div>
+              <div>{{
+                payload.security_center?.login_verification_required ? '已开启' : '已关闭'
+              }}</div>
             </div>
             <div class="merchant-kv-item">
               <span>验证方式</span>
@@ -89,7 +95,9 @@
                 <div class="merchant-kv-item">
                   <span>登录二次校验</span>
                   <div>{{
-                    payload.google_auth?.verification_required_at_login ? '系统要求启用' : '当前未要求'
+                    payload.google_auth?.verification_required_at_login
+                      ? '系统要求启用'
+                      : '当前未要求'
                   }}</div>
                 </div>
               </div>
@@ -139,7 +147,8 @@
                 >当前状态 {{ translateMerchantText(payload.google_auth?.status_label) }}</span
               >
               <span class="merchant-chip"
-                >登录校验 {{
+                >登录校验
+                {{
                   payload.google_auth?.verification_required_at_login ? '系统要求启用' : '暂未要求'
                 }}</span
               >
@@ -165,15 +174,11 @@
                 </div>
 
                 <template v-if="!googleWriteEnabled">
-                  <div class="merchant-google-placeholder">
-                    谷歌验证操作当前已关闭，这里仅展示绑定状态和登录校验要求。
-                  </div>
+                  <div class="merchant-google-placeholder"> 当前仅展示状态。 </div>
                 </template>
 
                 <template v-else-if="payload.google_auth?.bound">
-                  <div class="merchant-google-placeholder">
-                    当前账号已绑定谷歌验证器，如需更换设备，请先使用当前验证码完成解绑。
-                  </div>
+                  <div class="merchant-google-placeholder"> 已绑定，如需更换设备请先解绑。 </div>
                 </template>
 
                 <template v-else-if="googleSetup">
@@ -199,9 +204,7 @@
                 </template>
 
                 <template v-else>
-                  <div class="merchant-google-placeholder">
-                    先获取二维码，再在谷歌验证器中扫码绑定。
-                  </div>
+                  <div class="merchant-google-placeholder"> 先获取二维码再扫码绑定。 </div>
                 </template>
               </section>
 
@@ -211,16 +214,14 @@
                 </div>
 
                 <template v-if="!googleWriteEnabled">
-                  <div class="merchant-google-placeholder">
-                    当前商户端不开放谷歌验证绑定与解绑，请仅将这里作为状态查看面板使用。
-                  </div>
+                  <div class="merchant-google-placeholder"> 当前不开放绑定或解绑。 </div>
                 </template>
 
                 <template v-else-if="payload.google_auth?.bound">
                   <ElInput
                     v-model.trim="unbindCode"
                     maxlength="6"
-                    placeholder="请输入当前谷歌验证码后解绑"
+                    placeholder="输入当前谷歌验证码后解绑"
                   />
 
                   <div class="merchant-form-actions merchant-form-actions--end">
@@ -230,7 +231,7 @@
                       :loading="googleUnbindLoading"
                       @click="handleUnbindGoogleAuth"
                     >
-                      立即解绑
+                      解绑
                     </ElButton>
                   </div>
                 </template>
@@ -243,7 +244,7 @@
                   />
 
                   <div class="merchant-form-actions merchant-form-actions--split">
-                    <span class="merchant-fine-print">请先扫码，再输入当前动态码完成绑定。</span>
+                    <span class="merchant-fine-print">扫码后输入 6 位验证码完成绑定。</span>
                     <ElButton
                       type="primary"
                       :loading="googleBindLoading"
@@ -261,17 +262,13 @@
             <div class="merchant-form-card__head">
               <div>
                 <h2>修改登录密码</h2>
-                <p>密码更新已接入商户中心，保存成功后会清空当前登录态，需要重新登录。</p>
+                <p>保存后需重新登录。</p>
               </div>
             </div>
 
             <div class="merchant-chip-row">
               <span class="merchant-chip">密码策略：不少于 6 位</span>
               <span class="merchant-chip">保存后立即生效</span>
-            </div>
-
-            <div class="merchant-note merchant-security-note">
-              为了保证账号安全，建议同步检查谷歌验证器和实名认证状态后再执行密码修改。
             </div>
 
             <ElForm ref="formRef" :model="formData" :rules="rules" label-position="top">
@@ -308,7 +305,7 @@
             <div class="merchant-form-card__head">
               <div>
                 <h2>账号注销</h2>
-                <p>注销后会清理当前商户归属的配置、通道、订单、日志等数据，且不可恢复。</p>
+                <p>注销后会清理商户配置、通道、订单和日志，且不可恢复。</p>
               </div>
             </div>
 
@@ -322,7 +319,9 @@
             </div>
 
             <div class="merchant-note merchant-security-note merchant-security-note--danger">
-              {{ translateMerchantText(accountCancellation.write_message || '当前账号暂不支持注销。') }}
+              {{
+                translateMerchantText(accountCancellation.write_message || '当前账号暂不支持注销。')
+              }}
             </div>
 
             <div class="merchant-kv-grid merchant-kv-grid--compact">
@@ -371,7 +370,7 @@
             </div>
 
             <div v-if="accountCancellation.confirmation_phrase" class="merchant-confirm-block">
-              <span>请输入以下确认口令后再执行注销</span>
+              <span>输入确认口令后再注销</span>
               <code>{{ accountCancellation.confirmation_phrase }}</code>
             </div>
 
@@ -384,7 +383,7 @@
 
             <div class="merchant-form-actions merchant-form-actions--split">
               <span class="merchant-fine-print">
-                {{ accountCancellationAllowed ? '确认后会立即退出当前登录。' : '请先处理阻塞项后再提交。' }}
+                {{ accountCancellationAllowed ? '提交后会退出当前登录。' : '请先处理阻塞项。' }}
               </span>
               <ElButton
                 type="danger"
@@ -403,7 +402,7 @@
         <div class="merchant-card__head">
           <div>
             <h2>近期登录记录</h2>
-            <p>保留最近 5 条前台访问日志摘要，用于排查异常登录与会话问题。</p>
+            <p>最近 5 条访问记录。</p>
           </div>
 
           <div class="merchant-toolbar-pills">
@@ -467,7 +466,12 @@
 
   const googleSetup = computed(() => {
     const googleAuth = payload.value?.google_auth
-    if (!googleAuth || googleAuth.bound || !googleAuth.setup_pending || !googleAuth.setup_qrcode_url) {
+    if (
+      !googleAuth ||
+      googleAuth.bound ||
+      !googleAuth.setup_pending ||
+      !googleAuth.setup_qrcode_url
+    ) {
       return null
     }
 
@@ -475,46 +479,48 @@
   })
 
   const googleWriteEnabled = computed(() =>
-    Boolean(payload.value?.write_actions?.google_bind || payload.value?.write_actions?.google_unbind)
+    Boolean(
+      payload.value?.write_actions?.google_bind || payload.value?.write_actions?.google_unbind
+    )
   )
 
   const googleManagementDescription = computed(() =>
-    googleWriteEnabled.value
-      ? '支持重新生成绑定二维码、输入 6 位动态码完成绑定，或使用当前验证码完成解绑。'
-      : '谷歌验证相关操作当前已关闭，这里仅展示绑定状态和登录校验要求。'
+    googleWriteEnabled.value ? '可生成二维码并完成绑定或解绑。' : '当前仅展示状态。'
   )
 
   const accountCancellation = computed<Record<string, any>>(
     () => payload.value?.account_cancellation || {}
   )
-  const accountCancellationEnabled = computed(() => Boolean(accountCancellation.value?.feature_enabled))
-  const accountCancellationAllowed = computed(
-    () => Boolean(payload.value?.write_actions?.account_cancellation)
+  const accountCancellationEnabled = computed(() =>
+    Boolean(accountCancellation.value?.feature_enabled)
+  )
+  const accountCancellationAllowed = computed(() =>
+    Boolean(payload.value?.write_actions?.account_cancellation)
   )
 
   const summaryCards = computed(() => [
     {
       label: '安全中心',
       value: payload.value ? merchantEnabledLabel(payload.value.security_center?.enabled) : '--',
-      hint: '当前商户安全总开关状态',
+      hint: '当前安全总开关',
       icon: 'ri:shield-check-line'
     },
     {
       label: '登录校验',
       value: payload.value?.security_center?.login_verification_required ? '已开启' : '已关闭',
-      hint: '是否在登录阶段执行额外安全校验',
+      hint: '登录是否二次校验',
       icon: 'ri:lock-password-line'
     },
     {
       label: '谷歌验证器',
       value: translateMerchantText(payload.value?.google_auth?.status_label),
-      hint: '当前谷歌验证绑定状态',
+      hint: '当前绑定状态',
       icon: 'ri:google-line'
     },
     {
       label: '实名认证',
       value: translateMerchantText(payload.value?.real_name?.status_label),
-      hint: '当前实名认证审核状态',
+      hint: '当前实名状态',
       icon: 'ri:passport-line'
     }
   ])
@@ -528,7 +534,12 @@
       { required: true, message: '请再次输入新密码', trigger: 'blur' },
       {
         validator: (_rule, value, callback) => {
-          value === formData.newpwd ? callback() : callback(new Error('两次输入的密码不一致'))
+          if (value === formData.newpwd) {
+            callback()
+            return
+          }
+
+          callback(new Error('两次输入的密码不一致'))
         },
         trigger: 'blur'
       }
@@ -675,11 +686,15 @@
     }
 
     try {
-      await ElMessageBox.confirm('注销后将立即清理当前商户归属数据，且不可恢复，确认继续吗？', '确认注销', {
-        type: 'warning',
-        confirmButtonText: '确认注销',
-        cancelButtonText: '取消'
-      })
+      await ElMessageBox.confirm(
+        '注销后将立即清理当前商户归属数据，且不可恢复，确认继续吗？',
+        '确认注销',
+        {
+          type: 'warning',
+          confirmButtonText: '确认注销',
+          cancelButtonText: '取消'
+        }
+      )
     } catch {
       return
     }

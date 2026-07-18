@@ -145,7 +145,7 @@ class CommonUploadController
 
         if ($sizeBytes > $maxSizeBytes) {
             throw new \InvalidArgumentException(sprintf(
-                'uploaded file "%s" exceeds the configured limit of %d KB',
+                '上传文件“%s”超过了 %d KB 的大小限制',
                 $displayName,
                 (int)ceil($maxSizeBytes / 1024)
             ));
@@ -153,7 +153,7 @@ class CommonUploadController
 
         $uploadExtension = strtolower(trim((string)$file->getUploadExtension()));
         if ($uploadExtension !== '' && !in_array($uploadExtension, ['jpg', 'jpeg', 'png', 'bmp', 'gif'], true)) {
-            throw new \InvalidArgumentException(sprintf('uploaded file "%s" has an unsupported extension', $displayName));
+            throw new \InvalidArgumentException(sprintf('上传文件“%s”的扩展名不受支持', $displayName));
         }
 
         $imageInfo = @getimagesize($file->getPathname());

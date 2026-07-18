@@ -1101,7 +1101,7 @@
       `关联商户数：${audit.summary.linked_merchant_count}`,
       `有效关联商户：${audit.summary.active_linked_merchant_count}`,
       `已过期关联商户：${audit.summary.expired_linked_merchant_count}`,
-      ...(merchantLines.length > 0 ? ['', '示例关联商户：', ...merchantLines] : []),
+      ...(merchantLines.length > 0 ? ['', '关联商户：', ...merchantLines] : []),
       ...(audit.warnings.length > 0 ? ['', ...audit.warnings] : [])
     ].join('\n')
   }

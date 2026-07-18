@@ -5,6 +5,7 @@ namespace app\controller;
 use app\support\AdminCdkFormatter;
 use app\support\AdminRouteAuthorization;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\RequestPayload;
 use Illuminate\Database\Query\Builder;
 use support\Db;
@@ -22,11 +23,11 @@ class CdkController
         $this->applyFilters($query, $request);
 
         $summary = $this->summary(clone $query);
-        $total = (int)(clone $query)->count('ypay_cdk.id');
+        $total = (int)(clone $query)->count('cdk.id');
         $rows = array_map(
             static fn($row): array => (array)$row,
             $query
-                ->orderByDesc('ypay_cdk.id')
+                ->orderByDesc('cdk.id')
                 ->offset(($current - 1) * $size)
                 ->limit($size)
                 ->get()
@@ -79,7 +80,7 @@ class CdkController
         Db::transaction(function () use ($payload, $now, &$generatedCards, &$generatedCodes): void {
             for ($index = 0; $index < $payload['count']; $index++) {
                 $code = $this->generateUniqueCode($payload['prefix']);
-                $cdkId = (int)Db::table('ypay_cdk')->insertGetId([
+                $cdkId = (int)Db::table(BusinessTable::cdk())->insertGetId([
                     'type' => $payload['type'],
                     'value' => $payload['value'],
                     'code' => $code,
@@ -288,7 +289,7 @@ class CdkController
         }
 
         Db::transaction(function (): void {
-            Db::table('ypay_cdk')
+            Db::table(BusinessTable::cdk())
                 ->where('status', 1)
                 ->delete();
         });
@@ -303,16 +304,16 @@ class CdkController
 
     private function cdkQuery(): Builder
     {
-        return Db::table('ypay_cdk')
-            ->leftJoin('ypay_vip', 'ypay_cdk.value', '=', 'ypay_vip.id')
+        return Db::table(BusinessTable::cdk('cdk'))
+            ->leftJoin(BusinessTable::vip('vip'), 'cdk.value', '=', 'vip.id')
             ->select(
-                'ypay_cdk.id',
-                'ypay_cdk.type',
-                'ypay_cdk.value',
-                'ypay_cdk.code',
-                'ypay_cdk.status',
-                'ypay_cdk.create_time',
-                'ypay_vip.name as vip_name'
+                'cdk.id',
+                'cdk.type',
+                'cdk.value',
+                'cdk.code',
+                'cdk.status',
+                'cdk.create_time',
+                'vip.name as vip_name'
             );
     }
 
@@ -322,50 +323,50 @@ class CdkController
         if ($keyword !== '') {
             $query->where(function (Builder $builder) use ($keyword): void {
                 $builder
-                    ->where('ypay_cdk.code', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_cdk.value', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_vip.name', 'like', '%' . $keyword . '%');
+                    ->where('cdk.code', 'like', '%' . $keyword . '%')
+                    ->orWhere('cdk.value', 'like', '%' . $keyword . '%')
+                    ->orWhere('vip.name', 'like', '%' . $keyword . '%');
 
                 if (ctype_digit($keyword)) {
-                    $builder->orWhere('ypay_cdk.id', (int)$keyword);
+                    $builder->orWhere('cdk.id', (int)$keyword);
                 }
             });
         }
 
         $type = trim((string)$request->get('type', ''));
         if ($type !== '' && in_array($type, ['1', '2'], true)) {
-            $query->where('ypay_cdk.type', (int)$type);
+            $query->where('cdk.type', (int)$type);
         }
 
         $status = trim((string)$request->get('status', ''));
         if ($status !== '' && in_array($status, ['0', '1'], true)) {
-            $query->where('ypay_cdk.status', (int)$status);
+            $query->where('cdk.status', (int)$status);
         }
 
         $startDate = $this->normalizeDate((string)$request->get('start_date', ''));
         $endDate = $this->normalizeDate((string)$request->get('end_date', ''));
         if ($startDate !== null && $endDate !== null) {
             $query
-                ->where('ypay_cdk.create_time', '>=', $startDate . ' 00:00:00')
-                ->where('ypay_cdk.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
+                ->where('cdk.create_time', '>=', $startDate . ' 00:00:00')
+                ->where('cdk.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
         }
     }
 
     private function summary(Builder $query): array
     {
         return [
-            'unused_count' => (int)(clone $query)->where('ypay_cdk.status', 0)->count('ypay_cdk.id'),
-            'used_count' => (int)(clone $query)->where('ypay_cdk.status', 1)->count('ypay_cdk.id'),
-            'balance_card_count' => (int)(clone $query)->where('ypay_cdk.type', 1)->count('ypay_cdk.id'),
-            'vip_card_count' => (int)(clone $query)->where('ypay_cdk.type', 2)->count('ypay_cdk.id'),
+            'unused_count' => (int)(clone $query)->where('cdk.status', 0)->count('cdk.id'),
+            'used_count' => (int)(clone $query)->where('cdk.status', 1)->count('cdk.id'),
+            'balance_card_count' => (int)(clone $query)->where('cdk.type', 1)->count('cdk.id'),
+            'vip_card_count' => (int)(clone $query)->where('cdk.type', 2)->count('cdk.id'),
             'total_face_amount' => AdminCdkFormatter::toFloat(
-                (clone $query)->where('ypay_cdk.type', 1)->sum('ypay_cdk.value'),
+                (clone $query)->where('cdk.type', 1)->sum('cdk.value'),
                 2
             ),
             'code_ready_count' => (int)(clone $query)
-                ->whereNotNull('ypay_cdk.code')
-                ->where('ypay_cdk.code', '<>', '')
-                ->count('ypay_cdk.id'),
+                ->whereNotNull('cdk.code')
+                ->where('cdk.code', '<>', '')
+                ->count('cdk.id'),
         ];
     }
 
@@ -384,7 +385,7 @@ class CdkController
     private function loadCdkRow(int $cdkId): ?array
     {
         $row = $this->cdkQuery()
-            ->where('ypay_cdk.id', $cdkId)
+            ->where('cdk.id', $cdkId)
             ->first();
 
         return $row ? (array)$row : null;
@@ -403,8 +404,8 @@ class CdkController
         $rows = array_map(
             static fn($row): array => (array)$row,
             $this->cdkQuery()
-                ->whereIn('ypay_cdk.id', $cdkIds)
-                ->orderByDesc('ypay_cdk.id')
+                ->whereIn('cdk.id', $cdkIds)
+                ->orderByDesc('cdk.id')
                 ->get()
                 ->toArray()
         );
@@ -434,7 +435,7 @@ class CdkController
         }
 
         $vipId = $this->normalizeVipId($payload['vip_id'] ?? $payload['vip'] ?? null);
-        $vip = Db::table('ypay_vip')
+        $vip = Db::table(BusinessTable::vip())
             ->select('id', 'name')
             ->where('id', $vipId)
             ->first();
@@ -546,7 +547,7 @@ class CdkController
         for ($attempt = 0; $attempt < 20; $attempt++) {
             $suffix = strtoupper(substr(bin2hex(random_bytes(10)), 0, 15));
             $code = $prefix === '' ? $suffix : ($prefix . '_' . $suffix);
-            $exists = Db::table('ypay_cdk')
+            $exists = Db::table(BusinessTable::cdk())
                 ->where('code', $code)
                 ->exists();
 
@@ -708,8 +709,8 @@ class CdkController
         $rows = array_map(
             static fn($row): array => (array)$row,
             $this->cdkQuery()
-                ->where('ypay_cdk.status', 1)
-                ->orderByDesc('ypay_cdk.id')
+                ->where('cdk.status', 1)
+                ->orderByDesc('cdk.id')
                 ->limit(200)
                 ->get()
                 ->toArray()
@@ -755,7 +756,7 @@ class CdkController
 
     private function deleteCdkRow(int $cdkId): void
     {
-        Db::table('ypay_cdk')
+        Db::table(BusinessTable::cdk())
             ->where('id', $cdkId)
             ->delete();
     }

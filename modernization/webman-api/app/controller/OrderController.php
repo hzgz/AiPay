@@ -5,6 +5,7 @@ namespace app\controller;
 use app\controller\concerns\AdminControllerFormatSupport;
 use app\support\AdminOrderFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use Illuminate\Database\Query\Builder;
 use support\Db;
 use Webman\Http\Request;
@@ -25,9 +26,9 @@ class OrderController
         $summaryQuery = $this->baseOrderQuery();
         $this->applyFilters($summaryQuery, $request);
 
-        $total = (int)(clone $query)->count('ypay_order.id');
+        $total = (int)(clone $query)->count('orders.id');
         $rows = $query
-            ->orderByDesc('ypay_order.id')
+            ->orderByDesc('orders.id')
             ->offset(($current - 1) * $size)
             ->limit($size)
             ->get()
@@ -55,7 +56,7 @@ class OrderController
         }
 
         $row = $this->orderQuery()
-            ->where('ypay_order.id', $id)
+            ->where('orders.id', $id)
             ->first();
 
         if (!$row) {
@@ -71,51 +72,51 @@ class OrderController
     {
         return $this->baseOrderQuery()
             ->select(
-                'ypay_order.id',
-                'ypay_order.name',
-                'ypay_order.sitename',
-                'ypay_order.trade_no',
-                'ypay_order.out_trade_no',
-                'ypay_order.alipay_order_no',
-                'ypay_order.user_id',
-                'ypay_order.account_id',
-                'ypay_order.type',
-                'ypay_order.pay_type',
-                'ypay_order.money',
-                'ypay_order.truemoney',
-                'ypay_order.feilvmoney',
-                'ypay_order.status',
-                'ypay_order.notify_url',
-                'ypay_order.return_url',
-                'ypay_order.ip',
-                'ypay_order.create_time',
-                'ypay_order.end_time',
-                'ypay_order.api_memo',
-                'ypay_user.username as merchant_username',
-                'ypay_paylist.type as paylist_type',
-                'ypay_paylist.name as paylist_name'
+                'orders.id',
+                'orders.name',
+                'orders.sitename',
+                'orders.trade_no',
+                'orders.out_trade_no',
+                'orders.alipay_order_no',
+                'orders.user_id',
+                'orders.account_id',
+                'orders.type',
+                'orders.pay_type',
+                'orders.money',
+                'orders.truemoney',
+                'orders.feilvmoney',
+                'orders.status',
+                'orders.notify_url',
+                'orders.return_url',
+                'orders.ip',
+                'orders.create_time',
+                'orders.end_time',
+                'orders.api_memo',
+                'merchant.username as merchant_username',
+                'paylist.type as paylist_type',
+                'paylist.name as paylist_name'
             );
     }
 
     private function baseOrderQuery(): Builder
     {
-        return Db::table('ypay_order')
-            ->leftJoin('ypay_user', 'ypay_order.user_id', '=', 'ypay_user.id')
-            ->leftJoin('ypay_paylist', 'ypay_order.account_id', '=', 'ypay_paylist.id');
+        return Db::table(BusinessTable::order('orders'))
+            ->leftJoin(BusinessTable::user('merchant'), 'orders.user_id', '=', 'merchant.id')
+            ->leftJoin(BusinessTable::paylist('paylist'), 'orders.account_id', '=', 'paylist.id');
     }
 
     private function summary(Builder $query): array
     {
         $row = (array)($query
-            ->selectRaw('COUNT(ypay_order.id) as total_count')
-            ->selectRaw('SUM(CASE WHEN ypay_order.status = 1 THEN 1 ELSE 0 END) as paid_count')
-            ->selectRaw('SUM(CASE WHEN ypay_order.status = 0 THEN 1 ELSE 0 END) as pending_count')
-            ->selectRaw('SUM(CASE WHEN ypay_order.status NOT IN (0, 1) THEN 1 ELSE 0 END) as unknown_status_count')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN ypay_order.user_id > 0 THEN ypay_order.user_id END) as merchant_count')
-            ->selectRaw('COALESCE(SUM(ypay_order.money), 0) as gross_amount')
-            ->selectRaw("COALESCE(SUM(CASE WHEN ypay_order.status = 1 THEN CASE WHEN ypay_order.type = 'usdt' THEN ypay_order.money ELSE ypay_order.truemoney END ELSE 0 END), 0) as paid_amount")
-            ->selectRaw('COALESCE(SUM(CASE WHEN ypay_order.status = 0 THEN ypay_order.money ELSE 0 END), 0) as pending_amount')
-            ->selectRaw('COALESCE(SUM(CASE WHEN ypay_order.status = 1 THEN ypay_order.feilvmoney ELSE 0 END), 0) as fee_amount')
+            ->selectRaw('COUNT(orders.id) as total_count')
+            ->selectRaw('SUM(CASE WHEN orders.status = 1 THEN 1 ELSE 0 END) as paid_count')
+            ->selectRaw('SUM(CASE WHEN orders.status = 0 THEN 1 ELSE 0 END) as pending_count')
+            ->selectRaw('SUM(CASE WHEN orders.status NOT IN (0, 1) THEN 1 ELSE 0 END) as unknown_status_count')
+            ->selectRaw('COUNT(DISTINCT CASE WHEN orders.user_id > 0 THEN orders.user_id END) as merchant_count')
+            ->selectRaw('COALESCE(SUM(orders.money), 0) as gross_amount')
+            ->selectRaw("COALESCE(SUM(CASE WHEN orders.status = 1 THEN CASE WHEN orders.type = 'usdt' THEN orders.money ELSE orders.truemoney END ELSE 0 END), 0) as paid_amount")
+            ->selectRaw('COALESCE(SUM(CASE WHEN orders.status = 0 THEN orders.money ELSE 0 END), 0) as pending_amount')
+            ->selectRaw('COALESCE(SUM(CASE WHEN orders.status = 1 THEN orders.feilvmoney ELSE 0 END), 0) as fee_amount')
             ->first() ?? []);
 
         $totalCount = (int)($row['total_count'] ?? 0);
@@ -142,37 +143,37 @@ class OrderController
         if ($keyword !== '') {
             $query->where(function ($builder) use ($keyword) {
                 $builder
-                    ->where('ypay_order.trade_no', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_order.out_trade_no', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_order.name', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_order.sitename', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.username', 'like', '%' . $keyword . '%');
+                    ->where('orders.trade_no', 'like', '%' . $keyword . '%')
+                    ->orWhere('orders.out_trade_no', 'like', '%' . $keyword . '%')
+                    ->orWhere('orders.name', 'like', '%' . $keyword . '%')
+                    ->orWhere('orders.sitename', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.username', 'like', '%' . $keyword . '%');
 
                 if (ctype_digit($keyword)) {
                     $builder
-                        ->orWhere('ypay_order.user_id', (int)$keyword)
-                        ->orWhere('ypay_order.account_id', (int)$keyword)
-                        ->orWhere('ypay_order.id', (int)$keyword);
+                        ->orWhere('orders.user_id', (int)$keyword)
+                        ->orWhere('orders.account_id', (int)$keyword)
+                        ->orWhere('orders.id', (int)$keyword);
                 }
             });
         }
 
         $status = $request->get('status');
         if ($status !== null && $status !== '') {
-            $query->where('ypay_order.status', (int)$status);
+            $query->where('orders.status', (int)$status);
         }
 
         $type = trim((string)$request->get('type', ''));
         if ($type !== '') {
-            $query->where('ypay_order.type', $type);
+            $query->where('orders.type', $type);
         }
 
         $startDate = $this->normalizeDate((string)$request->get('start_date', ''));
         $endDate = $this->normalizeDate((string)$request->get('end_date', ''));
         if ($startDate !== null && $endDate !== null) {
             $query
-                ->where('ypay_order.create_time', '>=', $startDate . ' 00:00:00')
-                ->where('ypay_order.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
+                ->where('orders.create_time', '>=', $startDate . ' 00:00:00')
+                ->where('orders.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
         }
     }
 

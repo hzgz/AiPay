@@ -134,9 +134,13 @@ final class WxpayV3OrderQuerySupport
             throw new RuntimeException('wxpay_v3_private_key_missing');
         }
 
-        $runtimeDir = WxpayV3SdkAutoloader::ensureRuntimeDirectory((int)($account['id'] ?? 0));
-        $merchantPrivateKeyPath = $runtimeDir . DIRECTORY_SEPARATOR . 'merchant_private_key.pem';
-        file_put_contents($merchantPrivateKeyPath, $this->normalizePem($merchantPrivateKey, 'PRIVATE KEY'));
+        $accountId = (int)($account['id'] ?? 0);
+        $runtimeDir = WxpayV3SdkAutoloader::ensureRuntimeDirectory($accountId);
+        $merchantPrivateKeyPath = WxpayV3SdkAutoloader::writeRuntimeFile(
+            $accountId,
+            'merchant_private_key.pem',
+            $this->normalizePem($merchantPrivateKey, 'PRIVATE KEY')
+        );
 
         $platformCertificatePath = $runtimeDir . DIRECTORY_SEPARATOR . 'platform_certificate.pem';
         $config = [
@@ -152,8 +156,11 @@ final class WxpayV3OrderQuerySupport
         $platformPublicKey = trim((string)($account['cookie'] ?? ''));
         $platformPublicKeyId = trim((string)($account['cloud_id'] ?? ''));
         if ($platformPublicKey !== '' && $platformPublicKeyId !== '') {
-            $platformPublicKeyPath = $runtimeDir . DIRECTORY_SEPARATOR . 'platform_public_key.pem';
-            file_put_contents($platformPublicKeyPath, $this->normalizePem($platformPublicKey, 'PUBLIC KEY'));
+            $platformPublicKeyPath = WxpayV3SdkAutoloader::writeRuntimeFile(
+                $accountId,
+                'platform_public_key.pem',
+                $this->normalizePem($platformPublicKey, 'PUBLIC KEY')
+            );
             $config['platformPublicKeyFilePath'] = $platformPublicKeyPath;
         }
 

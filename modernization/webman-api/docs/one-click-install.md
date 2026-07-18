@@ -33,8 +33,8 @@ sudo bash deploy/linux/install-oneclick.sh
 ```bash
 sudo bash deploy/linux/install-oneclick.sh \
   --domain=pay.example.com \
-  --db-name=aipay_prod \
-  --db-user=aipay_prod \
+  --db-name=pay \
+  --db-user=pay \
   --db-password='ReplaceMe123!' \
   --admin-user=adminroot \
   --admin-password='ReplaceMe123!' \

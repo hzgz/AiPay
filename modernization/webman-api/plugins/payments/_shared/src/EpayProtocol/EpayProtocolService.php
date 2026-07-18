@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Plugins\Payments\Shared\Legacy;
+namespace Plugins\Payments\Shared\EpayProtocol;
 
 use app\service\order\OrderCallbackBuilder;
 use app\service\order\OrderCallbackTaskService;
 use app\support\SystemConfig;
 use Plugins\Payments\Shared\Support\PaymentPluginException;
 
-class LegacyEpayService
+class EpayProtocolService
 {
     public function __construct(
-        private readonly LegacyEpayMerchantRepository $merchants = new LegacyEpayMerchantRepository(),
-        private readonly LegacyEpayOrderRepository $orders = new LegacyEpayOrderRepository(),
+        private readonly EpayMerchantRepository $merchants = new EpayMerchantRepository(),
+        private readonly EpayOrderRepository $orders = new EpayOrderRepository(),
         private readonly OrderCallbackBuilder $callbackBuilder = new OrderCallbackBuilder(),
         private readonly OrderCallbackTaskService $callbackTasks = new OrderCallbackTaskService()
     ) {
@@ -44,7 +44,7 @@ class LegacyEpayService
             'legacy_epay'
         );
         if (!$paylist) {
-            throw PaymentPluginException::conflict('legacy epay paylist is not enabled');
+            throw PaymentPluginException::conflict('易支付协议通道未启用');
         }
 
         $basicSettings = $this->merchants->findBasicSettings((int)$merchant['id']);
@@ -89,7 +89,7 @@ class LegacyEpayService
             'response_mode' => $entry === 'submit' ? 'html_form' : 'legacy_api_json',
             'migration' => [
                 'persisted' => true,
-                'reason' => 'Legacy Epay orders are now persisted in Webman before the upstream gateway handoff.',
+                'reason' => '订单会先落库到 Webman，再跳转到上游通道继续支付。',
             ],
         ];
     }
@@ -101,12 +101,12 @@ class LegacyEpayService
 
         $outTradeNo = trim((string)($payload['out_trade_no'] ?? ''));
         if ($outTradeNo === '') {
-            throw PaymentPluginException::validation('out_trade_no is required for callback');
+            throw PaymentPluginException::validation('回调缺少商户订单号');
         }
 
         $order = $this->orders->findByOutTradeNo($outTradeNo);
         if (!$order) {
-            throw PaymentPluginException::notFound('order was not found');
+            throw PaymentPluginException::notFound('订单不存在');
         }
 
         $merchant = $this->merchants->findMerchant((int)$order['user_id']);
@@ -154,7 +154,7 @@ class LegacyEpayService
             ],
             'migration' => [
                 'persisted' => true,
-                'reason' => 'Callback settlement persists in Webman and merchant notify is delivered by worker queue.',
+                'reason' => '回调结算在 Webman 内完成，商户通知通过队列异步派发。',
             ],
         ];
     }
@@ -192,7 +192,7 @@ class LegacyEpayService
         foreach ($fields as $field) {
             $value = trim((string)($payload[$field] ?? ''));
             if ($value === '') {
-                throw PaymentPluginException::validation($field . ' is required');
+                throw PaymentPluginException::validation('缺少必填参数：' . $field);
             }
         }
     }
@@ -200,11 +200,11 @@ class LegacyEpayService
     private function assertMoney(string $value): void
     {
         if (!is_numeric($value)) {
-            throw PaymentPluginException::validation('money must be numeric');
+            throw PaymentPluginException::validation('金额格式不正确');
         }
 
         if ((float)$value <= 0) {
-            throw PaymentPluginException::validation('money must be greater than 0');
+            throw PaymentPluginException::validation('金额必须大于 0');
         }
     }
 
@@ -218,18 +218,18 @@ class LegacyEpayService
             : 0;
 
         if ($money < $min) {
-            throw PaymentPluginException::validation('money is lower than min_orderprice');
+            throw PaymentPluginException::validation('金额低于系统最低限额');
         }
 
         if ($max > 0 && $money > $max) {
-            throw PaymentPluginException::validation('money is higher than max_orderprice');
+            throw PaymentPluginException::validation('金额超过系统最高限额');
         }
     }
 
     private function assertOrderName(string $name, string $entry, array $systemConfig): void
     {
         if ($entry === 'submit' && str_contains($name, '=')) {
-            throw PaymentPluginException::validation('name is invalid');
+            throw PaymentPluginException::validation('商品名称包含非法字符');
         }
 
         $shieldKey = trim((string)($systemConfig['shield_key'] ?? ''));
@@ -246,7 +246,7 @@ class LegacyEpayService
 
             if (str_contains($name, $keyword)) {
                 $message = trim((string)($systemConfig['shield_tips'] ?? '商品存在风控风险'));
-                throw PaymentPluginException::validation($message !== '' ? $message : 'name hit shield keyword');
+                throw PaymentPluginException::validation($message !== '' ? $message : '商品名称触发风控关键词');
             }
         }
     }
@@ -258,11 +258,11 @@ class LegacyEpayService
         $allowZeroBalance = (string)($systemConfig['is_pay_money'] ?? '1') === '1';
 
         if (!$allowZeroBalance && $balance <= 0) {
-            throw PaymentPluginException::conflict('merchant balance is insufficient');
+            throw PaymentPluginException::conflict('商户余额不足');
         }
 
         if ($balance < $fee) {
-            throw PaymentPluginException::conflict('merchant balance is insufficient');
+            throw PaymentPluginException::conflict('商户余额不足');
         }
     }
 
@@ -270,12 +270,12 @@ class LegacyEpayService
     {
         $vipTime = trim((string)($merchant['vip_time'] ?? ''));
         if ($vipTime === '') {
-            throw PaymentPluginException::conflict('merchant vip package is missing');
+            throw PaymentPluginException::conflict('商户套餐不存在');
         }
 
         $timestamp = strtotime($vipTime);
         if ($timestamp === false || $timestamp < time()) {
-            throw PaymentPluginException::conflict('merchant vip package is expired');
+            throw PaymentPluginException::conflict('商户套餐已过期');
         }
     }
 
@@ -337,7 +337,7 @@ class LegacyEpayService
     {
         $gatewayUrl = trim($gatewayUrl);
         if ($gatewayUrl === '') {
-            throw PaymentPluginException::conflict('legacy epay gateway url is empty');
+            throw PaymentPluginException::conflict('易支付上游网关地址未配置');
         }
 
         if (str_ends_with($gatewayUrl, 'submit.php')) {
@@ -410,7 +410,7 @@ class LegacyEpayService
         }
 
         if (!$paylist || trim((string)($paylist['key'] ?? '')) === '') {
-            throw PaymentPluginException::conflict('legacy epay paylist is unavailable');
+            throw PaymentPluginException::conflict('易支付协议通道不可用');
         }
 
         return $paylist;

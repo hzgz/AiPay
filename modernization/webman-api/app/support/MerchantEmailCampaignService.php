@@ -123,7 +123,7 @@ class MerchantEmailCampaignService
             ]];
         }
 
-        $query = Db::table('ypay_user')->select('id', 'username', 'email');
+        $query = Db::table(BusinessTable::user())->select('id', 'username', 'email');
 
         if ($scope === 'vip') {
             $query->where('vip_id', '>', 0);

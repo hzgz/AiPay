@@ -5,6 +5,7 @@ namespace app\controller;
 use app\support\AdminRouteAuthorization;
 use app\support\AdminTicketCategoryFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\RequestPayload;
 use Illuminate\Database\Query\Builder;
 use support\Db;
@@ -77,7 +78,7 @@ class TicketCategoryController
         }
 
         $now = date('Y-m-d H:i:s');
-        $categoryId = (int)Db::table('ypay_ticket_category')->insertGetId([
+        $categoryId = (int)Db::table(BusinessTable::ticketCategory())->insertGetId([
             'name' => $payload['name'],
             'sort' => $payload['sort'],
             'status' => $payload['status'],
@@ -122,7 +123,7 @@ class TicketCategoryController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_ticket_category')
+        Db::table(BusinessTable::ticketCategory())
             ->where('id', $id)
             ->update([
                 'name' => $payload['name'],
@@ -168,7 +169,7 @@ class TicketCategoryController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_ticket_category')
+        Db::table(BusinessTable::ticketCategory())
             ->where('id', $id)
             ->update([
                 'status' => $status,
@@ -333,7 +334,7 @@ class TicketCategoryController
 
     private function categoryQuery(): Builder
     {
-        return Db::table('ypay_ticket_category')
+        return Db::table(BusinessTable::ticketCategory())
             ->select('id', 'name', 'sort', 'status', 'create_time', 'update_time');
     }
 
@@ -373,7 +374,7 @@ class TicketCategoryController
             return [];
         }
 
-        $rows = Db::table('ypay_ticket')
+        $rows = Db::table(BusinessTable::ticket())
             ->select('type')
             ->selectRaw('COUNT(*) as ticket_count')
             ->selectRaw('SUM(CASE WHEN status IN (0, 1) THEN 1 ELSE 0 END) as open_ticket_count')
@@ -488,7 +489,7 @@ class TicketCategoryController
 
         $rows = array_map(
             static fn($row): array => (array)$row,
-            Db::table('ypay_ticket_category')
+            Db::table(BusinessTable::ticketCategory())
                 ->select('id', 'name', 'sort', 'status', 'create_time', 'update_time')
                 ->whereIn('id', $categoryIds)
                 ->get()
@@ -595,7 +596,7 @@ class TicketCategoryController
         $blockingReasons = [];
         if ($ticketCount > 0) {
             $blockingReasons[] = sprintf(
-                'This ticket category still has %d linked ticket(s), including %d open ticket(s).',
+                '当前工单分类仍关联 %d 条工单，其中 %d 条仍处于未完结状态。',
                 $ticketCount,
                 $openTicketCount
             );
@@ -618,8 +619,8 @@ class TicketCategoryController
                 'blocked_count' => $blockingReasons === [] ? 0 : 1,
             ],
             'warnings' => [
-                'Deleting a ticket category permanently removes the category row.',
-                'Any category with linked tickets must stay in place until those tickets are cleared or reassigned.',
+                '删除工单分类会永久移除当前分类记录。',
+                '只要分类下仍有关联工单，就必须先清理或改派这些工单后才能删除。',
             ],
         ];
     }
@@ -655,14 +656,14 @@ class TicketCategoryController
                     'ticket_count' => 0,
                     'open_ticket_count' => 0,
                     'replied_ticket_count' => 0,
-                    'blocking_reasons' => ['This ticket category was not found in ypay_ticket_category.'],
+                    'blocking_reasons' => ['当前工单分类记录不存在。'],
                     'summary' => [
                         'delete_row_count' => 0,
                         'linked_ticket_count' => 0,
                         'open_ticket_count' => 0,
                         'blocked_count' => 1,
                     ],
-                    'warnings' => ['Remove missing ticket categories from the selection before retrying the batch delete.'],
+                    'warnings' => ['请先把不存在的工单分类从已选项中移除，再重新执行批量删除。'],
                 ];
                 continue;
             }
@@ -696,13 +697,13 @@ class TicketCategoryController
 
         $warnings = [];
         if ($missingCategoryIds !== []) {
-            $warnings[] = 'Some selected ticket categories no longer exist and must be removed from the selection.';
+            $warnings[] = '部分已选工单分类已不存在，请先从选择列表中移除。';
         }
         if ($blockedCategoryIds !== []) {
-            $warnings[] = 'At least one selected ticket category still has linked tickets, so the batch delete is paused.';
+            $warnings[] = '至少有一个已选工单分类仍关联工单，当前批量删除已暂停。';
         }
         if ($deletableCategoryIds !== []) {
-            $warnings[] = 'Batch delete permanently removes the selected ticket category rows after one shared confirmation phrase is accepted.';
+            $warnings[] = '确认后，会永久删除本次可移除的工单分类记录。';
         }
 
         return [
@@ -729,7 +730,7 @@ class TicketCategoryController
 
     private function deleteCategoryRow(int $id): void
     {
-        Db::table('ypay_ticket_category')
+        Db::table(BusinessTable::ticketCategory())
             ->where('id', $id)
             ->delete();
     }
@@ -798,7 +799,7 @@ class TicketCategoryController
 
     private function categoryDeleteConfirmationPhrase(int $id): string
     {
-        return 'DELETE TICKET CATEGORY ' . $id;
+        return '删除工单分类 ' . $id;
     }
 
     /**
@@ -807,7 +808,7 @@ class TicketCategoryController
     private function batchCategoryDeleteConfirmationPhrase(array $categoryIds): string
     {
         return sprintf(
-            'DELETE TICKET CATEGORY BATCH %d-%s',
+            '批量删除工单分类 %d-%s',
             count($categoryIds),
             strtoupper(substr(md5(implode(',', $categoryIds)), 0, 6))
         );

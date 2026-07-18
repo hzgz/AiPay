@@ -3,7 +3,7 @@
     <section class="merchant-page-header">
       <div class="merchant-page-header__title">
         <h1>登录日志</h1>
-        <p>查看前台访问记录、来源地址、行为类型和请求载荷摘要，用于安全核查与登录轨迹排查。</p>
+        <p>查看前台访问记录和请求摘要。</p>
       </div>
 
       <div v-if="!loading" class="merchant-chip-row">
@@ -42,7 +42,7 @@
         <div class="merchant-card__head">
           <div>
             <h2>日志记录</h2>
-            <p>支持按访问路径、来源地址和行为类型筛选，重点用于定位异常登录和前台操作痕迹。</p>
+            <p>按路径、来源地址、行为类型筛选。</p>
           </div>
 
           <div class="merchant-toolbar-pills">
@@ -55,10 +55,6 @@
               <strong>{{ filters.ip }}</strong>
             </div>
           </div>
-        </div>
-
-        <div class="merchant-note merchant-login-log-note">
-          登录日志当前仅提供查询与详情查看，并自动按当前商户范围过滤，不再展示无效的删除或清理提示。
         </div>
 
         <div class="merchant-table-toolbar">
@@ -90,7 +86,6 @@
             <ElButton type="primary" @click="loadLogs(true)">查询</ElButton>
             <ElButton plain :disabled="!hasActiveFilters" @click="resetFilters">重置</ElButton>
           </div>
-
         </div>
 
         <ElTable :data="records" empty-text="暂无登录日志">
@@ -136,7 +131,7 @@
           <div class="merchant-log-drawer-head">
             <div class="merchant-log-drawer-head__copy">
               <strong>日志详情</strong>
-              <span>{{ detail?.path || '查看单条访问日志的来源、行为类型和请求载荷' }}</span>
+              <span>{{ detail?.path || '查看来源、行为和请求内容' }}</span>
             </div>
           </div>
         </template>
@@ -175,7 +170,7 @@
           <section class="merchant-soft-panel">
             <div class="merchant-detail-section__head">
               <strong>请求载荷</strong>
-              <span>用于排查登录和前台行为问题</span>
+              <span>用于排查异常访问</span>
             </div>
 
             <div class="merchant-code-block">{{ detail.payload_text || '暂无请求载荷' }}</div>
@@ -215,25 +210,25 @@
     {
       label: '日志总数',
       value: String(summary.value.total_count ?? 0),
-      hint: '当前商户前台行为日志总数',
+      hint: '当前日志总数',
       icon: 'ri:file-list-3-line'
     },
     {
       label: '含载荷日志',
       value: String(summary.value.payload_count ?? 0),
-      hint: '携带请求载荷的日志条数',
+      hint: '带请求内容的记录',
       icon: 'ri:database-2-line'
     },
     {
       label: '今日访问',
       value: String(summary.value.today_count ?? 0),
-      hint: '今日新增的前台访问日志数量',
+      hint: '今日新增记录',
       icon: 'ri:calendar-check-line'
     },
     {
       label: '来源地址数',
       value: String(summary.value.ip_count ?? 0),
-      hint: '去重后的来源地址数量',
+      hint: '去重后的来源地址',
       icon: 'ri:global-line'
     }
   ])
@@ -310,10 +305,6 @@
 </style>
 
 <style lang="scss" scoped>
-  .merchant-login-log-note {
-    margin-bottom: 16px;
-  }
-
   .merchant-table-toolbar__filters--login {
     flex: 1;
   }

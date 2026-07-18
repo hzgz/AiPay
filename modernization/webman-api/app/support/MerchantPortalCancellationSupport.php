@@ -49,15 +49,15 @@ class MerchantPortalCancellationSupport
     public static function audit(array $merchant): array
     {
         $merchantId = (int)($merchant['id'] ?? 0);
-        $subordinateCount = self::countRows('ypay_user', 'superior_id', $merchantId);
-        $pendingOrderCount = self::pendingCount('ypay_order', 'user_id', $merchantId);
-        $pendingRechargeCount = self::pendingCount('ypay_recharge', 'user_id', $merchantId);
+        $subordinateCount = self::countRows(BusinessTable::user(), 'superior_id', $merchantId);
+        $pendingOrderCount = self::pendingCount(BusinessTable::order(), 'user_id', $merchantId);
+        $pendingRechargeCount = self::pendingCount(BusinessTable::recharge(), 'user_id', $merchantId);
         $balanceAmount = round((float)($merchant['money'] ?? 0), 3);
         $relatedCounts = [
             [
                 'key' => 'subordinate_merchants',
                 'label' => '下级商户',
-                'table_name' => 'ypay_user',
+                'table_name' => BusinessTable::user(),
                 'column_name' => 'superior_id',
                 'count' => $subordinateCount,
                 'delete_action' => 'block',
@@ -66,7 +66,7 @@ class MerchantPortalCancellationSupport
             [
                 'key' => 'pending_orders',
                 'label' => '未完成订单',
-                'table_name' => 'ypay_order',
+                'table_name' => BusinessTable::order(),
                 'column_name' => 'user_id',
                 'count' => $pendingOrderCount,
                 'delete_action' => 'block',
@@ -75,7 +75,7 @@ class MerchantPortalCancellationSupport
             [
                 'key' => 'pending_recharges',
                 'label' => '未完成充值',
-                'table_name' => 'ypay_recharge',
+                'table_name' => BusinessTable::recharge(),
                 'column_name' => 'user_id',
                 'count' => $pendingRechargeCount,
                 'delete_action' => 'block',
@@ -193,49 +193,49 @@ class MerchantPortalCancellationSupport
             [
                 'key' => 'userbasic',
                 'label' => '商户基础配置',
-                'table' => 'ypay_userbasic',
+                'table' => BusinessTable::userBasic(),
                 'column' => 'user_id',
                 'help_text' => '删除通讯密钥、超时回调、通知偏好等商户基础设置。',
             ],
             [
                 'key' => 'payment_accounts',
                 'label' => '商户本地通道',
-                'table' => 'ypay_account',
+                'table' => BusinessTable::account(),
                 'column' => 'user_id',
                 'help_text' => '删除当前商户名下的本地收款通道记录。',
             ],
             [
                 'key' => 'merchant_paylists',
                 'label' => '商户上游通道',
-                'table' => 'ypay_paylist',
+                'table' => BusinessTable::paylist(),
                 'column' => 'user_id',
                 'help_text' => '删除当前商户配置的上游支付通道凭据。',
             ],
             [
                 'key' => 'payment_pools',
                 'label' => '轮询池',
-                'table' => 'ypay_poll_pool',
+                'table' => BusinessTable::pollPool(),
                 'column' => 'user_id',
                 'help_text' => '删除当前商户创建的轮询池配置。',
             ],
             [
                 'key' => 'payment_pool_items',
                 'label' => '轮询池通道',
-                'table' => 'ypay_poll_pool_item',
+                'table' => BusinessTable::pollPoolItem(),
                 'column' => 'user_id',
                 'help_text' => '删除轮询池内已绑定的通道选择记录。',
             ],
             [
                 'key' => 'orders',
                 'label' => '订单记录',
-                'table' => 'ypay_order',
+                'table' => BusinessTable::order(),
                 'column' => 'user_id',
                 'help_text' => '删除当前商户的订单流水。',
             ],
             [
                 'key' => 'recharges',
                 'label' => '充值记录',
-                'table' => 'ypay_recharge',
+                'table' => BusinessTable::recharge(),
                 'column' => 'user_id',
                 'help_text' => '删除当前商户的充值与付费注册记录。',
             ],
@@ -256,28 +256,28 @@ class MerchantPortalCancellationSupport
             [
                 'key' => 'domains',
                 'label' => '域名记录',
-                'table' => 'ypay_domain',
+                'table' => BusinessTable::domain(),
                 'column' => 'user_id',
                 'help_text' => '删除当前商户提交的域名与审核结果。',
             ],
             [
                 'key' => 'risks',
                 'label' => '风控记录',
-                'table' => 'ypay_risk',
+                'table' => BusinessTable::risk(),
                 'column' => 'user_id',
                 'help_text' => '删除当前商户的风控命中记录。',
             ],
             [
                 'key' => 'tickets',
                 'label' => '工单记录',
-                'table' => 'ypay_ticket',
+                'table' => BusinessTable::ticket(),
                 'column' => 'creator_id',
                 'help_text' => '删除当前商户提交的工单记录。',
             ],
             [
                 'key' => 'merchant_record',
                 'label' => '商户账号',
-                'table' => 'ypay_user',
+                'table' => BusinessTable::user(),
                 'column' => 'id',
                 'help_text' => '删除当前商户账号本身。',
             ],

@@ -235,7 +235,7 @@
           <ElInput
             v-model="createForm.siteurl"
             maxlength="255"
-            placeholder="pay.aipay.local 或 https://pay.aipay.local"
+            placeholder="pay.你的域名.com 或 https://pay.你的域名.com"
           />
         </ElFormItem>
         <ElAlert
@@ -289,7 +289,7 @@
           <ElInput
             v-model="editForm.siteurl"
             maxlength="255"
-            placeholder="pay.aipay.local 或 https://pay.aipay.local"
+            placeholder="pay.你的域名.com 或 https://pay.你的域名.com"
           />
         </ElFormItem>
         <ElAlert

@@ -4,6 +4,7 @@ namespace app\controller;
 
 use app\support\AdminRechargeFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use Illuminate\Database\Query\Builder;
 use support\Db;
 use Webman\Http\Request;
@@ -22,9 +23,9 @@ class RechargeController
         $summaryQuery = $this->baseRechargeQuery();
         $this->applyFilters($summaryQuery, $request);
 
-        $total = (int)(clone $query)->count('ypay_recharge.id');
+        $total = (int)(clone $query)->count('recharge.id');
         $rows = $query
-            ->orderByDesc('ypay_recharge.id')
+            ->orderByDesc('recharge.id')
             ->offset(($current - 1) * $size)
             ->limit($size)
             ->get()
@@ -67,42 +68,42 @@ class RechargeController
         if ($keyword !== '') {
             $query->where(function (Builder $builder) use ($keyword) {
                 $builder
-                    ->where('ypay_recharge.out_trade_no', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_recharge.type', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.username', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.email', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.mobile', 'like', '%' . $keyword . '%');
+                    ->where('recharge.out_trade_no', 'like', '%' . $keyword . '%')
+                    ->orWhere('recharge.type', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.username', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.email', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.mobile', 'like', '%' . $keyword . '%');
 
                 if (ctype_digit($keyword)) {
                     $builder
-                        ->orWhere('ypay_recharge.id', (int)$keyword)
-                        ->orWhere('ypay_recharge.user_id', (int)$keyword);
+                        ->orWhere('recharge.id', (int)$keyword)
+                        ->orWhere('recharge.user_id', (int)$keyword);
                 }
             });
         }
 
         $status = $request->get('status');
         if ($status !== null && $status !== '') {
-            $query->where('ypay_recharge.status', (int)$status);
+            $query->where('recharge.status', (int)$status);
         }
 
         $type = trim((string)$request->get('type', ''));
         if ($type !== '') {
-            $query->where('ypay_recharge.type', $type);
+            $query->where('recharge.type', $type);
         }
 
         $rtype = $request->get('rtype');
         if ($rtype !== null && $rtype !== '') {
-            $query->where('ypay_recharge.rtype', (int)$rtype);
+            $query->where('recharge.rtype', (int)$rtype);
         }
 
         $startDate = $this->normalizeDate((string)$request->get('start_date', ''));
         $endDate = $this->normalizeDate((string)$request->get('end_date', ''));
         if ($startDate !== null && $endDate !== null) {
             $query
-                ->where('ypay_recharge.create_time', '>=', $startDate . ' 00:00:00')
+                ->where('recharge.create_time', '>=', $startDate . ' 00:00:00')
                 ->where(
-                    'ypay_recharge.create_time',
+                    'recharge.create_time',
                     '<',
                     date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day'))
                 );
@@ -113,50 +114,50 @@ class RechargeController
     {
         return $this->baseRechargeQuery()
             ->select(
-                'ypay_recharge.id',
-                'ypay_recharge.type',
-                'ypay_recharge.rtype',
-                'ypay_recharge.out_trade_no',
-                'ypay_recharge.user_id',
-                'ypay_recharge.money',
-                'ypay_recharge.qrcode',
-                'ypay_recharge.status',
-                'ypay_recharge.regdata',
-                'ypay_recharge.create_time',
-                'ypay_recharge.end_time',
-                'ypay_recharge.update_time',
-                'ypay_recharge.out_time',
-                'ypay_user.username as merchant_username',
-                'ypay_user.name as merchant_name',
-                'ypay_user.email as merchant_email',
-                'ypay_user.mobile as merchant_mobile'
+                'recharge.id',
+                'recharge.type',
+                'recharge.rtype',
+                'recharge.out_trade_no',
+                'recharge.user_id',
+                'recharge.money',
+                'recharge.qrcode',
+                'recharge.status',
+                'recharge.regdata',
+                'recharge.create_time',
+                'recharge.end_time',
+                'recharge.update_time',
+                'recharge.out_time',
+                'merchant.username as merchant_username',
+                'merchant.name as merchant_name',
+                'merchant.email as merchant_email',
+                'merchant.mobile as merchant_mobile'
             );
     }
 
     private function baseRechargeQuery(): Builder
     {
-        return Db::table('ypay_recharge')
-            ->leftJoin('ypay_user', 'ypay_recharge.user_id', '=', 'ypay_user.id');
+        return Db::table(BusinessTable::recharge('recharge'))
+            ->leftJoin(BusinessTable::user('merchant'), 'recharge.user_id', '=', 'merchant.id');
     }
 
     private function summary(Builder $query): array
     {
         $now = time();
         $row = (array)($query
-            ->selectRaw('COUNT(ypay_recharge.id) as total_count')
-            ->selectRaw('SUM(CASE WHEN ypay_recharge.status = 1 THEN 1 ELSE 0 END) as paid_count')
-            ->selectRaw('SUM(CASE WHEN ypay_recharge.status = 0 THEN 1 ELSE 0 END) as pending_count')
-            ->selectRaw('SUM(CASE WHEN ypay_recharge.status NOT IN (0, 1) THEN 1 ELSE 0 END) as unknown_status_count')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN ypay_recharge.user_id > 0 THEN ypay_recharge.user_id END) as merchant_count')
-            ->selectRaw('SUM(CASE WHEN ypay_recharge.rtype = 0 THEN 1 ELSE 0 END) as merchant_recharge_count')
-            ->selectRaw('SUM(CASE WHEN ypay_recharge.rtype = 1 THEN 1 ELSE 0 END) as registration_count')
+            ->selectRaw('COUNT(recharge.id) as total_count')
+            ->selectRaw('SUM(CASE WHEN recharge.status = 1 THEN 1 ELSE 0 END) as paid_count')
+            ->selectRaw('SUM(CASE WHEN recharge.status = 0 THEN 1 ELSE 0 END) as pending_count')
+            ->selectRaw('SUM(CASE WHEN recharge.status NOT IN (0, 1) THEN 1 ELSE 0 END) as unknown_status_count')
+            ->selectRaw('COUNT(DISTINCT CASE WHEN recharge.user_id > 0 THEN recharge.user_id END) as merchant_count')
+            ->selectRaw('SUM(CASE WHEN recharge.rtype = 0 THEN 1 ELSE 0 END) as merchant_recharge_count')
+            ->selectRaw('SUM(CASE WHEN recharge.rtype = 1 THEN 1 ELSE 0 END) as registration_count')
             ->selectRaw(
-                'SUM(CASE WHEN ypay_recharge.status = 0 AND ypay_recharge.out_time IS NOT NULL AND ypay_recharge.out_time > 0 AND ypay_recharge.out_time <= ? THEN 1 ELSE 0 END) as expired_pending_count',
+                'SUM(CASE WHEN recharge.status = 0 AND recharge.out_time IS NOT NULL AND recharge.out_time > 0 AND recharge.out_time <= ? THEN 1 ELSE 0 END) as expired_pending_count',
                 [$now]
             )
-            ->selectRaw('COALESCE(SUM(ypay_recharge.money), 0) as gross_amount')
-            ->selectRaw('COALESCE(SUM(CASE WHEN ypay_recharge.status = 1 THEN ypay_recharge.money ELSE 0 END), 0) as paid_amount')
-            ->selectRaw('COALESCE(SUM(CASE WHEN ypay_recharge.status = 0 THEN ypay_recharge.money ELSE 0 END), 0) as pending_amount')
+            ->selectRaw('COALESCE(SUM(recharge.money), 0) as gross_amount')
+            ->selectRaw('COALESCE(SUM(CASE WHEN recharge.status = 1 THEN recharge.money ELSE 0 END), 0) as paid_amount')
+            ->selectRaw('COALESCE(SUM(CASE WHEN recharge.status = 0 THEN recharge.money ELSE 0 END), 0) as pending_amount')
             ->first() ?? []);
 
         $totalCount = (int)($row['total_count'] ?? 0);
@@ -187,7 +188,7 @@ class RechargeController
     private function rechargeRecord(int $id): ?array
     {
         $row = $this->rechargeQuery()
-            ->where('ypay_recharge.id', $id)
+            ->where('recharge.id', $id)
             ->first();
 
         return $row ? (array)$row : null;

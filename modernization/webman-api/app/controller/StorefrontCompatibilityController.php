@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace app\controller;
 
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\FrontendUrlBuilder;
 use app\support\MerchantFrontSession;
 use app\support\SystemConfig;
@@ -272,6 +273,7 @@ class StorefrontCompatibilityController
             'records' => array_map(fn ($row): array => $this->formatNewsSummary((array)$row), $rows),
             'navs' => $this->navItems($request),
             'merchant_register_url' => FrontendUrlBuilder::merchantRegisterUrl($request),
+            'public_home_url' => $this->publicHomeUrl($request),
             'demo_url' => FrontendUrlBuilder::publicDemoUrl($request),
             'summary' => [
                 'total_count' => $total,
@@ -305,6 +307,7 @@ class StorefrontCompatibilityController
                 'status_code' => 404,
                 'site_name' => $this->displaySiteName((string)(SystemConfig::get('sitename', 'AiPay'))),
                 'navs' => $this->navItems($request),
+                'public_home_url' => $this->publicHomeUrl($request),
                 'legacy_url' => $this->publicHomeUrl($request),
                 'route_policy' => $this->routePolicy(),
                 'migration_guard' => [
@@ -321,6 +324,7 @@ class StorefrontCompatibilityController
             'article' => $this->formatNewsDetail($item),
             'navs' => $this->navItems($request),
             'merchant_register_url' => FrontendUrlBuilder::merchantRegisterUrl($request),
+            'public_home_url' => $this->publicHomeUrl($request),
             'demo_url' => FrontendUrlBuilder::publicDemoUrl($request),
             'legacy_url' => $this->publicHomeUrl($request),
             'route_policy' => $this->routePolicy(),
@@ -592,7 +596,7 @@ HTML;
   <div class="shell">
     <section class="hero">
       <h1>{$label}</h1>
-      <p>当前{$modeText}已稳定上线，公开阅读不再依赖旧版公告模板运行时；公告发布与编辑仍统一在已审计的管理后台中完成。</p>
+      <p>当前{$modeText}已稳定上线，公开阅读由当前前台页面直接提供；公告发布与编辑仍统一在已审计的管理后台中完成。</p>
     </section>
     <div class="topbar">
       <a class="btn" href="/">前台首页</a>
@@ -779,8 +783,8 @@ HTML;
                 'title' => '辅助地址与商户入口',
                 'description' => '以下辅助地址可用于二维码生成、拉起支付和商户后台登录。',
                 'items' => [
-                    ['label' => '二维码生成', 'value' => $origin . '/qrcode.php?text=https%3A%2F%2Fpay.aipay.local&size=180'],
-                    ['label' => '支付宝拉起地址', 'value' => $origin . '/url.php?user_id=10001&price=1.00&trade_no=demo'],
+                    ['label' => '二维码生成', 'value' => $origin . '/qrcode.php?text=https%3A%2F%2Fpay.%E4%BD%A0%E7%9A%84%E5%9F%9F%E5%90%8D.com&size=180'],
+                    ['label' => '支付宝拉起地址', 'value' => $origin . '/url.php?user_id=10001&price=1.00&trade_no=TEST202607170001'],
                     ['label' => '商户登录', 'value' => $this->merchantLoginUrl($request)],
                     ['label' => '商户接口信息', 'value' => FrontendUrlBuilder::merchantUrl($request, '/merchant/api')],
                 ],
@@ -842,7 +846,7 @@ HTML;
     private function navItems(Request $request): array
     {
         $defaults = $this->defaultPublicNavItems($request);
-        $rows = Db::table('ypay_navs')
+        $rows = Db::table(BusinessTable::nav())
             ->select('id', 'name', 'url', 'is_target', 'sort')
             ->where('status', 1)
             ->whereNull('delete_time')
@@ -1052,7 +1056,7 @@ HTML;
 
     private function newsBaseQuery()
     {
-        return Db::table('ypay_news')
+        return Db::table(BusinessTable::news())
             ->select('id', 'type', 'title', 'color', 'content', 'status', 'create_time', 'update_time')
             ->where('status', 1)
             ->whereNull('delete_time');
@@ -1066,7 +1070,7 @@ HTML;
     private function formatNewsSummary(array $row): array
     {
         $type = $this->normalizeNewsType((int)($row['type'] ?? 1));
-        $content = trim(strip_tags((string)($row['content'] ?? '')));
+        $content = $this->normalizePublicNewsText((string)($row['content'] ?? ''));
         $excerpt = mb_substr($content, 0, 120);
         if ($content !== '' && mb_strlen($content) > 120) {
             $excerpt .= '...';
@@ -1076,7 +1080,7 @@ HTML;
             'id' => (int)($row['id'] ?? 0),
             'type' => $type,
             'type_label' => $this->newsTypeLabel($type),
-            'title' => trim((string)($row['title'] ?? '')),
+            'title' => $this->normalizePublicNewsText((string)($row['title'] ?? '')),
             'color' => $this->nullableString($row['color'] ?? null),
             'create_time' => $this->nullableString($row['create_time'] ?? null),
             'date_label' => $this->dateLabel((string)($row['create_time'] ?? '')),
@@ -1087,11 +1091,39 @@ HTML;
     private function formatNewsDetail(array $row): array
     {
         $summary = $this->formatNewsSummary($row);
-        $contentHtml = $this->sanitizeHtmlFragment((string)($row['content'] ?? ''));
+        $contentHtml = $this->sanitizeHtmlFragment(
+            $this->normalizePublicNewsHtml((string)($row['content'] ?? ''))
+        );
 
         return array_merge($summary, [
             'content_html' => $contentHtml !== '' ? $contentHtml : '<p>暂无公告内容。</p>',
         ]);
+    }
+
+    private function normalizePublicNewsText(string $value): string
+    {
+        return trim(strip_tags($this->normalizePublicNewsHtml($value)));
+    }
+
+    private function normalizePublicNewsHtml(string $value): string
+    {
+        if (trim($value) === '') {
+            return '';
+        }
+
+        return str_replace(
+            [
+                'AiPay 已完成 Webman 架构升级，商户可通过首页完成注册、登录与支付接入。',
+                '如需对接支付、回调或订单查询，请前往开发文档查看完整说明。',
+                '当前为本地纯净预览环境。'
+            ],
+            [
+                '欢迎使用 AiPay，商户可在首页完成注册、登录与支付接入。',
+                '如需接入支付、回调或订单查询，请前往开发文档查看完整说明。',
+                '欢迎使用 AiPay。'
+            ],
+            $value
+        );
     }
 
     private function sanitizeHtmlFragment(string $html): string
@@ -1118,7 +1150,7 @@ HTML;
     private function displaySiteName(string $siteName): string
     {
         $trimmed = trim($siteName);
-        if ($trimmed === '' || in_array($trimmed, ['AiPay', 'AiPay Smoke', 'AiPay 演示站', 'Puple'], true)) {
+        if ($trimmed === '' || in_array($trimmed, ['AiPay', 'AiPay Smoke', 'AiPay 演示站', 'Puple', 'Purple'], true)) {
             return 'AiPay';
         }
 
@@ -1264,7 +1296,7 @@ HTML;
             return null;
         }
 
-        $row = Db::table('ypay_user')
+        $row = Db::table(BusinessTable::user())
             ->select('id', 'username', 'is_frozen')
             ->where('token', $token)
             ->first();

@@ -723,15 +723,15 @@
     }
 
     const nextStatus = target.status === 1 ? 0 : 1
-    const actionLabel = nextStatus === 1 ? 'enable' : 'disable'
+    const actionLabel = nextStatus === 1 ? '启用' : '停用'
 
     try {
       await ElMessageBox.confirm(
-        `本次将${actionLabel === 'enable' ? '启用' : '停用'} ${target.display}，并清空该账号已存储的登录令牌，是否继续？`,
-        `${nextStatus === 1 ? '启用' : '停用'}管理员`,
+        `本次将${actionLabel} ${target.display}，并清空其登录令牌，是否继续？`,
+        `${actionLabel}管理员`,
         {
           type: nextStatus === 1 ? 'success' : 'warning',
-          confirmButtonText: nextStatus === 1 ? '启用' : '停用',
+          confirmButtonText: actionLabel,
           cancelButtonText: '取消'
         }
       )
@@ -762,14 +762,14 @@
       const audit = response.audit
 
       if (!audit.can_delete) {
-        await ElMessageBox.alert(audit.blocking_reasons.join('\n'), '当前不可删除', {
+        await ElMessageBox.alert(audit.blocking_reasons.join('\n'), '暂不可回收', {
           type: 'warning'
         })
         return
       }
 
       const prompt = await ElMessageBox.prompt(
-        `请输入 ${audit.confirmation_phrase}，将 ${audit.admin_label} 移入回收站。角色关联和直属权限会保留，便于后续恢复；历史管理员日志也会继续保留。`,
+        `请输入 ${audit.confirmation_phrase}，将 ${audit.admin_label} 移入回收站。角色、直属权限和日志会保留。`,
         '回收管理员',
         {
           type: 'warning',
@@ -778,8 +778,7 @@
           confirmButtonText: '移入回收站',
           cancelButtonText: '取消',
           inputValidator: (value) =>
-            value.trim() === audit.confirmation_phrase ||
-            `请输入完整确认语：${audit.confirmation_phrase}`
+            value.trim() === audit.confirmation_phrase || `请输入：${audit.confirmation_phrase}`
         }
       )
 
@@ -884,8 +883,7 @@
           confirmButtonText: '批量回收',
           cancelButtonText: '取消',
           inputValidator: (value) =>
-            value.trim() === audit.confirmation_phrase ||
-            `请输入完整确认语：${audit.confirmation_phrase}`
+            value.trim() === audit.confirmation_phrase || `请输入：${audit.confirmation_phrase}`
         }
       )
 
@@ -1041,7 +1039,7 @@
   ) {
     const blockedItems = audit.items.filter((item) => !item.can_delete)
     return [
-      '当前所选管理员账号暂时无法批量移入回收站。',
+      '当前所选管理员暂不可批量回收。',
       '',
       ...blockedItems.slice(0, 6).map((item) => {
         const label = item.admin_label || `管理员 #${item.admin_id}`
@@ -1059,11 +1057,11 @@
     return [
       `即将把 ${audit.summary.deletable_count} 个管理员账号移入回收站。`,
       '',
-      `保留的角色关联：${audit.summary.retained_admin_role_row_count}`,
-      `保留的直属权限关联：${audit.summary.retained_admin_permission_row_count}`,
-      `保留的管理员日志：${audit.summary.retained_admin_log_row_count}`,
+      `保留角色：${audit.summary.retained_admin_role_row_count}`,
+      `保留直属权限：${audit.summary.retained_admin_permission_row_count}`,
+      `保留日志：${audit.summary.retained_admin_log_row_count}`,
       '',
-      `请输入 ${audit.confirmation_phrase} 以确认批量回收。`,
+      `请输入 ${audit.confirmation_phrase} 确认回收。`,
       ...audit.warnings.map((item) => `- ${item}`)
     ].join('\n')
   }

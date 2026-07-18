@@ -30,7 +30,7 @@
                 :loading="serverCacheClearing"
                 @click="handleClearServerCache"
               >
-                清服务端缓存
+                清服务端
               </ElButton>
               <ElButton
                 plain
@@ -38,7 +38,7 @@
                 :loading="browserCacheClearing"
                 @click="handleClearBrowserCache"
               >
-                清当前浏览器
+                清浏览器
               </ElButton>
               <ElButton
                 type="danger"
@@ -46,7 +46,7 @@
                 :loading="serverCacheClearing || browserCacheClearing"
                 @click="handleClearAllCaches"
               >
-                清除缓存
+                一键清理
               </ElButton>
             </ElSpace>
           </div>
@@ -104,11 +104,11 @@
               <strong>{{ browserCachePreview.sessionStorageKeys.length }}</strong>
             </div>
             <div class="browser-cache-item">
-              <span>缓存仓库</span>
+              <span>缓存仓</span>
               <strong>{{ browserCachePreview.cacheStorageKeys.length }}</strong>
             </div>
             <div class="browser-cache-item">
-              <span>缓存条目</span>
+              <span>缓存项</span>
               <strong>{{ browserCachePreview.cacheEntryCount }}</strong>
             </div>
           </div>
@@ -495,7 +495,7 @@
       pagination.size = response.size
       pagination.total = response.total
       Object.assign(summary, response.summary || emptySummary())
-    } catch (_error) {
+    } catch {
       ElMessage.error('加载清理列表失败。')
     } finally {
       loading.value = false
@@ -511,7 +511,7 @@
       ])
       cacheAudit.value = serverAudit
       browserCachePreview.value = browserPreview
-    } catch (_error) {
+    } catch {
       ElMessage.error('加载缓存状态失败。')
     } finally {
       cacheAuditLoading.value = false
@@ -553,7 +553,7 @@
     try {
       const response = await fetchGetCleanupAuditDetail(row.key)
       activeItem.value = response.item
-    } catch (_error) {
+    } catch {
       ElMessage.error('加载数据清理详情失败。')
     } finally {
       detailLoading.value = false
@@ -562,7 +562,7 @@
 
   async function handleExecuteCleanup(row?: CleanupAuditItem) {
     if (!hasCleanupExecuteAuth.value) {
-      ElMessage.warning('你没有执行清理的权限。')
+      ElMessage.warning('当前没有清理权限。')
       return
     }
 
@@ -614,7 +614,7 @@
         return
       }
 
-      ElMessage.error('执行数据清理失败。')
+      ElMessage.error('清理执行失败。')
     } finally {
       executingKey.value = ''
     }
@@ -622,12 +622,12 @@
 
   async function handleClearServerCache() {
     if (!hasCleanupExecuteAuth.value) {
-      ElMessage.warning('你没有缓存清理权限。')
+      ElMessage.warning('当前没有缓存清理权限。')
       return
     }
 
     try {
-      await ElMessageBox.confirm(buildServerCachePrompt(), '清服务端缓存', {
+      await ElMessageBox.confirm(buildServerCachePrompt(), '清服务端', {
         type: 'warning',
         confirmButtonText: '确认清理',
         cancelButtonText: '取消'
@@ -652,8 +652,8 @@
           `部分缓存未清理完成，请检查占用文件。剩余告警 ${response.warnings.length} 条。`
         )
       }
-    } catch (_error) {
-      ElMessage.error('清服务端缓存失败。')
+    } catch {
+      ElMessage.error('服务端缓存清理失败。')
     } finally {
       serverCacheClearing.value = false
       browserCachePreview.value = await inspectBrowserCache()
@@ -679,7 +679,7 @@
 
   async function handleClearAllCaches() {
     if (!hasCleanupExecuteAuth.value) {
-      ElMessage.warning('你没有缓存清理权限。')
+      ElMessage.warning('当前没有缓存清理权限。')
       return
     }
 
@@ -704,8 +704,8 @@
         `服务端缓存已清理，释放 ${response.released_size_label}，继续清理浏览器缓存。`
       )
       await clearBrowserCacheAndRedirect(true)
-    } catch (_error) {
-      ElMessage.error('一键清理服务端缓存阶段失败。')
+    } catch {
+      ElMessage.error('一键清理失败。')
     } finally {
       serverCacheClearing.value = false
     }
@@ -737,8 +737,8 @@
       setTimeout(() => {
         window.location.replace(`${window.location.pathname}${window.location.search}#/auth/login`)
       }, 360)
-    } catch (_error) {
-      ElMessage.error('清浏览器缓存失败。')
+    } catch {
+      ElMessage.error('浏览器缓存清理失败。')
     } finally {
       browserCacheClearing.value = false
     }
@@ -807,7 +807,7 @@
           const cache = await window.caches.open(cacheKey)
           cacheEntryCount += (await cache.keys()).length
         }
-      } catch (_error) {
+      } catch {
         cacheStorageKeys = []
         cacheEntryCount = 0
       }
@@ -854,7 +854,7 @@
 
   function buildBlockedMessage(audit: CleanupExecutionAudit) {
     return [
-      `${displayCleanupText(audit.title)} 暂无可清理目标。`,
+      `${displayCleanupText(audit.title)} 当前没有可清理内容。`,
       '',
       ...audit.blocking_reasons.map((item) => `- ${displayCleanupText(item, item)}`),
       ...audit.warnings.map((item) => `- ${displayCleanupText(item, item)}`)
@@ -863,7 +863,7 @@
 
   function buildExecutePromptMessage(item: CleanupAuditItem, audit: CleanupExecutionAudit) {
     return [
-      `${displayCleanupText(item.title)} 将执行清理：`,
+      `${displayCleanupText(item.title)} 将执行以下清理：`,
       '',
       `范围：${displayCleanupText(audit.action_scope_label)}`,
       `目标表：${displayCleanupText(audit.table_name)}`,
@@ -879,7 +879,7 @@
   function buildServerCachePrompt() {
     const targets = cacheAudit.value.server_targets
     const lines = [
-      '将清理以下服务端缓存目录：',
+      '将清理以下服务端缓存：',
       ...targets.map(
         (target) => `- ${target.title}（${target.relative_path}，${target.size_label}）`
       ),
@@ -896,7 +896,7 @@
       '将清理当前浏览器缓存：',
       `- 本地存储键 ${browserCachePreview.value.localStorageKeys.length} 个`,
       `- 会话键 ${browserCachePreview.value.sessionStorageKeys.length} 个`,
-      `- Cache Storage ${browserCachePreview.value.cacheStorageKeys.length} 个仓库 / ${browserCachePreview.value.cacheEntryCount} 条`,
+      `- Cache Storage ${browserCachePreview.value.cacheStorageKeys.length} 个仓 / ${browserCachePreview.value.cacheEntryCount} 条`,
       '',
       '清理完成后会自动退出当前登录并返回登录页。'
     ].join('\n')

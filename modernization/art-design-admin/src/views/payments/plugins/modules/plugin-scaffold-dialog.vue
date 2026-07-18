@@ -13,16 +13,14 @@
       <div class="scaffold-dialog-head">
         <p class="scaffold-dialog-eyebrow">插件创建</p>
         <h3 class="scaffold-dialog-title">创建新的支付插件</h3>
-        <p class="scaffold-dialog-desc">
-          一键生成独立插件目录，并自动带出清单文件、数据库脚本与基础清理策略。
-        </p>
+        <p class="scaffold-dialog-desc"> 创建独立插件目录，并自动生成基础清单、脚本和清理规则。 </p>
       </div>
     </template>
 
     <ElSteps :active="scaffoldStep" simple class="scaffold-steps">
-      <ElStep title="基础信息" description="编码、名称、提供方" />
-      <ElStep title="能力定义" description="能力范围与标签" />
-      <ElStep title="治理范围" description="文件、数据表、清理边界" />
+      <ElStep title="基础信息" description="编码、名称、来源" />
+      <ElStep title="能力定义" description="能力与标签" />
+      <ElStep title="清理范围" description="目录、数据表、边界" />
     </ElSteps>
 
     <ElForm
@@ -37,15 +35,15 @@
           <ElFormItem label="插件编码" prop="code">
             <ElInput
               v-model="scaffoldForm.code"
-              placeholder="epay_gateway"
+              placeholder="epay_protocol"
               autocomplete="off"
               @blur="normalizeScaffoldCode"
             />
           </ElFormItem>
           <ElFormItem label="插件名称" prop="name">
-            <ElInput v-model="scaffoldForm.name" placeholder="易支付网关插件" autocomplete="off" />
+            <ElInput v-model="scaffoldForm.name" placeholder="易支付协议插件" autocomplete="off" />
           </ElFormItem>
-          <ElFormItem label="提供方" prop="provider">
+          <ElFormItem label="来源" prop="provider">
             <ElInput v-model="scaffoldForm.provider" placeholder="AiPay官方" autocomplete="off" />
           </ElFormItem>
           <ElFormItem label="初始版本" prop="version">
@@ -59,7 +57,7 @@
             type="textarea"
             :rows="4"
             resize="vertical"
-            placeholder="描述该支付网关的用途，以及为什么需要这个插件。"
+            placeholder="描述该支付插件的用途，以及为什么需要这个插件。"
           />
         </ElFormItem>
 
@@ -152,7 +150,7 @@
           type="success"
           :closable="false"
           show-icon
-          title="能力定义会隔离在当前插件清单中，后续做发现、审核和路由检查时更容易维护。"
+          title="能力定义会写入当前插件清单，便于后续维护和审核。"
         />
       </template>
 
@@ -160,7 +158,7 @@
         <div class="scaffold-review-grid">
           <div class="plan-card scaffold-plan-card">
             <div class="plan-head">
-              <strong>Generated Package</strong>
+              <strong>插件目录</strong>
               <span>{{ scaffoldPreviewDirectory }}</span>
             </div>
             <div class="capability-list">
@@ -220,9 +218,7 @@
                 {{ normalizePluginCopy(field.field) }} {{ field.required ? '必填' : '可选' }}
               </ElTag>
             </div>
-            <p class="plan-hook-summary">
-              配置结构会根据已选能力自动生成，确保安装校验从预期的网关能力开始。
-            </p>
+            <p class="plan-hook-summary"> 配置字段会按已选能力自动生成。 </p>
           </div>
 
           <div class="plan-card scaffold-plan-card">
@@ -251,7 +247,7 @@
           type="warning"
           :closable="false"
           show-icon
-          title="订单、充值记录、资金日志、结算数据和回调轨迹默认不在自动清理范围内。"
+          title="订单、充值、资金日志、结算数据和回调记录默认不在自动清理范围内。"
         />
       </template>
     </ElForm>
@@ -353,7 +349,7 @@
       }
     ],
     name: [{ required: true, message: '请输入插件名称', trigger: 'blur' }],
-    provider: [{ required: true, message: '请输入提供方', trigger: 'blur' }],
+    provider: [{ required: true, message: '请输入来源', trigger: 'blur' }],
     description: [{ required: true, message: '请输入插件说明', trigger: 'blur' }],
     version: [
       { required: true, message: '请输入初始版本', trigger: 'blur' },

@@ -6,6 +6,7 @@ namespace app\controller;
 
 use app\support\ApiResponse;
 use app\support\AdminSmtpMailer;
+use app\support\BusinessTable;
 use app\support\GoogleAuthenticator;
 use app\support\LegacyApiCompatState;
 use app\support\LegacyPassword;
@@ -127,7 +128,7 @@ class ApiCompatibilityController
                     return $this->monitorResponse(201, '用户名和密码不能为空');
                 }
 
-                $user = Db::table('ypay_user')
+                $user = Db::table(BusinessTable::user())
                     ->where('username', $username)
                     ->where('password', LegacyPassword::hash($password))
                     ->first();
@@ -149,7 +150,7 @@ class ApiCompatibilityController
                     return $this->monitorResponse(201, '验证码错误');
                 }
 
-                $user = Db::table('ypay_user')->where('mobile', $mobile)->first();
+                $user = Db::table(BusinessTable::user())->where('mobile', $mobile)->first();
                 if (!$user) {
                     return $this->monitorResponse(201, '该手机号不存在');
                 }
@@ -168,7 +169,7 @@ class ApiCompatibilityController
                     return $this->monitorResponse(201, '验证码错误');
                 }
 
-                $user = Db::table('ypay_user')->where('email', $email)->first();
+                $user = Db::table(BusinessTable::user())->where('email', $email)->first();
                 if (!$user) {
                     return $this->monitorResponse(201, '该邮箱不存在');
                 }
@@ -187,7 +188,7 @@ class ApiCompatibilityController
                     return $this->monitorResponse(201, '验证码错误');
                 }
 
-                $user = Db::table('ypay_user')->where('tg_chat_id', $telegramId)->first();
+                $user = Db::table(BusinessTable::user())->where('tg_chat_id', $telegramId)->first();
                 if (!$user) {
                     return $this->monitorResponse(201, '该TG账号不存在');
                 }
@@ -324,7 +325,7 @@ class ApiCompatibilityController
 
             $tradeNo = $this->generateTradeNo('Y');
             $now = date('Y-m-d H:i:s');
-            Db::table('ypay_recharge')->insert([
+            Db::table(BusinessTable::recharge())->insert([
                 'type' => 'default',
                 'rtype' => 1,
                 'out_trade_no' => $tradeNo,
@@ -350,9 +351,9 @@ class ApiCompatibilityController
             Db::transaction(function () use ($config, $registerData): void {
                 $this->applyCustomMerchantAutoIncrement($config);
 
-                $userId = (int)Db::table('ypay_user')->insertGetId($registerData);
+                $userId = (int)Db::table(BusinessTable::user())->insertGetId($registerData);
 
-                Db::table('ypay_userbasic')->insert([
+                Db::table(BusinessTable::userBasic())->insert([
                     'user_id' => $userId,
                     'timeout_method' => 2,
                     'timeout_url' => '/',
@@ -525,7 +526,7 @@ class ApiCompatibilityController
         }
 
         $token = $this->generateSecret(32) . $merchantId . substr(str_replace('.', '', (string)microtime(true)), -8);
-        Db::table('ypay_user')
+        Db::table(BusinessTable::user())
             ->where('id', $merchantId)
             ->update(['token' => $token]);
 
@@ -539,7 +540,7 @@ class ApiCompatibilityController
 
     private function merchantFieldExists(string $field, string $value): bool
     {
-        return Db::table('ypay_user')->where($field, $value)->exists();
+        return Db::table(BusinessTable::user())->where($field, $value)->exists();
     }
 
     private function nullableInput(mixed $value): ?string
@@ -568,7 +569,7 @@ class ApiCompatibilityController
         if ($this->configInt($config, 'is_reg_give_vip', 0) === 1) {
             $vipId = $this->configInt($config, 'reg_give_vip', 0);
             if ($vipId > 0) {
-                $vip = Db::table('ypay_vip')
+                $vip = Db::table(BusinessTable::vip())
                     ->select('id', 'viptime', 'feilv', 'status')
                     ->where('id', $vipId)
                     ->first();
@@ -602,12 +603,12 @@ class ApiCompatibilityController
             return;
         }
 
-        $nextId = ((int)(Db::table('ypay_user')->max('id') ?? 0)) + 1;
+        $nextId = ((int)(Db::table(BusinessTable::user())->max('id') ?? 0)) + 1;
         if ($nextId >= $target) {
             return;
         }
 
-        Db::statement('ALTER TABLE ypay_user AUTO_INCREMENT = ' . $target);
+        Db::statement('ALTER TABLE ' . BusinessTable::user() . ' AUTO_INCREMENT = ' . $target);
     }
 
     private function paidRegistrationMethods(array $config): array
@@ -704,9 +705,9 @@ class ApiCompatibilityController
     private function checkVerificationThrottle(string $purpose, string $ip): ?Response
     {
         $url = match ($purpose) {
-            'register' => '/User/getRegCode',
-            'retrieve' => '/User/getLostCode',
-            default => '/User/getLoginCode',
+            'register' => '/api/compat/code/register',
+            'retrieve' => '/api/compat/code/retrieve',
+            default => '/api/compat/code/login',
         };
 
         $freqMessage = match ($purpose) {
@@ -754,9 +755,9 @@ class ApiCompatibilityController
     private function recordVerificationLog(string $purpose, Request $request): void
     {
         $url = match ($purpose) {
-            'register' => '/User/getRegCode',
-            'retrieve' => '/User/getLostCode',
-            default => '/User/getLoginCode',
+            'register' => '/api/compat/code/register',
+            'retrieve' => '/api/compat/code/retrieve',
+            default => '/api/compat/code/login',
         };
 
         $this->recordFrontLog(0, $url, 2, '发送验证码', $request);
@@ -859,7 +860,7 @@ class ApiCompatibilityController
             : ['out_trade_no', 'trade_no'];
 
         foreach ($fields as $field) {
-            $row = Db::table('ypay_order')
+            $row = Db::table(BusinessTable::order())
                 ->select(
                     'id',
                     'user_id',

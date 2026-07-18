@@ -6,6 +6,7 @@ use app\controller\concerns\AdminControllerFormatSupport;
 use app\support\AdminNavFormatter;
 use app\support\AdminRouteAuthorization;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\RequestPayload;
 use Illuminate\Database\Query\Builder;
 use support\Db;
@@ -82,7 +83,7 @@ class NavController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        $navId = (int)Db::table('ypay_navs')->insertGetId([
+        $navId = (int)Db::table(BusinessTable::nav())->insertGetId([
             'name' => $payload['name'],
             'url' => $payload['url'],
             'is_target' => $payload['is_target'],
@@ -133,7 +134,7 @@ class NavController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_navs')
+        Db::table(BusinessTable::nav())
             ->where('id', $id)
             ->update([
                 'name' => $payload['name'],
@@ -203,7 +204,7 @@ class NavController
 
         Db::transaction(function () use ($rows, $sortValues): void {
             foreach ($rows as $index => $row) {
-                Db::table('ypay_navs')
+                Db::table(BusinessTable::nav())
                     ->where('id', (int)($row['id'] ?? 0))
                     ->update(['sort' => (int)($sortValues[$index] ?? ($index + 1))]);
             }
@@ -253,7 +254,7 @@ class NavController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_navs')
+        Db::table(BusinessTable::nav())
             ->where('id', $id)
             ->update(['status' => $status]);
 
@@ -302,7 +303,7 @@ class NavController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_navs')
+        Db::table(BusinessTable::nav())
             ->where('id', $id)
             ->update(['is_target' => $isTarget]);
 
@@ -602,7 +603,7 @@ class NavController
 
     private function navQuery(): Builder
     {
-        return Db::table('ypay_navs')
+        return Db::table(BusinessTable::nav())
             ->select('id', 'name', 'url', 'is_target', 'status', 'create_time', 'sort', 'delete_time');
     }
 
@@ -687,7 +688,7 @@ class NavController
 
         return array_map(
             static fn($row): array => (array)$row,
-            Db::table('ypay_navs')
+            Db::table(BusinessTable::nav())
                 ->select('id', 'name', 'url', 'is_target', 'status', 'sort', 'delete_time')
                 ->whereIn('id', $navIds)
                 ->get()
@@ -704,7 +705,7 @@ class NavController
             return [];
         }
 
-        $rows = Db::table('ypay_navs')
+        $rows = Db::table(BusinessTable::nav())
             ->select('id', 'name', 'url', 'is_target', 'status', 'sort', 'delete_time')
             ->whereNull('delete_time')
             ->whereIn('id', $navIds)
@@ -857,7 +858,7 @@ class NavController
                     'url' => '',
                     'exists' => false,
                     'can_delete' => false,
-                    'blocking_reasons' => ['This navigation record was not found in ypay_navs.'],
+                    'blocking_reasons' => ['This navigation record was not found.'],
                     'summary' => [
                         'delete_row_count' => 0,
                         'blocked_count' => 1,
@@ -923,14 +924,14 @@ class NavController
 
     private function deleteNavRow(int $id): void
     {
-        Db::table('ypay_navs')
+        Db::table(BusinessTable::nav())
             ->where('id', $id)
             ->update(['delete_time' => date('Y-m-d H:i:s')]);
     }
 
     private function restoreNavRow(int $id): void
     {
-        Db::table('ypay_navs')
+        Db::table(BusinessTable::nav())
             ->where('id', $id)
             ->update(['delete_time' => null]);
     }

@@ -33,7 +33,7 @@ final class QrCodeService
         });
 
         if (!is_string($png) || !$this->isPng($png)) {
-            throw new RuntimeException('qrcode renderer returned invalid png');
+            throw new RuntimeException('二维码生成失败，请稍后重试');
         }
 
         return $png;

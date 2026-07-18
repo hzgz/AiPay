@@ -12,10 +12,8 @@
       <section class="home-hero">
         <div class="home-hero__copy">
           <span class="home-eyebrow">AiPay</span>
-          <h1>{{ siteName }} 为商户提供稳定清晰的支付接入入口</h1>
-          <p>
-            在这里了解平台能力、查看公告与文档，并完成商户注册或登录。
-          </p>
+          <h1>{{ siteName }} 商户注册、登录与支付接入入口</h1>
+          <p>在这里查看公告、文档，并完成商户注册或登录。</p>
 
           <div class="home-hero__actions">
             <a class="home-button home-button--primary" :href="merchantEntryUrl">
@@ -25,25 +23,12 @@
             <a class="home-button home-button--secondary" :href="docUrl">开发文档</a>
           </div>
 
-          <p v-if="error" class="home-hero__notice">
-            当前内容暂时无法刷新，请稍后再试。
-          </p>
+          <p v-if="error" class="home-hero__notice"> 当前内容暂时无法刷新，请稍后再试。 </p>
         </div>
 
         <aside class="home-hero__side">
           <div class="home-side__section">
-            <span>当前概览</span>
-
-            <div class="home-side__rows">
-              <div v-for="metric in heroMetrics" :key="metric.label" class="home-side__row">
-                <small>{{ metric.label }}</small>
-                <strong>{{ metric.value }}</strong>
-              </div>
-            </div>
-          </div>
-
-          <div class="home-side__section">
-            <span>常用入口</span>
+            <span>开始使用</span>
 
             <div class="home-side__links">
               <a v-for="item in heroLinks" :key="item.label" :href="item.href">
@@ -55,33 +40,21 @@
         </aside>
       </section>
 
-      <section class="home-band">
-        <div class="home-band__head">
-          <div>
-            <span class="home-eyebrow">平台能力</span>
-            <h2>接入说明、公告与商户入口集中呈现</h2>
-          </div>
-        </div>
-
-        <div class="home-feature-list">
-          <article v-for="item in featureCards" :key="item.title" class="home-feature-item">
-            <span>{{ item.eyebrow }}</span>
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.description }}</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="home-band">
+      <section class="home-band home-band--entries">
         <div class="home-band__head">
           <div>
             <span class="home-eyebrow">常用入口</span>
-            <h2>平台说明查看与商户接入从这里开始</h2>
+            <h2>常用入口</h2>
           </div>
         </div>
 
         <div class="home-entry-list">
-          <a v-for="entry in quickEntries" :key="entry.title" class="home-entry-item" :href="entry.href">
+          <a
+            v-for="entry in quickEntries"
+            :key="entry.title"
+            class="home-entry-item"
+            :href="entry.href"
+          >
             <div>
               <span>{{ entry.eyebrow }}</span>
               <h3>{{ entry.title }}</h3>
@@ -95,7 +68,7 @@
         <div class="home-band__head">
           <div>
             <span class="home-eyebrow">公告预览</span>
-            <h2>平台公告、行业资讯与常见问题</h2>
+            <h2>公告与常见问题</h2>
           </div>
 
           <a class="home-band__link" :href="newsIndexUrl">查看全部</a>
@@ -117,10 +90,10 @@
               >
                 <small>{{ item.date_label }}</small>
                 <h3>{{ item.title }}</h3>
-                <p>{{ item.excerpt || '点击查看公告详情。' }}</p>
+                <p>{{ item.excerpt || '点击查看详情。' }}</p>
               </a>
 
-              <div v-if="!section.items.length" class="home-news-empty">当前分类暂无内容</div>
+              <div v-if="!section.items.length" class="home-news-empty">暂无内容</div>
             </div>
           </article>
         </div>
@@ -156,62 +129,39 @@
   const newsIndexUrl = computed(() => payload.value?.news_index_url || '/#/news/index')
   const demoUrl = computed(() => payload.value?.demo_url || '/#/demo')
 
-  const heroMetrics = computed(() => [
-    { label: '商户服务', value: isLoggedIn.value ? '已登录可用' : '开放接入' },
-    { label: '栏目入口', value: '文档 / 公告 / 测试' },
-    { label: '公告总数', value: String(payload.value?.summary.news_count ?? 0) },
-    { label: '导航数量', value: String(payload.value?.summary.nav_count ?? 4) }
-  ])
-
   const heroLinks = computed(() => [
-    { label: '公告中心', note: '查看平台公告和行业资讯', href: newsIndexUrl.value },
-    { label: '支付测试', note: '快速了解前台支付展示方式', href: demoUrl.value },
-    { label: '商户入驻', note: '完成注册后进入商户控制台', href: merchantRegisterUrl.value }
+    {
+      label: isLoggedIn.value ? '商户中心' : '商户登录',
+      note: isLoggedIn.value ? '进入商户后台继续使用' : '已有账号可直接登录',
+      href: merchantEntryUrl.value
+    },
+    { label: '公告中心', note: '查看公告和帮助内容', href: newsIndexUrl.value },
+    { label: '支付测试', note: '查看当前开放方式', href: demoUrl.value }
   ])
-
-  const featureCards = [
-    {
-      eyebrow: '统一入口',
-      title: '首页、文档、公告与测试保持统一体验',
-      description: '访问者进入站点后，可以在一套连续清晰的页面里完成了解、查看与接入。'
-    },
-    {
-      eyebrow: '信息收敛',
-      title: '每个页面只保留真正有用的内容',
-      description: '不堆无意义说明，不塞杂乱提示，让平台介绍、公告与指引保持干净直接。'
-    },
-    {
-      eyebrow: '接入顺畅',
-      title: '从了解平台到进入商户端路径简洁',
-      description: '注册、登录、文档和测试入口都集中在首页上下文中，减少跳转和理解成本。'
-    }
-  ]
 
   const quickEntries = computed(() => [
     {
       eyebrow: '商户接入',
       title: isLoggedIn.value ? '进入商户中心' : '商户登录',
-      description: isLoggedIn.value
-        ? '继续管理通道、订单、回调与账户配置。'
-        : '登录后即可进入商户控制台管理通道和订单。',
+      description: isLoggedIn.value ? '继续管理通道、订单和账户配置。' : '登录后即可进入商户后台。',
       href: merchantEntryUrl.value
     },
     {
       eyebrow: '注册入驻',
       title: '注册商户',
-      description: '直接进入商户注册流程，完成基础入驻与配置。',
+      description: '进入商户注册流程并完成基础配置。',
       href: merchantRegisterUrl.value
     },
     {
       eyebrow: '开发接入',
       title: '查看开发文档',
-      description: '查看接入说明、回调规则和常用查询入口。',
+      description: '查看接入文档、回调规则和查询入口。',
       href: docUrl.value
     },
     {
       eyebrow: '支付展示',
       title: '支付测试',
-      description: '查看可用支付方式和测试金额，了解展示效果。',
+      description: '查看可用支付方式和展示效果。',
       href: demoUrl.value
     }
   ])
@@ -309,7 +259,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 42px;
+    min-height: 40px;
     padding: 0 16px;
     border-radius: 999px;
     border: 1px solid transparent;
@@ -359,14 +309,12 @@
     text-transform: uppercase;
   }
 
-  .home-side__rows,
   .home-side__links {
     display: grid;
     gap: 12px;
     margin-top: 14px;
   }
 
-  .home-side__row,
   .home-side__links a {
     display: flex;
     align-items: baseline;
@@ -378,19 +326,16 @@
     text-decoration: none;
   }
 
-  .home-side__row:last-child,
   .home-side__links a:last-child {
     padding-bottom: 0;
     border-bottom: 0;
   }
 
-  .home-side__row small,
   .home-side__links small {
     color: var(--public-text);
     line-height: 1.7;
   }
 
-  .home-side__row strong,
   .home-side__links strong {
     color: var(--public-title);
     font-size: 0.96rem;
@@ -417,18 +362,6 @@
     letter-spacing: -0.04em;
   }
 
-  .home-feature-list {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 22px;
-  }
-
-  .home-feature-item {
-    padding-top: 14px;
-    border-top: 1px solid rgba(15, 23, 42, 0.06);
-  }
-
-  .home-feature-item span,
   .home-entry-item span {
     color: var(--public-muted);
     font-size: 0.82rem;
@@ -437,14 +370,12 @@
     text-transform: uppercase;
   }
 
-  .home-feature-item h3,
   .home-entry-item h3,
   .home-news-row h3 {
     margin: 12px 0 10px;
     color: var(--public-title);
   }
 
-  .home-feature-item p,
   .home-entry-item p,
   .home-news-row p,
   .home-news-empty {
@@ -533,7 +464,6 @@
 
   @media (max-width: 1024px) {
     .home-hero,
-    .home-feature-list,
     .home-news-grid {
       grid-template-columns: 1fr;
     }
@@ -573,6 +503,10 @@
     .home-button,
     .home-band__link {
       width: 100%;
+    }
+
+    .home-band--entries {
+      display: none;
     }
   }
 </style>

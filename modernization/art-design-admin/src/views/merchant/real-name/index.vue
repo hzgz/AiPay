@@ -3,13 +3,17 @@
     <section class="merchant-page-header">
       <div class="merchant-page-header__title">
         <h1>实名认证</h1>
-        <p>统一完成实名资料填写、核验通道选择、二维码扫码认证与结果轮询，保持商户端操作链路完整可用。</p>
+        <p>填写实名资料并完成扫码认证。</p>
       </div>
 
       <div v-if="payload" class="merchant-chip-row">
-        <span class="merchant-chip">功能 {{ merchantEnabledLabel(payload.status?.feature_enabled) }}</span>
+        <span class="merchant-chip"
+          >功能 {{ merchantEnabledLabel(payload.status?.feature_enabled) }}</span
+        >
         <span class="merchant-chip">状态 {{ translateMerchantText(payload.status?.label) }}</span>
-        <span class="merchant-chip">可用通道 {{ payload.verification?.available_channel_count ?? 0 }}</span>
+        <span class="merchant-chip"
+          >可用通道 {{ payload.verification?.available_channel_count ?? 0 }}</span
+        >
       </div>
     </section>
 
@@ -24,7 +28,7 @@
         </div>
 
         <div class="merchant-real-name-state__copy">
-          <h2>实名认证当前不可用</h2>
+          <h2>实名认证未开启</h2>
           <p>{{ featureMessage }}</p>
         </div>
       </div>
@@ -32,12 +36,12 @@
       <div class="merchant-grid-3">
         <section class="merchant-soft-panel merchant-real-name-state__panel">
           <strong>当前状态</strong>
-          <p>当前环境未开启实名认证能力，因此这里只展示状态。</p>
+          <p>当前仅展示实名状态。</p>
         </section>
 
         <section class="merchant-soft-panel merchant-real-name-state__panel">
           <strong>开放后能力</strong>
-          <p>启用后可直接在此页填写实名信息、生成二维码并查询认证结果。</p>
+          <p>启用后可在此页填写资料并查询结果。</p>
         </section>
       </div>
     </article>
@@ -68,7 +72,7 @@
           <div class="merchant-card__head">
             <div>
               <h2>认证总览</h2>
-              <p>集中查看当前实名状态、脱敏证件信息、费用承担方式和当前结果说明。</p>
+              <p>查看实名状态、证件脱敏信息和费用。</p>
             </div>
           </div>
 
@@ -97,7 +101,7 @@
               <span>{{
                 merchantBooleanLabel(payload.cost?.merchant_bears_cost, ['商户承担', '平台承担'])
               }}</span>
-              <p>当前认证费用：{{ payload.cost?.amount_display || '0.00' }}</p>
+              <p>认证费用：{{ payload.cost?.amount_display || '0.00' }}</p>
             </section>
 
             <section class="merchant-soft-panel merchant-real-name-overview__panel">
@@ -112,14 +116,18 @@
           <div class="merchant-form-card__head">
             <div>
               <h2>发起认证</h2>
-              <p>填写实名资料后选择认证通道，系统会生成专属二维码，扫码完成后可直接在此轮询结果。</p>
+              <p>填写资料后生成二维码，再回到此页查结果。</p>
             </div>
           </div>
 
           <div class="merchant-chip-row">
             <span class="merchant-chip">默认通道 {{ activeChannel?.label || '未配置' }}</span>
-            <span class="merchant-chip">提交能力 {{ payload.verification?.write_allowed ? '已开启' : '未开启' }}</span>
-            <span class="merchant-chip" v-if="qrSession?.orderNumber">当前订单 {{ qrSession.orderNumber }}</span>
+            <span class="merchant-chip"
+              >提交能力 {{ payload.verification?.write_allowed ? '已开启' : '未开启' }}</span
+            >
+            <span class="merchant-chip" v-if="qrSession?.orderNumber"
+              >当前订单 {{ qrSession.orderNumber }}</span
+            >
           </div>
 
           <div class="merchant-note merchant-real-name-note">
@@ -156,11 +164,7 @@
                 class="merchant-real-name-channel"
                 :disabled="verificationLocked || submitLoading"
               >
-                <ElRadioButton
-                  v-for="item in availableChannels"
-                  :key="item.id"
-                  :label="item.id"
-                >
+                <ElRadioButton v-for="item in availableChannels" :key="item.id" :label="item.id">
                   {{ item.label }}
                 </ElRadioButton>
               </ElRadioGroup>
@@ -176,8 +180,8 @@
             <span class="merchant-fine-print">
               {{
                 verificationLocked
-                  ? '当前商户已完成实名认证，资料信息仅供查看。'
-                  : '提交后将生成二维码，请使用手机端完成扫码或授权，再回到此页查询结果。'
+                  ? '已完成实名，当前仅可查看。'
+                  : '提交后会生成二维码，请在手机端完成认证。'
               }}
             </span>
 
@@ -198,7 +202,7 @@
           <div class="merchant-card__head">
             <div>
               <h2>二维码与轮询</h2>
-              <p>生成二维码后即可扫码完成认证，页面支持手动查询并自动保留当前认证会话。</p>
+              <p>生成二维码后在这里查看进度。</p>
             </div>
           </div>
 
@@ -210,9 +214,13 @@
 
               <div class="merchant-real-name-progress__body">
                 <div class="merchant-chip-row merchant-chip-row--compact">
-                  <span class="merchant-chip">通道 {{ qrSession.channelLabel || qrSession.channel }}</span>
+                  <span class="merchant-chip"
+                    >通道 {{ qrSession.channelLabel || qrSession.channel }}</span
+                  >
                   <span class="merchant-chip">订单 {{ qrSession.orderNumber }}</span>
-                  <span class="merchant-chip">状态 {{ translateMerchantText(displayStatusText) }}</span>
+                  <span class="merchant-chip"
+                    >状态 {{ translateMerchantText(displayStatusText) }}</span
+                  >
                 </div>
 
                 <div class="merchant-kv-grid merchant-kv-grid--single">
@@ -221,27 +229,27 @@
                     <div>{{ translateMerchantText(displayStatusText) }}</div>
                   </div>
                   <div class="merchant-kv-item">
-                    <span>状态说明</span>
+                    <span>说明</span>
                     <div>{{ translateMerchantText(displayStatusDetail) }}</div>
                   </div>
                 </div>
 
                 <div v-if="qrSession.redirectUrl" class="merchant-real-name-progress__link">
                   <a :href="qrSession.redirectUrl" target="_blank" rel="noreferrer">
-                    在新窗口打开认证链接
+                    打开认证链接
                   </a>
                 </div>
 
                 <div class="merchant-form-actions merchant-form-actions--split">
                   <span class="merchant-fine-print">
-                    扫码完成后点击“查询认证结果”，系统也会在页面停留期间自动轮询。
+                    扫码后点“查询结果”，页面停留时也会自动轮询。
                   </span>
 
                   <div class="merchant-real-name-progress__actions">
                     <ElButton plain :loading="pollLoading" @click="handlePoll(false)">
-                      查询认证结果
+                      查询结果
                     </ElButton>
-                    <ElButton text @click="clearSession">清除当前二维码</ElButton>
+                    <ElButton text @click="clearSession">清除二维码</ElButton>
                   </div>
                 </div>
               </div>
@@ -253,7 +261,7 @@
               <Icon icon="ri:qr-scan-2-line" />
             </div>
             <strong>等待生成实名认证二维码</strong>
-            <p>填写资料并发起认证后，这里会展示当前专属二维码与查询状态入口。</p>
+            <p>发起认证后，这里会显示二维码和结果。</p>
           </div>
         </article>
 
@@ -261,17 +269,17 @@
           <div class="merchant-card__head">
             <div>
               <h2>通道清单</h2>
-              <p>展示当前实名通道的核验方式、可用状态和当前系统提供的校验能力。</p>
+              <p>查看各实名通道的可用状态。</p>
             </div>
           </div>
 
-          <ElTable :data="payload.verification?.channels || []" empty-text="暂无可展示通道">
+          <ElTable :data="payload.verification?.channels || []" empty-text="暂无通道">
             <ElTableColumn prop="label" label="通道名称" min-width="160" />
             <ElTableColumn prop="flow" label="校验方式" min-width="220" />
             <ElTableColumn label="状态" width="120">
               <template #default="{ row }">
                 <ElTag :type="row.available ? 'success' : 'info'" effect="plain">
-                  {{ row.available ? '可用' : '未开放' }}
+                  {{ row.available ? '可用' : '未开启' }}
                 </ElTag>
               </template>
             </ElTableColumn>
@@ -328,13 +336,22 @@
   })
 
   const activeChannel = computed(() => {
-    return availableChannels.value.find((item) => item.id === form.channel) || availableChannels.value[0] || null
+    return (
+      availableChannels.value.find((item) => item.id === form.channel) ||
+      availableChannels.value[0] ||
+      null
+    )
   })
 
   const verificationLocked = computed(() => Boolean(payload.value?.status?.verified))
 
   const displayStatusText = computed(() => {
-    return latestStatus.value?.message || latestStatus.value?.status_label || payload.value?.status?.label || '--'
+    return (
+      latestStatus.value?.message ||
+      latestStatus.value?.status_label ||
+      payload.value?.status?.label ||
+      '--'
+    )
   })
 
   const displayStatusDetail = computed(() => {
@@ -350,25 +367,28 @@
     {
       label: '功能状态',
       value: payload.value ? merchantEnabledLabel(payload.value.status?.feature_enabled) : '--',
-      hint: '实名认证能力是否已对当前商户开放',
+      hint: '是否已开放',
       icon: 'ri:shield-check-line'
     },
     {
       label: '当前结果',
       value: payload.value ? translateMerchantText(payload.value.status?.label) : '--',
-      hint: '当前商户最新实名认证状态',
+      hint: '最新实名状态',
       icon: 'ri:verified-badge-line'
     },
     {
       label: '可用通道',
       value: String(payload.value?.verification?.available_channel_count ?? 0),
-      hint: '当前环境可供使用的实名认证通道数量',
+      hint: '当前可用通道数',
       icon: 'ri:route-line'
     },
     {
       label: '待扣费用',
       value: payload.value?.cost?.amount_display || '0.00',
-      hint: merchantBooleanLabel(payload.value?.cost?.merchant_bears_cost, ['商户承担', '平台承担']),
+      hint: merchantBooleanLabel(payload.value?.cost?.merchant_bears_cost, [
+        '商户承担',
+        '平台承担'
+      ]),
       icon: 'ri:coins-line'
     }
   ])
@@ -414,7 +434,11 @@
   }
 
   function startPolling() {
-    if (typeof window === 'undefined' || !qrSession.value?.orderNumber || verificationLocked.value) {
+    if (
+      typeof window === 'undefined' ||
+      !qrSession.value?.orderNumber ||
+      verificationLocked.value
+    ) {
       return
     }
 
@@ -466,7 +490,9 @@
     } catch (error) {
       if (isMerchantFeatureDisabled(error)) {
         featureMessage.value = translateMerchantText(
-          error instanceof MerchantApiError ? error.message : 'merchant real-name feature is disabled'
+          error instanceof MerchantApiError
+            ? error.message
+            : 'merchant real-name feature is disabled'
         )
       } else {
         const message =
@@ -516,7 +542,9 @@
       persistSession()
 
       ElMessage.success(
-        translateMerchantText(result.message || 'merchant real-name verification started successfully')
+        translateMerchantText(
+          result.message || 'merchant real-name verification started successfully'
+        )
       )
       await loadRealName({ silent: true })
       startPolling()
@@ -551,7 +579,9 @@
       if (result.verified) {
         clearSession()
         ElMessage.success(
-          translateMerchantText(result.message || 'merchant real-name verification completed successfully')
+          translateMerchantText(
+            result.message || 'merchant real-name verification completed successfully'
+          )
         )
       } else if (!silent) {
         ElMessage.info(

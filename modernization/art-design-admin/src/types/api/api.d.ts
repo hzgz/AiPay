@@ -263,6 +263,8 @@ declare namespace Api {
       installed_at: string | null
       updated_at: string | null
       capabilities: string[]
+      merchant_enabled: boolean
+      supported_payment_types: string[]
       state_audit: PaymentPluginStateAudit
       cleanup_policy: PaymentPluginCleanupPolicy
     }
@@ -424,6 +426,8 @@ declare namespace Api {
       class: string
       directory: string
       capabilities: string[]
+      merchant_enabled: boolean
+      supported_payment_types: string[]
       managed_channels: PaymentPluginManagedChannelDefinition[]
       migrations: PaymentPluginManifestMigrations
       upgrade: PaymentPluginManifestUpgrade

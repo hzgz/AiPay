@@ -132,7 +132,7 @@ CREATE TABLE `money_log` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_account` (
+CREATE TABLE `aipay_account` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `code` varchar(50) DEFAULT NULL,
   `type` varchar(50) DEFAULT NULL,
@@ -163,7 +163,7 @@ CREATE TABLE `ypay_account` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_cdk` (
+CREATE TABLE `aipay_cdk` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `type` int(3) DEFAULT NULL,
   `value` varchar(50) DEFAULT NULL,
@@ -173,7 +173,7 @@ CREATE TABLE `ypay_cdk` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_domain` (
+CREATE TABLE `aipay_domain` (
   `id` int(100) NOT NULL AUTO_INCREMENT,
   `user_id` int(100) NOT NULL,
   `sitename` varchar(255) DEFAULT NULL,
@@ -185,7 +185,7 @@ CREATE TABLE `ypay_domain` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_navs` (
+CREATE TABLE `aipay_navs` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) DEFAULT NULL,
   `url` text DEFAULT NULL,
@@ -197,7 +197,7 @@ CREATE TABLE `ypay_navs` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_news` (
+CREATE TABLE `aipay_news` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `type` int(11) NOT NULL DEFAULT 1,
   `title` varchar(2500) DEFAULT NULL,
@@ -210,7 +210,7 @@ CREATE TABLE `ypay_news` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_order` (
+CREATE TABLE `aipay_order` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   `sitename` varchar(50) DEFAULT NULL,
@@ -238,13 +238,13 @@ CREATE TABLE `ypay_order` (
   `pay_type` int(11) NOT NULL DEFAULT 1,
   `is_order_tips` int(1) DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_ypay_order_out_trade_no` (`out_trade_no`),
+  UNIQUE KEY `uq_aipay_order_out_trade_no` (`out_trade_no`),
   KEY `idx_trade_no` (`trade_no`),
   KEY `idx_account_status_money_time` (`account_id`,`status`,`truemoney`,`out_time`),
   KEY `idx_alipay_order_no` (`alipay_order_no`(191))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_order_callback_task` (
+CREATE TABLE `aipay_order_callback_task` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `task_key` varchar(160) NOT NULL,
   `order_id` int(11) NOT NULL,
@@ -274,7 +274,7 @@ CREATE TABLE `ypay_order_callback_task` (
   KEY `idx_order_scene` (`order_id`,`scene`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_order_reconcile_task` (
+CREATE TABLE `aipay_order_reconcile_task` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `task_key` varchar(160) NOT NULL,
   `order_id` int(11) NOT NULL,
@@ -304,7 +304,7 @@ CREATE TABLE `ypay_order_reconcile_task` (
   KEY `idx_order_id` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_paylist` (
+CREATE TABLE `aipay_paylist` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `type` varchar(255) DEFAULT NULL,
@@ -318,7 +318,7 @@ CREATE TABLE `ypay_paylist` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_payment` (
+CREATE TABLE `aipay_payment` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   `type` varchar(255) DEFAULT NULL,
@@ -330,7 +330,7 @@ CREATE TABLE `ypay_payment` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_payment_transaction_claim` (
+CREATE TABLE `aipay_payment_transaction_claim` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `provider` varchar(32) NOT NULL,
   `transaction_id` varchar(255) NOT NULL,
@@ -345,7 +345,7 @@ CREATE TABLE `ypay_payment_transaction_claim` (
   KEY `idx_account_id` (`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_plug` (
+CREATE TABLE `aipay_plug` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) DEFAULT NULL,
   `downurl` text DEFAULT NULL,
@@ -357,7 +357,7 @@ CREATE TABLE `ypay_plug` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_poll_pool` (
+CREATE TABLE `aipay_poll_pool` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `name` varchar(64) NOT NULL,
@@ -373,7 +373,7 @@ CREATE TABLE `ypay_poll_pool` (
   KEY `idx_user_type_status` (`user_id`,`type`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_poll_pool_item` (
+CREATE TABLE `aipay_poll_pool_item` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `pool_id` int(11) NOT NULL,
@@ -388,7 +388,7 @@ CREATE TABLE `ypay_poll_pool_item` (
   KEY `idx_account_id` (`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_proxy` (
+CREATE TABLE `aipay_proxy` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) DEFAULT NULL,
   `sort` int(25) DEFAULT 0,
@@ -402,7 +402,7 @@ CREATE TABLE `ypay_proxy` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_quicklogin` (
+CREATE TABLE `aipay_quicklogin` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `type` varchar(255) DEFAULT NULL,
   `status` int(1) DEFAULT 1,
@@ -414,7 +414,7 @@ CREATE TABLE `ypay_quicklogin` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_recharge` (
+CREATE TABLE `aipay_recharge` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `type` varchar(50) DEFAULT NULL,
   `rtype` int(1) DEFAULT 0,
@@ -432,7 +432,7 @@ CREATE TABLE `ypay_recharge` (
   KEY `idx_out_trade_no` (`out_trade_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_risk` (
+CREATE TABLE `aipay_risk` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL DEFAULT 0,
   `name` varchar(225) DEFAULT NULL,
@@ -442,7 +442,7 @@ CREATE TABLE `ypay_risk` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_ticket` (
+CREATE TABLE `aipay_ticket` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `type` int(1) unsigned zerofill NOT NULL DEFAULT 0,
   `title` varchar(255) NOT NULL,
@@ -457,7 +457,7 @@ CREATE TABLE `ypay_ticket` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_ticket_category` (
+CREATE TABLE `aipay_ticket_category` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   `sort` varchar(255) DEFAULT NULL,
@@ -467,7 +467,7 @@ CREATE TABLE `ypay_ticket_category` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_user` (
+CREATE TABLE `aipay_user` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(50) DEFAULT NULL,
   `password` varchar(50) DEFAULT NULL,
@@ -498,7 +498,7 @@ CREATE TABLE `ypay_user` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_userbasic` (
+CREATE TABLE `aipay_userbasic` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
   `user_id` int(255) NOT NULL,
   `timeout_method` int(1) NOT NULL DEFAULT 2,
@@ -527,7 +527,7 @@ CREATE TABLE `ypay_userbasic` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_vip` (
+CREATE TABLE `aipay_vip` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `icon` text DEFAULT NULL,
   `avatar_frame` varchar(255) DEFAULT NULL,

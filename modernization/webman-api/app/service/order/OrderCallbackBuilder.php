@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace app\service\order;
 
+use app\support\BusinessTable;
 use support\Db;
 
 final class OrderCallbackBuilder
@@ -109,7 +110,7 @@ final class OrderCallbackBuilder
             return ['callback_hiddenName' => 0];
         }
 
-        $row = Db::table('ypay_userbasic')
+        $row = Db::table(BusinessTable::userBasic())
             ->select('callback_hiddenName')
             ->where('user_id', $merchantId)
             ->first();

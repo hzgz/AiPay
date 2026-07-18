@@ -1,9 +1,7 @@
 <template>
   <ElCard class="plugin-workspace-card" shadow="never">
     <div class="plugin-list-head">
-      <div class="plugin-list-head__copy">
-        <h3 class="plugin-list-head__title">插件列表</h3>
-      </div>
+      <h3 class="plugin-list-head__title">插件列表</h3>
 
       <div class="plugin-list-head__actions">
         <ElButton v-if="hasPluginScaffoldAuth" type="primary" @click="emit('scaffold')" v-ripple>
@@ -18,7 +16,7 @@
           @click="emit('toggle-governance')"
           v-ripple
         >
-          {{ showGovernancePanels ? '收起高级治理' : '高级治理' }}
+          {{ showGovernancePanels ? '收起恢复中心' : '恢复中心' }}
         </ElButton>
         <ElButton
           class="plugin-list-refresh"
@@ -50,7 +48,6 @@
       <aside class="plugin-payment-sidebar">
         <div class="plugin-payment-sidebar__head">
           <h4>支付方式</h4>
-          <span>{{ activePluginPaymentFilterLabel }}</span>
         </div>
 
         <div class="plugin-payment-sidebar__list">
@@ -83,8 +80,6 @@
 
           <div class="plugin-toolbar__meta">
             <ElTag type="primary" effect="plain">{{ filteredPlugins.length }} 个插件</ElTag>
-            <ElTag effect="plain">{{ currentPluginViewLabel }}</ElTag>
-            <ElTag type="info" effect="plain">{{ activePluginPaymentFilterLabel }}</ElTag>
           </div>
         </div>
 
@@ -93,37 +88,9 @@
           :loading="loading"
           :data="filteredPlugins"
           :columns="columns"
+          :show-header="false"
           :stripe="false"
         />
-
-        <div v-if="hasGovernanceData" class="plugin-governance-bar">
-          <div class="plugin-governance-bar__copy">
-            <strong>高级治理区</strong>
-            <span>
-              快照 {{ governanceSnapshotCount }} 个，残留 {{ governanceResidueCount }} 项，
-              回执 {{ governanceLedgerCount }} 条。
-            </span>
-          </div>
-
-          <div class="plugin-governance-bar__actions">
-            <ElTag v-if="governanceAttentionCount > 0" type="warning" effect="plain">
-              待处理 {{ governanceAttentionCount }}
-            </ElTag>
-            <ElButton
-              plain
-              :type="
-                showGovernancePanels
-                  ? 'primary'
-                  : governanceAttentionCount > 0
-                    ? 'warning'
-                    : undefined
-              "
-              @click="emit('toggle-governance')"
-            >
-              {{ showGovernancePanels ? '收起' : '展开' }}
-            </ElButton>
-          </div>
-        </div>
       </div>
     </div>
   </ElCard>
@@ -159,10 +126,8 @@
     activePluginPaymentFilter: PluginPaymentFilterKey
     pluginViews: PluginViewItem[]
     pluginPaymentFilters: PluginPaymentFilterItem[]
-    activePluginPaymentFilterLabel: string
     filteredPlugins: PaymentPluginItem[]
     columns: ColumnOption[]
-    currentPluginViewLabel: string
     hasPluginScaffoldAuth: boolean
     hasGovernanceData: boolean
     showGovernancePanels: boolean
@@ -222,12 +187,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-  }
-
-  .plugin-list-head__copy {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
   }
 
   .plugin-list-head__title {
@@ -329,8 +288,7 @@
 
   .plugin-payment-sidebar__head {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+    align-items: center;
     gap: 12px;
   }
 
@@ -339,11 +297,6 @@
     color: #0f172a;
     font-size: 14px;
     font-weight: 700;
-  }
-
-  .plugin-payment-sidebar__head span {
-    color: #64748b;
-    font-size: 12px;
   }
 
   .plugin-payment-sidebar__list {

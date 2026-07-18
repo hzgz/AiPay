@@ -3,7 +3,7 @@
     <section class="merchant-page-header">
       <div class="merchant-page-header__title">
         <h1>工单中心</h1>
-        <p>集中提交工单、查看处理进度和管理历史记录，保持商户与平台沟通链路清晰可追踪。</p>
+        <p>集中提交工单、查看处理进度和管理工单记录，保持商户与平台沟通链路清晰可追踪。</p>
       </div>
 
       <div v-if="categories.length || pagination.total" class="merchant-chip-row">
@@ -17,7 +17,7 @@
     </div>
 
     <div v-else-if="featureMessage" class="merchant-panel merchant-state-card">
-      <h3>当前不可用</h3>
+      <h3>功能未开启</h3>
       <p>{{ featureMessage }}</p>
     </div>
 
@@ -259,7 +259,7 @@
     {
       label: '已解决',
       value: String(summary.value.resolved_count ?? 0),
-      hint: '已经处理完成的历史工单数量',
+      hint: '已经处理完成的工单数量',
       icon: 'ri:checkbox-circle-line'
     },
     {

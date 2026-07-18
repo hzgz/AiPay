@@ -47,8 +47,8 @@ sudo bash deploy/linux/install-aapanel.sh \
   --domain=pay.example.com \
   --public-root=/www/wwwroot/pay.example.com \
   --nginx-conf=/www/server/panel/vhost/nginx/pay.example.com.conf \
-  --db-name=aipay_prod \
-  --db-user=aipay_prod \
+  --db-name=pay \
+  --db-user=pay \
   --db-password='ReplaceMe123!' \
   --admin-user=adminroot \
   --admin-password='ReplaceMe123!' \

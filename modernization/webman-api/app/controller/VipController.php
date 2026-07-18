@@ -6,6 +6,7 @@ use app\controller\concerns\AdminControllerFormatSupport;
 use app\support\AdminRouteAuthorization;
 use app\support\AdminVipFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\RequestPayload;
 use Illuminate\Database\Query\Builder;
 use support\Db;
@@ -110,7 +111,7 @@ class VipController
 
         $attributes['create_time'] = date('Y-m-d H:i:s');
 
-        $id = (int)Db::table('ypay_vip')->insertGetId($attributes);
+        $id = (int)Db::table(BusinessTable::vip())->insertGetId($attributes);
 
         return ApiResponse::success(
             $this->findVipDetail($id),
@@ -141,7 +142,7 @@ class VipController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_vip')
+        Db::table(BusinessTable::vip())
             ->where('id', $id)
             ->update($updates);
 
@@ -175,7 +176,7 @@ class VipController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_vip')
+        Db::table(BusinessTable::vip())
             ->where('id', $id)
             ->update(['status' => $status]);
 
@@ -210,7 +211,7 @@ class VipController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_vip')
+        Db::table(BusinessTable::vip())
             ->where('id', $id)
             ->update(['sort' => $sort]);
 
@@ -270,7 +271,7 @@ class VipController
 
         Db::transaction(function () use ($rows, $sortValues): void {
             foreach ($rows as $index => $row) {
-                Db::table('ypay_vip')
+                Db::table(BusinessTable::vip())
                     ->where('id', (int)($row['id'] ?? 0))
                     ->update(['sort' => (int)($sortValues[$index] ?? ($index + 1))]);
             }
@@ -342,7 +343,7 @@ class VipController
         $payload = RequestPayload::all($request);
         $confirmationPhrase = trim((string)($payload['confirmation_phrase'] ?? ''));
         if ($confirmationPhrase !== (string)($audit['confirmation_phrase'] ?? '')) {
-            return ApiResponse::error('confirmation phrase mismatch', 422, ['audit' => $audit], 422);
+            return ApiResponse::error('确认口令不匹配', 422, ['audit' => $audit], 422);
         }
 
         Db::transaction(function () use ($id): void {
@@ -395,7 +396,7 @@ class VipController
         $audit = $this->batchVipDeleteAudit($vipIds);
         if (empty($audit['can_delete_all'])) {
             return ApiResponse::error(
-                'selected VIP packages cannot be batch deleted until linked merchants are cleared',
+                '所选会员套餐仍有关联商户，清理后才能批量删除',
                 422,
                 ['audit' => $audit],
                 422
@@ -404,7 +405,7 @@ class VipController
 
         $confirmationPhrase = trim((string)($payload['confirmation_phrase'] ?? ''));
         if ($confirmationPhrase !== (string)($audit['confirmation_phrase'] ?? '')) {
-            return ApiResponse::error('confirmation phrase mismatch', 422, ['audit' => $audit], 422);
+            return ApiResponse::error('确认口令不匹配', 422, ['audit' => $audit], 422);
         }
 
         Db::transaction(function () use ($audit): void {
@@ -535,7 +536,7 @@ class VipController
 
     private function vipQuery(): Builder
     {
-        return Db::table('ypay_vip')
+        return Db::table(BusinessTable::vip())
             ->select(
                 'id',
                 'icon',
@@ -798,7 +799,7 @@ class VipController
 
     private function loadChannelCatalog(array $selectedCodes = []): array
     {
-        $payments = Db::table('ypay_payment')
+        $payments = Db::table(BusinessTable::payment())
             ->select('name', 'type', 'sort', 'id')
             ->whereNull('delete_time')
             ->orderByRaw('CAST(COALESCE(sort, 0) AS UNSIGNED) asc')
@@ -894,7 +895,7 @@ class VipController
 
         if ($legacyCodes !== []) {
             $groups[] = [
-                'label' => '旧通道 / 已移除',
+                'label' => '停用通道',
                 'value' => 'legacy_removed',
                 'disabled' => true,
                 'children' => $legacyCodes,
@@ -991,7 +992,7 @@ class VipController
         }
 
         $now = date('Y-m-d H:i:s');
-        $rows = Db::table('ypay_user')
+        $rows = Db::table(BusinessTable::user())
             ->select('vip_id')
             ->selectRaw('COUNT(*) as merchant_count')
             ->selectRaw(
@@ -1018,7 +1019,7 @@ class VipController
 
     private function loadVipMerchants(int $vipId): array
     {
-        $rows = Db::table('ypay_user')
+        $rows = Db::table(BusinessTable::user())
             ->select('id', 'username', 'name', 'vip_time', 'create_time')
             ->where('vip_id', $vipId)
             ->orderByDesc('id')
@@ -1034,7 +1035,7 @@ class VipController
 
     private function vipIdentity(int $id, bool $includeDeleted = false): ?array
     {
-        $query = Db::table('ypay_vip')
+        $query = Db::table(BusinessTable::vip())
             ->select('id', 'name')
             ->where('id', $id);
 
@@ -1076,7 +1077,7 @@ class VipController
 
     private function ensureVipSortBaseline(): bool
     {
-        $rows = Db::table('ypay_vip')
+        $rows = Db::table(BusinessTable::vip())
             ->select('id', 'sort')
             ->whereNull('delete_time')
             ->orderBy('sort')
@@ -1106,7 +1107,7 @@ class VipController
             $sort = 1;
             foreach ($rows as $row) {
                 $record = (array)$row;
-                Db::table('ypay_vip')
+                Db::table(BusinessTable::vip())
                     ->where('id', (int)($record['id'] ?? 0))
                     ->update(['sort' => $sort]);
                 $sort++;
@@ -1122,7 +1123,7 @@ class VipController
             return [];
         }
 
-        $rows = Db::table('ypay_vip')
+        $rows = Db::table(BusinessTable::vip())
             ->select('id', 'name', 'sort', 'delete_time')
             ->whereNull('delete_time')
             ->whereIn('id', $vipIds)
@@ -1153,7 +1154,7 @@ class VipController
             return [];
         }
 
-        $query = Db::table('ypay_vip')
+        $query = Db::table(BusinessTable::vip())
             ->select('id', 'name', 'status', 'sort', 'delete_time')
             ->whereIn('id', $vipIds);
 
@@ -1342,14 +1343,14 @@ class VipController
 
     private function deleteVipRow(int $id): void
     {
-        Db::table('ypay_vip')
+        Db::table(BusinessTable::vip())
             ->where('id', $id)
             ->update(['delete_time' => date('Y-m-d H:i:s')]);
     }
 
     private function restoreVipRow(int $id): void
     {
-        Db::table('ypay_vip')
+        Db::table(BusinessTable::vip())
             ->where('id', $id)
             ->update(['delete_time' => null]);
     }

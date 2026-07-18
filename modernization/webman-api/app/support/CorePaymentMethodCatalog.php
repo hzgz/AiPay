@@ -39,7 +39,7 @@ class CorePaymentMethodCatalog
     public static function seedWhenTableEmpty(): bool
     {
         try {
-            $count = (int)Db::table('ypay_payment')->count('id');
+            $count = (int)Db::table(BusinessTable::payment())->count('id');
         } catch (Throwable) {
             return false;
         }
@@ -61,7 +61,7 @@ class CorePaymentMethodCatalog
             ];
         }, self::defaults());
 
-        Db::table('ypay_payment')->insert($rows);
+        Db::table(BusinessTable::payment())->insert($rows);
 
         return true;
     }

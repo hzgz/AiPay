@@ -3,7 +3,7 @@
     <section class="merchant-page-header">
       <div class="merchant-page-header__title">
         <h1>域名管理</h1>
-        <p>统一管理当前商户站点域名，支持新增、编辑、删除和审核状态跟踪，便于业务入口合规上线。</p>
+        <p>管理当前商户站点域名，便于审核与上线。</p>
       </div>
 
       <div v-if="pagination.total" class="merchant-chip-row">
@@ -18,7 +18,7 @@
     </div>
 
     <div v-else-if="featureMessage" class="merchant-panel merchant-state-card">
-      <h3>当前不可用</h3>
+      <h3>功能未开启</h3>
       <p>{{ featureMessage }}</p>
     </div>
 
@@ -47,7 +47,7 @@
         <div class="merchant-card__head">
           <div>
             <h2>域名列表</h2>
-            <p>支持新增、编辑和删除商户域名，审核说明会在同页展示，方便及时调整并重新提交。</p>
+            <p>新增、编辑、删除都在这里处理，处理说明会直接显示。</p>
           </div>
 
           <div class="merchant-toolbar-pills">
@@ -90,7 +90,6 @@
             <ElButton plain :disabled="!hasActiveFilters" @click="resetFilters">重置</ElButton>
             <ElButton type="primary" plain @click="openCreateDialog">新增域名</ElButton>
           </div>
-
         </div>
 
         <ElTable :data="records" empty-text="暂无域名记录">
@@ -111,7 +110,7 @@
           </ElTableColumn>
           <ElTableColumn
             prop="reason_preview"
-            label="审核说明"
+            label="处理说明"
             min-width="220"
             show-overflow-tooltip
           >
@@ -143,14 +142,10 @@
       <ElDialog v-model="dialogVisible" :title="editingId ? '编辑域名' : '新增域名'" width="520px">
         <ElForm ref="formRef" :model="formData" :rules="rules" label-position="top">
           <ElFormItem label="站点名称" prop="sitename">
-            <ElInput
-              v-model.trim="formData.sitename"
-              maxlength="255"
-              placeholder="站点名称"
-            />
+            <ElInput v-model.trim="formData.sitename" maxlength="255" placeholder="站点名称" />
           </ElFormItem>
           <ElFormItem label="站点域名" prop="siteurl">
-            <ElInput v-model.trim="formData.siteurl" placeholder="pay.aipay.local" />
+            <ElInput v-model.trim="formData.siteurl" placeholder="pay.你的域名.com" />
           </ElFormItem>
         </ElForm>
 
@@ -206,25 +201,25 @@
     {
       label: '待审核',
       value: String(summary.value.pending_count ?? 0),
-      hint: '等待平台审核中的域名数量',
+      hint: '待平台审核',
       icon: 'ri:hourglass-line'
     },
     {
       label: '已通过',
       value: String(summary.value.approved_count ?? 0),
-      hint: '已审核通过并可继续使用的域名数量',
+      hint: '可继续使用',
       icon: 'ri:checkbox-circle-line'
     },
     {
       label: '已驳回',
       value: String(summary.value.rejected_count ?? 0),
-      hint: '需要根据审核说明调整后重新提交的域名数量',
+      hint: '按说明调整后再提交',
       icon: 'ri:close-circle-line'
     },
     {
       label: '最近提交',
       value: summary.value.last_domain_time || '--',
-      hint: '最近一次域名提交时间',
+      hint: '最近一次提交时间',
       icon: 'ri:time-line'
     }
   ])

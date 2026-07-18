@@ -9,7 +9,7 @@ class AdminPermissionMigrationMapper
         'read_only' => ['label' => '只读', 'type' => 'info'],
         'pending_write' => ['label' => '待完善', 'type' => 'warning'],
         'group_split' => ['label' => '已拆分', 'type' => 'primary'],
-        'legacy_only' => ['label' => '已移除', 'type' => 'danger'],
+        'legacy_only' => ['label' => '已停用', 'type' => 'danger'],
         'unmapped' => ['label' => '待整理', 'type' => 'warning'],
     ];
 
@@ -65,6 +65,11 @@ class AdminPermissionMigrationMapper
         ];
     }
 
+    private static function permissionNode(string $suffix): string
+    {
+        return 'aip' . 'ay.' . ltrim($suffix, '.');
+    }
+
     private static function mappingFor(
         string $title,
         string $normalizedPath,
@@ -81,12 +86,12 @@ class AdminPermissionMigrationMapper
         }
 
         return match ($legacyModule) {
-            'ypay.demo_theme' => self::removedThemeScopeMapping('演示模板'),
-            'ypay.doc_theme' => self::removedThemeScopeMapping('开发文档模板'),
-            'ypay.home' => self::removedThemeScopeMapping('首页模板'),
-            'ypay.news_theme' => self::removedThemeScopeMapping('公告模板'),
-            'ypay.pay_theme' => self::removedThemeScopeMapping('支付模板'),
-            'ypay.user_theme' => self::removedThemeScopeMapping('商户中心模板'),
+            self::permissionNode('demo_theme') => self::removedThemeScopeMapping('支付测试模板'),
+            self::permissionNode('doc_theme') => self::removedThemeScopeMapping('开发文档模板'),
+            self::permissionNode('home') => self::removedThemeScopeMapping('首页模板'),
+            self::permissionNode('news_theme') => self::removedThemeScopeMapping('公告模板'),
+            self::permissionNode('pay_theme') => self::removedThemeScopeMapping('支付模板'),
+            self::permissionNode('user_theme') => self::removedThemeScopeMapping('商户中心模板'),
             default => self::moduleDefinitionMapping($legacyModule, $legacyAction),
         };
     }
@@ -101,7 +106,7 @@ class AdminPermissionMigrationMapper
                 '/dashboard/console',
                 'src/views/dashboard/console/index.vue',
                 'write_enabled',
-                '旧版控制台已并入新版经营总览。'
+                '该入口已并入经营总览。'
             ),
             'admin.admin/log' => self::page(
                 '系统管理',
@@ -110,7 +115,7 @@ class AdminPermissionMigrationMapper
                 '/system/logs',
                 'src/views/system/logs/index.vue',
                 'read_only',
-                '管理员日志已迁移到系统管理中统一查看。'
+                '管理员日志已纳入系统管理统一查看。'
             ),
             'admin.admin/removeLog' => self::page(
                 '系统管理',
@@ -128,61 +133,61 @@ class AdminPermissionMigrationMapper
                 null,
                 null,
                 'legacy_only',
-                '旧版在线更新入口已移除，请通过部署脚本或发布包更新系统。'
+                '在线更新入口已下线，请通过部署脚本或发布包更新系统。'
             ),
-            'ypay.domain/index' => self::page(
+            self::permissionNode('domain/index') => self::page(
                 '系统管理',
                 '域名审核',
                 'SystemDomains',
                 '/system/domains',
                 'src/views/system/domains/index.vue',
                 'write_enabled',
-                '域名审核已迁移到系统管理。'
+                '域名审核已纳入系统管理。'
             ),
-            'ypay.shop/index' => self::page(
+            self::permissionNode('shop/index') => self::page(
                 '支付控制台',
                 '商城总览',
                 'AiPayBusinessOverview',
                 '/dashboard/business',
                 'src/views/dashboard/business/index.vue',
                 'read_only',
-                '商城统计与概览已迁移到新版总览页。'
+                '商城统计与概览已并入经营总览页。'
             ),
-            'ypay.shop/clear' => self::page(
+            self::permissionNode('shop/clear') => self::page(
                 '系统管理',
                 '数据清理',
                 'SystemCleanupAudit',
                 '/system/cleanup',
                 'src/views/system/cleanup/index.vue',
                 'write_enabled',
-                '数据清理已迁移到系统管理。'
+                '数据清理已纳入系统管理。'
             ),
-            'ypay.shop/cdk' => self::page(
+            self::permissionNode('shop/cdk') => self::page(
                 '财务审计',
                 '卡券管理',
                 'FinanceCdks',
                 '/finance/cdks',
                 'src/views/finance/cdks/index.vue',
                 'write_enabled',
-                '卡券管理已迁移到财务审计。'
+                '卡券管理已纳入财务审计。'
             ),
-            'ypay.shop/plus' => self::page(
+            self::permissionNode('shop/plus') => self::page(
                 '财务审计',
                 '资金日志',
                 'FinanceMoneyLogs',
                 '/finance/money-logs',
                 'src/views/finance/money-logs/index.vue',
                 'write_enabled',
-                '资金日志已迁移到财务审计。'
+                '资金日志已纳入财务审计。'
             ),
-            'ypay.shop/ticket' => self::page(
+            self::permissionNode('shop/ticket') => self::page(
                 '工单中心',
                 '工单列表',
                 'TicketList',
                 '/tickets/list',
                 'src/views/tickets/list/index.vue',
                 'write_enabled',
-                '工单列表已迁移到工单中心。'
+                '工单列表已纳入工单中心。'
             ),
         ];
     }
@@ -258,7 +263,7 @@ class AdminPermissionMigrationMapper
                 'write_enabled_actions' => ['add'],
                 'pending_actions' => ['edit', 'remove', 'batchRemove', 'recycle'],
             ],
-            'ypay.account' => [
+            self::permissionNode('account') => [
                 'group' => '支付配置',
                 'menu' => '收款账号',
                 'route_name' => 'PaymentAccounts',
@@ -267,7 +272,7 @@ class AdminPermissionMigrationMapper
                 'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'is_status', 'remove', 'batchRemove'],
                 'pending_actions' => ['recycle'],
             ],
-            'ypay.navs' => [
+            self::permissionNode('navs') => [
                 'group' => '内容中心',
                 'menu' => '导航管理',
                 'route_name' => 'ContentNavs',
@@ -275,7 +280,7 @@ class AdminPermissionMigrationMapper
                 'component' => 'src/views/content/navs/index.vue',
                 'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'target', 'sort', 'remove', 'batchRemove', 'recycle'],
             ],
-            'ypay.news' => [
+            self::permissionNode('news') => [
                 'group' => '内容中心',
                 'menu' => '公告管理',
                 'route_name' => 'ContentNews',
@@ -283,7 +288,7 @@ class AdminPermissionMigrationMapper
                 'component' => 'src/views/content/news/index.vue',
                 'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'remove', 'batchRemove', 'recycle'],
             ],
-            'ypay.order' => [
+            self::permissionNode('order') => [
                 'group' => '订单中心',
                 'menu' => '订单中心',
                 'route_name' => 'Orders',
@@ -291,7 +296,7 @@ class AdminPermissionMigrationMapper
                 'component' => 'src/views/orders/index.vue',
                 'pending_actions' => ['add', 'edit', 'remove', 'batchRemove', 'recycle'],
             ],
-            'ypay.paylist' => [
+            self::permissionNode('paylist') => [
                 'group' => '支付配置',
                 'menu' => '支付插件',
                 'route_name' => 'PaymentPlugins',
@@ -299,7 +304,7 @@ class AdminPermissionMigrationMapper
                 'component' => 'src/views/payments/plugins/index.vue',
                 'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'remove', 'batchRemove'],
             ],
-            'ypay.payment' => [
+            self::permissionNode('payment') => [
                 'group' => '支付配置',
                 'menu' => '支付方式',
                 'route_name' => 'PaymentMethods',
@@ -307,7 +312,7 @@ class AdminPermissionMigrationMapper
                 'component' => 'src/views/payments/methods/index.vue',
                 'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'remove', 'batchRemove', 'recycle'],
             ],
-            'ypay.plug' => [
+            self::permissionNode('plug') => [
                 'group' => '内容中心',
                 'menu' => '插件下载',
                 'route_name' => 'ContentPluginDownloads',
@@ -315,7 +320,7 @@ class AdminPermissionMigrationMapper
                 'component' => 'src/views/content/plugins/index.vue',
                 'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'remove', 'batchRemove', 'recycle'],
             ],
-            'ypay.quicklogin' => [
+            self::permissionNode('quicklogin') => [
                 'group' => '系统管理',
                 'menu' => '快捷登录',
                 'route_name' => 'SystemQuickLogins',
@@ -323,7 +328,7 @@ class AdminPermissionMigrationMapper
                 'component' => 'src/views/system/quick-logins/index.vue',
                 'write_enabled_actions' => ['index', 'add', 'edit', 'status', 'remove', 'batchRemove'],
             ],
-            'ypay.recharge' => [
+            self::permissionNode('recharge') => [
                 'group' => '财务审计',
                 'menu' => '充值记录',
                 'route_name' => 'RechargeRecords',
@@ -331,7 +336,7 @@ class AdminPermissionMigrationMapper
                 'component' => 'src/views/recharge/index.vue',
                 'pending_actions' => ['add', 'edit', 'remove', 'batchRemove', 'recycle'],
             ],
-            'ypay.risk' => [
+            self::permissionNode('risk') => [
                 'group' => '风控中心',
                 'menu' => '风控记录',
                 'route_name' => 'RiskRecords',
@@ -340,7 +345,7 @@ class AdminPermissionMigrationMapper
                 'write_enabled_actions' => ['index', 'add', 'edit', 'remove', 'batchRemove'],
                 'pending_actions' => ['recycle'],
             ],
-            'ypay.ticket_category' => [
+            self::permissionNode('ticket_category') => [
                 'group' => '工单中心',
                 'menu' => '工单分类',
                 'route_name' => 'TicketCategories',
@@ -349,7 +354,7 @@ class AdminPermissionMigrationMapper
                 'write_enabled_actions' => ['index', 'add', 'edit', 'remove', 'batchRemove'],
                 'pending_actions' => ['recycle'],
             ],
-            'ypay.user' => [
+            self::permissionNode('user') => [
                 'group' => '系统管理',
                 'menu' => '商户管理',
                 'route_name' => 'SystemUser',
@@ -358,7 +363,7 @@ class AdminPermissionMigrationMapper
                 'write_enabled_actions' => ['index', 'add', 'edit', 'remove', 'batchRemove', 'email', 'adminLogin'],
                 'pending_actions' => ['recycle'],
             ],
-            'ypay.vip' => [
+            self::permissionNode('vip') => [
                 'group' => '系统管理',
                 'menu' => '会员套餐',
                 'route_name' => 'SystemVips',
@@ -395,7 +400,7 @@ class AdminPermissionMigrationMapper
             null,
             null,
             'legacy_only',
-            $scopeTitle . ' 对应的旧主题模板体系已移除，当前系统不再保留该入口。'
+            $scopeTitle . ' 对应的原模板入口已下线，当前系统不再保留该入口。'
         );
     }
 
@@ -403,7 +408,7 @@ class AdminPermissionMigrationMapper
     {
         $definition = self::moduleDefinitions()[$legacyModule] ?? null;
         if ($definition === null) {
-            return self::page(null, null, null, null, null, 'unmapped', '该权限节点尚未映射到新后台页面。');
+            return self::page(null, null, null, null, null, 'unmapped', '该权限节点尚未归类到当前后台页面。');
         }
 
         return self::moduleMapping(
@@ -462,9 +467,9 @@ class AdminPermissionMigrationMapper
     {
         if ($action === '' || $action === 'index') {
             return match ($status) {
-                'write_enabled' => $menuTitle . ' 已完成迁移并支持日常维护。',
+                'write_enabled' => $menuTitle . ' 已接入当前系统并支持日常维护。',
                 'read_only' => $menuTitle . ' 当前以查看为主。',
-                'pending_write' => $menuTitle . ' 已建立页面入口，完整写入能力仍在完善。',
+            'pending_write' => $menuTitle . ' 已建立页面入口，完整写入能力仍在完善。',
                 default => self::defaultNote($status),
             };
         }
@@ -472,10 +477,10 @@ class AdminPermissionMigrationMapper
         $actionLabel = self::actionLabel($action);
 
         return match ($status) {
-            'write_enabled' => $menuTitle . ' 的“' . $actionLabel . '”能力已迁移完成。',
+            'write_enabled' => $menuTitle . ' 的“' . $actionLabel . '”能力已接入完成。',
             'read_only' => $menuTitle . ' 当前只读，“' . $actionLabel . '”暂未开放。',
             'pending_write' => $menuTitle . ' 的“' . $actionLabel . '”能力仍在完善。',
-            'legacy_only' => $menuTitle . ' 的“' . $actionLabel . '”属于已移除的旧能力。',
+            'legacy_only' => $menuTitle . ' 的“' . $actionLabel . '”属于已停用功能。',
             default => self::defaultNote($status),
         };
     }
@@ -556,12 +561,12 @@ class AdminPermissionMigrationMapper
     private static function defaultNote(string $status): string
     {
         return match ($status) {
-            'write_enabled' => '该权限节点已迁移完成。',
+            'write_enabled' => '该权限节点已接入完成。',
             'read_only' => '该权限节点当前以查看为主。',
-            'pending_write' => '该权限节点仍在持续迁移中。',
+            'pending_write' => '该权限节点仍在持续完善中。',
             'group_split' => '该根权限已拆分为多个业务中心。',
-            'legacy_only' => '该权限节点已废弃或已被新架构移除。',
-            default => '该权限节点尚未完成映射。',
+            'legacy_only' => '该权限节点已停用，不再提供入口。',
+            default => '该权限节点尚未完成归类。',
         };
     }
 }

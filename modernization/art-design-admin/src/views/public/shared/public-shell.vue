@@ -31,7 +31,9 @@
 
           <template v-else>
             <a class="public-action public-action--secondary" :href="merchantLoginHref">商户登录</a>
-            <a class="public-action public-action--primary" :href="merchantRegisterHref">注册商户</a>
+            <a class="public-action public-action--primary" :href="merchantRegisterHref"
+              >注册商户</a
+            >
           </template>
 
           <button
@@ -172,7 +174,7 @@
       navs: () => [],
       isLoggedIn: false,
       pageLabel: '首页',
-      footerNote: '可商用聚合支付与商户接入平台。',
+      footerNote: '商户接入平台。',
       merchantLoginUrl: '/#/merchant/login',
       merchantRegisterUrl: '/#/merchant/register',
       merchantCenterUrl: '/#/merchant/dashboard'
@@ -236,10 +238,7 @@
   )
 
   watch(mobileMenuOpen, (opened) => {
-    if (typeof document === 'undefined') {
-      return
-    }
-
+    if (typeof document === 'undefined') return
     document.body.style.overflow = opened ? 'hidden' : ''
   })
 
@@ -251,26 +250,11 @@
 
   function resolveAppHref(url: string) {
     const raw = String(url || '').trim()
-    if (!raw || raw === '/') {
-      return '/'
-    }
-
-    if (/^https?:\/\//i.test(raw)) {
-      return raw
-    }
-
-    if (raw.startsWith('/#/')) {
-      return raw
-    }
-
-    if (raw.startsWith('#/')) {
-      return `/${raw}`
-    }
-
-    if (raw.startsWith('/')) {
-      return `/#${raw}`
-    }
-
+    if (!raw || raw === '/') return '/'
+    if (/^https?:\/\//i.test(raw)) return raw
+    if (raw.startsWith('/#/')) return raw
+    if (raw.startsWith('#/')) return `/${raw}`
+    if (raw.startsWith('/')) return `/#${raw}`
     return `/#/${raw.replace(/^\/+/, '')}`
   }
 
@@ -284,9 +268,7 @@
 
   function normalizeNavPath(url: string) {
     const raw = String(url || '').trim()
-    if (!raw) {
-      return '/'
-    }
+    if (!raw) return '/'
 
     try {
       const parsed = /^https?:\/\//i.test(raw) ? new URL(raw) : new URL(raw, window.location.origin)
@@ -296,18 +278,9 @@
 
       return normalizeRoutePath(parsed.pathname)
     } catch {
-      if (raw.startsWith('#/')) {
-        return normalizeRoutePath(raw.slice(1))
-      }
-
-      if (raw.startsWith('/#/')) {
-        return normalizeRoutePath(raw.slice(2))
-      }
-
-      if (/^https?:\/\//i.test(raw)) {
-        return ''
-      }
-
+      if (raw.startsWith('#/')) return normalizeRoutePath(raw.slice(1))
+      if (raw.startsWith('/#/')) return normalizeRoutePath(raw.slice(2))
+      if (/^https?:\/\//i.test(raw)) return ''
       return normalizeRoutePath(raw)
     }
   }
@@ -316,22 +289,10 @@
     const navPath = normalizeNavPath(url)
     const currentPath = normalizedCurrentPath.value
 
-    if (!navPath) {
-      return false
-    }
-
-    if (navPath === '/') {
-      return currentPath === '/'
-    }
-
-    if (navPath.startsWith('/news')) {
-      return currentPath.startsWith('/news')
-    }
-
-    if (navPath.startsWith('/doc')) {
-      return currentPath.startsWith('/doc')
-    }
-
+    if (!navPath) return false
+    if (navPath === '/') return currentPath === '/'
+    if (navPath.startsWith('/news')) return currentPath.startsWith('/news')
+    if (navPath.startsWith('/doc')) return currentPath.startsWith('/doc')
     if (navPath.startsWith('/demo') || navPath.startsWith('/test-pay')) {
       return currentPath.startsWith('/demo') || currentPath.startsWith('/test-pay')
     }
@@ -368,8 +329,7 @@
     --public-shadow: 0 20px 40px rgba(15, 23, 42, 0.04);
     min-height: 100vh;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 247, 251, 1) 28%),
-      #f5f7fb;
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 247, 251, 1) 28%), #f5f7fb;
     color: var(--public-title);
     font-family:
       'MiSans',
@@ -684,6 +644,10 @@
 
     .public-brand strong {
       font-size: 1.26rem;
+    }
+
+    .public-brand small {
+      display: none;
     }
 
     .public-footer__inner {

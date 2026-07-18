@@ -1,6 +1,6 @@
-import axios, { type AxiosRequestConfig } from 'axios'
+import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { resolveBackendOrigin } from '@/utils/http/base'
-import { getMerchantFrontToken } from '@/utils/merchant-session'
+import { clearMerchantFrontToken, getMerchantFrontToken } from '@/utils/merchant-session'
 
 export interface MerchantApiResponse<T = any> {
   code: number
@@ -120,7 +120,12 @@ export class MerchantApiError extends Error {
   code: number
   payload: MerchantApiResponse<any> | null
 
-  constructor(message: string, status: number, code: number, payload: MerchantApiResponse<any> | null) {
+  constructor(
+    message: string,
+    status: number,
+    code: number,
+    payload: MerchantApiResponse<any> | null
+  ) {
     super(message)
     this.name = 'MerchantApiError'
     this.status = status
@@ -149,6 +154,158 @@ merchantClient.interceptors.request.use((config) => {
   return config
 })
 
+merchantClient.interceptors.response.use((response) => {
+  const payload = parseMerchantResponsePayload(response.data)
+  if (payload !== null) {
+    if (response.status === 401 || Number(payload.code) === 401) {
+      clearMerchantFrontToken()
+      redirectToMerchantLogin()
+    }
+
+    response.data = payload
+    return response
+  }
+
+  const text = normalizeMerchantResponseText(response.data)
+  const contentType = String(response.headers?.['content-type'] || '').toLowerCase()
+  const looksLikeHtml = isHtmlDocumentPayload(text)
+  const looksLikeUnauthorized =
+    response.status === 401 ||
+    response.status === 403 ||
+    text.includes('请先登录商户账号') ||
+    text.includes('merchant login is required') ||
+    text.includes('/merchant/login') ||
+    text.includes('/#/merchant/login')
+
+  if (looksLikeUnauthorized) {
+    clearMerchantFrontToken()
+    redirectToMerchantLogin()
+    response.status = 401
+    response.data = {
+      code: 401,
+      msg: '请先登录商户账号',
+      message: '请先登录商户账号',
+      data: null
+    }
+    return response
+  }
+
+  const fallbackMessage =
+    looksLikeHtml || contentType.includes('text/html')
+      ? '商户接口返回了页面内容，请刷新后重试'
+      : '商户接口未返回 JSON 数据'
+
+  response.data = {
+    code: response.status || 500,
+    msg: fallbackMessage,
+    message: fallbackMessage,
+    data: null
+  }
+  return response
+})
+
+function normalizeMerchantResponseText(value: unknown): string {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  return value.replace(/^\uFEFF/, '').trim()
+}
+
+function parseMerchantResponsePayload<T = any>(
+  data: MerchantApiResponse<T> | string
+): MerchantApiResponse<T> | null {
+  if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+    return data
+  }
+
+  const normalized = normalizeMerchantResponseText(data)
+  if (normalized === '') {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(normalized)
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      return parsed as MerchantApiResponse<T>
+    }
+  } catch {
+    // Ignore parse failures and let the caller surface a friendlier error.
+  }
+
+  return null
+}
+
+function isHtmlDocumentPayload(text: string): boolean {
+  return /^<!doctype html/i.test(text) || /^<html[\s>]/i.test(text)
+}
+
+function merchantCurrentHashPath(): string {
+  if (typeof window === 'undefined') {
+    return '/merchant/dashboard'
+  }
+
+  const currentHash = String(window.location.hash || '')
+    .replace(/^#/, '')
+    .trim()
+  return currentHash !== '' ? currentHash : '/merchant/dashboard'
+}
+
+function redirectToMerchantLogin() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const currentPath = merchantCurrentHashPath()
+  if (currentPath.startsWith('/merchant/login')) {
+    return
+  }
+
+  const loginPath = `/merchant/login?redirect=${encodeURIComponent(currentPath)}`
+  window.location.hash = `#${loginPath}`
+}
+
+function createMerchantUnauthorizedError(message = '请先登录商户账号') {
+  clearMerchantFrontToken()
+  redirectToMerchantLogin()
+  return new MerchantApiError(message, 401, 401, null)
+}
+
+function createMerchantNonJsonError(response: AxiosResponse<MerchantApiResponse<any> | string>) {
+  const text = normalizeMerchantResponseText(response.data)
+  const contentType = String(response.headers?.['content-type'] || '').toLowerCase()
+  const looksLikeHtml = isHtmlDocumentPayload(text)
+  const looksLikeUnauthorized =
+    response.status === 401 ||
+    response.status === 403 ||
+    text.includes('请先登录商户账号') ||
+    text.includes('merchant login is required') ||
+    text.includes('/merchant/login') ||
+    text.includes('/#/merchant/login')
+
+  if (looksLikeUnauthorized) {
+    return createMerchantUnauthorizedError()
+  }
+
+  if (looksLikeHtml || contentType.includes('text/html')) {
+    return new MerchantApiError(
+      '商户接口返回了页面内容，请刷新后重试',
+      response.status,
+      response.status || 500,
+      null
+    )
+  }
+
+  return new MerchantApiError(
+    '商户接口未返回 JSON 数据',
+    response.status,
+    response.status || 500,
+    null
+  )
+}
+
+void createMerchantNonJsonError
+
 async function merchantRequest<T = any>(
   config: AxiosRequestConfig,
   successCodes: number[] = [0, 1, 200]
@@ -167,7 +324,8 @@ async function merchantRequest<T = any>(
 
   const payload = response.data
   const acceptedCodes = new Set(successCodes)
-  const isSuccess = response.status >= 200 && response.status < 300 && acceptedCodes.has(Number(payload.code))
+  const isSuccess =
+    response.status >= 200 && response.status < 300 && acceptedCodes.has(Number(payload.code))
 
   if (isSuccess) {
     return payload
@@ -181,7 +339,9 @@ async function merchantRequest<T = any>(
   )
 }
 
-function normalizeCollection<T = Record<string, any>>(payload: MerchantApiResponse<any>): MerchantCollectionResult<T> {
+function normalizeCollection<T = Record<string, any>>(
+  payload: MerchantApiResponse<any>
+): MerchantCollectionResult<T> {
   const records = Array.isArray(payload.records)
     ? payload.records
     : Array.isArray(payload.data)
@@ -219,7 +379,7 @@ export async function merchantLogin(username: string, password: string) {
     merchant_id?: number
     merchant_username?: string
   }>({
-    url: '/User/Login',
+    url: '/api/merchant/login',
     method: 'POST',
     data: {
       username,
@@ -231,12 +391,16 @@ export async function merchantLogin(username: string, password: string) {
 }
 
 export async function merchantLogout() {
-  await merchantClient.get('/User/Logout')
+  await merchantClient.post('/api/merchant/logout', null, {
+    params: {
+      format: 'json'
+    }
+  })
 }
 
 export async function fetchMerchantDashboard() {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/User/Index',
+    url: '/api/merchant/dashboard',
     method: 'GET'
   })
 
@@ -245,7 +409,7 @@ export async function fetchMerchantDashboard() {
 
 export async function fetchMerchantProfile() {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/userpro',
+    url: '/api/merchant/profile',
     method: 'GET'
   })
 
@@ -255,7 +419,7 @@ export async function fetchMerchantProfile() {
 export async function updateMerchantProfile(data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/userpro',
+      url: '/api/merchant/profile',
       method: 'POST',
       data
     },
@@ -267,7 +431,7 @@ export async function updateMerchantProfile(data: Record<string, any>) {
 
 export async function fetchMerchantNotifications() {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/Notifications',
+    url: '/api/merchant/notifications',
     method: 'GET'
   })
 
@@ -276,7 +440,7 @@ export async function fetchMerchantNotifications() {
 
 export async function updateMerchantNotifications(data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/Notifications',
+    url: '/api/merchant/notifications',
     method: 'POST',
     data
   })
@@ -286,7 +450,7 @@ export async function updateMerchantNotifications(data: Record<string, any>) {
 
 export async function fetchMerchantConnections() {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/Connections',
+    url: '/api/merchant/connections',
     method: 'GET'
   })
 
@@ -296,7 +460,7 @@ export async function fetchMerchantConnections() {
 export async function fetchMerchantWxPusherQrCode() {
   const payload = await merchantRequest<MerchantWxPusherQrPayload>(
     {
-      url: '/My/getWxPusherQrCode',
+      url: '/api/merchant/connections/wxpusher/qrcode',
       method: 'POST',
       data: {}
     },
@@ -309,7 +473,7 @@ export async function fetchMerchantWxPusherQrCode() {
 export async function fetchMerchantWxPusherUidStatus(operate: 'bind' | 'edit' = 'bind', uid = '') {
   const payload = await merchantRequest<MerchantWxPusherUidStatusPayload>(
     {
-      url: '/My/getWxPusherUID',
+      url: '/api/merchant/connections/wxpusher/status',
       method: 'GET',
       params: {
         operate,
@@ -332,7 +496,10 @@ export async function requestMerchantConnectionCode(
 ) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: mode === 'bind' ? '/My/getBindCode' : '/My/getUBindCode',
+      url:
+        mode === 'bind'
+          ? '/api/merchant/connections/bind-code'
+          : '/api/merchant/connections/unbind-code',
       method: 'POST',
       data: {
         bind: channel,
@@ -349,7 +516,7 @@ export async function requestMerchantConnectionCode(
 export async function submitMerchantEmailBinding(type: 1 | 2, email: string, captcha: string) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/bindOrUBindEmail',
+      url: '/api/merchant/connections/email',
       method: 'POST',
       data: {
         type,
@@ -366,7 +533,7 @@ export async function submitMerchantEmailBinding(type: 1 | 2, email: string, cap
 export async function submitMerchantMobileBinding(type: 1 | 2, mobile: string, captcha: string) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/bindOrUBindMobile',
+      url: '/api/merchant/connections/mobile',
       method: 'POST',
       data: {
         type,
@@ -383,7 +550,7 @@ export async function submitMerchantMobileBinding(type: 1 | 2, mobile: string, c
 export async function unbindMerchantConnection(type: string) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/Unbinding',
+      url: '/api/merchant/connections/unbind',
       method: 'POST',
       data: { type }
     },
@@ -396,7 +563,7 @@ export async function unbindMerchantConnection(type: string) {
 export async function saveMerchantWxPusherUid(wxpusherUid: string) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/savaWxPuserUID',
+      url: '/api/merchant/connections/wxpusher',
       method: 'POST',
       data: {
         wxpusher_uid: wxpusherUid
@@ -411,7 +578,7 @@ export async function saveMerchantWxPusherUid(wxpusherUid: string) {
 export async function saveMerchantTelegramChatId(chatId: string) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/saveTgChatId',
+      url: '/api/merchant/connections/telegram',
       method: 'POST',
       data: {
         tg_chat_id: chatId
@@ -425,7 +592,7 @@ export async function saveMerchantTelegramChatId(chatId: string) {
 
 export async function fetchMerchantSecurity() {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/Security',
+    url: '/api/merchant/security',
     method: 'GET'
   })
 
@@ -435,7 +602,7 @@ export async function fetchMerchantSecurity() {
 export async function fetchMerchantGoogleAuthQrCode() {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/getGoogleAuthQrCode',
+      url: '/api/merchant/security/google-auth/qrcode',
       method: 'POST',
       data: {}
     },
@@ -448,7 +615,7 @@ export async function fetchMerchantGoogleAuthQrCode() {
 export async function bindMerchantGoogleAuth(code: string) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/bindGoogleAuth',
+      url: '/api/merchant/security/google-auth/bind',
       method: 'POST',
       data: { code }
     },
@@ -461,7 +628,7 @@ export async function bindMerchantGoogleAuth(code: string) {
 export async function unbindMerchantGoogleAuth(code: string) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/uBindGoogleAuth',
+      url: '/api/merchant/security/google-auth/unbind',
       method: 'POST',
       data: { code }
     },
@@ -473,7 +640,7 @@ export async function unbindMerchantGoogleAuth(code: string) {
 
 export async function updateMerchantPassword(newPassword: string, confirmPassword: string) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/UpdatePwd',
+    url: '/api/merchant/security/password',
     method: 'POST',
     data: {
       newpwd: newPassword,
@@ -487,7 +654,7 @@ export async function updateMerchantPassword(newPassword: string, confirmPasswor
 export async function cancelMerchantAccount(confirmation: string) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/Cancellation',
+      url: '/api/merchant/security/cancellation',
       method: 'POST',
       data: {
         confirmation
@@ -501,7 +668,7 @@ export async function cancelMerchantAccount(confirmation: string) {
 
 export async function fetchMerchantRealName() {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/real_name',
+    url: '/api/merchant/security/real-name',
     method: 'GET'
   })
 
@@ -515,7 +682,7 @@ export async function submitMerchantRealName(data: {
 }) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/realname',
+      url: '/api/merchant/security/real-name',
       method: 'POST',
       data
     },
@@ -528,7 +695,7 @@ export async function submitMerchantRealName(data: {
 export async function pollMerchantRealNameStatus(orderNumber: string) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/getRealNameStatus',
+      url: '/api/merchant/security/real-name/status',
       method: 'GET',
       params: {
         orderNumber
@@ -542,7 +709,7 @@ export async function pollMerchantRealNameStatus(orderNumber: string) {
 
 export async function fetchMerchantAffiliate(params: Record<string, any> = {}) {
   const payload = await merchantRequest({
-    url: '/My/affInfo',
+    url: '/api/merchant/affiliate',
     method: 'GET',
     params
   })
@@ -552,7 +719,7 @@ export async function fetchMerchantAffiliate(params: Record<string, any> = {}) {
 
 export async function fetchMerchantOrders(params: Record<string, any> = {}) {
   const payload = await merchantRequest({
-    url: '/Deal/OrderLog',
+    url: '/api/merchant/orders',
     method: 'GET',
     params
   })
@@ -562,7 +729,7 @@ export async function fetchMerchantOrders(params: Record<string, any> = {}) {
 
 export async function fetchMerchantOrderDetail(id: number) {
   const payload = await merchantRequest<Record<string, any> & { dataArray?: Record<string, any> }>({
-    url: '/Deal/getDetails',
+    url: '/api/merchant/orders/detail',
     method: 'GET',
     params: { id }
   })
@@ -573,7 +740,7 @@ export async function fetchMerchantOrderDetail(id: number) {
 export async function replayMerchantOrderCallback(id: number) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/Deal/set_function',
+      url: '/api/merchant/orders/callback-replay',
       method: 'POST',
       data: {
         id,
@@ -588,7 +755,7 @@ export async function replayMerchantOrderCallback(id: number) {
 
 export async function fetchMerchantMoneyLogs(params: Record<string, any> = {}) {
   const payload = await merchantRequest({
-    url: '/Deal/MoneyLog',
+    url: '/api/merchant/money-logs',
     method: 'GET',
     params
   })
@@ -598,7 +765,7 @@ export async function fetchMerchantMoneyLogs(params: Record<string, any> = {}) {
 
 export async function fetchMerchantRecharges(params: Record<string, any> = {}) {
   const payload = await merchantRequest({
-    url: '/Deal/Recharge',
+    url: '/api/merchant/recharges',
     method: 'GET',
     params
   })
@@ -608,7 +775,7 @@ export async function fetchMerchantRecharges(params: Record<string, any> = {}) {
 
 export async function createMerchantRecharge(data: Record<string, any>) {
   return merchantRequest<Record<string, any>>({
-    url: '/Deal/Recharge',
+    url: '/api/merchant/recharges',
     method: 'POST',
     data
   })
@@ -617,7 +784,7 @@ export async function createMerchantRecharge(data: Record<string, any>) {
 export async function redeemMerchantCdk(code: string) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/Deal/cdkPay',
+      url: '/api/merchant/recharges/cdk',
       method: 'POST',
       data: {
         cdk: code
@@ -631,7 +798,7 @@ export async function redeemMerchantCdk(code: string) {
 
 export async function fetchMerchantVipPackages(params: Record<string, any> = {}) {
   const payload = await merchantRequest({
-    url: '/Deal/Vip',
+    url: '/api/merchant/vips',
     method: 'GET',
     params
   })
@@ -642,7 +809,7 @@ export async function fetchMerchantVipPackages(params: Record<string, any> = {})
 export async function purchaseMerchantVipPackage(vipId: number) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/Deal/Vip',
+      url: '/api/merchant/vips',
       method: 'POST',
       data: {
         tcid: vipId
@@ -656,7 +823,7 @@ export async function purchaseMerchantVipPackage(vipId: number) {
 
 export async function fetchMerchantApiInfo() {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/Api',
+    url: '/api/merchant/api',
     method: 'GET'
   })
 
@@ -671,7 +838,7 @@ export async function generateMerchantApiQrcode(
 ) {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/getApiQrcode',
+      url: '/api/merchant/api/qrcode',
       method: 'POST',
       data: {
         line_url: lineUrl,
@@ -687,7 +854,7 @@ export async function generateMerchantApiQrcode(
 export async function resetMerchantSignKey() {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/GeneratingKey',
+      url: '/api/merchant/api/sign-key/reset',
       method: 'POST',
       data: {}
     },
@@ -700,7 +867,7 @@ export async function resetMerchantSignKey() {
 export async function resetMerchantAppKey() {
   const payload = await merchantRequest<Record<string, any>>(
     {
-      url: '/My/goAPPKey',
+      url: '/api/merchant/api/app-key/reset',
       method: 'POST',
       data: {}
     },
@@ -712,7 +879,7 @@ export async function resetMerchantAppKey() {
 
 export async function fetchMerchantTickets(params: Record<string, any> = {}) {
   const payload = await merchantRequest({
-    url: '/My/Ticket',
+    url: '/api/merchant/tickets',
     method: 'GET',
     params
   })
@@ -722,7 +889,7 @@ export async function fetchMerchantTickets(params: Record<string, any> = {}) {
 
 export async function createMerchantTicket(data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/addTicket',
+    url: '/api/merchant/tickets',
     method: 'POST',
     data
   })
@@ -732,7 +899,7 @@ export async function createMerchantTicket(data: Record<string, any>) {
 
 export async function deleteMerchantTicket(id: number) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/delTicket',
+    url: '/api/merchant/tickets/delete',
     method: 'POST',
     data: { id }
   })
@@ -742,7 +909,7 @@ export async function deleteMerchantTicket(id: number) {
 
 export async function fetchMerchantDomains(params: Record<string, any> = {}) {
   const payload = await merchantRequest({
-    url: '/My/is_domain',
+    url: '/api/merchant/domains',
     method: 'GET',
     params
   })
@@ -752,7 +919,7 @@ export async function fetchMerchantDomains(params: Record<string, any> = {}) {
 
 export async function createMerchantDomain(data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/addDomain',
+    url: '/api/merchant/domains',
     method: 'POST',
     data
   })
@@ -762,7 +929,7 @@ export async function createMerchantDomain(data: Record<string, any>) {
 
 export async function updateMerchantDomain(data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/editDomain',
+    url: '/api/merchant/domains/update',
     method: 'POST',
     data
   })
@@ -772,7 +939,7 @@ export async function updateMerchantDomain(data: Record<string, any>) {
 
 export async function deleteMerchantDomain(id: number) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/delDomain',
+    url: '/api/merchant/domains/delete',
     method: 'POST',
     data: { id }
   })
@@ -782,7 +949,7 @@ export async function deleteMerchantDomain(id: number) {
 
 export async function fetchMerchantLoginLogs(params: Record<string, any> = {}) {
   const payload = await merchantRequest({
-    url: '/My/loginlog',
+    url: '/api/merchant/login-logs',
     method: 'GET',
     params
   })
@@ -792,7 +959,7 @@ export async function fetchMerchantLoginLogs(params: Record<string, any> = {}) {
 
 export async function fetchMerchantChannels(params: Record<string, any> = {}) {
   const payload = await merchantRequest({
-    url: '/My/channels',
+    url: '/api/merchant/channels',
     method: 'GET',
     params
   })
@@ -802,7 +969,7 @@ export async function fetchMerchantChannels(params: Record<string, any> = {}) {
 
 export async function fetchMerchantChannelDetail(id: number) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/channels/${id}`,
+    url: `/api/merchant/channels/${id}`,
     method: 'GET'
   })
 
@@ -811,7 +978,7 @@ export async function fetchMerchantChannelDetail(id: number) {
 
 export async function createMerchantChannel(data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/channels/create',
+    url: '/api/merchant/channels',
     method: 'POST',
     data
   })
@@ -831,7 +998,7 @@ export async function uploadMerchantChannelCredentialImage(
   formData.append('file', payload.file)
 
   const response = await merchantRequest<MerchantChannelCredentialImageUploadResponse>({
-    url: '/My/channels/credential-image',
+    url: '/api/merchant/channels/credential-image',
     method: 'POST',
     data: formData
   })
@@ -851,7 +1018,7 @@ export async function decodeMerchantChannelCredentialImage(
   formData.append('file', payload.file)
 
   const response = await merchantRequest<MerchantChannelCredentialDecodeResponse>({
-    url: '/My/channels/credential-decode',
+    url: '/api/merchant/channels/credential-decode',
     method: 'POST',
     data: formData
   })
@@ -861,7 +1028,7 @@ export async function decodeMerchantChannelCredentialImage(
 
 export async function updateMerchantChannel(id: number, data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/channels/${id}/update`,
+    url: `/api/merchant/channels/${id}/update`,
     method: 'POST',
     data
   })
@@ -871,7 +1038,7 @@ export async function updateMerchantChannel(id: number, data: Record<string, any
 
 export async function updateMerchantChannelCredentials(id: number, data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/channels/${id}/credentials`,
+    url: `/api/merchant/channels/${id}/credentials`,
     method: 'POST',
     data
   })
@@ -881,7 +1048,7 @@ export async function updateMerchantChannelCredentials(id: number, data: Record<
 
 export async function updateMerchantChannelStatus(id: number, data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/channels/${id}/status`,
+    url: `/api/merchant/channels/${id}/status`,
     method: 'POST',
     data
   })
@@ -891,7 +1058,7 @@ export async function updateMerchantChannelStatus(id: number, data: Record<strin
 
 export async function fetchMerchantChannelDeleteAudit(id: number) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/channels/${id}/delete-audit`,
+    url: `/api/merchant/channels/${id}/delete-audit`,
     method: 'GET'
   })
 
@@ -900,7 +1067,7 @@ export async function fetchMerchantChannelDeleteAudit(id: number) {
 
 export async function deleteMerchantChannel(id: number, data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/channels/${id}/delete`,
+    url: `/api/merchant/channels/${id}/delete`,
     method: 'POST',
     data
   })
@@ -910,7 +1077,7 @@ export async function deleteMerchantChannel(id: number, data: Record<string, any
 
 export async function createMerchantChannelTestPay(id: number, data: Record<string, any> = {}) {
   const payload = await merchantRequest<MerchantChannelTestPayResponse>({
-    url: `/My/channels/${id}/test-pay`,
+    url: `/api/merchant/channels/${id}/test`,
     method: 'POST',
     data
   })
@@ -920,7 +1087,7 @@ export async function createMerchantChannelTestPay(id: number, data: Record<stri
 
 export async function pollMerchantChannelTestPay(outTradeNo: string) {
   const payload = await merchantRequest<MerchantChannelTestPayResponse>({
-    url: '/My/channels/test-pay/poll',
+    url: '/api/merchant/channels/test/poll',
     method: 'GET',
     params: {
       out_trade_no: outTradeNo
@@ -932,7 +1099,7 @@ export async function pollMerchantChannelTestPay(outTradeNo: string) {
 
 export async function fetchMerchantChannelBatchDeleteAudit(data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/channels/batch-delete-audit',
+    url: '/api/merchant/channels/batch-delete-audit',
     method: 'POST',
     data
   })
@@ -942,7 +1109,7 @@ export async function fetchMerchantChannelBatchDeleteAudit(data: Record<string, 
 
 export async function batchDeleteMerchantChannels(data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/channels/batch-delete',
+    url: '/api/merchant/channels/batch-delete',
     method: 'POST',
     data
   })
@@ -952,7 +1119,7 @@ export async function batchDeleteMerchantChannels(data: Record<string, any>) {
 
 export async function fetchMerchantPools(params: Record<string, any> = {}) {
   const payload = await merchantRequest({
-    url: '/My/pools',
+    url: '/api/merchant/pools',
     method: 'GET',
     params
   })
@@ -962,7 +1129,7 @@ export async function fetchMerchantPools(params: Record<string, any> = {}) {
 
 export async function fetchMerchantPoolDetail(id: number) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/pools/${id}`,
+    url: `/api/merchant/pools/${id}`,
     method: 'GET'
   })
 
@@ -971,7 +1138,7 @@ export async function fetchMerchantPoolDetail(id: number) {
 
 export async function createMerchantPool(data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: '/My/pools/create',
+    url: '/api/merchant/pools',
     method: 'POST',
     data
   })
@@ -981,7 +1148,7 @@ export async function createMerchantPool(data: Record<string, any>) {
 
 export async function updateMerchantPool(id: number, data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/pools/${id}/update`,
+    url: `/api/merchant/pools/${id}/update`,
     method: 'POST',
     data
   })
@@ -991,7 +1158,7 @@ export async function updateMerchantPool(id: number, data: Record<string, any>) 
 
 export async function updateMerchantPoolStatus(id: number, data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/pools/${id}/status`,
+    url: `/api/merchant/pools/${id}/status`,
     method: 'POST',
     data
   })
@@ -1001,7 +1168,7 @@ export async function updateMerchantPoolStatus(id: number, data: Record<string, 
 
 export async function fetchMerchantPoolChannelEditor(id: number) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/pools/${id}/channel-editor`,
+    url: `/api/merchant/pools/${id}/channel-editor`,
     method: 'GET'
   })
 
@@ -1010,7 +1177,7 @@ export async function fetchMerchantPoolChannelEditor(id: number) {
 
 export async function saveMerchantPoolChannels(id: number, data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/pools/${id}/channels`,
+    url: `/api/merchant/pools/${id}/channels`,
     method: 'POST',
     data
   })
@@ -1020,7 +1187,7 @@ export async function saveMerchantPoolChannels(id: number, data: Record<string, 
 
 export async function fetchMerchantPoolDeleteAudit(id: number) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/pools/${id}/delete-audit`,
+    url: `/api/merchant/pools/${id}/delete-audit`,
     method: 'GET'
   })
 
@@ -1029,7 +1196,7 @@ export async function fetchMerchantPoolDeleteAudit(id: number) {
 
 export async function deleteMerchantPool(id: number, data: Record<string, any>) {
   const payload = await merchantRequest<Record<string, any>>({
-    url: `/My/pools/${id}/delete`,
+    url: `/api/merchant/pools/${id}/delete`,
     method: 'POST',
     data
   })

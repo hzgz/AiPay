@@ -3,7 +3,7 @@
     <section class="merchant-page-header">
       <div class="merchant-page-header__title">
         <h1>资金日志</h1>
-        <p>查看收入支出、余额变化和流水备注，统一追踪每一笔账户资金的来龙去脉。</p>
+        <p>查看收入、支出和余额变化。</p>
       </div>
 
       <div v-if="!loading" class="merchant-chip-row">
@@ -42,7 +42,7 @@
         <div class="merchant-card__head">
           <div>
             <h2>资金流水</h2>
-            <p>支持按备注关键字和流水编号筛选，用于核对收入支出、手续费和余额变化明细。</p>
+            <p>按备注或流水编号筛选。</p>
           </div>
 
           <div class="merchant-toolbar-pills">
@@ -55,10 +55,6 @@
               <strong>{{ filters.keyword }}</strong>
             </div>
           </div>
-        </div>
-
-        <div class="merchant-note merchant-money-note">
-          资金日志以查询和核对为主，适合快速追踪余额变动、手续费扣减和结算类账务事件。
         </div>
 
         <div class="merchant-table-toolbar">
@@ -77,7 +73,6 @@
             <ElButton type="primary" @click="loadLogs(true)">查询</ElButton>
             <ElButton plain :disabled="!hasActiveFilters" @click="resetFilters">重置</ElButton>
           </div>
-
         </div>
 
         <ElTable :data="records" empty-text="暂无资金日志">
@@ -143,25 +138,25 @@
     {
       label: '收入笔数',
       value: String(summary.value.income_count ?? 0),
-      hint: '当前筛选结果中的金额流入次数',
+      hint: '收入次数',
       icon: 'ri:arrow-right-up-line'
     },
     {
       label: '支出笔数',
       value: String(summary.value.expense_count ?? 0),
-      hint: '当前筛选结果中的金额流出次数',
+      hint: '支出次数',
       icon: 'ri:arrow-left-down-line'
     },
     {
       label: '净变动',
       value: amount(summary.value.net_amount),
-      hint: '收入与支出相抵后的净变化结果',
+      hint: '收入减支出',
       icon: 'ri:exchange-dollar-line'
     },
     {
       label: '最近流水',
       value: summary.value.last_log_time || '--',
-      hint: '最近一笔资金流水的创建时间',
+      hint: '最近一笔流水时间',
       icon: 'ri:time-line'
     }
   ])
@@ -221,10 +216,6 @@
 </style>
 
 <style lang="scss" scoped>
-  .merchant-money-note {
-    margin-bottom: 16px;
-  }
-
   .merchant-table-toolbar__filters--money {
     flex: 1;
   }

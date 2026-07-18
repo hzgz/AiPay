@@ -506,7 +506,7 @@
     },
     {
       prop: 'create_time',
-      label: '历史时间戳',
+      label: '创建时间',
       minWidth: 180,
       formatter: (row) => row.create_time || '--'
     },

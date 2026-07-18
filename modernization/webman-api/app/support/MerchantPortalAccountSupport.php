@@ -65,7 +65,7 @@ class MerchantPortalAccountSupport
             'timeout_method_label' => $timeoutMethodLabel($timeoutMethod),
             'signing' => [
                 'algorithm' => 'MD5',
-                'secret_source' => 'ypay_user.user_key',
+                'secret_source' => BusinessTable::column('user', 'user_key'),
                 'raw_secret_exposed' => false,
                 'note' => '支付请求签名请使用当前商户已配置的签名密钥，原始密钥默认保持脱敏。',
             ],
@@ -85,7 +85,7 @@ class MerchantPortalAccountSupport
 
     public static function basic(int $merchantId): array
     {
-        $row = Db::table('ypay_userbasic')
+        $row = Db::table(BusinessTable::userBasic())
             ->select('user_id', 'appkey', 'timeout_url', 'timeout_time', 'timeout_method')
             ->where('user_id', $merchantId)
             ->first();
@@ -99,11 +99,11 @@ class MerchantPortalAccountSupport
 
     public static function ensureBasicRecord(int $merchantId, string $appkey): void
     {
-        if (Db::table('ypay_userbasic')->where('user_id', $merchantId)->exists()) {
+        if (Db::table(BusinessTable::userBasic())->where('user_id', $merchantId)->exists()) {
             return;
         }
 
-        Db::table('ypay_userbasic')->insert([
+        Db::table(BusinessTable::userBasic())->insert([
             'user_id' => $merchantId,
             'timeout_method' => 2,
             'timeout_url' => '/',
@@ -132,7 +132,7 @@ class MerchantPortalAccountSupport
             'voice_tips' => $defaultVoiceTips,
         ];
 
-        $row = Db::table('ypay_userbasic')
+        $row = Db::table(BusinessTable::userBasic())
             ->select(
                 'user_id',
                 'order_tips',
@@ -177,7 +177,7 @@ class MerchantPortalAccountSupport
         $quickLoginRows = [];
         if ($configIds !== []) {
             foreach (
-                Db::table('ypay_quicklogin')
+                Db::table(BusinessTable::quickLogin())
                     ->select('id', 'type', 'status', 'name', 'url', 'appid', 'appkey', 'create_time')
                     ->whereIn('id', array_values(array_unique($configIds)))
                     ->get()

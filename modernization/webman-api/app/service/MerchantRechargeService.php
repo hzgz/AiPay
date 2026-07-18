@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace app\service;
 
+use app\support\BusinessTable;
 use app\support\LegacyPaymentSdkAutoloader;
 use app\support\RequestPayload;
 use app\support\SystemConfig;
@@ -98,7 +99,7 @@ class MerchantRechargeService
         $basic = $this->merchantBasic((int)($merchant['id'] ?? 0));
         $orderNo = $this->generateRechargeOrderNo($config);
         $now = date('Y-m-d H:i:s');
-        $rechargeId = (int)Db::table('ypay_recharge')->insertGetId([
+        $rechargeId = (int)Db::table(BusinessTable::recharge())->insertGetId([
             'type' => $type,
             'rtype' => 0,
             'out_trade_no' => $orderNo,
@@ -127,7 +128,7 @@ class MerchantRechargeService
                 default => $this->error('当前充值通道类型暂不支持：' . $providerType, 201, 409),
             };
         } catch (\Throwable $exception) {
-            Db::table('ypay_recharge')->where('id', $rechargeId)->delete();
+            Db::table(BusinessTable::recharge())->where('id', $rechargeId)->delete();
             return $this->error('创建充值订单失败：' . $exception->getMessage(), 201, 500);
         }
     }
@@ -139,11 +140,13 @@ class MerchantRechargeService
             return [
                 'code' => 0,
                 'msg' => 'order_no_required',
-                'message' => 'order_no_required',
+                'message' => '缺少充值订单号',
+                'status_key' => 'order_no_required',
+                'status_text' => '缺少充值订单号',
             ];
         }
 
-        $row = Db::table('ypay_recharge')
+        $row = Db::table(BusinessTable::recharge())
             ->select('id', 'out_trade_no', 'user_id', 'money', 'qrcode', 'status', 'out_time')
             ->where('out_trade_no', $outTradeNo)
             ->orderByDesc('id')
@@ -153,7 +156,9 @@ class MerchantRechargeService
             return [
                 'code' => 0,
                 'msg' => 'order_not_found',
-                'message' => 'order_not_found',
+                'message' => '未找到对应充值订单',
+                'status_key' => 'order_not_found',
+                'status_text' => '未找到对应充值订单',
             ];
         }
 
@@ -162,7 +167,9 @@ class MerchantRechargeService
             return [
                 'code' => 200,
                 'msg' => 'order_paid',
-                'message' => 'order_paid',
+                'message' => '充值订单已支付',
+                'status_key' => 'order_paid',
+                'status_text' => '充值订单已支付',
                 'url' => '/Deal/Recharge',
             ];
         }
@@ -171,7 +178,9 @@ class MerchantRechargeService
             return [
                 'code' => 0,
                 'msg' => 'order_timeout',
-                'message' => 'order_timeout',
+                'message' => '充值订单已超时',
+                'status_key' => 'order_timeout',
+                'status_text' => '充值订单已超时',
             ];
         }
 
@@ -180,14 +189,18 @@ class MerchantRechargeService
             return [
                 'code' => 0,
                 'msg' => 'qrcode_missing',
-                'message' => 'qrcode_missing',
+                'message' => '当前充值订单暂未生成二维码',
+                'status_key' => 'qrcode_missing',
+                'status_text' => '当前充值订单暂未生成二维码',
             ];
         }
 
         return [
             'code' => 100,
             'msg' => 'qrcode_ready',
-            'message' => 'qrcode_ready',
+            'message' => '充值二维码已生成',
+            'status_key' => 'qrcode_ready',
+            'status_text' => '充值二维码已生成',
             'qr_url' => $this->buildQrCodeUrl($qrcode, $request, 350),
         ];
     }
@@ -241,7 +254,7 @@ class MerchantRechargeService
     public function cashierPayload(int $merchantId, string $outTradeNo, string $type, string $rawQrCode, string $launchUrl = ''): array
     {
         $basic = $this->merchantBasic($merchantId);
-        $recharge = Db::table('ypay_recharge')
+        $recharge = Db::table(BusinessTable::recharge())
             ->select('id', 'out_trade_no', 'money', 'status', 'create_time', 'out_time')
             ->where('out_trade_no', $outTradeNo)
             ->first();
@@ -253,7 +266,7 @@ class MerchantRechargeService
                 'trade_no' => $outTradeNo,
                 'out_trade_no' => $outTradeNo,
                 'type' => $type,
-                'name' => 'Online Recharge',
+                'name' => '在线充值',
                 'truemoney' => (string)($row['money'] ?? '0.00'),
                 'raw_qrcode' => $rawQrCode,
                 'launch_url' => $launchUrl,
@@ -276,7 +289,7 @@ class MerchantRechargeService
             'out_trade_no' => $orderNo,
             'notify_url' => $notifyUrl,
             'return_url' => $returnUrl,
-            'name' => 'Online Recharge',
+            'name' => '在线充值',
             'money' => number_format($amount, 2, '.', ''),
         ];
 
@@ -300,12 +313,12 @@ class MerchantRechargeService
             $client->AlipayWeb([
                 'out_trade_no' => $orderNo,
                 'amount' => number_format($amount, 2, '.', ''),
-                'order_name' => 'Online Recharge',
+                'order_name' => '在线充值',
             ]);
         });
 
         if (trim($body) === '') {
-            throw new RuntimeException('official alipay gateway did not return an HTML submit body');
+            throw new RuntimeException('支付宝官方网页支付未返回跳转表单');
         }
 
         return [
@@ -337,28 +350,28 @@ class MerchantRechargeService
         $gatewayOrder = [
             'out_trade_no' => $orderNo,
             'amount' => number_format($amount, 2, '.', ''),
-            'order_name' => 'Online Recharge',
+            'order_name' => '在线充值',
         ];
 
         $result = match ($providerType) {
             'dmf' => $client->AlipayCode($gatewayOrder),
             'wxpay' => $client->WxPayCode($gatewayOrder),
             'qqpay' => $client->QQPay($gatewayOrder),
-            default => throw new RuntimeException('unsupported qr provider: ' . $providerType),
+            default => throw new RuntimeException('不支持的充值二维码通道类型：' . $providerType),
         };
 
         if (!is_array($result)) {
-            throw new RuntimeException('qr payment upstream did not return a structured response');
+            throw new RuntimeException('上游充值通道未返回结构化数据');
         }
 
         $qrCode = trim((string)($result['qr_code'] ?? $result['code_url'] ?? $result['payurl'] ?? ''));
         if ($qrCode === '') {
-            throw new RuntimeException('qr payment upstream did not return a QR code');
+            throw new RuntimeException('上游充值通道未返回有效收款码');
         }
 
         $launchUrl = $providerType === 'dmf' ? $qrCode : trim((string)($result['mweb_url'] ?? ''));
         $outTime = time() + $this->timeoutSeconds($basic);
-        Db::table('ypay_recharge')
+        Db::table(BusinessTable::recharge())
             ->where('id', $rechargeId)
             ->update([
                 'qrcode' => $qrCode,
@@ -377,7 +390,7 @@ class MerchantRechargeService
 
     private function merchantBasic(int $merchantId): array
     {
-        $row = Db::table('ypay_userbasic')
+        $row = Db::table(BusinessTable::userBasic())
             ->select('user_id', 'timeout_time', 'timeout_url', 'console_notity', 'is_payPopUp')
             ->where('user_id', $merchantId)
             ->first();
@@ -412,7 +425,7 @@ class MerchantRechargeService
             return null;
         }
 
-        $row = Db::table('ypay_paylist')
+        $row = Db::table(BusinessTable::paylist())
             ->select('id', 'type', 'status', 'name', 'url', 'pid', 'key', 'other')
             ->where('id', $paylistId)
             ->where('status', 1)
@@ -496,7 +509,7 @@ class MerchantRechargeService
     {
         $gatewayUrl = rtrim(trim($gatewayUrl), '/');
         if ($gatewayUrl === '') {
-            throw new RuntimeException('epay gateway url is missing');
+            throw new RuntimeException('易支付上游网关地址未配置');
         }
 
         $payload = $fields;
@@ -507,7 +520,7 @@ class MerchantRechargeService
         foreach ($payload as $name => $value) {
             $html .= '<input type="hidden" name="' . htmlspecialchars((string)$name, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') . '"/>';
         }
-        $html .= '<input type="submit" value="正在跳转"></form><script>document.getElementById("legacy-recharge-epay").submit();</script>';
+        $html .= '<input type="submit" value="正在跳转..."></form><script>document.getElementById("legacy-recharge-epay").submit();</script>';
 
         return $html;
     }
@@ -813,7 +826,7 @@ class MerchantRechargeService
     private function settleRecharge(string $outTradeNo, array $config): void
     {
         Db::transaction(function () use ($outTradeNo, $config): void {
-            $rechargeRow = Db::table('ypay_recharge')
+            $rechargeRow = Db::table(BusinessTable::recharge())
                 ->where('out_trade_no', $outTradeNo)
                 ->lockForUpdate()
                 ->first();
@@ -826,12 +839,12 @@ class MerchantRechargeService
                 return;
             }
 
-            $merchantRow = Db::table('ypay_user')
+            $merchantRow = Db::table(BusinessTable::user())
                 ->where('id', (int)($recharge['user_id'] ?? 0))
                 ->lockForUpdate()
                 ->first();
             if (!$merchantRow) {
-                throw new RuntimeException('merchant was not found for recharge settlement');
+                throw new RuntimeException('充值结算失败：未找到对应商户');
             }
 
             $merchant = (array)$merchantRow;
@@ -840,7 +853,7 @@ class MerchantRechargeService
             $after = round($before + $amount, 2);
             $now = date('Y-m-d H:i:s');
 
-            Db::table('ypay_recharge')
+            Db::table(BusinessTable::recharge())
                 ->where('id', (int)$recharge['id'])
                 ->update([
                     'status' => 1,
@@ -848,7 +861,7 @@ class MerchantRechargeService
                     'update_time' => $now,
                 ]);
 
-            Db::table('ypay_user')
+            Db::table(BusinessTable::user())
                 ->where('id', (int)$merchant['id'])
                 ->update([
                     'money' => number_format($after, 2, '.', ''),
@@ -893,7 +906,7 @@ class MerchantRechargeService
             return;
         }
 
-        $superiorRow = Db::table('ypay_user')
+        $superiorRow = Db::table(BusinessTable::user())
             ->where('id', $superiorId)
             ->lockForUpdate()
             ->first();
@@ -905,7 +918,7 @@ class MerchantRechargeService
         $before = round((float)($superior['money'] ?? 0), 2);
         $after = round($before + $rebate, 2);
 
-        Db::table('ypay_user')
+        Db::table(BusinessTable::user())
             ->where('id', $superiorId)
             ->update([
                 'money' => number_format($after, 2, '.', ''),

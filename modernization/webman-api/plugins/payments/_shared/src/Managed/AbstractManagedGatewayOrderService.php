@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Plugins\Payments\Shared\Managed;
 
+use app\support\BusinessTable;
 use app\support\SystemConfig;
-use Plugins\Payments\Shared\Legacy\LegacyEpayMerchantRepository;
-use Plugins\Payments\Shared\Legacy\LegacyEpayOrderRepository;
-use Plugins\Payments\Shared\Legacy\LegacyEpayService;
+use Plugins\Payments\Shared\EpayProtocol\EpayMerchantRepository;
+use Plugins\Payments\Shared\EpayProtocol\EpayOrderRepository;
+use Plugins\Payments\Shared\EpayProtocol\EpayProtocolService;
 use Plugins\Payments\Shared\Support\LegacyTradeNumber;
 use Plugins\Payments\Shared\Support\PaymentPluginException;
 use support\Db;
@@ -15,9 +16,9 @@ use support\Db;
 abstract class AbstractManagedGatewayOrderService
 {
     public function __construct(
-        protected readonly LegacyEpayMerchantRepository $merchants = new LegacyEpayMerchantRepository(),
-        protected readonly LegacyEpayOrderRepository $orders = new LegacyEpayOrderRepository(),
-        protected readonly LegacyEpayService $legacy = new LegacyEpayService()
+        protected readonly EpayMerchantRepository $merchants = new EpayMerchantRepository(),
+        protected readonly EpayOrderRepository $orders = new EpayOrderRepository(),
+        protected readonly EpayProtocolService $epayProtocol = new EpayProtocolService()
     ) {
     }
 
@@ -56,7 +57,7 @@ abstract class AbstractManagedGatewayOrderService
         ]);
 
         $merchant = $this->merchants->findMerchant((int)$cleanPayload['pid']);
-        if (!$this->legacy->verifySignature($cleanPayload, (string)($merchant['user_key'] ?? ''))) {
+        if (!$this->epayProtocol->verifySignature($cleanPayload, (string)($merchant['user_key'] ?? ''))) {
             throw PaymentPluginException::unauthorized();
         }
 
@@ -164,7 +165,7 @@ abstract class AbstractManagedGatewayOrderService
         foreach ($fields as $field) {
             $value = trim((string)($payload[$field] ?? ''));
             if ($value === '') {
-                throw PaymentPluginException::validation('缺少必填字段：' . $field);
+                throw PaymentPluginException::validation('缺少必填字段: ' . $field);
             }
         }
     }
@@ -293,7 +294,7 @@ abstract class AbstractManagedGatewayOrderService
             }
         }
 
-        $row = Db::table('ypay_account')
+        $row = Db::table(BusinessTable::account())
             ->select(
                 'id',
                 'user_id',
@@ -342,7 +343,7 @@ abstract class AbstractManagedGatewayOrderService
         }
 
         return Db::transaction(function () use ($poolId, $merchantId, $paymentType): ?array {
-            $pool = Db::table('ypay_poll_pool')
+            $pool = Db::table(BusinessTable::pollPool())
                 ->select('id', 'user_id', 'type', 'status', 'round_type', 'current_index', 'current_weight', 'last_account_id')
                 ->where('id', $poolId)
                 ->where('user_id', $merchantId)
@@ -362,8 +363,8 @@ abstract class AbstractManagedGatewayOrderService
                 throw PaymentPluginException::validation('轮询池类型与订单类型不匹配');
             }
 
-            $rows = Db::table('ypay_poll_pool_item as item')
-                ->join('ypay_account as account', 'account.id', '=', 'item.account_id')
+            $rows = Db::table(BusinessTable::pollPoolItem('item'))
+                ->join(BusinessTable::account('account'), 'account.id', '=', 'item.account_id')
                 ->select(
                     'item.account_id',
                     'item.weight',
@@ -425,7 +426,7 @@ abstract class AbstractManagedGatewayOrderService
             }
 
             $selected = $accounts[$selectedIndex];
-            Db::table('ypay_poll_pool')
+            Db::table(BusinessTable::pollPool())
                 ->where('id', $poolId)
                 ->update([
                     'current_index' => (($selectedIndex + 1) % max(1, count($accounts))),
@@ -446,7 +447,7 @@ abstract class AbstractManagedGatewayOrderService
      */
     protected function loadBoundAccount(int $accountId, int $merchantId, string $paymentType): array
     {
-        $row = Db::table('ypay_account')
+        $row = Db::table(BusinessTable::account())
             ->select(
                 'id',
                 'user_id',
@@ -518,7 +519,7 @@ abstract class AbstractManagedGatewayOrderService
         $feeMoney = number_format(round(((float)$money) * $feeRate / 100, 3), 3, '.', '');
         $timeoutSeconds = $this->resolveTimeoutSeconds($basicSettings);
 
-        Db::table('ypay_order')->insert([
+        Db::table(BusinessTable::order())->insert([
             'name' => trim((string)($payload['name'] ?? '')),
             'sitename' => trim((string)SystemConfig::get('sitename', 'AiPay')),
             'type' => $paymentType,
@@ -612,7 +613,7 @@ abstract class AbstractManagedGatewayOrderService
             $updates['alipay_order_no'] = $gatewayTradeNo;
         }
 
-        Db::table('ypay_order')
+        Db::table(BusinessTable::order())
             ->where('id', (int)($order['id'] ?? 0))
             ->update($updates);
 
@@ -703,7 +704,7 @@ abstract class AbstractManagedGatewayOrderService
             . $escapedUrl
             . '"><title>正在跳转收银台</title></head><body><script>location.replace('
             . json_encode($cashierUrl, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-            . ');</script><p>正在跳转收银台，若未自动跳转，请 <a href="'
+            . ');</script><p>正在跳转收银台，如未自动跳转，请 <a href="'
             . $escapedUrl
             . '">点击这里</a>。</p></body></html>';
     }

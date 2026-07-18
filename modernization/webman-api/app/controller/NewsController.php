@@ -5,6 +5,7 @@ namespace app\controller;
 use app\support\AdminNewsFormatter;
 use app\support\AdminRouteAuthorization;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\RequestPayload;
 use Illuminate\Database\Query\Builder;
 use support\Db;
@@ -79,7 +80,7 @@ class NewsController
         }
 
         $now = date('Y-m-d H:i:s');
-        $newsId = (int)Db::table('ypay_news')->insertGetId([
+        $newsId = (int)Db::table(BusinessTable::news())->insertGetId([
             'type' => $payload['type'],
             'title' => $payload['title'],
             'color' => $payload['color'],
@@ -131,7 +132,7 @@ class NewsController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_news')
+        Db::table(BusinessTable::news())
             ->where('id', $id)
             ->update([
                 'type' => $payload['type'],
@@ -185,7 +186,7 @@ class NewsController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_news')
+        Db::table(BusinessTable::news())
             ->where('id', $id)
             ->update([
                 'status' => $status,
@@ -488,7 +489,7 @@ class NewsController
 
     private function newsQuery(): Builder
     {
-        return Db::table('ypay_news')
+        return Db::table(BusinessTable::news())
             ->select(
                 'id',
                 'type',
@@ -593,7 +594,7 @@ class NewsController
 
         return array_map(
             static fn($row): array => (array)$row,
-            Db::table('ypay_news')
+            Db::table(BusinessTable::news())
                 ->select('id', 'type', 'title', 'status', 'delete_time')
                 ->whereIn('id', $newsIds)
                 ->get()
@@ -740,7 +741,7 @@ class NewsController
                     'type' => 0,
                     'exists' => false,
                     'can_delete' => false,
-                    'blocking_reasons' => ['This announcement was not found in ypay_news.'],
+                    'blocking_reasons' => ['This announcement record was not found.'],
                     'summary' => [
                         'delete_row_count' => 0,
                         'blocked_count' => 1,
@@ -806,14 +807,14 @@ class NewsController
 
     private function deleteNewsRow(int $id): void
     {
-        Db::table('ypay_news')
+        Db::table(BusinessTable::news())
             ->where('id', $id)
             ->update(['delete_time' => date('Y-m-d H:i:s')]);
     }
 
     private function restoreNewsRow(int $id): void
     {
-        Db::table('ypay_news')
+        Db::table(BusinessTable::news())
             ->where('id', $id)
             ->update(['delete_time' => null]);
     }

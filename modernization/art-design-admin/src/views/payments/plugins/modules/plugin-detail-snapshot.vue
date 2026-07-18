@@ -34,7 +34,7 @@
       type="info"
       :closable="false"
       show-icon
-      title="该插件暂未创建恢复快照。"
+      title="该插件暂时还没有恢复快照。"
     />
 
     <div v-else class="snapshot-list">
@@ -70,7 +70,7 @@
               snapshot.summary.managed_channel_count
             }}
           </ElTag>
-          <ElTag type="danger" effect="plain">数据行 {{ snapshot.summary.row_count }}</ElTag>
+          <ElTag type="danger" effect="plain">记录 {{ snapshot.summary.row_count }}</ElTag>
           <ElTag type="info" effect="plain">操作人 {{ operatorLabel(snapshot.operator) }}</ElTag>
         </div>
 
@@ -81,7 +81,9 @@
               v-if="hasPluginRestoreSnapshotAuth"
               type="warning"
               plain
-              :disabled="Boolean(detail.state.enabled) || snapshotDeletingId === snapshot.snapshot_id"
+              :disabled="
+                Boolean(detail.state.enabled) || snapshotDeletingId === snapshot.snapshot_id
+              "
               :loading="snapshotRestoringId === snapshot.snapshot_id"
               @click="emit('restoreSnapshot', snapshot)"
             >

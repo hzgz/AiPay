@@ -264,7 +264,7 @@
               >
                 重放当前订单回调
               </ElButton>
-              <span class="merchant-detail-tip">仅已支付订单支持回调重放，状态重置仍未开放。</span>
+              <span class="merchant-detail-tip">仅已支付订单支持回调重放，状态重置入口已关闭。</span>
             </div>
           </section>
 
@@ -362,10 +362,10 @@
 
   const actionTip = computed(() => {
     if (writeActions.value.callback_replay) {
-      return '当前支持对已支付订单执行回调重放，状态重置入口已下线。'
+      return '当前支持对已支付订单执行回调重放，状态重置入口已关闭。'
     }
 
-    return '当前页面提供订单查询与详情核对，订单写入操作暂未开放。'
+    return '当前页面提供订单查询与详情核对。'
   })
 
   function money(value: unknown) {

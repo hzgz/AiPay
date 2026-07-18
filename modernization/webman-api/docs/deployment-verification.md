@@ -50,7 +50,7 @@ bash deploy/linux/verify-deployment.sh --skip-http
 - 支付插件目录是否含有 `plugin.json` 和 `src/Plugin.php`
 - 数据库连接是否可用
 - 核心表和关键增量字段是否存在
-- `ypay_payment` 是否已有基础支付方式数据
+- 支付方式数据表是否已有基础支付方式数据
 
 ## 完整 HTTP 验收
 
@@ -100,7 +100,7 @@ bash deploy/linux/verify-deployment.sh \
 新增后台接口验收，主要是为了提前拦住这些线上高频问题：
 
 - 管理员页能打开，但登录后关键接口报错
-- `ypay_payment` 为空，导致支付插件页、支付方式页直接异常
+- 支付方式数据表为空，导致支付插件页、支付方式页直接异常
 - Linux 下 Webman 实际运行中，但进程管理误报“未运行”
 
 退出码：

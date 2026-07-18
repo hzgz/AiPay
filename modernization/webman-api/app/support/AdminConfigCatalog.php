@@ -48,13 +48,13 @@ class AdminConfigCatalog
         'alipay' => '支付宝收款开关',
         'bearMoney' => '实名认证费用',
         'dataClearDays' => '数据清理保留天数',
-        'demo_theme' => '演示主题',
-        'demopay_money' => '演示金额',
-        'demopay_name' => '演示收款人',
+        'demo_theme' => '支付测试主题',
+        'demopay_money' => '测试金额',
+        'demopay_name' => '测试收款人',
         'diyApiTemp' => '自定义接口模板',
         'diyMtceHtml' => '维护页内容',
         'diy_dataClear' => '数据清理范围',
-        'diy_demoPay' => '演示支付方式',
+        'diy_demoPay' => '测试支付方式',
         'diy_js' => '自定义脚本',
         'diy_orderNo' => '自定义订单号',
         'diy_recharge' => '充值支付方式',
@@ -64,9 +64,9 @@ class AdminConfigCatalog
         'doc_theme' => '文档主题',
         'domain_notice' => '域名提示',
         'email_switch' => '邮件通知开关',
-        'epayid_demo' => '易支付演示商户号',
-        'epaykey_demo' => '易支付演示密钥',
-        'epayurl_demo' => '易支付演示地址',
+        'epayid_demo' => '易支付测试商户号',
+        'epaykey_demo' => '易支付测试密钥',
+        'epayurl_demo' => '易支付测试地址',
         'home_popup' => '首页弹窗',
         'icp' => 'ICP备案',
         'index_popup' => '入口页弹窗',
@@ -123,14 +123,14 @@ class AdminConfigCatalog
         'smtp-pass' => 'SMTP 密码',
         'smsbao-api' => '短信宝 API 地址',
         'td_notice' => '支付说明',
-        'tg_admin_id' => 'Telegram 管理员 ID',
-        'tg_bot_token' => 'Telegram 机器人令牌',
+        'tg_admin_id' => '电报管理员编号',
+        'tg_bot_token' => '电报机器人令牌',
         'thinkCode' => '验证码密钥',
         'user_agreement' => '用户协议',
         'user_theme' => '用户中心主题',
         'vip_expire' => '会员到期提醒天数',
         'wechat' => '微信收款开关',
-        'wxpusher_appToken' => 'WxPusher 应用令牌',
+        'wxpusher_appToken' => '微信推送应用令牌',
         'imageSize' => '图片压缩大小',
         'api_url' => '接口地址',
         'code_switch' => '短信验证开关',
@@ -182,7 +182,7 @@ class AdminConfigCatalog
         ],
         'transaction_rules' => [
             'title' => '交易规则',
-            'description' => '订单金额、测试支付、演示支付与二维码相关配置。',
+            'description' => '订单金额、支付测试与二维码相关配置。',
             'fields' => [
                 'is_channelPay',
                 'isDiy_orderNo',
@@ -264,7 +264,7 @@ class AdminConfigCatalog
         ],
         'notifications' => [
             'title' => '通知提醒',
-            'description' => '邮件、Telegram、WxPusher 与常用通知模板配置。',
+            'description' => '邮件、电报、微信推送与常用通知模板配置。',
             'fields' => [
                 'email_switch',
                 'smtp-host',
@@ -357,20 +357,20 @@ class AdminConfigCatalog
             'help_text' => '用于首页展示、搜索描述和系统简介。',
         ],
         'demopay_money' => [
-            'label' => '演示金额',
+            'label' => '测试金额',
             'editor' => 'input',
             'value_type' => 'non_negative_decimal',
             'max_length' => 12,
             'placeholder' => '0.01',
-            'help_text' => '用于支付测试和演示页面的默认下单金额。',
+            'help_text' => '用于支付测试页默认金额展示。',
         ],
         'demopay_name' => [
-            'label' => '演示收款人',
+            'label' => '测试收款人',
             'editor' => 'input',
             'value_type' => 'text',
             'max_length' => 80,
-            'placeholder' => '演示收款商户',
-            'help_text' => '用于支付测试、演示订单和收银台展示的收款人名称。',
+            'placeholder' => '测试收款商户',
+            'help_text' => '用于支付测试页和收银台展示的收款人名称。',
         ],
         'diy_codeTemp' => [
             'label' => '验证码模板',
@@ -397,14 +397,14 @@ class AdminConfigCatalog
             'help_text' => '支持 [login_uid]、[login_ip]、[login_time] 变量。',
         ],
         'diy_demoPay' => [
-            'label' => '演示支付方式',
+            'label' => '测试支付方式',
             'editor' => 'textarea',
             'value_type' => 'list',
             'max_length' => 255,
             'placeholder' => "wxpay
 alipay
 qqpay",
-            'help_text' => '每行一个支付方式编码，用于演示支付和支付测试页面。',
+            'help_text' => '每行一个支付方式编码，用于支付测试页展示。',
         ],
         'diy_loseTips' => [
             'label' => '掉线通知模板',
@@ -467,8 +467,8 @@ qqpay",
             'editor' => 'textarea',
             'value_type' => 'list',
             'max_length' => 5000,
-            'placeholder' => "spam-domain.com
-blocked-domain.com",
+            'placeholder' => "blocked.你的域名.com
+spam.你的域名.com",
             'help_text' => '每行一个域名，命中后将禁止绑定或访问相关业务功能。',
         ],
         'domain_white' => [
@@ -476,8 +476,8 @@ blocked-domain.com",
             'editor' => 'textarea',
             'value_type' => 'list',
             'max_length' => 5000,
-            'placeholder' => "pay.example.com
-safe.example.com",
+            'placeholder' => "pay.你的域名.com
+api.你的域名.com",
             'help_text' => '每行一个域名，命中后优先视为可信域名。',
         ],
         'email_switch' => [
@@ -487,28 +487,28 @@ safe.example.com",
             'help_text' => '开启后可使用邮箱通知、验证码和邮件提醒能力。',
         ],
         'epayid_demo' => [
-            'label' => '易支付演示商户号',
+            'label' => '易支付测试商户号',
             'editor' => 'input',
             'value_type' => 'text',
             'max_length' => 120,
-            'placeholder' => '请输入演示商户号',
-            'help_text' => '用于易支付兼容演示、支付测试和联调示例。',
+            'placeholder' => '请输入测试商户号',
+            'help_text' => '用于协议联调、支付测试和测试下单。',
         ],
         'epaykey_demo' => [
-            'label' => '易支付演示密钥',
+            'label' => '易支付测试密钥',
             'editor' => 'password',
             'value_type' => 'text',
             'max_length' => 255,
-            'placeholder' => '请输入演示密钥',
-            'help_text' => '用于易支付兼容演示、支付测试和联调示例。',
+            'placeholder' => '请输入测试密钥',
+            'help_text' => '用于支付测试与接口验证。',
         ],
         'epayurl_demo' => [
-            'label' => '易支付演示地址',
+            'label' => '测试网关地址',
             'editor' => 'input',
             'value_type' => 'url',
             'max_length' => 255,
-            'placeholder' => 'https://demo.example.com/submit.php',
-            'help_text' => '填写易支付兼容网关地址，用于演示和支付测试。',
+            'placeholder' => 'https://pay.你的域名.com/submit.php',
+            'help_text' => '填写易支付协议网关地址，用于支付测试。',
         ],
         'favicon' => [
             'label' => '网站图标',
@@ -703,8 +703,8 @@ safe.example.com",
             'editor' => 'textarea',
             'value_type' => 'list',
             'max_length' => 2000,
-            'placeholder' => "https://api1.example.com/
-https://api2.example.com/",
+            'placeholder' => "https://api.你的域名.com/
+https://api2.你的域名.com/",
             'help_text' => '每行一个地址，用于对外展示或分发给商户的接口入口地址。',
         ],
         'paid_reg_price' => [
@@ -820,7 +820,7 @@ https://api2.example.com/",
             'placeholder' => '请选择接口模板',
             'help_text' => '用于接口对接页或接口展示页的模板方案。',
             'options' => [
-                ['label' => '默认模板', 'value' => 'default'],
+                ['label' => '标准模板', 'value' => 'default'],
                 ['label' => '自定义模板', 'value' => 'diyApiTemp'],
             ],
         ],
@@ -882,13 +882,13 @@ https://api2.example.com/",
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
             'placeholder' => '请选择登录验证方式',
-            'help_text' => '用于前台登录方式选择，TG 验证需先配置 Telegram 能力。',
+            'help_text' => '用于前台登录方式选择，电报验证需先配置电报通知能力。',
             'options' => [
                 ['label' => '账号密码', 'value' => '0'],
                 ['label' => '短信验证', 'value' => '1'],
                 ['label' => '邮箱验证', 'value' => '2'],
                 ['label' => '社交登录', 'value' => '3'],
-                ['label' => 'TG 验证', 'value' => '4'],
+                ['label' => '电报验证', 'value' => '4'],
             ],
         ],
         'mtceType' => [
@@ -899,7 +899,7 @@ https://api2.example.com/",
             'placeholder' => '请选择维护页模板',
             'help_text' => '系统进入维护模式后，前台展示的维护页面模板方案。',
             'options' => [
-                ['label' => '默认模板', 'value' => 'default'],
+                ['label' => '标准模板', 'value' => 'default'],
                 ['label' => '自定义模板', 'value' => 'diyMtceHtml'],
             ],
         ],
@@ -945,12 +945,12 @@ https://api2.example.com/",
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
             'placeholder' => '请选择注册验证方式',
-            'help_text' => '用于商户注册验证码发送方式选择，TG 验证需先配置 Telegram 能力。',
+            'help_text' => '用于商户注册验证码发送方式选择，电报验证需先配置电报通知能力。',
             'options' => [
                 ['label' => '关闭验证', 'value' => '0'],
                 ['label' => '短信验证', 'value' => '1'],
                 ['label' => '邮箱验证', 'value' => '2'],
-                ['label' => 'TG 验证', 'value' => '3'],
+                ['label' => '电报验证', 'value' => '3'],
             ],
         ],
         'reportPos' => [
@@ -973,12 +973,12 @@ https://api2.example.com/",
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
             'placeholder' => '请选择找回方式',
-            'help_text' => '用于密码找回验证码发送方式选择，TG 验证需先配置 Telegram 能力。',
+            'help_text' => '用于密码找回验证码发送方式选择，电报验证需先配置电报通知能力。',
             'options' => [
                 ['label' => '关闭', 'value' => '0'],
                 ['label' => '短信验证', 'value' => '1'],
                 ['label' => '邮箱验证', 'value' => '2'],
-                ['label' => 'TG 验证', 'value' => '3'],
+                ['label' => '电报验证', 'value' => '3'],
             ],
         ],
         'smstype' => [
@@ -1000,7 +1000,7 @@ https://api2.example.com/",
             'value_type' => 'text',
             'max_length' => 16,
             'placeholder' => '请选择签名模式',
-            'help_text' => '基础校验兼容旧版 token 逻辑，安全签名会同时校验签名和时间窗口。',
+            'help_text' => '基础校验仅校验必要参数；安全签名会同时校验签名与时间窗口。',
             'options' => [
                 ['label' => '基础校验', 'value' => 'compat'],
                 ['label' => '安全签名', 'value' => 'strict'],
@@ -1049,12 +1049,12 @@ https://api2.example.com/",
             'help_text' => '关闭或选择一个已配置的微信登录渠道。',
         ],
         'tg_bind_tips' => [
-            'label' => 'Telegram 绑定提示',
+            'label' => '电报绑定提示',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 255,
-            'placeholder' => '请输入 Telegram 绑定提示',
-            'help_text' => '显示在商户绑定 Telegram 账号时的说明内容。',
+            'placeholder' => '请输入电报绑定提示',
+            'help_text' => '显示在商户绑定电报账号时的说明内容。',
         ],
         'aff_percentage' => [
             'label' => '返佣比例',
@@ -1065,34 +1065,34 @@ https://api2.example.com/",
             'help_text' => '填写 0 到 1 之间的小数，例如 0.10 表示 10%。',
         ],
         'tg_notice_recharge' => [
-            'label' => 'Telegram 充值通知',
+            'label' => '电报充值通知',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后通过 Telegram 发送充值相关通知。',
+            'help_text' => '开启后通过电报发送充值相关通知。',
         ],
         'tg_notice_register' => [
-            'label' => 'Telegram 注册通知',
+            'label' => '电报注册通知',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后通过 Telegram 发送商户注册通知。',
+            'help_text' => '开启后通过电报发送商户注册通知。',
         ],
         'tg_notice_ticket' => [
-            'label' => 'Telegram 工单通知',
+            'label' => '电报工单通知',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后通过 Telegram 发送工单消息通知。',
+            'help_text' => '开启后通过电报发送工单消息通知。',
         ],
         'tg_notice_vip' => [
-            'label' => 'Telegram VIP 通知',
+            'label' => '电报会员通知',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后通过 Telegram 发送 VIP 相关提醒。',
+            'help_text' => '开启后通过电报发送会员相关提醒。',
         ],
         'tg_switch' => [
-            'label' => 'Telegram 开关',
+            'label' => '电报通知开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后显示并启用 Telegram 相关能力。',
+            'help_text' => '开启后显示并启用电报相关能力。',
         ],
         'timeout' => [
             'label' => '订单超时时间',
@@ -1107,7 +1107,7 @@ https://api2.example.com/",
             'editor' => 'input',
             'value_type' => 'url',
             'max_length' => 255,
-            'placeholder' => 'https://cdk.example.com/',
+            'placeholder' => 'https://card.你的域名.com/',
             'help_text' => '用于商户中心跳转至卡密充值页面或外部卡密系统。',
         ],
         'daily_limit' => [
@@ -1151,10 +1151,10 @@ https://api2.example.com/",
             'help_text' => '支持 HTML 富文本内容。',
         ],
         'wxpusher_switch' => [
-            'label' => 'WxPusher 开关',
+            'label' => '微信推送开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后可使用 WxPusher 消息推送能力。',
+            'help_text' => '开启后可使用微信推送消息能力。',
         ],
     ];
 
@@ -1976,7 +1976,7 @@ https://api2.example.com/",
                 default => $value,
             },
             'apiTemp', 'mtceType' => match ($value) {
-                'default' => '默认模板',
+                'default' => '标准模板',
                 'diyApiTemp', 'diyMtceHtml' => '自定义模板',
                 default => $value,
             },
@@ -2009,21 +2009,21 @@ https://api2.example.com/",
                 '1' => '短信验证',
                 '2' => '邮箱验证',
                 '3' => '社交登录',
-                '4' => 'TG 验证',
+                '4' => '电报验证',
                 default => $value,
             },
             'regcode-type' => match ($value) {
                 '0' => '关闭验证',
                 '1' => '短信验证',
                 '2' => '邮箱验证',
-                '3' => 'TG 验证',
+                '3' => '电报验证',
                 default => $value,
             },
             'retrieve-type' => match ($value) {
                 '0' => '关闭',
                 '1' => '短信验证',
                 '2' => '邮箱验证',
-                '3' => 'TG 验证',
+                '3' => '电报验证',
                 default => $value,
             },
             'qr_codeType' => match ($value) {
@@ -2358,7 +2358,7 @@ https://api2.example.com/",
         ];
 
         try {
-            $rows = Db::table('ypay_quicklogin')
+            $rows = Db::table(BusinessTable::quickLogin())
                 ->select('id', 'name', 'status')
                 ->where('type', $type)
                 ->orderBy('status')
@@ -2409,7 +2409,7 @@ https://api2.example.com/",
         ];
 
         try {
-            $rows = Db::table('ypay_vip')
+            $rows = Db::table(BusinessTable::vip())
                 ->select('id', 'name', 'status', 'viptime', 'sort')
                 ->orderByRaw('CAST(COALESCE(sort, 0) AS UNSIGNED) asc')
                 ->orderBy('id')
@@ -2524,7 +2524,7 @@ https://api2.example.com/",
         }
 
         if ($normalized === 'default') {
-            return '默认模板';
+            return '标准模板';
         }
 
         if ($normalized === 'index99') {
@@ -2537,7 +2537,7 @@ https://api2.example.com/",
 
         $replaced = str_replace(
             ['AiPay Smoke', 'Puple'],
-            ['AiPay 演示站', '紫色主题'],
+            ['AiPay 官方站', '标准主题'],
             $normalized
         );
 

@@ -38,7 +38,7 @@ Options:
   --backend-port=PORT          Local Webman port. Default: 8787
   --db-host=HOST               Database host. Default: 127.0.0.1
   --db-port=PORT               Database port. Default: 3306
-  --db-name=NAME               Database name. Default: aipay_prod
+  --db-name=NAME               Database name. Default: pay
   --db-user=USER               Database user. Default: same as db name
   --db-password=PASS           Database password. Default: auto-generate
   --admin-user=NAME            Admin username. Default: adminroot
@@ -478,7 +478,7 @@ prompt_value BACKEND_PORT 'Webman backend port' '8787'
 if [[ -z "${SITE_NAME}" ]]; then
   SITE_NAME="$(sanitize_site_name "${DOMAIN}")"
 fi
-prompt_value DB_NAME 'Database name' 'aipay_prod'
+prompt_value DB_NAME 'Database name' 'pay'
 prompt_value DB_USER 'Database user' "${DB_NAME}"
 prompt_secret DB_PASSWORD 'Database password'
 prompt_value ADMIN_USER 'Admin username' 'adminroot'

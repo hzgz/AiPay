@@ -280,6 +280,40 @@ export const ACCOUNT_CODE_META = {
     credentialHelpText:
       '填写应用 ID、商户号、平台公钥、商户私钥、API V3 密钥、商户证书序列号，以及可选的平台公钥 ID、APIv2 密钥。'
   },
+  universal_epay: {
+    createEnabled: true,
+    label: '通用易支付插件',
+    typeLabel: '易支付',
+    identifierLabel: '商户ID',
+    identifierPlaceholder: '请输入上游易支付商户ID',
+    qrTypeOptions: [
+      { label: '普通接口', value: '0' },
+      { label: 'MAPI接口', value: '1' }
+    ],
+    supportsPid: false,
+    pidLabel: '商户PID',
+    pidPlaceholder: '',
+    supportsQrUrl: true,
+    supportsCookie: true,
+    supportsRemark: false,
+    supportsWxGuid: false,
+    supportsCloudId: false,
+    supportsExtraValue: false,
+    qrUrlLabel: '接口地址',
+    qrUrlPlaceholder: '请输入完整接口地址，例如 https://demo.com/',
+    cookieLabel: '商户密钥',
+    cookiePlaceholder: '请输入上游易支付商户密钥',
+    remarkLabel: '备注',
+    remarkPlaceholder: '',
+    wxGuidLabel: '证书序列号',
+    wxGuidPlaceholder: '',
+    cloudIdLabel: '云端标识',
+    cloudIdPlaceholder: '',
+    extraValueLabel: '扩展值',
+    extraValuePlaceholder: '',
+    credentialHelpText:
+      '一个插件目录同时支持支付宝、微信、QQ 三种支付方式。先选择支付方式，再填写商户ID、接口地址、商户密钥和接口模式。'
+  },
   jiaofeiyi_alipay: {
     createEnabled: true,
     label: '缴费易支付宝',
@@ -411,6 +445,7 @@ export const ACCOUNT_METHOD_TYPE_MAP: Record<PaymentAccountCreateCode, PaymentAc
   alipay_official: 'alipay',
   wxpay_v3: 'wxpay',
   alipay_mck: 'alipay',
+  universal_epay: 'alipay',
   jiaofeiyi_alipay: 'alipay',
   jiaofeiyi_wxpay: 'wxpay'
 }

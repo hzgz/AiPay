@@ -55,11 +55,11 @@
               />
             </ElFormItem>
 
-            <ElFormItem v-if="requiresTelegram" label="Telegram Chat ID" prop="tg_chat_id">
+            <ElFormItem v-if="requiresTelegram" label="电报会话标识" prop="tg_chat_id">
               <ElInput
                 v-model.trim="formData.tg_chat_id"
                 class="merchant-auth__input"
-                placeholder="请输入 Telegram Chat ID"
+                placeholder="请输入电报会话标识"
               />
             </ElFormItem>
 
@@ -97,7 +97,9 @@
                   :disabled="codeSending || countdown > 0"
                   @click="handleSendCode"
                 >
-                  {{ countdown > 0 ? `${countdown}s 后重试` : codeSending ? '发送中' : '发送验证码' }}
+                  {{
+                    countdown > 0 ? `${countdown}s 后重试` : codeSending ? '发送中' : '发送验证码'
+                  }}
                 </ElButton>
               </div>
             </ElFormItem>
@@ -132,7 +134,9 @@
 
             <div class="merchant-auth__links">
               <ElButton text @click="openFrontHome">返回首页</ElButton>
-              <RouterLink class="merchant-auth__link" to="/merchant/login">已有账号，去登录</RouterLink>
+              <RouterLink class="merchant-auth__link" to="/merchant/login"
+                >已有账号，去登录</RouterLink
+              >
             </div>
           </ElForm>
         </div>
@@ -195,7 +199,7 @@
         0: '账号密码',
         1: '手机验证码',
         2: '邮箱验证码',
-        3: 'Telegram 验证'
+        3: '电报验证'
       }[config.value.register_type] || '账号密码'
     )
   })
@@ -211,7 +215,11 @@
 
     const methods = Array.isArray(pendingPayment.value.paytype)
       ? pendingPayment.value.paytype
-          .map((item) => String((item as { showname?: string })?.showname || (item as { name?: string })?.name || ''))
+          .map((item) =>
+            String(
+              (item as { showname?: string })?.showname || (item as { name?: string })?.name || ''
+            )
+          )
           .filter(Boolean)
           .join(' / ')
       : ''
@@ -266,7 +274,7 @@
         ]
       : [],
     tg_chat_id: requiresTelegram.value
-      ? [{ required: true, message: '请输入 Telegram Chat ID', trigger: 'blur' }]
+      ? [{ required: true, message: '请输入电报会话标识', trigger: 'blur' }]
       : [],
     captcha: requiresVerifyCode.value
       ? [{ required: true, message: '请输入验证码', trigger: 'blur' }]

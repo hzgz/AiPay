@@ -40,7 +40,7 @@ const EXACT_MAP: Record<string, string> = {
   wechat: '微信',
   'qq wallet': 'QQ 钱包',
   'qq pay': 'QQ 支付',
-  '网站bug': '网站问题',
+  网站bug: '网站问题',
   usdt: 'USDT',
   'line 1': '线路 1',
   'line 2': '线路 2',
@@ -57,15 +57,15 @@ const EXACT_MAP: Record<string, string> = {
   'merchant action': '商户行为',
   'behavior log': '行为日志',
   'direct channel save is live in webman. email and mobile verification-code flows still stay on the migration guard.':
-    '当前可直接保存通知通道设置，邮箱和手机号仍需通过验证码完成校验。',
+    '当前可直接保存通知通道设置，邮箱和手机号绑定需通过验证码完成校验。',
   'email and mobile bind flows still stay on the migration guard until the verification-code service is migrated.':
     '邮箱和手机号绑定请通过验证码流程完成。',
   'merchant google auth verify, bind, and unbind flows are not migrated for the webman merchant center yet':
-    '谷歌验证状态页当前仅做信息汇总，请在安全中心完成校验、绑定或解绑。',
+    '当前页面展示谷歌验证状态，请在安全中心完成校验、绑定或解绑操作。',
   'merchant google auth bind is live in webman. login-time verification still follows the migration guard.':
-    '谷歌验证器已可在当前商户后台绑定；如登录开启校验，仍需完成安全验证。',
+    '谷歌验证器已支持在商户后台绑定；如登录启用校验，仍需完成安全验证。',
   'merchant google auth unbind is live in webman. login-time verification still follows the migration guard.':
-    '谷歌验证器已可在当前商户后台解绑；如登录开启校验，仍需完成安全验证。',
+    '谷歌验证器已支持在商户后台解绑；如登录启用校验，仍需完成安全验证。',
   'google auth qr code generated successfully': '谷歌验证二维码已生成',
   'merchant google auth bound successfully': '谷歌验证器绑定成功',
   'merchant google auth unbound successfully': '谷歌验证器解绑成功',
@@ -80,9 +80,9 @@ const EXACT_MAP: Record<string, string> = {
   'merchant domain create, edit, and delete are enabled on webman':
     '域名新增、编辑和删除已接入商户后台。',
   'merchant login-log delete and cleanup flows are not exposed in the webman merchant center':
-    '登录日志当前仅支持查看，删除与清理暂未开放。',
+    '登录日志当前支持查看与检索，删除和批量清理不在此页处理。',
   'merchant affiliate page is read-only in the webman merchant center':
-    '推广返佣当前可查看统计并复制邀请链接，返佣提现与重置链接暂未开放。',
+    '推广返佣当前支持查看统计与复制邀请链接，提现与链接重置请通过平台结算流程处理。',
   'merchant real-name verification finalization is not migrated for the webman merchant center yet':
     '实名认证结果会根据上游返回自动更新，请继续轮询或稍后刷新页面。',
   'merchant real-name verification initiation is not migrated for the webman merchant center yet':
@@ -105,21 +105,20 @@ const EXACT_MAP: Record<string, string> = {
   'alipay real-name authorization failed': '支付宝实名认证授权失败',
   'merchant identity information is incomplete': '实名认证资料不完整，请重新填写后再试。',
   'vip purchase is not migrated for webman merchant center yet':
-    '会员套餐购买与续费入口暂未开放，请联系管理员处理。',
+    '会员套餐页当前仅展示可用套餐，购买与续费请通过平台服务入口办理。',
   'vip package is required': '请选择会员套餐',
   'vip package not found': '会员套餐不存在或已下架',
   'merchant balance is insufficient for vip purchase': '余额不足，请先充值。',
   'merchant vip purchase completed successfully': '会员套餐购买成功',
   'current package can be renewed directly in webman merchant center':
     '当前套餐可直接在商户中心续费。',
-  'vip package purchase is enabled in webman merchant center':
-    '会员套餐购买已在商户中心开放。',
-  'legacy epay compatible browser form entry.': '易支付网关的网页表单下单地址。',
-  'legacy epay compatible json/api entry.': '易支付网关的程序下单地址。',
+  'vip package purchase is enabled in webman merchant center': '会员套餐购买已在商户中心开放。',
+  'legacy epay compatible browser form entry.': '易支付网页表单下单地址。',
+  'legacy epay compatible json/api entry.': '易支付程序下单地址。',
   'upstream payment notify callback entry.': '支付异步回调地址。',
   'upstream payment return callback entry.': '支付同步跳转地址。',
   'use the configured merchant sign key for payment request signing. raw values remain hidden during migration.':
-    '请使用当前商户密钥完成请求签名，原始密钥默认保持脱敏。',
+    '请使用当前商户密钥完成请求签名，页面默认保持密钥脱敏展示。',
   'merchant sign key reset successfully': '商户签名密钥已重置',
   'merchant api key reset successfully': '商户接口密钥已重置',
   'merchant appkey reset successfully': '商户通讯密钥已重置',
@@ -142,7 +141,7 @@ const EXACT_MAP: Record<string, string> = {
   'username and password are required': '请输入账号和密码',
   'username or password is incorrect': '账号或密码错误',
   'captcha verification is not migrated for webman merchant login yet':
-    '当前登录入口不提供验证码登录，请使用账号密码进入商户后台。',
+    '当前登录入口采用账号密码方式，请使用账号密码进入商户后台。',
   'only username/password merchant login is migrated in webman': '当前登录方式为账号密码登录。',
   'google verification is required before webman direct merchant login can continue':
     '当前账户需要先完成谷歌验证后才能继续登录。',
@@ -152,7 +151,7 @@ const EXACT_MAP: Record<string, string> = {
   'face verification via wechat or alipay': '通过微信或支付宝进行人脸核验',
   'alipay identity authorization': '支付宝身份授权',
   'quick-login unbind is live in webman. fresh oauth bind flows still follow the legacy route during migration.':
-    '快捷登录解绑可在当前商户中心完成，新授权绑定请使用授权入口。',
+    '快捷登录解绑可在当前商户中心完成，新授权绑定请使用对应授权入口。',
   'unavailable because the global recharge mapping or upstream paylist is missing.':
     '当前未配置全局充值映射或可用支付通道。',
   'merchant recharge creation and payment handoff are not migrated for webman merchant center yet':
@@ -160,14 +159,15 @@ const EXACT_MAP: Record<string, string> = {
   'merchant connection bind-code, qr enrollment, and email/mobile verification flows are not migrated for webman merchant center yet':
     '绑定中心总览仅显示当前状态；绑定、解绑、验证码与扫码请使用对应操作入口。',
   'merchant order callback replay and status reset flows are not migrated for webman merchant center yet':
-    '订单回调重放与状态重置暂未在当前页面开放。',
+    '订单页当前已支持回调重放，状态重置入口已关闭。',
   'merchant cdk recharge feature is disabled': '卡密充值功能未开启',
-  'merchant cdk redemption is not migrated for webman merchant center yet': '卡密兑换当前暂未开放。',
+  'merchant cdk redemption is not migrated for webman merchant center yet':
+    '卡密兑换入口正在整理中，请使用系统提供的兑换入口。',
   'recharge amount is required': '请输入充值金额',
   'recharge method is invalid': '充值方式无效',
-  'selected recharge method is not available': '所选充值方式当前不可用',
-  '会员排序联调': '会员套餐示例',
-  '卡券联调会员': '卡券会员套餐'
+  'selected recharge method is not available': '所选充值方式当前未接入可用通道',
+  会员排序联调: '会员套餐测试',
+  卡券联调会员: '卡券会员套餐'
 }
 
 const REGEX_RULES: Array<[RegExp, string]> = [
@@ -177,10 +177,10 @@ const REGEX_RULES: Array<[RegExp, string]> = [
   [/\blegacy smoke upstream\b/gi, '支付通道'],
   [/\bupstream channel\b/gi, '支付通道'],
   [/\blocal channel\b/gi, '本地通道'],
-  [/\blegacy_epay_smoke_[a-z0-9_]+\b/gi, '示例商户账号'],
-  [/\bmerchant_batch_delete_smoke_[a-z0-9_]+\b/gi, '示例商户账号'],
-  [/\bsmoke_account_[a-z0-9_]+\b/gi, '示例收款账号'],
-  [/\bmerchant_impersonation_smoke_[a-z0-9_]+\b/gi, '商户代登示例账号'],
+  [/\blegacy_epay_smoke_[a-z0-9_]+\b/gi, '测试商户账号'],
+  [/\bmerchant_batch_delete_smoke_[a-z0-9_]+\b/gi, '测试商户账号'],
+  [/\bsmoke_account_[a-z0-9_]+\b/gi, '测试收款账号'],
+  [/\bmerchant_impersonation_smoke_[a-z0-9_]+\b/gi, '商户代登测试账号'],
   [/\bmerchant #(\d+)\b/gi, '商户 #$1'],
   [/\bvip #(\d+)\b/gi, '会员 #$1'],
   [/\bcategory #(\d+)\b/gi, '分类 #$1'],
@@ -194,13 +194,13 @@ const REGEX_RULES: Array<[RegExp, string]> = [
 ]
 
 const IDENTITY_FIXTURE_RULES: Array<[RegExp, string]> = [
-  [/^art_merchant_demo$/i, '演示商户账号'],
-  [/^legacy_epay_smoke_[a-z0-9_]+$/i, '示例商户账号'],
-  [/^merchant_batch_delete_smoke_[a-z0-9_]+$/i, '示例商户账号'],
-  [/^smoke_account_[a-z0-9_]+$/i, '示例收款账号'],
-  [/^merchant_impersonation_smoke_[a-z0-9_]+$/i, '商户代登示例账号'],
-  [/^smoke_[a-z0-9_]+$/i, '示例账号'],
-  [/^legacy_[a-z0-9_]+$/i, '系统历史账号'],
+  [/^art_merchant_demo$/i, '测试商户账号'],
+  [/^legacy_epay_smoke_[a-z0-9_]+$/i, '测试商户账号'],
+  [/^merchant_batch_delete_smoke_[a-z0-9_]+$/i, '测试商户账号'],
+  [/^smoke_account_[a-z0-9_]+$/i, '测试收款账号'],
+  [/^merchant_impersonation_smoke_[a-z0-9_]+$/i, '商户代登测试账号'],
+  [/^smoke_[a-z0-9_]+$/i, '测试账号'],
+  [/^legacy_[a-z0-9_]+$/i, '系统账号'],
   [/^[a-f0-9]{20,}$/i, '系统账号']
 ]
 
@@ -231,10 +231,26 @@ function normalizeMerchantText(value: string) {
   return tryDecodeLatin1Utf8(value).trim()
 }
 
+function cleanupMerchantVisibleWords(value: string) {
+  return value
+    .replace(/演示邮箱已脱敏/g, '脱敏邮箱')
+    .replace(/示例联系邮箱/g, '脱敏联系邮箱')
+    .replace(/示例邮箱/g, '脱敏邮箱')
+    .replace(/风控示例地址/g, '风控测试地址')
+    .replace(/风控示例域名/g, '风控测试域名')
+    .replace(/示例地址/g, '脱敏地址')
+    .replace(/演示/g, '测试')
+    .replace(/示例/g, '测试')
+    .replace(/旧版/g, '原有')
+    .replace(/联调/g, '测试')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
 function translateKnownMerchantText(raw: string) {
   const mapped = EXACT_MAP[raw.toLowerCase()]
   if (mapped) {
-    return mapped
+    return cleanupMerchantVisibleWords(mapped)
   }
 
   let result = raw
@@ -242,13 +258,13 @@ function translateKnownMerchantText(raw: string) {
     result = result.replace(pattern, replacement)
   }
 
-  return result
+  return cleanupMerchantVisibleWords(result)
 }
 
 function matchMerchantIdentityFixture(raw: string) {
   for (const [pattern, label] of IDENTITY_FIXTURE_RULES) {
     if (pattern.test(raw)) {
-      return label
+      return cleanupMerchantVisibleWords(label)
     }
   }
 
@@ -266,7 +282,7 @@ function matchMerchantIdentityFixture(raw: string) {
 function matchMerchantRecordFixture(raw: string) {
   for (const [pattern, label] of RECORD_FIXTURE_RULES) {
     if (pattern.test(raw)) {
-      return label
+      return cleanupMerchantVisibleWords(label)
     }
   }
 
@@ -429,7 +445,7 @@ export function formatMerchantContactValue(
     const [localPart, domainPart = ''] = raw.split('@')
     if (localPart && domainPart) {
       if (/example\.com$/i.test(domainPart)) {
-        return '演示邮箱已脱敏'
+        return '脱敏邮箱'
       }
       const safeLocal =
         localPart.length <= 2 ? `${localPart[0] || '*'}*` : `${localPart.slice(0, 2)}***`

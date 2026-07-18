@@ -6,6 +6,7 @@ use app\controller\concerns\AdminControllerFormatSupport;
 use app\support\AdminRouteAuthorization;
 use app\support\AdminFrontLogFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\RequestPayload;
 use Illuminate\Database\Query\Builder;
 use support\Db;
@@ -230,7 +231,7 @@ class FrontLogController
     private function frontLogQuery(): Builder
     {
         return Db::table('admin_front_log')
-            ->leftJoin('ypay_user', 'admin_front_log.uid', '=', 'ypay_user.id')
+            ->leftJoin(BusinessTable::user('merchant'), 'admin_front_log.uid', '=', 'merchant.id')
             ->select(
                 'admin_front_log.id',
                 'admin_front_log.uid as user_id',
@@ -240,10 +241,10 @@ class FrontLogController
                 'admin_front_log.ip',
                 'admin_front_log.user_agent',
                 'admin_front_log.create_time',
-                'ypay_user.username as merchant_username',
-                'ypay_user.name as merchant_name',
-                'ypay_user.email as merchant_email',
-                'ypay_user.mobile as merchant_mobile'
+                'merchant.username as merchant_username',
+                'merchant.name as merchant_name',
+                'merchant.email as merchant_email',
+                'merchant.mobile as merchant_mobile'
             );
     }
 
@@ -253,10 +254,10 @@ class FrontLogController
         if ($keyword !== '') {
             $query->where(function (Builder $builder) use ($keyword): void {
                 $builder
-                    ->where('ypay_user.username', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.name', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.email', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.mobile', 'like', '%' . $keyword . '%')
+                    ->where('merchant.username', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.name', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.email', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.mobile', 'like', '%' . $keyword . '%')
                     ->orWhere('admin_front_log.url', 'like', '%' . $keyword . '%')
                     ->orWhere('admin_front_log.ip', 'like', '%' . $keyword . '%')
                     ->orWhere('admin_front_log.desc', 'like', '%' . $keyword . '%');
@@ -411,15 +412,15 @@ class FrontLogController
                 $missingLogIds[] = $logId;
                 $items[] = [
                     'log_id' => $logId,
-                    'log_label' => 'Front log #' . $logId,
+                    'log_label' => '前台日志 #' . $logId,
                     'exists' => false,
                     'can_delete' => false,
                     'merchant_id' => 0,
-                    'merchant_display' => 'Missing log',
+                    'merchant_display' => '日志缺失',
                     'path' => '--',
                     'ip' => '',
                     'has_payload' => false,
-                    'blocking_reasons' => ['This front log no longer exists. Refresh the selection and try again.'],
+                    'blocking_reasons' => ['当前前台日志已不存在，请刷新选择列表后重试。'],
                     'warnings' => [],
                     'summary' => [
                         'delete_row_count' => 0,
@@ -465,13 +466,13 @@ class FrontLogController
         $warnings = [];
         if ($summary['missing_count'] > 0) {
             $warnings[] = sprintf(
-                '%d selected front log record(s) no longer exist and blocked the batch delete.',
+                '%d 条已选前台日志已不存在，当前批量删除已被拦截。',
                 $summary['missing_count']
             );
         }
         if ($summary['payload_log_count'] > 0) {
             $warnings[] = sprintf(
-                '%d selected front log record(s) include captured request payloads.',
+                '%d 条已选前台日志包含请求载荷内容。',
                 $summary['payload_log_count']
             );
         }
@@ -511,12 +512,12 @@ class FrontLogController
 
         $warnings = [];
         if ($summary['total_count'] === 0) {
-            $warnings[] = 'No front log rows are available for cleanup.';
+            $warnings[] = '当前没有可清理的前台日志记录。';
         } else {
-            $warnings[] = 'This permanently removes every merchant front-log row and resets the table state.';
+            $warnings[] = '执行后会永久清空全部商户前台日志，并重置日志表状态。';
             if ($summary['payload_log_count'] > 0) {
                 $warnings[] = sprintf(
-                    '%d front log row(s) include captured request payloads that will also be removed.',
+                    '%d 条前台日志包含请求载荷内容，清理时也会一并移除。',
                     $summary['payload_log_count']
                 );
             }
@@ -595,12 +596,12 @@ class FrontLogController
             return $merchantDisplay . ' / ' . ($path === '' ? '/' : $path);
         }
 
-        return $path === '' ? ('Front log #' . (int)($record['id'] ?? 0)) : $path;
+        return $path === '' ? ('前台日志 #' . (int)($record['id'] ?? 0)) : $path;
     }
 
     private function frontLogDeleteConfirmationPhrase(int $logId): string
     {
-        return 'DELETE FRONT LOG ' . $logId;
+        return '删除前台日志 ' . $logId;
     }
 
     /**
@@ -609,7 +610,7 @@ class FrontLogController
     private function batchFrontLogDeleteConfirmationPhrase(array $logIds): string
     {
         return sprintf(
-            'DELETE FRONT LOG BATCH %d-%s',
+            '批量删除前台日志 %d-%s',
             count($logIds),
             strtoupper(substr(md5(implode(',', $logIds)), 0, 6))
         );
@@ -670,7 +671,7 @@ class FrontLogController
                 $label = trim((string)($item['log_label'] ?? ''));
                 $logId = (int)($item['log_id'] ?? 0);
 
-                return $label !== '' ? $label : ('Front log #' . $logId);
+                return $label !== '' ? $label : ('前台日志 #' . $logId);
             },
             array_values(array_filter(
                 (array)($audit['items'] ?? []),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace app\controller;
 
+use app\support\ApiResponse;
 use Plugins\Payments\WxpayV3\Support\WxpayV3NotifyException;
 use Plugins\Payments\WxpayV3\Support\WxpayV3NotifySupport;
 use Throwable;
@@ -15,7 +16,7 @@ final class WxpayV3NotifyController
     public function notify(Request $request): Response
     {
         if (strtoupper($request->method()) !== 'POST') {
-            return $this->failure('POST is required', 405);
+            return $this->failure('请求方式必须为 POST', 405);
         }
 
         try {
@@ -33,7 +34,7 @@ final class WxpayV3NotifyController
         } catch (WxpayV3NotifyException $exception) {
             return $this->failure($exception->getMessage(), $exception->httpStatus());
         } catch (Throwable) {
-            return $this->failure('temporary processing failure', 500);
+            return $this->failure('系统暂时处理失败', 500);
         }
     }
 
@@ -41,7 +42,7 @@ final class WxpayV3NotifyController
     {
         return json([
             'code' => 'FAIL',
-            'message' => $message,
+            'message' => ApiResponse::normalizeText($message),
         ], JSON_UNESCAPED_SLASHES)->withStatus($status);
     }
 }

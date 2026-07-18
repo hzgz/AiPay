@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Plugins\Payments\AlipayOfficial\Support;
 
+use app\support\BusinessTable;
 use app\service\order\OrderCallbackTaskService;
 use InvalidArgumentException;
-use Plugins\Payments\Shared\Legacy\LegacyEpayOrderRepository;
+use Plugins\Payments\Shared\EpayProtocol\EpayOrderRepository;
 use RuntimeException;
 use support\Db;
 
@@ -16,7 +17,7 @@ final class AlipayOfficialNotifySupport
     private const PAID_STATUS = 'TRADE_SUCCESS';
 
     public function __construct(
-        private readonly LegacyEpayOrderRepository $orders = new LegacyEpayOrderRepository(),
+        private readonly EpayOrderRepository $orders = new EpayOrderRepository(),
         private readonly OrderCallbackTaskService $callbackTasks = new OrderCallbackTaskService()
     ) {
     }
@@ -30,18 +31,18 @@ final class AlipayOfficialNotifySupport
         $payload = $this->normalizePayload($payload);
         $outTradeNo = trim((string)($payload['out_trade_no'] ?? ''));
         if ($outTradeNo === '') {
-            throw new InvalidArgumentException('out_trade_no is required');
+            throw new InvalidArgumentException('商户订单号不能为空');
         }
 
         $order = $this->orders->findByOutTradeNo($outTradeNo);
         if ($order === null) {
-            throw new RuntimeException('order was not found');
+            throw new RuntimeException('订单不存在');
         }
 
         $account = $this->loadBoundAccount($order);
         $publicKey = trim((string)($account['cookie'] ?? ''));
         if ($publicKey === '' || !$this->verifySignature($payload, $publicKey)) {
-            throw new RuntimeException('Alipay signature verification failed');
+            throw new RuntimeException('支付宝签名校验失败');
         }
 
         $this->assertAppIdMatches($payload, $account);
@@ -49,18 +50,18 @@ final class AlipayOfficialNotifySupport
 
         $tradeStatus = strtoupper(trim((string)($payload['trade_status'] ?? '')));
         if ($tradeStatus !== self::PAID_STATUS) {
-            throw new RuntimeException('Alipay trade is not paid');
+            throw new RuntimeException('支付宝订单未支付成功');
         }
 
         $transactionId = trim((string)($payload['trade_no'] ?? ''));
         if ($transactionId === '') {
-            throw new InvalidArgumentException('Alipay trade_no is required');
+            throw new InvalidArgumentException('支付宝交易号不能为空');
         }
         $this->assertReplayTransactionMatches($order, $transactionId);
 
         $merchant = $this->loadMerchant((int)($order['user_id'] ?? 0));
         if ($merchant === null) {
-            throw new RuntimeException('merchant was not found');
+            throw new RuntimeException('商户不存在');
         }
 
         $settlement = $this->orders->settlePaidOrder($order, $merchant, [
@@ -160,7 +161,7 @@ final class AlipayOfficialNotifySupport
         $normalized = [];
         foreach ($payload as $name => $value) {
             if (!is_string($name) || (!is_scalar($value) && $value !== null)) {
-                throw new InvalidArgumentException('Alipay callback payload is invalid');
+                throw new InvalidArgumentException('支付宝回调参数格式不正确');
             }
 
             $normalized[$name] = $value === null ? '' : (string)$value;
@@ -177,29 +178,29 @@ final class AlipayOfficialNotifySupport
     {
         $accountId = (int)($order['account_id'] ?? 0);
         if ($accountId <= 0) {
-            throw new RuntimeException('order has no bound payment account');
+            throw new RuntimeException('订单未绑定收款账号');
         }
 
-        $row = Db::table('ypay_account')
+        $row = Db::table(BusinessTable::account())
             ->select('id', 'user_id', 'code', 'type', 'wxname', 'zfb_pid', 'cookie', 'status')
             ->where('id', $accountId)
             ->first();
         if (!$row) {
-            throw new RuntimeException('payment account was not found');
+            throw new RuntimeException('收款账号不存在');
         }
 
         $account = (array)$row;
         $code = strtolower(trim((string)($account['code'] ?? '')));
         if (!in_array($code, self::CHANNEL_CODES, true)) {
-            throw new RuntimeException('payment account does not accept Alipay official callbacks');
+            throw new RuntimeException('当前收款账号不支持支付宝官方版回调');
         }
 
         if ((int)($account['user_id'] ?? 0) !== (int)($order['user_id'] ?? 0)) {
-            throw new RuntimeException('payment account is not bound to the order merchant');
+            throw new RuntimeException('收款账号不属于当前订单商户');
         }
 
         if (strtolower(trim((string)($order['type'] ?? ''))) !== 'alipay') {
-            throw new RuntimeException('order payment type is not Alipay');
+            throw new RuntimeException('当前订单支付方式不是支付宝');
         }
 
         $account['code'] = $code;
@@ -216,7 +217,7 @@ final class AlipayOfficialNotifySupport
         $expected = trim((string)($account['wxname'] ?? ''));
         $received = trim((string)($payload['app_id'] ?? ''));
         if ($expected === '' || $received === '' || !hash_equals($expected, $received)) {
-            throw new RuntimeException('Alipay app_id does not match the payment account');
+            throw new RuntimeException('支付宝应用ID与收款账号配置不一致');
         }
     }
 
@@ -234,7 +235,7 @@ final class AlipayOfficialNotifySupport
         $expected = $this->amountInCents($expectedValue);
 
         if ($received === null || $expected === null || $received !== $expected) {
-            throw new RuntimeException('Alipay total_amount does not match the order');
+            throw new RuntimeException('支付宝回调金额与订单不一致');
         }
     }
 
@@ -249,7 +250,7 @@ final class AlipayOfficialNotifySupport
 
         $storedTransactionId = trim((string)($order['alipay_order_no'] ?? ''));
         if ($storedTransactionId !== '' && !hash_equals($storedTransactionId, $transactionId)) {
-            throw new RuntimeException('Alipay trade_no does not match the settled order');
+            throw new RuntimeException('支付宝交易号与已落账订单不一致');
         }
     }
 
@@ -311,7 +312,7 @@ final class AlipayOfficialNotifySupport
             return null;
         }
 
-        $row = Db::table('ypay_user')
+        $row = Db::table(BusinessTable::user())
             ->select('id', 'username', 'user_key')
             ->where('id', $merchantId)
             ->first();

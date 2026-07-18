@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace app\service\order;
 
+use app\support\BusinessTable;
 use app\support\LegacyHttpClient;
-use Plugins\Payments\Shared\Legacy\LegacyEpayOrderRepository;
+use Plugins\Payments\Shared\EpayProtocol\EpayOrderRepository;
 use RuntimeException;
 use support\Db;
 
 final class OrderCallbackTaskService
 {
-    private const TABLE = 'ypay_order_callback_task';
     private const MERCHANT_TEST_ORDER_MEMOS = ['merchant_channel_test_pay', 'merchant_channel_test_paid'];
     private const STALE_LOCK_SECONDS = 180;
     private const RETRY_DELAYS = [5, 15, 30, 60, 120, 300];
 
     public function __construct(
         private readonly OrderCallbackBuilder $builder = new OrderCallbackBuilder(),
-        private readonly LegacyEpayOrderRepository $orders = new LegacyEpayOrderRepository()
+        private readonly EpayOrderRepository $orders = new EpayOrderRepository()
     ) {
     }
 
@@ -32,7 +32,7 @@ final class OrderCallbackTaskService
     {
         $orderId = (int)($order['id'] ?? 0);
         if ($orderId <= 0) {
-            throw new RuntimeException('order id is required when enqueueing merchant callback');
+            throw new RuntimeException('创建商户回调任务时缺少订单ID');
         }
 
         if ($this->isMerchantChannelTestOrder($order)) {
@@ -54,7 +54,7 @@ final class OrderCallbackTaskService
 
         $merchant = $merchant ?? $this->loadMerchant((int)($order['user_id'] ?? 0));
         if ($merchant === null) {
-            throw new RuntimeException('merchant was not found for callback enqueue');
+            throw new RuntimeException('创建商户回调任务时未找到商户');
         }
 
         $urls = $this->builder->buildUrls($order, $merchant);
@@ -85,7 +85,7 @@ final class OrderCallbackTaskService
             : sprintf('order:%d:merchant_notify:%s', $orderId, $scene);
 
         if (!$forceNew) {
-            $existing = Db::table(self::TABLE)->where('task_key', $taskKey)->first();
+            $existing = Db::table(self::table())->where('task_key', $taskKey)->first();
             if ($existing) {
                 $existingRecord = (array)$existing;
                 $status = trim((string)($existingRecord['status'] ?? ''));
@@ -94,7 +94,7 @@ final class OrderCallbackTaskService
                     return $this->taskSummary($existingRecord, true);
                 }
 
-                Db::table(self::TABLE)
+                Db::table(self::table())
                     ->where('id', (int)($existingRecord['id'] ?? 0))
                     ->update([
                         'status' => 'pending',
@@ -114,7 +114,7 @@ final class OrderCallbackTaskService
 
                 $this->updateOrderMemo($orderId, 'merchant_callback_queued');
 
-                $reloaded = Db::table(self::TABLE)
+                $reloaded = Db::table(self::table())
                     ->where('id', (int)($existingRecord['id'] ?? 0))
                     ->first();
 
@@ -152,10 +152,10 @@ final class OrderCallbackTaskService
             'update_time' => $this->now(),
         ];
 
-        $inserted = (int)Db::table(self::TABLE)->insertOrIgnore($insert);
-        $stored = Db::table(self::TABLE)->where('task_key', $taskKey)->first();
+        $inserted = (int)Db::table(self::table())->insertOrIgnore($insert);
+        $stored = Db::table(self::table())->where('task_key', $taskKey)->first();
         if (!$stored) {
-            throw new RuntimeException('Failed to persist merchant callback task');
+            throw new RuntimeException('商户回调任务写入失败');
         }
         $insert = (array)$stored;
         $this->updateOrderMemo($orderId, 'merchant_callback_queued');
@@ -176,7 +176,7 @@ final class OrderCallbackTaskService
             $now = $this->now();
             $staleAt = $this->dateTime(time() - self::STALE_LOCK_SECONDS);
 
-            $row = Db::table(self::TABLE)
+            $row = Db::table(self::table())
                 ->where(function ($query) use ($now, $staleAt) {
                     $query
                         ->whereIn('status', ['pending', 'retry'])
@@ -200,7 +200,7 @@ final class OrderCallbackTaskService
             $task = (array)$row;
             $attemptCount = (int)($task['attempt_count'] ?? 0) + 1;
 
-            Db::table(self::TABLE)
+            Db::table(self::table())
                 ->where('id', (int)($task['id'] ?? 0))
                 ->update([
                     'status' => 'running',
@@ -262,7 +262,7 @@ final class OrderCallbackTaskService
         $taskId = (int)($task['id'] ?? 0);
         $orderId = (int)($task['order_id'] ?? 0);
 
-        Db::table(self::TABLE)
+        Db::table(self::table())
             ->where('id', $taskId)
             ->update([
                 'status' => 'success',
@@ -300,7 +300,7 @@ final class OrderCallbackTaskService
             $lastError = 'unexpected_http_status';
         }
 
-        Db::table(self::TABLE)
+        Db::table(self::table())
             ->where('id', $taskId)
             ->update([
                 'status' => $status,
@@ -343,16 +343,16 @@ final class OrderCallbackTaskService
     private function dispatchTaskNow(int $taskId, bool $deduplicated): array
     {
         if ($taskId <= 0) {
-            throw new RuntimeException('callback task id is required for synchronous dispatch');
+            throw new RuntimeException('同步派发回调任务时缺少回调任务ID');
         }
 
         $task = Db::transaction(function () use ($taskId): array {
-            $row = Db::table(self::TABLE)
+            $row = Db::table(self::table())
                 ->where('id', $taskId)
                 ->lockForUpdate()
                 ->first();
             if (!$row) {
-                throw new RuntimeException('callback task was not found for synchronous dispatch');
+                throw new RuntimeException('同步派发回调任务时未找到回调任务');
             }
 
             $task = (array)$row;
@@ -364,7 +364,7 @@ final class OrderCallbackTaskService
             $attemptCount = (int)($task['attempt_count'] ?? 0) + 1;
             $now = $this->now();
 
-            Db::table(self::TABLE)
+            Db::table(self::table())
                 ->where('id', $taskId)
                 ->update([
                     'status' => 'running',
@@ -419,7 +419,7 @@ final class OrderCallbackTaskService
             return null;
         }
 
-        $row = Db::table('ypay_user')
+        $row = Db::table(BusinessTable::user())
             ->select('id', 'username', 'user_key')
             ->where('id', $merchantId)
             ->first();
@@ -442,12 +442,17 @@ final class OrderCallbackTaskService
             return;
         }
 
-        Db::table('ypay_order')
+        Db::table(BusinessTable::order())
             ->where('id', $orderId)
             ->update([
                 'api_memo' => $memo,
                 'update_time' => $this->now(),
             ]);
+    }
+
+    private static function table(): string
+    {
+        return BusinessTable::orderCallbackTask();
     }
 
     /**

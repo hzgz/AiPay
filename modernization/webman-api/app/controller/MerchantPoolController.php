@@ -7,6 +7,7 @@ use app\support\AdminOrderFormatter;
 use app\support\AdminPaymentPoolFormatter;
 use app\support\AdminVipFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\FrontendUrlBuilder;
 use app\support\MerchantFrontSession;
 use app\support\RequestPayload;
@@ -37,9 +38,9 @@ class MerchantPoolController
         $query = $this->poolQuery($merchantId);
         $this->applyFilters($query, $request);
 
-        $total = (int)(clone $query)->count('ypay_poll_pool.id');
+        $total = (int)(clone $query)->count('pool.id');
         $rows = $query
-            ->orderByDesc('ypay_poll_pool.id')
+            ->orderByDesc('pool.id')
             ->offset(($current - 1) * $size)
             ->limit($size)
             ->get()
@@ -121,7 +122,7 @@ class MerchantPoolController
 
         $merchantId = (int)($merchant['id'] ?? 0);
         $now = date('Y-m-d H:i:s');
-        $poolId = (int)Db::table('ypay_poll_pool')->insertGetId([
+        $poolId = (int)Db::table(BusinessTable::pollPool())->insertGetId([
             'user_id' => $merchantId,
             'name' => $name,
             'type' => $type,
@@ -175,7 +176,7 @@ class MerchantPoolController
             return $this->merchantError($exception->getMessage(), 422, 201);
         }
 
-        Db::table('ypay_poll_pool')
+        Db::table(BusinessTable::pollPool())
             ->where('id', $id)
             ->where('user_id', $merchantId)
             ->update([
@@ -217,7 +218,7 @@ class MerchantPoolController
             return $this->merchantError($exception->getMessage(), 422, 201);
         }
 
-        Db::table('ypay_poll_pool')
+        Db::table(BusinessTable::pollPool())
             ->where('id', $id)
             ->where('user_id', $merchantId)
             ->update([
@@ -277,7 +278,7 @@ class MerchantPoolController
         }
 
         if ($channels !== []) {
-            $validAccountIds = Db::table('ypay_account')
+            $validAccountIds = Db::table(BusinessTable::account())
                 ->where('user_id', $merchantId)
                 ->where('type', trim((string)($record['type'] ?? '')))
                 ->whereIn('id', array_column($channels, 'account_id'))
@@ -295,7 +296,7 @@ class MerchantPoolController
 
         $now = date('Y-m-d H:i:s');
         Db::transaction(function () use ($id, $merchantId, $channels, $now): void {
-            Db::table('ypay_poll_pool_item')
+            Db::table(BusinessTable::pollPoolItem())
                 ->where('pool_id', $id)
                 ->where('user_id', $merchantId)
                 ->delete();
@@ -313,10 +314,10 @@ class MerchantPoolController
                     ];
                 }, $channels);
 
-                Db::table('ypay_poll_pool_item')->insert($rows);
+                Db::table(BusinessTable::pollPoolItem())->insert($rows);
             }
 
-            Db::table('ypay_poll_pool')
+            Db::table(BusinessTable::pollPool())
                 ->where('id', $id)
                 ->where('user_id', $merchantId)
                 ->update([
@@ -409,11 +410,11 @@ class MerchantPoolController
         }
 
         Db::transaction(function () use ($id, $merchantId): void {
-            Db::table('ypay_poll_pool_item')
+            Db::table(BusinessTable::pollPoolItem())
                 ->where('pool_id', $id)
                 ->where('user_id', $merchantId)
                 ->delete();
-            Db::table('ypay_poll_pool')
+            Db::table(BusinessTable::pollPool())
                 ->where('id', $id)
                 ->where('user_id', $merchantId)
                 ->delete();
@@ -428,24 +429,24 @@ class MerchantPoolController
 
     private function poolQuery(int $merchantId): Builder
     {
-        return Db::table('ypay_poll_pool')
-            ->leftJoin('ypay_user', 'ypay_poll_pool.user_id', '=', 'ypay_user.id')
+        return Db::table(BusinessTable::pollPool('pool'))
+            ->leftJoin(BusinessTable::user('merchant'), 'pool.user_id', '=', 'merchant.id')
             ->select(
-                'ypay_poll_pool.id',
-                'ypay_poll_pool.user_id',
-                'ypay_poll_pool.name',
-                'ypay_poll_pool.type',
-                'ypay_poll_pool.round_type',
-                'ypay_poll_pool.status',
-                'ypay_poll_pool.current_index',
-                'ypay_poll_pool.current_weight',
-                'ypay_poll_pool.last_account_id',
-                'ypay_poll_pool.create_time',
-                'ypay_poll_pool.update_time',
-                'ypay_user.username as merchant_username',
-                'ypay_user.name as merchant_name'
+                'pool.id',
+                'pool.user_id',
+                'pool.name',
+                'pool.type',
+                'pool.round_type',
+                'pool.status',
+                'pool.current_index',
+                'pool.current_weight',
+                'pool.last_account_id',
+                'pool.create_time',
+                'pool.update_time',
+                'merchant.username as merchant_username',
+                'merchant.name as merchant_name'
             )
-            ->where('ypay_poll_pool.user_id', $merchantId);
+            ->where('pool.user_id', $merchantId);
     }
 
     private function applyFilters(Builder $query, Request $request): void
@@ -454,30 +455,30 @@ class MerchantPoolController
         if ($keyword !== '') {
             $query->where(function (Builder $builder) use ($keyword) {
                 $builder
-                    ->where('ypay_poll_pool.name', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_poll_pool.type', 'like', '%' . $keyword . '%');
+                    ->where('pool.name', 'like', '%' . $keyword . '%')
+                    ->orWhere('pool.type', 'like', '%' . $keyword . '%');
 
                 if (ctype_digit($keyword)) {
                     $builder
-                        ->orWhere('ypay_poll_pool.id', (int)$keyword)
-                        ->orWhere('ypay_poll_pool.last_account_id', (int)$keyword);
+                        ->orWhere('pool.id', (int)$keyword)
+                        ->orWhere('pool.last_account_id', (int)$keyword);
                 }
             });
         }
 
         $type = trim((string)$request->get('type', ''));
         if ($type !== '') {
-            $query->where('ypay_poll_pool.type', $type);
+            $query->where('pool.type', $type);
         }
 
         $roundType = trim((string)$request->get('round_type', ''));
         if (in_array($roundType, ['1', '2'], true)) {
-            $query->where('ypay_poll_pool.round_type', (int)$roundType);
+            $query->where('pool.round_type', (int)$roundType);
         }
 
         $status = trim((string)$request->get('status', ''));
         if (in_array($status, ['0', '1'], true)) {
-            $query->where('ypay_poll_pool.status', (int)$status);
+            $query->where('pool.status', (int)$status);
         }
     }
 
@@ -485,7 +486,7 @@ class MerchantPoolController
     {
         $merchantId = (int)($merchant['id'] ?? 0);
         $rows = (clone $query)
-            ->select('ypay_poll_pool.id')
+            ->select('pool.id')
             ->get()
             ->toArray();
 
@@ -524,8 +525,8 @@ class MerchantPoolController
             'merchant_username' => trim((string)($merchant['username'] ?? '')),
             'vip_label' => $vipPackage['name'] ?? (trim((string)($merchant['vip_name'] ?? '')) ?: '普通商户'),
             'total_count' => count($poolIds),
-            'enabled_count' => (int)(clone $query)->where('ypay_poll_pool.status', 1)->count('ypay_poll_pool.id'),
-            'disabled_count' => (int)(clone $query)->where('ypay_poll_pool.status', '<>', 1)->count('ypay_poll_pool.id'),
+            'enabled_count' => (int)(clone $query)->where('pool.status', 1)->count('pool.id'),
+            'disabled_count' => (int)(clone $query)->where('pool.status', '<>', 1)->count('pool.id'),
             'configured_pool_count' => $configuredPoolCount,
             'empty_pool_count' => $emptyPoolCount,
             'configured_channel_count' => $configuredChannelCount,
@@ -548,7 +549,7 @@ class MerchantPoolController
 
     private function buildCatalog(int $merchantId): array
     {
-        $methodRows = Db::table('ypay_payment')
+        $methodRows = Db::table(BusinessTable::payment())
             ->select('id', 'name', 'type', 'status', 'sort')
             ->where('status', 1)
             ->orderBy('sort')
@@ -570,7 +571,7 @@ class MerchantPoolController
             ];
         }, $methodRows);
 
-        $knownTypes = Db::table('ypay_account')
+        $knownTypes = Db::table(BusinessTable::account())
             ->where('user_id', $merchantId)
             ->select('type')
             ->distinct()
@@ -622,7 +623,7 @@ class MerchantPoolController
             return [];
         }
 
-        $rows = Db::table('ypay_poll_pool_item')
+        $rows = Db::table(BusinessTable::pollPoolItem())
             ->select('id', 'pool_id', 'account_id', 'weight', 'sort', 'create_time', 'update_time')
             ->whereIn('pool_id', $poolIds)
             ->orderBy('sort')
@@ -711,19 +712,19 @@ class MerchantPoolController
             return [];
         }
 
-        $rows = Db::table('ypay_account')
-            ->leftJoin('admin_channel', 'ypay_account.code', '=', 'admin_channel.code')
+        $rows = Db::table(BusinessTable::account('account'))
+            ->leftJoin('admin_channel', 'account.code', '=', 'admin_channel.code')
             ->select(
-                'ypay_account.id',
-                'ypay_account.code',
-                'ypay_account.type',
-                'ypay_account.memo',
-                'ypay_account.status',
-                'ypay_account.is_status',
-                'ypay_account.update_time',
+                'account.id',
+                'account.code',
+                'account.type',
+                'account.memo',
+                'account.status',
+                'account.is_status',
+                'account.update_time',
                 'admin_channel.name as channel_name'
             )
-            ->whereIn('ypay_account.id', $accountIds)
+            ->whereIn('account.id', $accountIds)
             ->get()
             ->toArray();
 
@@ -836,21 +837,21 @@ class MerchantPoolController
             ];
         }
 
-        $rows = Db::table('ypay_account')
-            ->leftJoin('admin_channel', 'ypay_account.code', '=', 'admin_channel.code')
+        $rows = Db::table(BusinessTable::account('account'))
+            ->leftJoin('admin_channel', 'account.code', '=', 'admin_channel.code')
             ->select(
-                'ypay_account.id',
-                'ypay_account.code',
-                'ypay_account.type',
-                'ypay_account.memo',
-                'ypay_account.status',
-                'ypay_account.is_status',
-                'ypay_account.update_time',
+                'account.id',
+                'account.code',
+                'account.type',
+                'account.memo',
+                'account.status',
+                'account.is_status',
+                'account.update_time',
                 'admin_channel.name as channel_name'
             )
-            ->where('ypay_account.user_id', $merchantId)
-            ->where('ypay_account.type', trim((string)($record['type'] ?? '')))
-            ->orderByDesc('ypay_account.id')
+            ->where('account.user_id', $merchantId)
+            ->where('account.type', trim((string)($record['type'] ?? '')))
+            ->orderByDesc('account.id')
             ->get()
             ->toArray();
 
@@ -972,7 +973,7 @@ class MerchantPoolController
     private function poolRecord(int $merchantId, int $id): ?array
     {
         $row = $this->poolQuery($merchantId)
-            ->where('ypay_poll_pool.id', $id)
+            ->where('pool.id', $id)
             ->first();
 
         return $row ? (array)$row : null;
@@ -985,7 +986,7 @@ class MerchantPoolController
 
     private function paymentTypeExists(string $type): bool
     {
-        return Db::table('ypay_payment')
+        return Db::table(BusinessTable::payment())
             ->where('type', $type)
             ->where('status', 1)
             ->exists();
@@ -1128,7 +1129,7 @@ class MerchantPoolController
 
     private function poolDeleteConfirmationPhrase(int $poolId): string
     {
-        return 'DELETE POOL ' . $poolId;
+        return '删除轮询池 ' . $poolId;
     }
 
     private function merchantFromRequest(Request $request): ?array
@@ -1138,18 +1139,18 @@ class MerchantPoolController
             return null;
         }
 
-        $row = Db::table('ypay_user')
-            ->leftJoin('ypay_vip', 'ypay_user.vip_id', '=', 'ypay_vip.id')
+        $row = Db::table(BusinessTable::user('merchant'))
+            ->leftJoin(BusinessTable::vip('vip'), 'merchant.vip_id', '=', 'vip.id')
             ->select(
-                'ypay_user.id',
-                'ypay_user.username',
-                'ypay_user.vip_id',
-                'ypay_user.vip_time',
-                'ypay_user.is_frozen',
-                'ypay_user.frozen_reason',
-                'ypay_vip.name as vip_name'
+                'merchant.id',
+                'merchant.username',
+                'merchant.vip_id',
+                'merchant.vip_time',
+                'merchant.is_frozen',
+                'merchant.frozen_reason',
+                'vip.name as vip_name'
             )
-            ->where('ypay_user.token', $token)
+            ->where('merchant.token', $token)
             ->first();
 
         return $row ? (array)$row : null;
@@ -1162,7 +1163,7 @@ class MerchantPoolController
             return null;
         }
 
-        $row = Db::table('ypay_vip')
+        $row = Db::table(BusinessTable::vip())
             ->where('id', $vipId)
             ->first();
 

@@ -102,7 +102,7 @@
         :loading="actionLoading === 'cleanup'"
         @click="handleCleanupDuplicateSupervisors"
       >
-        立即清理
+        清理
       </ElButton>
     </div>
 
@@ -113,7 +113,7 @@
     >
       <div class="cleanup-head">
         <div>
-          <h3>重复进程提醒</h3>
+          <h3>重复主服务</h3>
         </div>
 
         <ElButton
@@ -133,10 +133,10 @@
           保留主服务 #{{ cleanupPreview.keep_supervisor_pid }}
         </ElTag>
         <ElTag type="warning" effect="plain">
-          待清理主服务 {{ cleanupPreview.remove_supervisor_pids.length }}
+          待清主服务 {{ cleanupPreview.remove_supervisor_pids.length }}
         </ElTag>
         <ElTag type="warning" effect="plain">
-          待清理子进程 {{ cleanupPreview.remove_worker_pids.length }}
+          待清子进程 {{ cleanupPreview.remove_worker_pids.length }}
         </ElTag>
         <ElTag effect="plain">
           主服务进程 {{ cleanupPreview.current_webman_worker_total }} /
@@ -321,7 +321,7 @@
           <ElTable v-if="supervisors.length" :data="supervisors" class="compact-table">
             <ElTableColumn prop="pid" label="进程序号" width="100" />
             <ElTableColumn prop="started_at" label="启动时间" width="180" />
-            <ElTableColumn label="建议" width="110" align="center">
+            <ElTableColumn label="处理" width="110" align="center">
               <template #default="{ row }">
                 <ElTag :type="supervisorActionType(row.pid)" effect="plain">
                   {{ supervisorActionLabel(row.pid) }}
@@ -431,7 +431,7 @@
       overview.value?.duplicate_cleanup || {
         can_cleanup: false,
         strategy: '',
-        summary: '当前没有检测到可清理的重复主服务进程。',
+        summary: '未检测到可清理的重复主服务。',
         keep_supervisor_pid: null,
         keep_supervisor: null,
         keep_workers: [],
@@ -479,7 +479,7 @@
       return ''
     }
 
-    return `检测到 ${summary.value.supervisor_total} 个主服务实例，存在重复启动，请确认后清理。`
+    return `检测到 ${summary.value.supervisor_total} 个主服务实例，请清理重复进程。`
   })
   const monitorStatusLabel = computed(() => {
     if (monitor.value.paused) {
@@ -540,24 +540,24 @@
   async function handleCleanupDuplicateSupervisors() {
     const preview = cleanupPreview.value
     if (!preview.can_cleanup) {
-      ElMessage.warning('当前没有可清理的重复进程')
+      ElMessage.warning('没有可清理的重复进程')
       return
     }
 
     const summaryLines = [
       preview.summary,
-      `保留主服务：#${preview.keep_supervisor_pid || '--'}`,
-      `待清理主服务：${preview.remove_supervisor_pids.length} 个`,
-      `待清理子进程：${preview.remove_worker_pids.length} 个`
+      `保留：#${preview.keep_supervisor_pid || '--'}`,
+      `待清主服务：${preview.remove_supervisor_pids.length} 个`,
+      `待清子进程：${preview.remove_worker_pids.length} 个`
     ]
 
     if (preview.warnings.length) {
       summaryLines.push(`注意：${preview.warnings.join('；')}`)
     }
 
-    await ElMessageBox.confirm(summaryLines.join('\n'), '清理重复进程', {
+    await ElMessageBox.confirm(summaryLines.join('\n'), '清理重复主服务', {
       type: 'warning',
-      confirmButtonText: '确认清理',
+      confirmButtonText: '确认',
       cancelButtonText: '取消'
     })
 
@@ -579,7 +579,7 @@
       return '清理'
     }
 
-    return '观察'
+    return '正常'
   }
 
   function supervisorActionType(pid: number) {

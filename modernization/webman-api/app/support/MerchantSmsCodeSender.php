@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\support;
 
 use Overtrue\EasySms\EasySms;
@@ -29,19 +31,19 @@ class MerchantSmsCodeSender
         $summary = $this->configurationSummary($config);
 
         if (!$summary['enabled']) {
-            throw new \InvalidArgumentException('system mobile verification switch is disabled');
+            throw new \InvalidArgumentException('系统未开启短信验证功能');
         }
 
         if (!$summary['package_installed']) {
-            throw new \InvalidArgumentException('sms package is not installed for webman merchant center');
+            throw new \InvalidArgumentException('当前环境未安装短信发送依赖');
         }
 
         if (($summary['provider'] ?? '') === '') {
-            throw new \InvalidArgumentException('sms verification provider is not supported');
+            throw new \InvalidArgumentException('暂不支持当前短信服务商配置');
         }
 
         if (!$summary['configured']) {
-            throw new \InvalidArgumentException('sms verification provider configuration is incomplete');
+            throw new \InvalidArgumentException('短信服务商配置不完整');
         }
 
         return $summary;
@@ -50,7 +52,7 @@ class MerchantSmsCodeSender
     public function sendCode(string $mobile, string $code, array $config): void
     {
         if (!preg_match('/^1\d{10}$/', $mobile)) {
-            throw new \InvalidArgumentException('mobile format is invalid');
+            throw new \InvalidArgumentException('手机号格式不正确');
         }
 
         $summary = $this->assertReady($config);
@@ -84,7 +86,7 @@ class MerchantSmsCodeSender
         $message = match ($provider) {
             'smsbao' => [
                 'content' => sprintf(
-                    '【%s】您的验证码是%s，验证码5分钟内有效。',
+                    '【%s】您的验证码是 %s，5 分钟内有效。',
                     trim((string)($config['smsbao-SignName'] ?? 'AiPay')),
                     $code
                 ),
@@ -106,13 +108,13 @@ class MerchantSmsCodeSender
         try {
             $result = $easySms->send($mobile, $message);
         } catch (NoGatewayAvailableException $exception) {
-            throw new \RuntimeException('sms verification code sending failed', 0, $exception);
+            throw new \RuntimeException('短信验证码发送失败', 0, $exception);
         } catch (\Throwable $exception) {
-            throw new \RuntimeException('sms verification code sending failed', 0, $exception);
+            throw new \RuntimeException('短信验证码发送失败', 0, $exception);
         }
 
         if (($result[$provider]['status'] ?? '') !== 'success') {
-            throw new \RuntimeException('sms verification code sending failed');
+            throw new \RuntimeException('短信验证码发送失败');
         }
     }
 

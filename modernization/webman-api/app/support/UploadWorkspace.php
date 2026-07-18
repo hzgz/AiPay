@@ -61,14 +61,14 @@ final class UploadWorkspace
     public static function mirrorFileToLegacyPublic(string $workspaceAbsolutePath, string $directory, string $relativeChild = ''): string
     {
         if (!is_file($workspaceAbsolutePath)) {
-            throw new \RuntimeException('workspace upload file does not exist');
+            throw new \RuntimeException('工作区上传文件不存在');
         }
 
         $legacyPath = self::legacyPublicPath($directory, $relativeChild);
         self::ensureDirectory(dirname($legacyPath));
 
         if (!@copy($workspaceAbsolutePath, $legacyPath) && !is_file($legacyPath)) {
-            throw new \RuntimeException('failed to mirror upload file to legacy public directory');
+            throw new \RuntimeException('同步上传文件到公开镜像目录失败');
         }
 
         return $legacyPath;

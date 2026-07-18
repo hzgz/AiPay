@@ -13,7 +13,7 @@ class PaymentPluginException extends RuntimeException
         return new self($message, $code);
     }
 
-    public static function unauthorized(string $message = 'signature verification failed', int $code = 401): self
+    public static function unauthorized(string $message = '签名校验失败', int $code = 401): self
     {
         return new self($message, $code);
     }

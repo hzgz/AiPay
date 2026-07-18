@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace app\service\order;
 
+use app\support\BusinessTable;
 use Plugins\Payments\AlipayBill\Support\AlipayBillSupport;
-use Plugins\Payments\Shared\Legacy\LegacyEpayOrderRepository;
+use Plugins\Payments\Shared\EpayProtocol\EpayOrderRepository;
 use Plugins\Payments\Shared\Support\JiaofeiyiSupport;
 use Plugins\Payments\Usdt\Support\UsdtTrc20Support;
 use Plugins\Payments\WxpayV3\Support\WxpayV3OrderQuerySupport;
@@ -15,8 +16,6 @@ use Throwable;
 
 final class OrderReconcileTaskService
 {
-    private const TABLE = 'ypay_order_reconcile_task';
-    private const TRANSACTION_CLAIM_TABLE = 'ypay_payment_transaction_claim';
     private const ALIPAY_BILL_CHANNEL_CODES = ['alipay_bill', 'alipay_mck'];
     private const JIAOFEIYI_CHANNEL_CODES = ['jiaofeiyi_alipay', 'jiaofeiyi_wxpay'];
     private const SUPPORTED_CHANNEL_CODES = ['alipay_bill', 'alipay_mck', 'usdt', 'jiaofeiyi_alipay', 'jiaofeiyi_wxpay', 'wxpay_v3'];
@@ -31,7 +30,7 @@ final class OrderReconcileTaskService
         private readonly AlipayBillSupport $alipayBill = new AlipayBillSupport(),
         private readonly UsdtTrc20Support $usdt = new UsdtTrc20Support(),
         private readonly WxpayV3OrderQuerySupport $wxpayV3 = new WxpayV3OrderQuerySupport(),
-        private readonly LegacyEpayOrderRepository $orders = new LegacyEpayOrderRepository(),
+        private readonly EpayOrderRepository $orders = new EpayOrderRepository(),
         private readonly OrderCallbackTaskService $callbackTasks = new OrderCallbackTaskService()
     ) {
     }
@@ -39,51 +38,51 @@ final class OrderReconcileTaskService
     public function seedMissingTasks(int $limit = 20): int
     {
         $now = time();
-        $rows = Db::table('ypay_order')
-            ->join('ypay_account', 'ypay_order.account_id', '=', 'ypay_account.id')
-            ->leftJoin(self::TABLE . ' as reconcile_task', 'ypay_order.id', '=', 'reconcile_task.order_id')
+        $rows = Db::table(BusinessTable::order('orders'))
+            ->join(BusinessTable::account('account'), 'orders.account_id', '=', 'account.id')
+            ->leftJoin(self::table() . ' as reconcile_task', 'orders.id', '=', 'reconcile_task.order_id')
             ->select(
-                'ypay_order.id',
-                'ypay_order.user_id',
-                'ypay_order.account_id',
-                'ypay_order.trade_no',
-                'ypay_order.out_trade_no',
-                'ypay_order.type',
-                'ypay_order.create_time',
-                'ypay_order.out_time',
-                'ypay_order.alipay_order_no',
-                'ypay_order.status',
-                'ypay_account.code',
-                'ypay_account.wxname',
-                'ypay_account.zfb_pid',
-                'ypay_account.cookie',
-                'ypay_account.remark'
+                'orders.id',
+                'orders.user_id',
+                'orders.account_id',
+                'orders.trade_no',
+                'orders.out_trade_no',
+                'orders.type',
+                'orders.create_time',
+                'orders.out_time',
+                'orders.alipay_order_no',
+                'orders.status',
+                'account.code',
+                'account.wxname',
+                'account.zfb_pid',
+                'account.cookie',
+                'account.remark'
             )
-            ->where('ypay_order.status', 0)
+            ->where('orders.status', 0)
             ->whereNull('reconcile_task.id')
-            ->whereIn('ypay_account.code', self::SUPPORTED_CHANNEL_CODES)
+            ->whereIn('account.code', self::SUPPORTED_CHANNEL_CODES)
             ->where(function ($query) use ($now) {
                 $query->where(function ($jiaofeiyiQuery) use ($now) {
                     $jiaofeiyiQuery
-                        ->whereIn('ypay_account.code', self::JIAOFEIYI_CHANNEL_CODES)
-                        ->where('ypay_order.out_time', '>', $now)
-                        ->whereNotNull('ypay_order.alipay_order_no')
-                        ->where('ypay_order.alipay_order_no', '<>', '');
+                        ->whereIn('account.code', self::JIAOFEIYI_CHANNEL_CODES)
+                        ->where('orders.out_time', '>', $now)
+                        ->whereNotNull('orders.alipay_order_no')
+                        ->where('orders.alipay_order_no', '<>', '');
                 })->orWhere(function ($alipayBillQuery) use ($now) {
                     $alipayBillQuery
-                        ->whereIn('ypay_account.code', self::ALIPAY_BILL_CHANNEL_CODES)
-                        ->where('ypay_order.out_time', '>', $now - self::ALIPAY_BILL_GRACE_SECONDS);
+                        ->whereIn('account.code', self::ALIPAY_BILL_CHANNEL_CODES)
+                        ->where('orders.out_time', '>', $now - self::ALIPAY_BILL_GRACE_SECONDS);
                 })->orWhere(function ($usdtQuery) use ($now) {
                     $usdtQuery
-                        ->where('ypay_account.code', 'usdt')
-                        ->where('ypay_order.out_time', '>', $now - self::USDT_GRACE_SECONDS);
+                        ->where('account.code', 'usdt')
+                        ->where('orders.out_time', '>', $now - self::USDT_GRACE_SECONDS);
                 })->orWhere(function ($wxpayV3Query) use ($now) {
                     $wxpayV3Query
-                        ->where('ypay_account.code', 'wxpay_v3')
-                        ->where('ypay_order.out_time', '>', $now - self::WXPAY_V3_GRACE_SECONDS);
+                        ->where('account.code', 'wxpay_v3')
+                        ->where('orders.out_time', '>', $now - self::WXPAY_V3_GRACE_SECONDS);
                 });
             })
-            ->orderBy('ypay_order.id')
+            ->orderBy('orders.id')
             ->limit(max(1, $limit))
             ->get()
             ->toArray();
@@ -121,7 +120,7 @@ final class OrderReconcileTaskService
         }
 
         $taskKey = sprintf('order:%d:reconcile', $orderId);
-        $existing = Db::table(self::TABLE)->where('task_key', $taskKey)->first();
+        $existing = Db::table(self::table())->where('task_key', $taskKey)->first();
         if ($existing) {
             return [
                 'created' => false,
@@ -154,8 +153,8 @@ final class OrderReconcileTaskService
             'update_time' => $this->now(),
         ];
 
-        $inserted = (int)Db::table(self::TABLE)->insertOrIgnore($insert);
-        $stored = Db::table(self::TABLE)->where('task_key', $taskKey)->first();
+        $inserted = (int)Db::table(self::table())->insertOrIgnore($insert);
+        $stored = Db::table(self::table())->where('task_key', $taskKey)->first();
         if (!$stored) {
             throw new RuntimeException('Failed to persist reconciliation task');
         }
@@ -178,7 +177,7 @@ final class OrderReconcileTaskService
             $now = $this->now();
             $staleAt = $this->dateTime(time() - self::STALE_LOCK_SECONDS);
 
-            $row = Db::table(self::TABLE)
+            $row = Db::table(self::table())
                 ->where(function ($query) use ($now, $staleAt) {
                     $query
                         ->whereIn('status', ['pending', 'retry'])
@@ -202,7 +201,7 @@ final class OrderReconcileTaskService
             $task = (array)$row;
             $attemptCount = (int)($task['attempt_count'] ?? 0) + 1;
 
-            Db::table(self::TABLE)
+            Db::table(self::table())
                 ->where('id', (int)($task['id'] ?? 0))
                 ->update([
                     'status' => 'running',
@@ -583,7 +582,7 @@ final class OrderReconcileTaskService
             'scene' => 'reconcile',
         ]);
 
-        Db::table('ypay_account')
+        Db::table(BusinessTable::account())
             ->where('id', (int)($order['account_id'] ?? 0))
             ->update(['update_time' => $this->now()]);
 
@@ -608,37 +607,37 @@ final class OrderReconcileTaskService
             return null;
         }
 
-        $row = Db::table('ypay_order')
-            ->join('ypay_account', 'ypay_order.account_id', '=', 'ypay_account.id')
+        $row = Db::table(BusinessTable::order('orders'))
+            ->join(BusinessTable::account('account'), 'orders.account_id', '=', 'account.id')
             ->select(
-                'ypay_order.id as order_id',
-                'ypay_order.name',
-                'ypay_order.trade_no',
-                'ypay_order.out_trade_no',
-                'ypay_order.user_id',
-                'ypay_order.account_id',
-                'ypay_order.type',
-                'ypay_order.money',
-                'ypay_order.truemoney',
-                'ypay_order.feilvmoney',
-                'ypay_order.status',
-                'ypay_order.notify_url',
-                'ypay_order.return_url',
-                'ypay_order.alipay_order_no',
-                'ypay_order.api_memo',
-                'ypay_order.create_time',
-                'ypay_order.out_time',
-                'ypay_account.id as account_row_id',
-                'ypay_account.code',
-                'ypay_account.wxname',
-                'ypay_account.zfb_pid',
-                'ypay_account.wx_guid',
-                'ypay_account.cloud_id',
-                'ypay_account.cookie',
-                'ypay_account.qr_url',
-                'ypay_account.remark'
+                'orders.id as order_id',
+                'orders.name',
+                'orders.trade_no',
+                'orders.out_trade_no',
+                'orders.user_id',
+                'orders.account_id',
+                'orders.type',
+                'orders.money',
+                'orders.truemoney',
+                'orders.feilvmoney',
+                'orders.status',
+                'orders.notify_url',
+                'orders.return_url',
+                'orders.alipay_order_no',
+                'orders.api_memo',
+                'orders.create_time',
+                'orders.out_time',
+                'account.id as account_row_id',
+                'account.code',
+                'account.wxname',
+                'account.zfb_pid',
+                'account.wx_guid',
+                'account.cloud_id',
+                'account.cookie',
+                'account.qr_url',
+                'account.remark'
             )
-            ->where('ypay_order.id', $orderId)
+            ->where('orders.id', $orderId)
             ->first();
 
         if (!$row) {
@@ -693,7 +692,7 @@ final class OrderReconcileTaskService
             return [];
         }
 
-        $usedByOrders = Db::table('ypay_order')
+        $usedByOrders = Db::table(BusinessTable::order())
             ->where('id', '<>', $currentOrderId)
             ->whereIn('alipay_order_no', array_values(array_unique($candidateIds)))
             ->pluck('alipay_order_no')
@@ -702,7 +701,7 @@ final class OrderReconcileTaskService
             ->values()
             ->all();
 
-        $usedByClaims = Db::table(self::TRANSACTION_CLAIM_TABLE)
+        $usedByClaims = Db::table(self::transactionClaimTable())
             ->where('provider', strtolower(trim($provider)))
             ->where('order_id', '<>', $currentOrderId)
             ->whereIn('transaction_id', array_values(array_unique($candidateIds)))
@@ -726,13 +725,13 @@ final class OrderReconcileTaskService
             return false;
         }
 
-        $count = Db::table('ypay_order')
-            ->join('ypay_account', 'ypay_order.account_id', '=', 'ypay_account.id')
-            ->whereIn('ypay_account.code', self::ALIPAY_BILL_CHANNEL_CODES)
-            ->whereRaw('BINARY ypay_account.wxname = ?', [$appId])
-            ->where('ypay_order.status', 0)
-            ->where('ypay_order.out_time', '>', time() - max(0, $graceSeconds))
-            ->where('ypay_order.truemoney', $amount)
+        $count = Db::table(BusinessTable::order('orders'))
+            ->join(BusinessTable::account('account'), 'orders.account_id', '=', 'account.id')
+            ->whereIn('account.code', self::ALIPAY_BILL_CHANNEL_CODES)
+            ->whereRaw('BINARY account.wxname = ?', [$appId])
+            ->where('orders.status', 0)
+            ->where('orders.out_time', '>', time() - max(0, $graceSeconds))
+            ->where('orders.truemoney', $amount)
             ->count();
 
         return $count === 1;
@@ -752,14 +751,14 @@ final class OrderReconcileTaskService
         }
 
         $amount = number_format((float)($order['truemoney'] ?? $order['money'] ?? 0), 2, '.', '');
-        $count = Db::table('ypay_order')
-            ->join('ypay_account', 'ypay_order.account_id', '=', 'ypay_account.id')
-            ->where('ypay_account.code', 'usdt')
-            ->whereRaw('BINARY ypay_account.wxname = ?', [$wallet])
-            ->where('ypay_order.status', 0)
-            ->where('ypay_order.truemoney', $amount)
-            ->where('ypay_order.create_time', '<=', $this->dateTime($outTime))
-            ->where('ypay_order.out_time', '>=', $createdAt)
+        $count = Db::table(BusinessTable::order('orders'))
+            ->join(BusinessTable::account('account'), 'orders.account_id', '=', 'account.id')
+            ->where('account.code', 'usdt')
+            ->whereRaw('BINARY account.wxname = ?', [$wallet])
+            ->where('orders.status', 0)
+            ->where('orders.truemoney', $amount)
+            ->where('orders.create_time', '<=', $this->dateTime($outTime))
+            ->where('orders.out_time', '>=', $createdAt)
             ->count();
 
         return $count === 1;
@@ -771,7 +770,7 @@ final class OrderReconcileTaskService
      */
     private function markFinished(array $task, string $status, array $result, string $memo): void
     {
-        Db::table(self::TABLE)
+        Db::table(self::table())
             ->where('id', (int)($task['id'] ?? 0))
             ->update([
                 'status' => $status,
@@ -794,7 +793,7 @@ final class OrderReconcileTaskService
         $maxAttempts = max(1, (int)($task['max_attempts'] ?? 1));
         $status = $attemptCount >= $maxAttempts ? 'failed' : 'retry';
 
-        Db::table(self::TABLE)
+        Db::table(self::table())
             ->where('id', (int)($task['id'] ?? 0))
             ->update([
                 'status' => $status,
@@ -883,5 +882,15 @@ final class OrderReconcileTaskService
     private function dateTime(int $timestamp): string
     {
         return date('Y-m-d H:i:s', $timestamp);
+    }
+
+    private static function table(): string
+    {
+        return BusinessTable::orderReconcileTask();
+    }
+
+    private static function transactionClaimTable(): string
+    {
+        return BusinessTable::paymentTransactionClaim();
     }
 }

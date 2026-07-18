@@ -104,7 +104,7 @@ class PublicEntryController
   <main>
     <h1>二维码接口</h1>
     <p>使用 <code>text</code> 传入二维码内容，使用 <code>size</code> 控制 PNG 图片像素尺寸。</p>
-    <p>示例：<code>{$origin}/qrcode.php?text=https%3A%2F%2Fpay.aipay.local&amp;size=180</code></p>
+    <p>示例：<code>{$origin}/qrcode.php?text=https%3A%2F%2Fpay.%E4%BD%A0%E7%9A%84%E5%9F%9F%E5%90%8D.com&amp;size=180</code></p>
   </main>
 </body>
 </html>

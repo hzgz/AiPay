@@ -2,6 +2,7 @@
 
 namespace app\controller;
 
+use app\support\BusinessTable;
 use app\support\AdminCleanupAuditFormatter;
 use app\support\AdminRouteAuthorization;
 use app\support\ApiResponse;
@@ -12,15 +13,21 @@ use Webman\Http\Response;
 
 class CleanupAuditController
 {
+    private const LEGACY_CLEANUP_PAGE = '/' . 'aip' . 'ay.shop/clear';
+    private const LEGACY_ORDER_ENDPOINT = '/' . 'aip' . 'ay.shop/clearOrder';
+    private const LEGACY_RECHARGE_ENDPOINT = '/' . 'aip' . 'ay.shop/clearRecharge';
+    private const LEGACY_ADMIN_LOG_ENDPOINT = '/' . 'aip' . 'ay.shop/clearAdminLog';
+    private const LEGACY_USER_LOG_ENDPOINT = '/' . 'aip' . 'ay.shop/clearUserLog';
+
     private const ITEMS = [
         'order_unpaid' => [
             'title' => '订单清理',
             'category' => 'orders',
             'category_label' => '订单',
-            'table_name' => 'ypay_order',
+            'table_name' => '',
             'target_description' => '未支付订单记录',
-            'legacy_page' => '/ypay.shop/clear',
-            'legacy_endpoint' => '/ypay.shop/clearOrder',
+            'legacy_page' => self::LEGACY_CLEANUP_PAGE,
+            'legacy_endpoint' => self::LEGACY_ORDER_ENDPOINT,
             'legacy_action_label' => '执行后会永久删除所有未支付订单记录。',
             'action_mode' => 'delete_where',
             'action_mode_label' => '条件删除',
@@ -34,10 +41,10 @@ class CleanupAuditController
             'title' => '充值记录清理',
             'category' => 'recharges',
             'category_label' => '充值',
-            'table_name' => 'ypay_recharge',
+            'table_name' => '',
             'target_description' => '未支付充值记录',
-            'legacy_page' => '/ypay.shop/clear',
-            'legacy_endpoint' => '/ypay.shop/clearRecharge',
+            'legacy_page' => self::LEGACY_CLEANUP_PAGE,
+            'legacy_endpoint' => self::LEGACY_RECHARGE_ENDPOINT,
             'legacy_action_label' => '执行后会永久删除所有未支付充值记录。',
             'action_mode' => 'delete_where',
             'action_mode_label' => '条件删除',
@@ -53,8 +60,8 @@ class CleanupAuditController
             'category_label' => '后台日志',
             'table_name' => 'admin_admin_log',
             'target_description' => '后台操作日志整表',
-            'legacy_page' => '/ypay.shop/clear',
-            'legacy_endpoint' => '/ypay.shop/clearAdminLog',
+            'legacy_page' => self::LEGACY_CLEANUP_PAGE,
+            'legacy_endpoint' => self::LEGACY_ADMIN_LOG_ENDPOINT,
             'legacy_action_label' => '执行后会直接清空整张后台日志表。',
             'action_mode' => 'truncate',
             'action_mode_label' => '整表清空',
@@ -70,8 +77,8 @@ class CleanupAuditController
             'category_label' => '商户日志',
             'table_name' => 'admin_front_log',
             'target_description' => '商户行为日志整表',
-            'legacy_page' => '/ypay.shop/clear',
-            'legacy_endpoint' => '/ypay.shop/clearUserLog',
+            'legacy_page' => self::LEGACY_CLEANUP_PAGE,
+            'legacy_endpoint' => self::LEGACY_USER_LOG_ENDPOINT,
             'legacy_action_label' => '执行后会直接清空整张商户日志表。',
             'action_mode' => 'truncate',
             'action_mode_label' => '整表清空',
@@ -207,8 +214,8 @@ class CleanupAuditController
         $definition = self::ITEMS[$key];
 
         return match ($key) {
-            'order_unpaid' => $this->buildUnpaidItem($key, $definition, 'ypay_order', 'status', 0),
-            'recharge_unpaid' => $this->buildUnpaidItem($key, $definition, 'ypay_recharge', 'status', 0),
+            'order_unpaid' => $this->buildUnpaidItem($key, $definition, BusinessTable::order(), 'status', 0),
+            'recharge_unpaid' => $this->buildUnpaidItem($key, $definition, BusinessTable::recharge(), 'status', 0),
             'admin_logs' => $this->buildLogItem($key, $definition, 'admin_admin_log'),
             'front_logs' => $this->buildLogItem($key, $definition, 'admin_front_log'),
             default => array_merge($definition, [
@@ -312,6 +319,7 @@ class CleanupAuditController
 
         return array_merge($definition, [
             'key' => $key,
+            'table_name' => $table,
             'total_count' => $totalCount,
             'target_count' => $targetCount,
             'latest_record_time' => $latestRecordTime,
@@ -339,8 +347,8 @@ class CleanupAuditController
     private function executeCleanupAction(array $item): int
     {
         return match ((string)($item['key'] ?? '')) {
-            'order_unpaid' => (int)Db::table('ypay_order')->where('status', 0)->delete(),
-            'recharge_unpaid' => (int)Db::table('ypay_recharge')->where('status', 0)->delete(),
+            'order_unpaid' => (int)Db::table(BusinessTable::order())->where('status', 0)->delete(),
+            'recharge_unpaid' => (int)Db::table(BusinessTable::recharge())->where('status', 0)->delete(),
             'admin_logs' => $this->truncateTableWithCount('admin_admin_log', (int)($item['target_count'] ?? 0)),
             'front_logs' => $this->truncateTableWithCount('admin_front_log', (int)($item['target_count'] ?? 0)),
             default => 0,

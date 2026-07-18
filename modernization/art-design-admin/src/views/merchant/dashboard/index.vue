@@ -116,7 +116,7 @@
     </template>
 
     <div v-else class="merchant-panel merchant-state-card">
-      <h3>看板数据暂不可用</h3>
+      <h3>看板暂时未加载成功</h3>
       <p>当前未能加载商户概览，请刷新页面后重试。</p>
     </div>
   </div>
@@ -184,7 +184,7 @@
       {
         label: '累计已付金额',
         value: summary.paid_amount_display || '--',
-        hint: '历史成功到账金额',
+        hint: '累计成功到账金额',
         icon: 'ri:exchange-cny-line'
       },
       {

@@ -48,7 +48,7 @@ class PaymentPluginScaffoldGenerator
         $configSchema = $this->configSchemaFields($options);
 
         if (file_exists($pluginDirectory)) {
-            throw new RuntimeException('payment plugin directory already exists');
+            throw new RuntimeException('支付插件目录已存在');
         }
 
         $configTable = 'pay_plugin_' . $options['code'] . '_config';
@@ -126,18 +126,18 @@ class PaymentPluginScaffoldGenerator
     private function normalizeInput(array $input): array
     {
         $code = $this->normalizeCode((string)($input['code'] ?? ''));
-        $name = $this->requireNonEmpty((string)($input['name'] ?? ''), 'plugin name is required');
+        $name = $this->requireNonEmpty((string)($input['name'] ?? ''), '插件名称不能为空');
         $provider = trim((string)($input['provider'] ?? self::DEFAULT_PROVIDER));
         $description = trim((string)($input['description'] ?? self::DEFAULT_DESCRIPTION));
         $version = $this->normalizeVersion((string)($input['version'] ?? self::DEFAULT_VERSION));
         $capabilities = $this->normalizeCapabilities($input['capabilities'] ?? self::DEFAULT_CAPABILITIES);
 
         if ($provider === '') {
-            throw new InvalidArgumentException('plugin provider is required');
+            throw new InvalidArgumentException('插件提供方不能为空');
         }
 
         if ($description === '') {
-            throw new InvalidArgumentException('plugin description is required');
+            throw new InvalidArgumentException('插件说明不能为空');
         }
 
         return [
@@ -165,7 +165,7 @@ class PaymentPluginScaffoldGenerator
     {
         $code = strtolower(trim($code));
         if ($code === '' || !preg_match('/^[a-z0-9_]+$/', $code)) {
-            throw new InvalidArgumentException('invalid payment plugin code');
+            throw new InvalidArgumentException('支付插件编码格式无效');
         }
 
         return $code;
@@ -175,7 +175,7 @@ class PaymentPluginScaffoldGenerator
     {
         $version = trim($version);
         if ($version === '' || !preg_match('/^\d+\.\d+\.\d+$/', $version)) {
-            throw new InvalidArgumentException('invalid plugin version');
+            throw new InvalidArgumentException('插件版本号格式无效');
         }
 
         return $version;
@@ -192,7 +192,7 @@ class PaymentPluginScaffoldGenerator
         }
 
         if (!is_array($capabilities)) {
-            throw new InvalidArgumentException('capabilities must be an array');
+            throw new InvalidArgumentException('插件能力必须为数组');
         }
 
         $normalized = [];
@@ -203,14 +203,14 @@ class PaymentPluginScaffoldGenerator
             }
 
             if (!preg_match('/^[a-z0-9_]+$/', $capability)) {
-                throw new InvalidArgumentException('invalid capability [' . $capability . ']');
+                throw new InvalidArgumentException('插件能力标识无效：' . $capability);
             }
 
             $normalized[$capability] = true;
         }
 
         if ($normalized === []) {
-            throw new InvalidArgumentException('at least one capability is required');
+            throw new InvalidArgumentException('至少需要声明一个插件能力');
         }
 
         return array_keys($normalized);
@@ -257,7 +257,7 @@ class PaymentPluginScaffoldGenerator
         $fields = [
             [
                 'field' => 'merchant_id',
-                'label' => 'Merchant ID',
+                'label' => '商户号',
                 'type' => 'text',
                 'required' => true,
             ],
@@ -467,9 +467,9 @@ class PaymentPluginScaffoldGenerator
             'managed_channels' => [
                 [
                     'code' => $code . '_default',
-                    'name' => $options['name'] . ' Default',
+                    'name' => $options['name'] . '默认通道',
                     'type' => 'alipay',
-                    'info' => 'Plugin-managed channel seeded from plugin.json.',
+                    'info' => '插件安装后自动生成的默认通道。',
                     'status' => 1,
                     'sort' => 0,
                     'maxcount' => 10,
@@ -485,8 +485,8 @@ class PaymentPluginScaffoldGenerator
                             '002_create_plugin_log_table.sql',
                         ],
                         'notes' => [
-                            'Creates plugin-owned config and log tables under the pay_plugin_' . $code . '_* namespace.',
-                            'Generated scaffolds start with isolated tables so install, purge, and Recovery Vault flows can stay residue-aware from day 1.',
+                            '创建 pay_plugin_' . $code . '_* 命名空间下的插件独立配置表与日志表。',
+                            '脚手架默认使用隔离表结构，方便安装、清理与恢复流程保持无残留管理。',
                         ],
                     ],
                 ],
@@ -496,22 +496,22 @@ class PaymentPluginScaffoldGenerator
                 'downtime' => 'brief_validation',
                 'requires_disable_after_upgrade' => true,
                 'notes' => [
-                    'Generated scaffolds default to a cautious upgrade window so new SQL releases can be audited before traffic resumes.',
-                    'Only plugin-owned runtime files and pay_plugin_' . $code . '_* tables should be mutated by future releases.',
+                    '脚手架默认采用谨慎升级策略，建议先验证新版本 SQL 再恢复通道流量。',
+                    '后续版本仅应变更插件独立运行目录与 pay_plugin_' . $code . '_* 表。',
                 ],
                 'checklist' => $this->scaffoldChecklist($options),
                 'changelog' => [
                     [
                         'version' => $options['version'],
-                        'summary' => 'Initial scaffold release with isolated config/log tables, lifecycle metadata, and cleanup-hook support.',
+                        'summary' => '初始化插件脚手架，包含独立配置表、日志表、生命周期元数据与清理钩子。',
                         'breaking' => false,
                         'migration_files' => [
                             '001_create_config_table.sql',
                             '002_create_plugin_log_table.sql',
                         ],
                         'notes' => [
-                            'Payment request logic is still a stub and must be implemented inside src/Plugin.php before activation.',
-                            'Future SQL files should be appended as new releases instead of editing this initial release in place.',
+                            '支付逻辑仍需在 src/Plugin.php 中按真实上游协议补齐后再启用。',
+                            '后续 SQL 请以新版本发布追加，不要直接修改初始迁移文件。',
                         ],
                     ],
                 ],
@@ -521,8 +521,8 @@ class PaymentPluginScaffoldGenerator
                     'automatic' => false,
                     'requires_backup' => true,
                     'notes' => [
-                        'Rollback is expected to restore the plugin package, runtime workspace, and plugin-owned tables from backup or Recovery Vault.',
-                        'Do not attempt a destructive downgrade without a verified restore point.',
+                        '回滚应通过备份或恢复仓恢复插件包、运行目录与插件独立数据表。',
+                        '没有可验证恢复点时，不要执行破坏性降级。',
                     ],
                 ],
             ],
@@ -535,7 +535,7 @@ class PaymentPluginScaffoldGenerator
                         $configTable,
                     ],
                     'notes' => [
-                        'Safe cleanup removes generated runtime artifacts and plugin-owned config rows only after uninstall audit.',
+                        '安全清理仅移除运行目录与插件独立配置数据，业务订单等数据继续保留。',
                     ],
                 ],
                 'purge' => [
@@ -546,15 +546,15 @@ class PaymentPluginScaffoldGenerator
                         $logTable,
                     ],
                     'notes' => [
-                        'Purge removes the package directory and plugin-owned log table after explicit confirmation.',
+                        '彻底清理会在明确确认后删除插件目录与插件独立日志表。',
                     ],
                 ],
                 'retain' => [
-                    'merchant order history',
-                    'recharge records',
-                    'fund and balance logs',
-                    'settlement records',
-                    'notify and audit traces',
+                    '商户订单记录',
+                    '充值订单记录',
+                    '资金与余额流水',
+                    '结算记录',
+                    '通知与审计轨迹',
                 ],
                 'purge_requires_confirmation' => true,
             ],
@@ -572,13 +572,13 @@ class PaymentPluginScaffoldGenerator
         try {
             foreach ([$pluginDirectory, $srcDirectory, $migrationDirectory] as $directory) {
                 if (!mkdir($directory, 0777, true) && !is_dir($directory)) {
-                    throw new RuntimeException('failed to create scaffold directory');
+                    throw new RuntimeException('创建插件脚手架目录失败');
                 }
             }
 
             foreach ($files as $path => $contents) {
                 if (file_put_contents($path, $contents) === false) {
-                    throw new RuntimeException('failed to write scaffold file');
+                    throw new RuntimeException('写入插件脚手架文件失败');
                 }
             }
         } catch (\Throwable $exception) {
@@ -618,7 +618,7 @@ class PaymentPluginScaffoldGenerator
     {
         $encoded = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($encoded === false) {
-            throw new RuntimeException('failed to encode payment plugin scaffold manifest');
+            throw new RuntimeException('编码支付插件清单失败');
         }
 
         return $encoded . PHP_EOL;
@@ -643,7 +643,7 @@ class PaymentPluginScaffoldGenerator
             PHP_EOL,
             array_map(
                 static function (array $field): string {
-                    $suffix = !empty($field['required']) ? 'required' : 'optional';
+                    $suffix = !empty($field['required']) ? '必填' : '可选';
                     return '- `' . ($field['field'] ?? '') . '` (' . $suffix . ')';
                 },
                 $configSchema
@@ -661,7 +661,7 @@ class PaymentPluginScaffoldGenerator
             array_map(
                 static function (array $blueprint): string {
                     return '- `' . $blueprint['method'] . '()` -> '
-                        . ($blueprint['selected'] ? '`not_implemented` stub' : '`unsupported` response');
+                        . ($blueprint['selected'] ? '待补齐真实逻辑' : '未声明时返回不支持');
                 },
                 $this->methodBlueprints($options)
             )
@@ -671,10 +671,10 @@ class PaymentPluginScaffoldGenerator
             array_map(
                 static fn (string $item, int $index): string => ($index + 1) . '. ' . $item,
                 [
-                    'Review `plugin.json` and keep all future SQL changes under new `migrations.releases[]` versions.',
-                    'Replace the generated stubs in `src/Plugin.php` only for the capabilities this plugin actually declares.',
-                    'Adjust `configSchema()` so required fields match the real upstream gateway contract.',
-                    'Capture a Recovery Vault snapshot before shipping any destructive schema change in a later release.',
+                    '检查 plugin.json，并把后续 SQL 变更放到新的 `migrations.releases[]` 版本里。',
+                    '仅为当前插件真实声明的能力补齐 `src/Plugin.php` 中的业务逻辑。',
+                    '根据上游协议实际要求调整 `configSchema()` 字段。',
+                    '后续如需破坏性变更，请先创建恢复快照。',
                 ],
                 array_keys([0, 1, 2, 3])
             )
@@ -683,46 +683,46 @@ class PaymentPluginScaffoldGenerator
         return <<<MD
 # {$options['name']}
 
-This payment plugin scaffold was generated by `php tools/create_payment_plugin.php`.
+该插件脚手架由 `php tools/create_payment_plugin.php` 自动生成。
 
-## Generated Defaults
+## 基础信息
 
-- Plugin code: `{$options['code']}`
-- Namespace: `{$namespace}`
-- Version: `{$options['version']}`
-- Config table: `{$configTable}`
-- Log table: `{$logTable}`
-- Runtime directory: `runtime/payment-plugins/{$options['code']}`
-- Managed channel code: `{$options['code']}_default`
-- Cleanup policy: safe cleanup removes runtime + config rows; purge cleanup removes the package directory + log table after explicit confirmation
+- 插件编码：`{$options['code']}`
+- 命名空间：`{$namespace}`
+- 初始版本：`{$options['version']}`
+- 配置表：`{$configTable}`
+- 日志表：`{$logTable}`
+- 运行目录：`runtime/payment-plugins/{$options['code']}`
+- 默认通道编码：`{$options['code']}_default`
+- 清理策略：安全清理只移除运行目录与插件独立配置，彻底清理会删除插件目录与日志表
 
-## Capabilities
+## 声明能力
 
 {$capabilityList}
 
-## Generated Config Skeleton
+## 配置骨架
 
 {$configFieldList}
 
-## Capability Notes
+## 能力说明
 
 {$capabilityNotes}
 
-## Runtime Defaults
+## 默认行为
 
 {$runtimeDefaults}
 
-## Next Steps
+## 后续步骤
 
 {$nextSteps}
 
-## Notes
+## 说明
 
-- The scaffold already implements `PaymentPluginCleanupHookInterface` so uninstall cleanup can record handoff metadata before files and tables are removed.
-- Interface methods for unselected capabilities already return `status = unsupported`, so operators can distinguish intentional exclusions from unfinished work.
-- Future plugin-owned tables should continue the `pay_plugin_{$options['code']}_*` namespace to keep uninstall plans residue-safe.
-- Plugin-owned channel rows should stay inside `plugin.json -> managed_channels[]` and keep the `{$options['code']}_*` code prefix so cleanup and snapshot restore remain deterministic.
-- Business tables such as orders, recharges, balance logs, and settlement records should remain outside this plugin directory and cleanup policy.
+- 脚手架已接入 `PaymentPluginCleanupHookInterface`，卸载前可以先记录清理交接信息。
+- 未声明的能力会直接返回不支持，便于区分“本插件不做”和“功能尚未补齐”。
+- 后续插件独立数据表建议继续使用 `pay_plugin_{$options['code']}_*` 命名空间，方便清理与恢复。
+- 插件托管通道请继续放在 `plugin.json -> managed_channels[]` 中，并保持 `{$options['code']}_*` 前缀。
+- 订单、充值、余额流水、结算等业务表不应放入插件目录清理范围。
 MD;
     }
 
@@ -752,7 +752,8 @@ MD;
             ? <<<PHP
         return [
             'plugin' => \$this->code(),
-            'status' => 'not_implemented',
+            'status' => 'pending',
+            'status_text' => '待实现',
             'message' => '{$methodBlueprints['createOrder']['selected_message']}',
             'payload' => \$payload,
         ];
@@ -768,7 +769,8 @@ PHP;
             ? <<<PHP
         return [
             'plugin' => \$this->code(),
-            'status' => 'not_implemented',
+            'status' => 'pending',
+            'status_text' => '待实现',
             'order_no' => \$orderNo,
             'message' => '{$methodBlueprints['query']['selected_message']}',
         ];
@@ -784,7 +786,8 @@ PHP;
             ? <<<PHP
         return [
             'plugin' => \$this->code(),
-            'status' => 'not_implemented',
+            'status' => 'pending',
+            'status_text' => '待实现',
             'message' => '{$methodBlueprints['refund']['selected_message']}',
             'payload' => \$payload,
         ];
@@ -800,7 +803,8 @@ PHP;
             ? <<<PHP
         return [
             'plugin' => \$this->code(),
-            'status' => 'not_implemented',
+            'status' => 'pending',
+            'status_text' => '待实现',
             'message' => '{$methodBlueprints['handleNotify']['selected_message']}',
             'payload' => \$payload,
         ];
@@ -841,7 +845,7 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
     {
         \$this->ensureRuntimeDirectory();
         \$this->seedConfigSkeleton();
-        \$this->recordPluginLog('info', '{$name} installed.', [
+        \$this->recordPluginLog('info', '{$name} 安装完成', [
             'plugin' => \$this->code(),
             'version' => '{$version}',
             'capabilities' => self::CAPABILITIES,
@@ -858,7 +862,7 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
     {
         \$this->ensureRuntimeDirectory();
         \$this->seedConfigSkeleton();
-        \$this->recordPluginLog('info', '{$name} upgraded.', [
+        \$this->recordPluginLog('info', '{$name} 升级完成', [
             'plugin' => \$this->code(),
             'from_version' => \$fromVersion,
             'to_version' => \$toVersion,
@@ -877,7 +881,7 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
     public function uninstall(bool \$purge = false): void
     {
         \$this->ensureRuntimeDirectory();
-        \$this->recordPluginLog('warning', '{$name} uninstall requested.', [
+        \$this->recordPluginLog('warning', '{$name} 已提交卸载请求', [
             'plugin' => \$this->code(),
             'purge_requested' => \$purge,
         ]);
@@ -896,10 +900,10 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
 
         \$steps = [
             sprintf(
-                'Reviewed %d audited file target(s) and %d table target(s) before %s cleanup.',
+                '开始%s前，已审计 %d 个文件目标与 %d 个数据表目标。',
+                \$mode === 'purge' ? '彻底清理' : '安全清理',
                 \$fileTargets,
-                \$tableTargets,
-                \$mode
+                \$tableTargets
             ),
         ];
 
@@ -909,14 +913,14 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
                 'cleanup_mode' => \$mode,
                 'cleanup_requested_at' => \$this->now(),
             ]);
-            \$steps[] = 'Updated lifecycle metadata so the cleanup handoff remains visible during execution.';
+            \$steps[] = '已更新生命周期元数据，方便清理执行期间继续追踪状态。';
         } else {
-            \$steps[] = 'Skipped runtime metadata handoff because the plugin runtime directory is already absent.';
+            \$steps[] = '插件运行目录已不存在，跳过运行态元数据交接。';
         }
 
         \$this->recordPluginLog(
             \$mode === 'purge' ? 'warning' : 'info',
-            '{$name} cleanup prepared.',
+            '{$name} 清理任务已准备完成',
             [
                 'plugin' => \$this->code(),
                 'mode' => \$mode,
@@ -927,8 +931,8 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
 
         return [
             'summary' => \$mode === 'purge'
-                ? 'Prepared the plugin for final package removal and namespaced data purge.'
-                : 'Prepared the plugin runtime for safe cleanup while leaving business records untouched.',
+                ? '已完成彻底清理前置准备，可继续删除插件包与插件独立数据。'
+                : '已完成安全清理前置准备，业务订单等数据将继续保留。',
             'steps' => \$steps,
             'metadata' => [
                 'file_target_count' => \$fileTargets,
@@ -1029,6 +1033,7 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
         return array_merge([
             'plugin' => \$this->code(),
             'status' => 'unsupported',
+            'status_text' => '未接入',
             'capability' => \$capability,
             'message' => \$message,
         ], \$context);
@@ -1042,11 +1047,11 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
         }
 
         if (file_exists(\$directory)) {
-            throw new RuntimeException('payment plugin runtime path is not a directory');
+            throw new RuntimeException('支付插件运行目录目标不是文件夹');
         }
 
         if (!mkdir(\$directory, 0777, true) && !is_dir(\$directory)) {
-            throw new RuntimeException('failed to create payment plugin runtime directory');
+            throw new RuntimeException('创建支付插件运行目录失败');
         }
     }
 
@@ -1069,11 +1074,11 @@ class Plugin implements PaymentPluginInterface, PaymentPluginCleanupHookInterfac
 
         \$encoded = json_encode(\$metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if (\$encoded === false) {
-            throw new RuntimeException('failed to encode payment plugin lifecycle metadata');
+            throw new RuntimeException('编码支付插件生命周期元数据失败');
         }
 
         if (file_put_contents(\$metadataPath, \$encoded . PHP_EOL) === false) {
-            throw new RuntimeException('failed to write payment plugin lifecycle metadata');
+            throw new RuntimeException('写入支付插件生命周期元数据失败');
         }
     }
 
@@ -1098,8 +1103,8 @@ PHP;
     private function renderConfigMigration(string $code, string $configTable): string
     {
         return <<<SQL
--- Phase 1 install-time plugin migration.
--- Generated by tools/create_payment_plugin.php for the {$code} payment plugin.
+        -- 插件安装阶段的首个迁移文件。
+        -- 由 tools/create_payment_plugin.php 为 {$code} 插件自动生成。
 
 CREATE TABLE IF NOT EXISTS `{$configTable}` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -1117,8 +1122,8 @@ SQL;
     private function renderLogMigration(string $code, string $logTable): string
     {
         return <<<SQL
--- Phase 1 install-time plugin migration.
--- Generated by tools/create_payment_plugin.php for the {$code} payment plugin.
+        -- 插件安装阶段的首个迁移文件。
+        -- 由 tools/create_payment_plugin.php 为 {$code} 插件自动生成。
 
 CREATE TABLE IF NOT EXISTS `{$logTable}` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

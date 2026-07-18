@@ -9,31 +9,28 @@
     <div class="overview-grid">
       <div class="overview-item">
         <span>插件编码</span>
-        <strong>{{ pluginCodeSummary(detail.manifest.code) }}</strong>
+        <strong>{{ detail.manifest.code }}</strong>
       </div>
       <div class="overview-item">
         <span>版本</span>
         <strong>{{ detail.manifest.version }}</strong>
       </div>
       <div class="overview-item">
-        <span>提供方</span>
+        <span>来源</span>
         <strong>{{ normalizePluginCopy(detail.manifest.provider) }}</strong>
       </div>
       <div class="overview-item">
-        <span>接入方式</span>
+        <span>支付方式</span>
         <div class="overview-item-tags">
           <ElTag :type="pluginPaymentTagType(pluginPaymentLabel(detail.manifest.code))">
             {{ pluginPaymentLabel(detail.manifest.code) }}
-          </ElTag>
-          <ElTag effect="plain">
-            {{ pluginAccessLabel(detail.manifest.code) }}
           </ElTag>
         </div>
       </div>
     </div>
 
-    <p class="overview-desc">
-      {{ normalizePluginCopy(detail.manifest.description) || '暂无插件说明。' }}
+    <p v-if="detail.manifest.description" class="overview-desc">
+      {{ normalizePluginCopy(detail.manifest.description) }}
     </p>
 
     <div class="overview-action-bar">
@@ -71,9 +68,13 @@
         >
           卸载插件
         </ElButton>
-        <ElButton plain :loading="bundleExporting" @click="emit('downloadBundle', detail.manifest.code)">
+        <ElButton
+          plain
+          :loading="bundleExporting"
+          @click="emit('downloadBundle', detail.manifest.code)"
+        >
           <Icon icon="ri:download-2-line" />
-          <span>导出记录包</span>
+          <span>导出插件包</span>
         </ElButton>
       </div>
     </div>
@@ -88,11 +89,11 @@
         <strong>{{ detail.state.updated_at || '--' }}</strong>
       </div>
       <div class="overview-item">
-        <span>最近动作</span>
+        <span>最近操作</span>
         <strong>{{ historyActionLabel(detail.state.last_action) }}</strong>
       </div>
       <div class="overview-item">
-        <span>执行状态</span>
+        <span>执行结果</span>
         <strong>{{ executionStateLabel(detail.state.hook_execution) }}</strong>
       </div>
     </div>
@@ -145,8 +146,6 @@
     historyActionLabel,
     normalizePluginCopy,
     overviewAuditTone,
-    pluginAccessLabel,
-    pluginCodeSummary,
     pluginPaymentLabel,
     pluginPaymentTagType,
     statusLabel,

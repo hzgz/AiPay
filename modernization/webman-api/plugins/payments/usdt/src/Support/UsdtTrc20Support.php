@@ -31,7 +31,7 @@ final class UsdtTrc20Support
     ) {
         $baseUrl = rtrim(trim($baseUrl), '/');
         if (!str_starts_with($baseUrl, 'https://')) {
-            throw new RuntimeException('TronGrid base URL must use HTTPS');
+            throw new RuntimeException('TronGrid 接口地址必须使用 HTTPS');
         }
 
         $this->baseUrl = $baseUrl;
@@ -48,7 +48,7 @@ final class UsdtTrc20Support
     {
         $recipient = trim((string)($account['wxname'] ?? ''));
         if (!$this->isValidMainnetAddress($recipient)) {
-            throw new RuntimeException('USDT account wallet address is invalid');
+            throw new RuntimeException('USDT 钱包地址无效');
         }
 
         [$minimumTimestamp, $maximumTimestamp] = $this->queryWindow($order);
@@ -67,7 +67,7 @@ final class UsdtTrc20Support
         for ($page = 1; $page <= self::MAX_PAGES; $page++) {
             $response = $this->requestJson($path, $query);
             if (($response['success'] ?? null) !== true || !is_array($response['data'] ?? null)) {
-                throw new RuntimeException('TronGrid returned an invalid transfer response');
+                throw new RuntimeException('TronGrid 返回的转账数据无效');
             }
 
             $pageRows = array_values($response['data']);
@@ -79,7 +79,7 @@ final class UsdtTrc20Support
 
                 $transactionId = (string)$normalized['transaction_id'];
                 if (isset($transfers[$transactionId]) && $transfers[$transactionId] !== $normalized) {
-                    throw new RuntimeException('TronGrid returned conflicting events for one transaction');
+                    throw new RuntimeException('TronGrid 返回了冲突的转账事件');
                 }
                 $transfers[$transactionId] = $normalized;
             }
@@ -89,10 +89,10 @@ final class UsdtTrc20Support
                 break;
             }
             if ($fingerprint === '') {
-                throw new RuntimeException('TronGrid full transfer page is missing a pagination fingerprint');
+                throw new RuntimeException('TronGrid 分页指纹缺失');
             }
             if ($page === self::MAX_PAGES) {
-                throw new RuntimeException('TronGrid transfer page limit was exceeded');
+                throw new RuntimeException('TronGrid 转账分页超过上限');
             }
             $query['fingerprint'] = $fingerprint;
         }
@@ -271,13 +271,13 @@ final class UsdtTrc20Support
         $createdAt = strtotime(trim((string)($order['create_time'] ?? ''))) ?: 0;
         $outTime = (int)($order['out_time'] ?? 0);
         if ($createdAt <= 0 || $outTime <= 0 || $outTime < $createdAt) {
-            throw new RuntimeException('USDT order has an invalid reconciliation window');
+            throw new RuntimeException('USDT 订单对账时间窗口无效');
         }
 
         $minimumTimestamp = max(1, $createdAt);
         $maximumTimestamp = min(time(), $outTime);
         if ($maximumTimestamp < $minimumTimestamp) {
-            throw new RuntimeException('USDT reconciliation window has not started');
+            throw new RuntimeException('USDT 对账时间窗口尚未开始');
         }
 
         return [$minimumTimestamp, $maximumTimestamp];
@@ -309,19 +309,19 @@ final class UsdtTrc20Support
                 return $raw;
             }
             if (!is_string($raw)) {
-                throw new RuntimeException('TronGrid transport returned an invalid response');
+                throw new RuntimeException('TronGrid 传输层返回无效响应');
             }
 
             return $this->decodeJson($raw);
         }
 
         if (!function_exists('curl_init')) {
-            throw new RuntimeException('The PHP cURL extension is required for TronGrid queries');
+            throw new RuntimeException('当前 PHP 环境缺少 cURL 扩展，无法请求 TronGrid');
         }
 
         $curl = curl_init($url);
         if ($curl === false) {
-            throw new RuntimeException('Failed to initialize TronGrid request');
+            throw new RuntimeException('初始化 TronGrid 请求失败');
         }
 
         try {
@@ -340,12 +340,12 @@ final class UsdtTrc20Support
 
             $body = curl_exec($curl);
             if (!is_string($body)) {
-                throw new RuntimeException('TronGrid request failed: ' . curl_error($curl));
+                throw new RuntimeException('TronGrid 请求失败: ' . curl_error($curl));
             }
 
             $httpStatus = (int)curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
             if ($httpStatus < 200 || $httpStatus >= 300) {
-                throw new RuntimeException('TronGrid request returned HTTP ' . $httpStatus);
+                throw new RuntimeException('TronGrid 请求返回 HTTP ' . $httpStatus);
             }
 
             return $this->decodeJson($body);
@@ -362,11 +362,11 @@ final class UsdtTrc20Support
         try {
             $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $exception) {
-            throw new RuntimeException('TronGrid returned malformed JSON', previous: $exception);
+            throw new RuntimeException('TronGrid 返回的 JSON 格式无效', previous: $exception);
         }
 
         if (!is_array($decoded)) {
-            throw new RuntimeException('TronGrid returned an invalid JSON object');
+            throw new RuntimeException('TronGrid 返回的 JSON 对象无效');
         }
 
         return $decoded;

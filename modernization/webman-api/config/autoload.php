@@ -15,7 +15,7 @@
 return [
     'files' => [
         base_path() . '/app/functions.php',
-        base_path() . '/app/payment/bootstrap.php',
+        base_path() . '/plugins/payments/bootstrap.php',
         base_path() . '/support/Request.php',
         base_path() . '/support/Response.php',
         base_path() . '/vendor/workerman/webman-framework/src/support/helpers.php',

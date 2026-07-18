@@ -99,7 +99,7 @@ class AdminThemeFormatter
     private static function maintenanceNote(bool $activateSupported, bool $deleteSupported): string
     {
         if ($activateSupported && $deleteSupported) {
-            return '当前范围已接入模板中心，支持启用切换与安全删除。若删除的是正在使用的模板，系统会先切回默认模板再完成清理。';
+            return '当前范围已接入模板中心，支持启用切换与安全删除。若删除的是正在使用的模板，系统会先切回标准模板再完成清理。';
         }
 
         if ($deleteSupported) {

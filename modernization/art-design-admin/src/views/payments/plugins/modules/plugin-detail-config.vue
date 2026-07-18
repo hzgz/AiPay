@@ -8,14 +8,10 @@
               {{ capabilityDisplayLabel(item) }}
             </ElTag>
           </div>
-          <div class="audit-tags">
-            <ElTag effect="plain">{{ pluginWorkspaceLabel(legacyProfile) }}</ElTag>
-            <ElTag type="info" effect="plain">字段 {{ legacyProfile.fields.length }}</ElTag>
-          </div>
         </div>
 
-        <div class="legacy-profile-notice">
-          <div class="legacy-profile-notice__copy">
+        <div class="legacy-profile-toolbar">
+          <div class="plugin-config-notice__copy">
             <strong>{{ pluginWorkspaceLabel(legacyProfile) }}</strong>
             <p>{{ legacyProfile.summary }}</p>
           </div>
@@ -28,41 +24,21 @@
           </ElButton>
         </div>
 
-        <div class="legacy-profile-overview">
-          <article class="legacy-profile-overview__card">
-            <span>维护位置</span>
-            <strong>{{ pluginWorkspaceLabel(legacyProfile) }}</strong>
-          </article>
-          <article class="legacy-profile-overview__card">
-            <span>接入方式</span>
-            <strong>{{ pluginAccessLabel(detail.manifest.code) }}</strong>
-          </article>
-          <article class="legacy-profile-overview__card">
-            <span>字段数量</span>
-            <strong>{{ legacyProfile.fields.length }} 项</strong>
-          </article>
-        </div>
-
-        <div class="legacy-profile-grid">
-          <article
+        <div class="legacy-profile-list">
+          <section
             v-for="field in legacyProfile.fields"
             :key="`${legacyProfile.code}-${field.key}`"
-            class="legacy-profile-card"
+            class="legacy-profile-row"
           >
-            <div class="legacy-profile-card__head">
+            <div class="legacy-profile-row__head">
               <strong>{{ field.label }}</strong>
               <div class="capability-list">
                 <ElTag v-if="field.required" type="danger" effect="plain">必填</ElTag>
                 <ElTag v-if="field.secret" type="warning" effect="plain">敏感</ElTag>
               </div>
             </div>
-            <div v-if="field.hint" class="legacy-profile-card__meta-group">
-              <p v-if="field.hint" class="legacy-profile-card__meta-line">
-                <span>说明</span>
-                <strong>{{ field.hint }}</strong>
-              </p>
-            </div>
-          </article>
+            <p v-if="field.hint" class="legacy-profile-row__hint">{{ field.hint }}</p>
+          </section>
         </div>
       </div>
     </template>
@@ -91,8 +67,8 @@
 
         <div v-if="!detail.state.installed" class="plugin-config-notice">
           <div class="plugin-config-notice__copy">
-            <strong>安装后可维护接入字段</strong>
-            <p>当前插件尚未安装，暂不开放配置编辑。</p>
+            <strong>插件未安装</strong>
+            <p>安装后即可在这里填写接入字段。</p>
           </div>
           <ElTag effect="plain" type="info">未安装</ElTag>
         </div>
@@ -104,7 +80,7 @@
           >
             <div class="plugin-config-notice__copy">
               <strong>配置表缺失</strong>
-              <p>请先执行安装或修复，再回到这里维护接入字段。</p>
+              <p>请先修复插件，再回到这里填写接入字段。</p>
             </div>
             <ElTag effect="plain" type="danger">需修复</ElTag>
           </div>
@@ -118,20 +94,17 @@
               <div class="plugin-config-section__head">
                 <div>
                   <h4>{{ section.title }}</h4>
-                  <p>{{ section.description }}</p>
                 </div>
                 <ElTag effect="plain">{{ section.fields.length }} 项</ElTag>
               </div>
 
               <ElForm label-position="top" class="config-form">
                 <ElRow :gutter="16">
-                  <ElCol
-                    v-for="field in section.fields"
-                    :key="field.field"
-                    :xs="24"
-                    :md="field.type === 'textarea' ? 24 : 12"
-                  >
-                    <ElFormItem :label="normalizePluginCopy(field.label)" :required="field.required">
+                  <ElCol v-for="field in section.fields" :key="field.field" :xs="24" :md="24">
+                    <ElFormItem
+                      :label="normalizePluginCopy(field.label)"
+                      :required="field.required"
+                    >
                       <ElInput
                         :model-value="configForm[field.field] ?? ''"
                         :type="inputTypeForField(field)"
@@ -159,7 +132,9 @@
             >
               保存配置
             </ElButton>
-            <ElTag effect="plain" type="info">必填 {{ detail.config_summary.required_fields }}</ElTag>
+            <ElTag effect="plain" type="info"
+              >必填 {{ detail.config_summary.required_fields }} 项</ElTag
+            >
           </div>
         </template>
       </div>
@@ -174,7 +149,6 @@
     inputTypeForField,
     normalizePluginCopy,
     placeholderForField,
-    pluginAccessLabel,
     pluginWorkspaceButtonLabel,
     pluginWorkspaceLabel,
     type PluginConfigSection
@@ -192,7 +166,7 @@
     canSaveConfig: boolean
   }
 
-  const props = defineProps<Props>()
+  defineProps<Props>()
 
   const emit = defineEmits<{
     (e: 'openWorkspace', profile: PaymentPluginLegacyProfile, code: string): void
@@ -237,7 +211,7 @@
     min-width: 0;
   }
 
-  .legacy-profile-notice,
+  .legacy-profile-toolbar,
   .plugin-config-notice {
     display: flex;
     flex-wrap: wrap;
@@ -252,20 +226,19 @@
       linear-gradient(180deg, rgb(239 246 255 / 0.92), rgb(255 255 255 / 1));
   }
 
-  .legacy-profile-notice__copy,
+  .legacy-profile-toolbar__label,
+  .plugin-config-notice__copy strong {
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
   .plugin-config-notice__copy {
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
 
-  .legacy-profile-notice__copy strong,
-  .plugin-config-notice__copy strong {
-    color: #0f172a;
-    font-size: 14px;
-  }
-
-  .legacy-profile-notice__copy p,
   .plugin-config-notice__copy p {
     margin: 0;
     color: #475569;
@@ -310,52 +283,17 @@
     font-weight: 700;
   }
 
-  .plugin-config-section__head p {
-    margin: 4px 0 0;
-    color: #64748b;
-    font-size: 12px;
-    line-height: 1.6;
-  }
-
   .plugin-config-section .config-form {
     margin-top: 0;
   }
 
-  .legacy-profile-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .legacy-profile-overview {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .legacy-profile-overview__card {
+  .legacy-profile-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    min-height: 76px;
-    padding: 12px 14px;
-    border: 1px solid rgb(226 232 240 / 0.9);
-    border-radius: 16px;
-    background: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(248 250 252 / 0.94));
+    gap: 12px;
   }
 
-  .legacy-profile-overview__card span {
-    color: #64748b;
-    font-size: 12px;
-  }
-
-  .legacy-profile-overview__card strong {
-    color: #0f172a;
-    font-size: 15px;
-    line-height: 1.5;
-  }
-
-  .legacy-profile-card {
+  .legacy-profile-row {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -365,56 +303,20 @@
     background: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(248 250 252 / 0.94));
   }
 
-  .legacy-profile-card__head {
+  .legacy-profile-row__head {
     display: flex;
     justify-content: space-between;
     gap: 10px;
     align-items: flex-start;
   }
 
-  .legacy-profile-card__head strong {
+  .legacy-profile-row__head strong {
     color: #111827;
     line-height: 1.4;
   }
 
-  .legacy-profile-card__identity {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px 12px;
-    border: 1px solid rgb(226 232 240 / 0.82);
-    border-radius: 12px;
-    background: rgb(255 255 255 / 0.82);
-  }
-
-  .legacy-profile-card__identity span,
-  .legacy-profile-card__meta-line span {
-    color: #94a3b8;
-    font-size: 12px;
-  }
-
-  .legacy-profile-card__identity code {
-    color: #0f172a;
-    font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-    word-break: break-all;
-  }
-
-  .legacy-profile-card__meta-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .legacy-profile-card__meta-line {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  .legacy-profile-row__hint {
     margin: 0;
-  }
-
-  .legacy-profile-card__meta-line strong {
     color: #475569;
     font-size: 13px;
     font-weight: 500;
@@ -444,16 +346,11 @@
       grid-template-columns: 1fr;
     }
 
-    .legacy-profile-notice,
+    .legacy-profile-toolbar,
     .plugin-config-notice,
     .plugin-config-section__head {
       flex-direction: column;
       align-items: flex-start;
-    }
-
-    .legacy-profile-overview,
-    .legacy-profile-grid {
-      grid-template-columns: 1fr;
     }
 
     .audit-tags {

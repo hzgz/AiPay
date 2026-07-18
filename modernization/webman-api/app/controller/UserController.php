@@ -7,6 +7,7 @@ use app\support\AdminRouteAuthorization;
 use app\support\AdminSmtpMailer;
 use app\support\AdminUserFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\LegacyPassword;
 use app\support\MerchantEmailCampaignService;
 use app\support\MerchantImpersonationService;
@@ -29,9 +30,9 @@ class UserController
         $query = $this->merchantQuery();
         $this->applyFilters($query, $request);
 
-        $total = (int)(clone $query)->count('ypay_user.id');
+        $total = (int)(clone $query)->count('merchant.id');
         $rows = $query
-            ->orderByDesc('ypay_user.id')
+            ->orderByDesc('merchant.id')
             ->offset(($current - 1) * $size)
             ->limit($size)
             ->get()
@@ -62,12 +63,12 @@ class UserController
     {
         $id = $this->userIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('user id is required', 422, null, 422);
+            return ApiResponse::error('缺少商户编号', 422, null, 422);
         }
 
         $detail = $this->findUserDetail($id);
         if ($detail === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         return ApiResponse::success($detail);
@@ -96,7 +97,7 @@ class UserController
         $id = Db::transaction(function () use ($payload): int {
             $this->applyCustomMerchantAutoIncrement();
 
-            $userId = (int)Db::table('ypay_user')->insertGetId([
+            $userId = (int)Db::table(BusinessTable::user())->insertGetId([
                 'username' => $payload['username'],
                 'password' => LegacyPassword::hash($payload['password']),
                 'email' => $payload['email'],
@@ -111,7 +112,7 @@ class UserController
                 'remarks' => $payload['remarks'],
             ]);
 
-            Db::table('ypay_userbasic')->insert([
+            Db::table(BusinessTable::userBasic())->insert([
                 'user_id' => $userId,
                 'timeout_method' => 2,
                 'timeout_url' => '/',
@@ -145,11 +146,11 @@ class UserController
 
         $id = $this->userIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('user id is required', 422, null, 422);
+            return ApiResponse::error('缺少商户编号', 422, null, 422);
         }
 
         if ($this->baseUserRecord($id) === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         $payload = RequestPayload::all($request);
@@ -162,7 +163,7 @@ class UserController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_user')
+        Db::table(BusinessTable::user())
             ->where('id', $id)
             ->update([
                 'email' => $email,
@@ -172,7 +173,7 @@ class UserController
 
         $detail = $this->findUserDetail($id);
         if ($detail === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         return ApiResponse::success($detail, 'merchant profile updated');
@@ -187,11 +188,11 @@ class UserController
 
         $id = $this->userIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('user id is required', 422, null, 422);
+            return ApiResponse::error('缺少商户编号', 422, null, 422);
         }
 
         if ($this->baseUserRecord($id) === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         $payload = RequestPayload::all($request);
@@ -203,7 +204,7 @@ class UserController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_user')
+        Db::table(BusinessTable::user())
             ->where('id', $id)
             ->update([
                 'is_frozen' => $status,
@@ -212,7 +213,7 @@ class UserController
 
         return ApiResponse::success([
             'item' => $this->findUserItem($id),
-        ], 'merchant status updated');
+        ], '商户状态已更新');
     }
 
     public function business(Request $request): Response
@@ -224,12 +225,12 @@ class UserController
 
         $id = $this->userIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('user id is required', 422, null, 422);
+            return ApiResponse::error('缺少商户编号', 422, null, 422);
         }
 
         $record = $this->baseUserRecord($id);
         if ($record === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         $payload = RequestPayload::all($request);
@@ -249,11 +250,11 @@ class UserController
             if ($vipId > 0) {
                 $vip = $this->vipRecord($vipId);
                 if ($vip === null) {
-                    throw new \InvalidArgumentException('vip package was not found');
+                    throw new \InvalidArgumentException('会员套餐不存在');
                 }
 
                 if ((int)($vip['status'] ?? 0) !== 1 && $vipId !== $currentVipId) {
-                    throw new \InvalidArgumentException('vip package is disabled and cannot be newly assigned');
+                    throw new \InvalidArgumentException('该会员套餐已停用，无法新分配');
                 }
 
                 $vipTime = $this->normalizeOptionalDateTime(
@@ -282,7 +283,7 @@ class UserController
 
         $this->ensureUserBasicRecord($id);
 
-        Db::table('ypay_user')
+        Db::table(BusinessTable::user())
             ->where('id', $id)
             ->update([
                 'vip_id' => $vipId > 0 ? $vipId : null,
@@ -290,7 +291,7 @@ class UserController
                 'feilv' => $vipId > 0 ? $feeRate : null,
             ]);
 
-        Db::table('ypay_userbasic')
+        Db::table(BusinessTable::userBasic())
             ->where('user_id', $id)
             ->update([
                 'is_rate' => $isRate,
@@ -298,7 +299,7 @@ class UserController
 
         $detail = $this->findUserDetail($id);
         if ($detail === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         return ApiResponse::success($detail, 'merchant vip and fee settings updated');
@@ -313,11 +314,11 @@ class UserController
 
         $id = $this->userIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('user id is required', 422, null, 422);
+            return ApiResponse::error('缺少商户编号', 422, null, 422);
         }
 
         if ($this->baseUserRecord($id) === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         $this->ensureUserBasicRecord($id);
@@ -325,7 +326,7 @@ class UserController
         $payload = RequestPayload::all($request);
         $item = $this->findUserItem($id);
         if ($item === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         $config = SystemConfig::all();
@@ -360,7 +361,7 @@ class UserController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_userbasic')
+        Db::table(BusinessTable::userBasic())
             ->where('user_id', $id)
             ->update([
                 'order_tips' => $orderTips,
@@ -370,10 +371,10 @@ class UserController
 
         $detail = $this->findUserDetail($id);
         if ($detail === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
-        return ApiResponse::success($detail, 'merchant notification settings updated');
+        return ApiResponse::success($detail, '商户通知设置已更新');
     }
 
     public function emailAudit(Request $request): Response
@@ -412,7 +413,7 @@ class UserController
 
         if (!$audit['can_send']) {
             return ApiResponse::error(
-                'merchant email campaign cannot be sent',
+                '当前商户邮件发送条件不满足，暂不能发送',
                 422,
                 ['audit' => $service->publicAudit($audit)],
                 422
@@ -437,7 +438,7 @@ class UserController
 
         $this->recordAdminEmailCampaign($request, $result);
 
-        return ApiResponse::success($result, 'merchant email campaign sent');
+        return ApiResponse::success($result, '商户邮件已发送');
     }
 
     public function impersonationAudit(Request $request): Response
@@ -449,12 +450,12 @@ class UserController
 
         $id = $this->userIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('user id is required', 422, null, 422);
+            return ApiResponse::error('缺少商户编号', 422, null, 422);
         }
 
         $detail = $this->findUserDetail($id);
         if ($detail === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         try {
@@ -478,12 +479,12 @@ class UserController
 
         $id = $this->userIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('user id is required', 422, null, 422);
+            return ApiResponse::error('缺少商户编号', 422, null, 422);
         }
 
         $detail = $this->findUserDetail($id);
         if ($detail === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         $service = $this->merchantImpersonation();
@@ -496,7 +497,7 @@ class UserController
 
         if (empty($audit['can_impersonate'])) {
             return ApiResponse::error(
-                'merchant cannot be impersonated',
+                '当前商户暂不允许代登录',
                 422,
                 ['audit' => $service->publicAudit($audit)],
                 422
@@ -516,7 +517,7 @@ class UserController
 
         $this->recordAdminImpersonation($request, $result);
 
-        return ApiResponse::success($result, 'merchant impersonation ready');
+        return ApiResponse::success($result, '商户代登录已就绪');
     }
 
     public function impersonationRedirect(Request $request): Response
@@ -593,7 +594,7 @@ class UserController
             'deleted_user_ids' => array_values(array_map('intval', (array)($audit['deletable_merchant_ids'] ?? []))),
             'deleted_count' => (int)($audit['summary']['deletable_count'] ?? 0),
             'audit' => $audit,
-        ], 'merchant batch delete completed');
+        ], '商户批量删除已完成');
     }
 
     public function deleteAudit(Request $request): Response
@@ -605,12 +606,12 @@ class UserController
 
         $id = $this->userIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('user id is required', 422, null, 422);
+            return ApiResponse::error('缺少商户编号', 422, null, 422);
         }
 
         $detail = $this->findUserDetail($id);
         if ($detail === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         return ApiResponse::success([
@@ -628,12 +629,12 @@ class UserController
 
         $id = $this->userIdFromRequest($request);
         if ($id <= 0) {
-            return ApiResponse::error('user id is required', 422, null, 422);
+            return ApiResponse::error('缺少商户编号', 422, null, 422);
         }
 
         $item = $this->findUserItem($id);
         if ($item === null) {
-            return ApiResponse::error('user not found', 404, null, 404);
+            return ApiResponse::error('商户不存在', 404, null, 404);
         }
 
         $audit = $this->merchantDeleteAudit($id);
@@ -665,40 +666,40 @@ class UserController
             'deleted_user_id' => $id,
             'deleted_username' => (string)($item['userName'] ?? ''),
             'audit' => $audit,
-        ], 'merchant deleted');
+        ], '商户已删除');
     }
 
     private function merchantQuery(): Builder
     {
-        return Db::table('ypay_user')
-            ->leftJoin('ypay_userbasic', 'ypay_user.id', '=', 'ypay_userbasic.user_id')
-            ->leftJoin('ypay_vip', 'ypay_user.vip_id', '=', 'ypay_vip.id')
+        return Db::table(BusinessTable::user('merchant'))
+            ->leftJoin(BusinessTable::userBasic('basic'), 'merchant.id', '=', 'basic.user_id')
+            ->leftJoin(BusinessTable::vip('vip'), 'merchant.vip_id', '=', 'vip.id')
             ->select(
-                'ypay_user.id',
-                'ypay_user.username',
-                'ypay_user.superior_id',
-                'ypay_user.email',
-                'ypay_user.mobile',
-                'ypay_user.wxpusher_uid',
-                'ypay_user.tg_chat_id',
-                'ypay_user.is_realName',
-                'ypay_user.name',
-                'ypay_user.money',
-                'ypay_user.vip_id',
-                'ypay_user.vip_time',
-                'ypay_user.feilv',
-                'ypay_user.create_time',
-                'ypay_user.is_frozen',
-                'ypay_user.frozen_reason',
-                'ypay_user.remarks',
-                'ypay_userbasic.appkey',
-                'ypay_userbasic.loginfailure',
-                'ypay_userbasic.timeout_time',
-                'ypay_userbasic.is_rate',
-                'ypay_userbasic.order_tips',
-                'ypay_userbasic.is_money_tips',
-                'ypay_userbasic.money_tips',
-                'ypay_vip.name as vip_name'
+                'merchant.id',
+                'merchant.username',
+                'merchant.superior_id',
+                'merchant.email',
+                'merchant.mobile',
+                'merchant.wxpusher_uid',
+                'merchant.tg_chat_id',
+                'merchant.is_realName',
+                'merchant.name',
+                'merchant.money',
+                'merchant.vip_id',
+                'merchant.vip_time',
+                'merchant.feilv',
+                'merchant.create_time',
+                'merchant.is_frozen',
+                'merchant.frozen_reason',
+                'merchant.remarks',
+                'basic.appkey',
+                'basic.loginfailure',
+                'basic.timeout_time',
+                'basic.is_rate',
+                'basic.order_tips',
+                'basic.is_money_tips',
+                'basic.money_tips',
+                'vip.name as vip_name'
             );
     }
 
@@ -708,39 +709,39 @@ class UserController
         if ($keyword !== '') {
             $query->where(function (Builder $builder) use ($keyword) {
                 $builder
-                    ->where('ypay_user.username', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.name', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.email', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.mobile', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.remarks', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_userbasic.appkey', 'like', '%' . $keyword . '%');
+                    ->where('merchant.username', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.name', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.email', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.mobile', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.remarks', 'like', '%' . $keyword . '%')
+                    ->orWhere('basic.appkey', 'like', '%' . $keyword . '%');
 
                 if (ctype_digit($keyword)) {
                     $builder
-                        ->orWhere('ypay_user.id', (int)$keyword)
-                        ->orWhere('ypay_user.superior_id', (int)$keyword);
+                        ->orWhere('merchant.id', (int)$keyword)
+                        ->orWhere('merchant.superior_id', (int)$keyword);
                 }
             });
         }
 
         $mobile = trim((string)$request->get('userPhone', $request->get('mobile', '')));
         if ($mobile !== '') {
-            $query->where('ypay_user.mobile', 'like', '%' . $mobile . '%');
+            $query->where('merchant.mobile', 'like', '%' . $mobile . '%');
         }
 
         $email = trim((string)$request->get('userEmail', $request->get('email', '')));
         if ($email !== '') {
-            $query->where('ypay_user.email', 'like', '%' . $email . '%');
+            $query->where('merchant.email', 'like', '%' . $email . '%');
         }
 
         $status = strtolower(trim((string)$request->get('status', '')));
         if ($status !== '') {
             if (in_array($status, ['1', 'active', 'normal'], true)) {
-                $query->where('ypay_user.is_frozen', 0);
+                $query->where('merchant.is_frozen', 0);
             }
 
             if (in_array($status, ['2', '4', 'frozen', 'disabled'], true)) {
-                $query->where('ypay_user.is_frozen', 1);
+                $query->where('merchant.is_frozen', 1);
             }
         }
 
@@ -750,14 +751,14 @@ class UserController
         }
 
         if (in_array($realNameStatus, ['1', 'verified', 'yes', 'realname'], true)) {
-            $query->where('ypay_user.is_realName', 1);
+            $query->where('merchant.is_realName', 1);
         }
 
         if (in_array($realNameStatus, ['0', '2', 'unverified', 'no'], true)) {
             $query->where(function (Builder $builder) {
                 $builder
-                    ->whereNull('ypay_user.is_realName')
-                    ->orWhere('ypay_user.is_realName', 0);
+                    ->whereNull('merchant.is_realName')
+                    ->orWhere('merchant.is_realName', 0);
             });
         }
 
@@ -766,20 +767,20 @@ class UserController
             $now = date('Y-m-d H:i:s');
             if (in_array($vipStatus, ['1', 'vip', 'member'], true)) {
                 $query
-                    ->where('ypay_user.vip_id', '>', 0)
+                    ->where('merchant.vip_id', '>', 0)
                     ->where(function (Builder $builder) use ($now) {
                         $builder
-                            ->whereNull('ypay_user.vip_time')
-                            ->orWhere('ypay_user.vip_time', '>=', $now);
+                            ->whereNull('merchant.vip_time')
+                            ->orWhere('merchant.vip_time', '>=', $now);
                     });
             }
 
             if (in_array($vipStatus, ['0', '2', 'normal'], true)) {
                 $query->where(function (Builder $builder) use ($now) {
                     $builder
-                        ->whereNull('ypay_user.vip_id')
-                        ->orWhere('ypay_user.vip_id', 0)
-                        ->orWhere('ypay_user.vip_time', '<', $now);
+                        ->whereNull('merchant.vip_id')
+                        ->orWhere('merchant.vip_id', 0)
+                        ->orWhere('merchant.vip_time', '<', $now);
                 });
             }
         }
@@ -797,7 +798,7 @@ class UserController
         }
 
         $todayStart = date('Y-m-d 00:00:00');
-        $rows = Db::table('ypay_order')
+        $rows = Db::table(BusinessTable::order())
             ->select('user_id')
             ->selectRaw('COUNT(*) as order_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as paid_order_count')
@@ -821,7 +822,7 @@ class UserController
     private function findUserItem(int $id): ?array
     {
         $row = $this->merchantQuery()
-            ->where('ypay_user.id', $id)
+            ->where('merchant.id', $id)
             ->first();
 
         if (!$row) {
@@ -881,7 +882,7 @@ class UserController
 
     private function baseUserRecord(int $id): ?array
     {
-        $row = Db::table('ypay_user')
+        $row = Db::table(BusinessTable::user())
             ->select('id', 'vip_id', 'vip_time', 'feilv')
             ->where('id', $id)
             ->first();
@@ -891,7 +892,7 @@ class UserController
 
     private function userBasicRecord(int $id): ?array
     {
-        $row = Db::table('ypay_userbasic')
+        $row = Db::table(BusinessTable::userBasic())
             ->select('user_id', 'is_rate', 'order_tips', 'is_money_tips', 'money_tips')
             ->where('user_id', $id)
             ->first();
@@ -901,12 +902,12 @@ class UserController
 
     private function ensureUserBasicRecord(int $id): void
     {
-        $exists = Db::table('ypay_userbasic')->where('user_id', $id)->exists();
+        $exists = Db::table(BusinessTable::userBasic())->where('user_id', $id)->exists();
         if ($exists) {
             return;
         }
 
-        Db::table('ypay_userbasic')->insert([
+        Db::table(BusinessTable::userBasic())->insert([
             'user_id' => $id,
             'timeout_method' => 2,
             'timeout_url' => '/',
@@ -923,7 +924,7 @@ class UserController
 
     private function loadVipOptions(int $currentVipId = 0): array
     {
-        $rows = Db::table('ypay_vip')
+        $rows = Db::table(BusinessTable::vip())
             ->select('id', 'name', 'feilv', 'viptime', 'status', 'sort')
             ->orderByRaw('CAST(COALESCE(sort, 0) AS UNSIGNED) asc')
             ->orderBy('id')
@@ -980,11 +981,11 @@ class UserController
     private function merchantDeleteAudit(int $id): array
     {
         $merchant = $this->merchantIdentity($id);
-        $subordinateCount = (int)Db::table('ypay_user')->where('superior_id', $id)->count();
+        $subordinateCount = (int)Db::table(BusinessTable::user())->where('superior_id', $id)->count();
         $relatedCounts = [[
             'key' => 'subordinate_merchants',
             'label' => 'Subordinate merchants',
-            'table_name' => 'ypay_user',
+            'table_name' => BusinessTable::user(),
             'column_name' => 'superior_id',
             'count' => $subordinateCount,
             'delete_action' => 'block',
@@ -1015,7 +1016,7 @@ class UserController
         $blockingReasons = [];
         if ($subordinateCount > 0) {
             $blockingReasons[] = sprintf(
-                'This merchant still has %d subordinate merchant(s) linked by superior_id.',
+                '当前商户仍通过 superior_id 关联了 %d 个下级商户，请先解除关联后再删除。',
                 $subordinateCount
             );
         }
@@ -1033,8 +1034,8 @@ class UserController
                 'blocking_reference_count' => $subordinateCount,
             ],
             'warnings' => [
-                'Deleting a merchant permanently removes merchant-owned records from the audited tables below.',
-                'Recharge records, order history, money logs, tickets, risk records, and upstream channels are all included in this destructive cleanup.',
+                '删除商户会一并清理下方审计表中的商户自有数据。',
+                '充值记录、订单历史、资金日志、工单、风控记录以及上游通道都会纳入本次清理范围。',
             ],
         ];
     }
@@ -1044,94 +1045,94 @@ class UserController
         return [
             [
                 'key' => 'userbasic',
-                'label' => 'Merchant basic settings',
-                'table' => 'ypay_userbasic',
+                'label' => '商户基础设置',
+                'table' => BusinessTable::userBasic(),
                 'column' => 'user_id',
-                'help_text' => 'Deletes appkey, timeout, notification, and fee-bearer settings.',
+                'help_text' => '清理 appkey、超时、通知方式与手续费承担方等基础配置。',
             ],
             [
                 'key' => 'payment_accounts',
-                'label' => 'Merchant local payment accounts',
-                'table' => 'ypay_account',
+                'label' => '商户本地支付账户',
+                'table' => BusinessTable::account(),
                 'column' => 'user_id',
-                'help_text' => 'Deletes locally managed payment account records owned by the merchant.',
+                'help_text' => '清理商户名下的本地支付账户记录。',
             ],
             [
                 'key' => 'merchant_paylists',
-                'label' => 'Merchant upstream channels',
-                'table' => 'ypay_paylist',
+                'label' => '商户上游通道',
+                'table' => BusinessTable::paylist(),
                 'column' => 'user_id',
-                'help_text' => 'Deletes merchant-scoped upstream channel credentials and metadata.',
+                'help_text' => '清理商户范围内的上游通道密钥与元数据。',
             ],
             [
                 'key' => 'payment_pools',
-                'label' => 'Merchant payment pools',
-                'table' => 'ypay_poll_pool',
+                'label' => '商户轮询池',
+                'table' => BusinessTable::pollPool(),
                 'column' => 'user_id',
-                'help_text' => 'Deletes merchant poll-pool definitions.',
+                'help_text' => '清理商户轮询池定义。',
             ],
             [
                 'key' => 'payment_pool_items',
-                'label' => 'Merchant payment pool items',
-                'table' => 'ypay_poll_pool_item',
+                'label' => '商户轮询池项',
+                'table' => BusinessTable::pollPoolItem(),
                 'column' => 'user_id',
-                'help_text' => 'Deletes merchant poll-pool channel selections.',
+                'help_text' => '清理商户轮询池内的通道选择记录。',
             ],
             [
                 'key' => 'orders',
-                'label' => 'Merchant orders',
-                'table' => 'ypay_order',
+                'label' => '商户订单',
+                'table' => BusinessTable::order(),
                 'column' => 'user_id',
-                'help_text' => 'Deletes local order records for this merchant.',
+                'help_text' => '清理该商户的本地订单记录。',
             ],
             [
                 'key' => 'recharges',
-                'label' => 'Merchant recharge records',
-                'table' => 'ypay_recharge',
+                'label' => '商户充值记录',
+                'table' => BusinessTable::recharge(),
                 'column' => 'user_id',
-                'help_text' => 'Deletes merchant recharge and paid registration records.',
+                'help_text' => '清理商户充值记录与付费注册记录。',
             ],
             [
                 'key' => 'money_logs',
-                'label' => 'Merchant money logs',
+                'label' => '商户资金日志',
                 'table' => 'money_log',
                 'column' => 'user_id',
-                'help_text' => 'Deletes merchant balance change logs.',
+                'help_text' => '清理商户余额变动日志。',
             ],
             [
                 'key' => 'front_logs',
-                'label' => 'Merchant front logs',
+                'label' => '商户前台日志',
                 'table' => 'admin_front_log',
                 'column' => 'uid',
-                'help_text' => 'Deletes merchant front-operation log rows.',
+                'help_text' => '清理商户前台操作日志。',
             ],
             [
                 'key' => 'domains',
-                'label' => 'Merchant domains',
-                'table' => 'ypay_domain',
+                'label' => '商户域名',
+                'table' => BusinessTable::domain(),
                 'column' => 'user_id',
-                'help_text' => 'Deletes merchant domain submissions and audit results.',
+                'help_text' => '清理商户域名提交记录与审核结果。',
             ],
             [
                 'key' => 'risks',
-                'label' => 'Merchant risk records',
-                'table' => 'ypay_risk',
+                'label' => '商户风控记录',
+                'table' => BusinessTable::risk(),
                 'column' => 'user_id',
-                'help_text' => 'Deletes merchant risk-control records.',
+                'help_text' => '清理商户风控记录。',
             ],
             [
                 'key' => 'tickets',
-                'label' => 'Merchant tickets',
-                'table' => 'ypay_ticket',
+                'label' => '商户工单',
+                'table' => BusinessTable::ticket(),
                 'column' => 'creator_id',
-                'help_text' => 'Deletes merchant support tickets created by this merchant.',
+                'help_text' => '清理该商户创建的客服工单。',
             ],
             [
                 'key' => 'merchant_record',
-                'label' => 'Merchant account',
-                'table' => 'ypay_user',
+                'label' => '商户账号',
+                'table' => BusinessTable::user(),
                 'column' => 'id',
-                'help_text' => 'Deletes the merchant account record itself.',
+                'help_text' => '清理商户账号本身的主记录。',
             ],
         ];
     }
@@ -1155,13 +1156,13 @@ class UserController
                     'merchant_username' => '',
                     'exists' => false,
                     'can_delete' => false,
-                    'blocking_reasons' => ['This merchant was not found in ypay_user.'],
+                    'blocking_reasons' => ['当前商户记录不存在。'],
                     'summary' => [
                         'delete_row_count' => 0,
                         'non_empty_target_count' => 0,
                         'blocking_reference_count' => 0,
                     ],
-                    'warnings' => ['Remove missing merchants from the selection before retrying the batch delete.'],
+                    'warnings' => ['请先从选择列表中移除不存在的商户，再重新执行批量删除。'],
                     'related_counts' => [],
                 ];
                 continue;
@@ -1193,13 +1194,13 @@ class UserController
 
         $warnings = [];
         if ($missingMerchantIds !== []) {
-            $warnings[] = 'Some selected merchants no longer exist and must be removed from the batch selection.';
+            $warnings[] = '所选商户中存在已失效记录，请先移出本次选择后再继续。';
         }
         if ($blockedMerchantIds !== []) {
-            $warnings[] = 'At least one selected merchant still has blocking references, so the batch delete is paused until those merchants are cleared.';
+            $warnings[] = '所选商户中仍存在阻塞引用，需先清理这些商户后才能继续批量删除。';
         }
         if ($deletableMerchantIds !== []) {
-            $warnings[] = 'Batch delete reuses the same destructive cleanup scope as the single-merchant delete flow.';
+            $warnings[] = '批量删除沿用单个商户删除的同一清理范围，请确认后再执行。';
         }
 
         return [
@@ -1226,7 +1227,7 @@ class UserController
 
     private function merchantIdentity(int $id): ?array
     {
-        $row = Db::table('ypay_user')
+        $row = Db::table(BusinessTable::user())
             ->select('id', 'username')
             ->where('id', $id)
             ->first();
@@ -1317,42 +1318,42 @@ class UserController
         return [
             [
                 'value' => 'close',
-                'label' => 'Disabled',
+                'label' => '关闭',
                 'enabled' => true,
                 'target_ready' => true,
                 'requires' => null,
-                'help_text' => 'Turn the merchant notification off for this event.',
+                'help_text' => '关闭该项通知。',
             ],
             [
                 'value' => 'email',
-                'label' => 'Email',
+                'label' => '邮箱',
                 'enabled' => (string)($config['email_switch'] ?? '0') === '1',
                 'target_ready' => trim((string)($item['email'] ?? '')) !== '',
-                'requires' => 'merchant email',
-                'help_text' => 'Uses the merchant email address already saved on the profile.',
+                'requires' => '商户邮箱',
+                'help_text' => '使用商户资料中已保存的邮箱地址。',
             ],
             [
                 'value' => 'wxpusher',
-                'label' => 'WxPusher',
+                'label' => '微信推送',
                 'enabled' => (string)($config['wxpusher_switch'] ?? '0') === '1',
                 'target_ready' => !empty($item['wxpusher_uid_configured']),
-                'requires' => 'merchant WxPusher UID',
-                'help_text' => 'Requires the merchant to bind a WxPusher UID first.',
+                'requires' => '商户微信推送标识',
+                'help_text' => '需要商户先绑定微信推送标识。',
             ],
             [
                 'value' => 'tg',
-                'label' => 'Telegram',
+                'label' => '电报',
                 'enabled' => (string)($config['tg_switch'] ?? '0') === '1',
                 'target_ready' => !empty($item['tg_chat_id_configured']),
-                'requires' => 'merchant Telegram chat id',
-                'help_text' => 'Requires the merchant to bind a Telegram chat id first.',
+                'requires' => '商户电报会话标识',
+                'help_text' => '需要商户先绑定电报会话标识。',
             ],
         ];
     }
 
     private function vipRecord(int $vipId): ?array
     {
-        $row = Db::table('ypay_vip')
+        $row = Db::table(BusinessTable::vip())
             ->select('id', 'name', 'feilv', 'viptime', 'status')
             ->where('id', $vipId)
             ->first();
@@ -1378,14 +1379,14 @@ class UserController
         return match ($normalized) {
             '1', 'true', 'yes', 'on', 'freeze', 'frozen', 'disabled' => 1,
             '0', 'false', 'no', 'off', 'unfreeze', 'normal', 'active', 'enabled' => 0,
-            default => throw new \InvalidArgumentException('merchant status must be 0 or 1'),
+            default => throw new \InvalidArgumentException('商户状态只能是正常或冻结'),
         };
     }
 
     private function normalizeVipId(mixed $value): int
     {
         if (is_bool($value) || is_array($value) || is_object($value)) {
-            throw new \InvalidArgumentException('vip package is invalid');
+            throw new \InvalidArgumentException('会员套餐无效');
         }
 
         $normalized = trim((string)$value);
@@ -1394,7 +1395,7 @@ class UserController
         }
 
         if (!ctype_digit($normalized)) {
-            throw new \InvalidArgumentException('vip package is invalid');
+            throw new \InvalidArgumentException('会员套餐无效');
         }
 
         return (int)$normalized;
@@ -1418,14 +1419,18 @@ class UserController
         return match ($normalized) {
             '1', 'true', 'yes', 'on', 'enable', 'enabled', 'merchant' => 1,
             '0', 'false', 'no', 'off', 'disable', 'disabled', 'platform' => 0,
-            default => throw new \InvalidArgumentException($field . ' must be 0 or 1'),
+            default => throw new \InvalidArgumentException(
+                $field === 'merchant fee bearer'
+                    ? '手续费承担方只能是平台或商户'
+                    : $this->fieldLabel($field) . '只能是开启或关闭'
+            ),
         };
     }
 
     private function normalizeOptionalDateTime(mixed $value, string $field): ?string
     {
         if (is_array($value) || is_object($value)) {
-            throw new \InvalidArgumentException($field . ' must be a scalar');
+            throw new \InvalidArgumentException($this->fieldLabel($field) . '格式不正确');
         }
 
         $normalized = trim((string)$value);
@@ -1443,26 +1448,26 @@ class UserController
             }
         }
 
-        throw new \InvalidArgumentException($field . ' must be a valid datetime');
+        throw new \InvalidArgumentException($this->fieldLabel($field) . '必须是有效的日期时间');
     }
 
     private function normalizeFeeRate(mixed $value, string $field, bool $required = true): string
     {
         if (is_array($value) || is_object($value)) {
-            throw new \InvalidArgumentException($field . ' must be a scalar');
+            throw new \InvalidArgumentException($this->fieldLabel($field) . '格式不正确');
         }
 
         $normalized = trim((string)$value);
         if ($normalized === '') {
             if ($required) {
-                throw new \InvalidArgumentException($field . ' is required');
+                throw new \InvalidArgumentException($this->fieldLabel($field) . '不能为空');
             }
 
             return '';
         }
 
         if (strlen($normalized) > 50 || !preg_match('/^\d+(?:\.\d+)?$/', $normalized)) {
-            throw new \InvalidArgumentException($field . ' must be a non-negative number');
+            throw new \InvalidArgumentException($this->fieldLabel($field) . '必须是非负数字');
         }
 
         return $normalized;
@@ -1471,7 +1476,7 @@ class UserController
     private function normalizeNotificationChannel(mixed $value, string $field): string
     {
         if (is_array($value) || is_object($value)) {
-            throw new \InvalidArgumentException($field . ' must be a scalar');
+            throw new \InvalidArgumentException($this->fieldLabel($field) . '格式不正确');
         }
 
         $normalized = strtolower(trim((string)$value));
@@ -1480,7 +1485,7 @@ class UserController
         }
 
         if (!in_array($normalized, ['close', 'email', 'wxpusher', 'tg'], true)) {
-            throw new \InvalidArgumentException($field . ' is invalid');
+            throw new \InvalidArgumentException($this->fieldLabel($field) . '无效');
         }
 
         return $normalized;
@@ -1489,7 +1494,7 @@ class UserController
     private function normalizeThreshold(mixed $value, string $field): string
     {
         if (is_array($value) || is_object($value)) {
-            throw new \InvalidArgumentException($field . ' must be a scalar');
+            throw new \InvalidArgumentException($this->fieldLabel($field) . '格式不正确');
         }
 
         $normalized = trim((string)$value);
@@ -1498,7 +1503,7 @@ class UserController
         }
 
         if (strlen($normalized) > 50 || !preg_match('/^\d+(?:\.\d{1,2})?$/', $normalized)) {
-            throw new \InvalidArgumentException($field . ' must be a non-negative amount with up to 2 decimals');
+            throw new \InvalidArgumentException($this->fieldLabel($field) . '必须是最多两位小数的非负金额');
         }
 
         return $normalized;
@@ -1518,7 +1523,7 @@ class UserController
         };
 
         if (!$enabled) {
-            throw new \InvalidArgumentException($field . ' is disabled in system config');
+            throw new \InvalidArgumentException($this->fieldLabel($field) . '未在系统配置中开启');
         }
     }
 
@@ -1537,10 +1542,10 @@ class UserController
 
         if (!$ready) {
             $message = match ($channel) {
-                'email' => 'merchant email is required before enabling email notifications',
-                'wxpusher' => 'merchant WxPusher UID is required before enabling WxPusher notifications',
-                'tg' => 'merchant Telegram chat id is required before enabling Telegram notifications',
-                default => $field . ' target is not ready',
+                'email' => '启用邮箱通知前，商户邮箱不能为空',
+                'wxpusher' => '启用微信推送通知前，商户需先绑定微信推送标识',
+                'tg' => '启用电报通知前，商户需先绑定电报会话标识',
+                default => $this->fieldLabel($field) . '接收目标未就绪',
             };
 
             throw new \InvalidArgumentException($message);
@@ -1555,7 +1560,7 @@ class UserController
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new \InvalidArgumentException('merchant email format is invalid');
+            throw new \InvalidArgumentException('商户邮箱格式不正确');
         }
 
         return $email;
@@ -1572,15 +1577,15 @@ class UserController
         $isRate = $this->normalizeBinaryToggle($payload['is_rate'] ?? 0, 'merchant fee bearer');
 
         if ($this->merchantFieldExists('username', $username)) {
-            throw new \InvalidArgumentException('merchant username already exists');
+            throw new \InvalidArgumentException('商户账号已存在');
         }
 
         if ($email !== null && $this->merchantFieldExists('email', $email)) {
-            throw new \InvalidArgumentException('merchant email already exists');
+            throw new \InvalidArgumentException('商户邮箱已存在');
         }
 
         if ($mobile !== null && $this->merchantFieldExists('mobile', $mobile)) {
-            throw new \InvalidArgumentException('merchant mobile already exists');
+            throw new \InvalidArgumentException('商户手机号已存在');
         }
 
         $vipTime = null;
@@ -1588,11 +1593,11 @@ class UserController
         if ($vipId > 0) {
             $vip = $this->vipRecord($vipId);
             if ($vip === null) {
-                throw new \InvalidArgumentException('vip package was not found');
+                throw new \InvalidArgumentException('会员套餐不存在');
             }
 
             if ((int)($vip['status'] ?? 0) !== 1) {
-                throw new \InvalidArgumentException('vip package is disabled and cannot be assigned');
+                throw new \InvalidArgumentException('该会员套餐已停用，无法分配');
             }
 
             $vipTime = $this->normalizeOptionalDateTime(
@@ -1632,16 +1637,16 @@ class UserController
     private function normalizeRequiredString(mixed $value, int $maxLength, string $fieldLabel): string
     {
         if (is_array($value) || is_object($value)) {
-            throw new \InvalidArgumentException($fieldLabel . ' must be a scalar');
+            throw new \InvalidArgumentException($this->fieldLabel($fieldLabel) . '格式不正确');
         }
 
         $string = trim((string)$value);
         if ($string === '') {
-            throw new \InvalidArgumentException($fieldLabel . ' is required');
+            throw new \InvalidArgumentException($this->fieldLabel($fieldLabel) . '不能为空');
         }
 
         if (mb_strlen($string) > $maxLength) {
-            throw new \InvalidArgumentException($fieldLabel . ' is too long');
+            throw new \InvalidArgumentException($this->fieldLabel($fieldLabel) . '长度不能超过 ' . $maxLength . ' 个字符');
         }
 
         return $string;
@@ -1649,7 +1654,7 @@ class UserController
 
     private function merchantFieldExists(string $field, string $value): bool
     {
-        return Db::table('ypay_user')
+        return Db::table(BusinessTable::user())
             ->where($field, $value)
             ->exists();
     }
@@ -1666,12 +1671,12 @@ class UserController
             return;
         }
 
-        $nextId = ((int)(Db::table('ypay_user')->max('id') ?? 0)) + 1;
+        $nextId = ((int)(Db::table(BusinessTable::user())->max('id') ?? 0)) + 1;
         if ($nextId >= $target) {
             return;
         }
 
-        Db::statement('ALTER TABLE ypay_user AUTO_INCREMENT = ' . $target);
+        Db::statement('ALTER TABLE ' . BusinessTable::user() . ' AUTO_INCREMENT = ' . $target);
     }
 
     private function generateSecret(int $length = 32): string
@@ -1682,7 +1687,7 @@ class UserController
     private function normalizeNullableString(mixed $value, int $maxLength, string $fieldLabel): ?string
     {
         if (is_array($value) || is_object($value)) {
-            throw new \InvalidArgumentException($fieldLabel . ' must be a scalar');
+            throw new \InvalidArgumentException($this->fieldLabel($fieldLabel) . '格式不正确');
         }
 
         $string = trim((string)$value);
@@ -1691,10 +1696,31 @@ class UserController
         }
 
         if (mb_strlen($string) > $maxLength) {
-            throw new \InvalidArgumentException($fieldLabel . ' is too long');
+            throw new \InvalidArgumentException($this->fieldLabel($fieldLabel) . '长度不能超过 ' . $maxLength . ' 个字符');
         }
 
         return $string;
+    }
+
+    private function fieldLabel(string $field): string
+    {
+        return match ($field) {
+            'merchant username' => '商户账号',
+            'merchant password' => '商户密码',
+            'merchant email' => '商户邮箱',
+            'merchant mobile' => '商户手机号',
+            'merchant remarks' => '商户备注',
+            'frozen reason' => '冻结原因',
+            'merchant fee bearer' => '手续费承担方',
+            'merchant vip expire time' => '商户会员到期时间',
+            'merchant fee rate' => '商户费率',
+            'merchant order notification channel' => '订单通知方式',
+            'merchant low-balance notification channel' => '低余额通知方式',
+            'merchant low-balance threshold' => '低余额提醒阈值',
+            'merchant wxpusher uid' => '商户微信推送标识',
+            'merchant telegram chat id' => '商户电报会话标识',
+            default => $field,
+        };
     }
 
     private function recordAdminEmailCampaign(Request $request, array $result): void
@@ -1713,7 +1739,7 @@ class UserController
             'uid' => $adminId,
             'url' => '/api/admin/users/email',
             'desc' => sprintf(
-                'merchant email campaign [%s] title="%s" attempted=%d sent=%d failed=%d skipped=%d',
+                '商户邮件发送 [%s] 标题="%s" 尝试=%d 已发=%d 失败=%d 跳过=%d',
                 $scope,
                 $title,
                 (int)($summary['attempted_count'] ?? 0),
@@ -1743,7 +1769,7 @@ class UserController
             'uid' => $adminId,
             'url' => '/api/admin/users/' . $merchantId . '/impersonate',
             'desc' => sprintf(
-                'merchant impersonation merchant_id=%d username="%s" warning_count=%d target="%s"',
+                '商户代登录 merchant_id=%d username="%s" warning_count=%d target="%s"',
                 $merchantId,
                 $merchantUsername,
                 count($warnings),
@@ -1782,7 +1808,7 @@ class UserController
             'uid' => $adminId,
             'url' => '/api/admin/users/batch-delete',
             'desc' => sprintf(
-                'merchant batch delete requested=%d deleted=%d blocked=%d missing=%d delete_rows=%d merchants="%s" labels="%s"',
+                '商户批量删除 requested=%d deleted=%d blocked=%d missing=%d delete_rows=%d merchants="%s" labels="%s"',
                 (int)($summary['requested_count'] ?? 0),
                 (int)($summary['deletable_count'] ?? 0),
                 (int)($summary['blocked_count'] ?? 0),

@@ -19,7 +19,7 @@ Current phase 1 behavior:
 - Install seeds the plugin-owned `pay_plugin_legacy_epay_config` table with a compatibility config skeleton for `merchant_id`, `merchant_key`, `gateway_url`, and `notify_url`.
 - The shared payment-plugin config API can now read and save those rows from the admin detail drawer.
 - Secret config such as `merchant_key` is returned to the admin as masked metadata only; leaving the password input blank preserves the stored value.
-- Those compatibility fields are optional defaults only. `legacy_epay` can now be enabled without filling them because the live legacy bridge resolves real upstream credentials from each merchant `ypay_paylist` row.
+- Those compatibility fields are optional defaults only. `legacy_epay` can now be enabled without filling them because the live legacy bridge resolves real upstream credentials from each merchant payment-gateway row.
 - Release `0.1.2` adds `pay_plugin_legacy_epay_log` through a dedicated upgrade migration so future plugin-owned audit traces stay isolated for purge review.
 - Release `0.1.3` adds `upgrade_note` to `pay_plugin_legacy_epay_log` so release-specific diagnostics can be preserved without touching shared merchant data.
 - `plugin.json -> upgrade` now documents impact level, validation downtime, release changelog, operator checklist, and rollback policy for the admin upgrade preview.

@@ -5,6 +5,7 @@ namespace app\controller;
 use app\support\AdminRouteAuthorization;
 use app\support\AdminRiskFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\RequestPayload;
 use Illuminate\Database\Query\Builder;
 use support\Db;
@@ -22,11 +23,11 @@ class RiskController
         $this->applyFilters($query, $request);
 
         $summary = $this->summary(clone $query);
-        $total = (int)(clone $query)->count('ypay_risk.id');
+        $total = (int)(clone $query)->count('risk.id');
         $rows = array_map(
             static fn($row): array => (array)$row,
             $query
-                ->orderByDesc('ypay_risk.id')
+                ->orderByDesc('risk.id')
                 ->offset(($current - 1) * $size)
                 ->limit($size)
                 ->get()
@@ -72,7 +73,7 @@ class RiskController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        $riskId = (int)Db::table('ypay_risk')->insertGetId([
+        $riskId = (int)Db::table(BusinessTable::risk())->insertGetId([
             'user_id' => $payload['user_id'],
             'name' => $payload['name'],
             'url' => $payload['url'],
@@ -117,7 +118,7 @@ class RiskController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_risk')
+        Db::table(BusinessTable::risk())
             ->where('id', $id)
             ->update([
                 'user_id' => $payload['user_id'],
@@ -270,19 +271,19 @@ class RiskController
 
     private function riskQuery(): Builder
     {
-        return Db::table('ypay_risk')
-            ->leftJoin('ypay_user', 'ypay_risk.user_id', '=', 'ypay_user.id')
+        return Db::table(BusinessTable::risk('risk'))
+            ->leftJoin(BusinessTable::user('merchant'), 'risk.user_id', '=', 'merchant.id')
             ->select(
-                'ypay_risk.id',
-                'ypay_risk.user_id',
-                'ypay_risk.name',
-                'ypay_risk.url',
-                'ypay_risk.create_time',
-                'ypay_risk.update_time',
-                'ypay_user.username as merchant_username',
-                'ypay_user.name as merchant_name',
-                'ypay_user.email as merchant_email',
-                'ypay_user.mobile as merchant_mobile'
+                'risk.id',
+                'risk.user_id',
+                'risk.name',
+                'risk.url',
+                'risk.create_time',
+                'risk.update_time',
+                'merchant.username as merchant_username',
+                'merchant.name as merchant_name',
+                'merchant.email as merchant_email',
+                'merchant.mobile as merchant_mobile'
             );
     }
 
@@ -292,64 +293,64 @@ class RiskController
         if ($keyword !== '') {
             $query->where(function (Builder $builder) use ($keyword): void {
                 $builder
-                    ->where('ypay_risk.name', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_risk.url', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.username', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.name', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.email', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_user.mobile', 'like', '%' . $keyword . '%');
+                    ->where('risk.name', 'like', '%' . $keyword . '%')
+                    ->orWhere('risk.url', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.username', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.name', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.email', 'like', '%' . $keyword . '%')
+                    ->orWhere('merchant.mobile', 'like', '%' . $keyword . '%');
 
                 if (ctype_digit($keyword)) {
                     $builder
-                        ->orWhere('ypay_risk.id', (int)$keyword)
-                        ->orWhere('ypay_risk.user_id', (int)$keyword);
+                        ->orWhere('risk.id', (int)$keyword)
+                        ->orWhere('risk.user_id', (int)$keyword);
                 }
             });
         }
 
         $userId = trim((string)$request->get('user_id', ''));
         if ($userId !== '') {
-            $query->where('ypay_risk.user_id', 'like', '%' . $userId . '%');
+            $query->where('risk.user_id', 'like', '%' . $userId . '%');
         }
 
         $name = trim((string)$request->get('name', ''));
         if ($name !== '') {
-            $query->where('ypay_risk.name', 'like', '%' . $name . '%');
+            $query->where('risk.name', 'like', '%' . $name . '%');
         }
 
         $url = trim((string)$request->get('url', ''));
         if ($url !== '') {
-            $query->where('ypay_risk.url', 'like', '%' . $url . '%');
+            $query->where('risk.url', 'like', '%' . $url . '%');
         }
 
         $startDate = $this->normalizeDate((string)$request->get('start_date', ''));
         $endDate = $this->normalizeDate((string)$request->get('end_date', ''));
         if ($startDate !== null && $endDate !== null) {
             $query
-                ->where('ypay_risk.create_time', '>=', $startDate . ' 00:00:00')
-                ->where('ypay_risk.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
+                ->where('risk.create_time', '>=', $startDate . ' 00:00:00')
+                ->where('risk.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
         }
     }
 
     private function summary(Builder $query): array
     {
         return [
-            'total_count' => (int)(clone $query)->count('ypay_risk.id'),
+            'total_count' => (int)(clone $query)->count('risk.id'),
             'merchant_count' => (int)(clone $query)
-                ->where('ypay_risk.user_id', '>', 0)
+                ->where('risk.user_id', '>', 0)
                 ->distinct()
-                ->count('ypay_risk.user_id'),
+                ->count('risk.user_id'),
             'named_count' => (int)(clone $query)
-                ->whereNotNull('ypay_risk.name')
-                ->where('ypay_risk.name', '<>', '')
-                ->count('ypay_risk.id'),
+                ->whereNotNull('risk.name')
+                ->where('risk.name', '<>', '')
+                ->count('risk.id'),
             'source_count' => (int)(clone $query)
-                ->whereNotNull('ypay_risk.url')
-                ->where('ypay_risk.url', '<>', '')
-                ->count('ypay_risk.id'),
+                ->whereNotNull('risk.url')
+                ->where('risk.url', '<>', '')
+                ->count('risk.id'),
             'today_count' => (int)(clone $query)
-                ->where('ypay_risk.create_time', '>=', date('Y-m-d 00:00:00'))
-                ->count('ypay_risk.id'),
+                ->where('risk.create_time', '>=', date('Y-m-d 00:00:00'))
+                ->count('risk.id'),
         ];
     }
 
@@ -368,7 +369,7 @@ class RiskController
     private function loadRiskRow(int $riskId): ?array
     {
         $row = $this->riskQuery()
-            ->where('ypay_risk.id', $riskId)
+            ->where('risk.id', $riskId)
             ->first();
 
         return $row ? (array)$row : null;
@@ -387,7 +388,7 @@ class RiskController
         $rows = array_map(
             static fn($row): array => (array)$row,
             $this->riskQuery()
-                ->whereIn('ypay_risk.id', $riskIds)
+                ->whereIn('risk.id', $riskIds)
                 ->get()
                 ->toArray()
         );
@@ -455,7 +456,7 @@ class RiskController
             return false;
         }
 
-        return Db::table('ypay_user')
+        return Db::table(BusinessTable::user())
             ->where('id', $userId)
             ->exists();
     }
@@ -508,8 +509,8 @@ class RiskController
                 'source_count' => $url === '' ? 0 : 1,
             ],
             'warnings' => [
-                'Deleting a risk record permanently removes the database row.',
-                'Automatic payment risk capture can create a new row later if the same merchant and source trigger again.',
+                '删除风控记录会永久移除当前数据库记录。',
+                '如果后续再次触发相同商户或来源的风控条件，系统仍可能自动生成新的风控记录。',
             ],
         ];
     }
@@ -533,16 +534,16 @@ class RiskController
                 $missingRiskIds[] = $riskId;
                 $items[] = [
                     'risk_id' => $riskId,
-                    'risk_label' => 'Risk #' . $riskId,
+                    'risk_label' => '风控记录 #' . $riskId,
                     'merchant_id' => 0,
-                    'merchant_display' => 'Unknown Merchant',
+                    'merchant_display' => '未知商户',
                     'name' => '',
                     'url' => '',
                     'url_host' => '',
                     'exists' => false,
                     'can_delete' => false,
-                    'blocking_reasons' => ['This risk record no longer exists in the live table.'],
-                    'warnings' => ['Refresh the selection before retrying the batch delete.'],
+                    'blocking_reasons' => ['当前风控记录在实时数据表中已不存在。'],
+                    'warnings' => ['请先刷新选择列表，再重新执行批量删除。'],
                     'summary' => [
                         'delete_row_count' => 0,
                         'merchant_count' => 0,
@@ -592,13 +593,13 @@ class RiskController
         $warnings = [];
         if ($summary['missing_count'] > 0) {
             $warnings[] = sprintf(
-                '%d selected risk record(s) are already missing and must be reselected before deletion.',
+                '%d 条已选风控记录已不存在，请重新选择后再删除。',
                 $summary['missing_count']
             );
         }
         if ($summary['deletable_count'] > 0) {
-            $warnings[] = 'Batch delete permanently removes the selected risk rows after one shared confirmation phrase is accepted.';
-            $warnings[] = 'Automatic payment risk capture can create similar rows again later if new events match the same merchant or URL.';
+            $warnings[] = '确认后，会永久删除本次已选的风控记录。';
+            $warnings[] = '如果后续再次出现相同商户或域名的风险事件，系统仍可能重新生成类似记录。';
         }
 
         return [
@@ -617,7 +618,7 @@ class RiskController
 
     private function deleteRiskRow(int $riskId): void
     {
-        Db::table('ypay_risk')
+        Db::table(BusinessTable::risk())
             ->where('id', $riskId)
             ->delete();
     }
@@ -691,12 +692,12 @@ class RiskController
             return $url;
         }
 
-        return 'Risk #' . (int)($record['id'] ?? 0);
+        return '风控记录 #' . (int)($record['id'] ?? 0);
     }
 
     private function riskDeleteConfirmationPhrase(int $riskId): string
     {
-        return 'DELETE RISK ' . $riskId;
+        return '删除风控记录 ' . $riskId;
     }
 
     /**
@@ -705,7 +706,7 @@ class RiskController
     private function batchRiskDeleteConfirmationPhrase(array $riskIds): string
     {
         return sprintf(
-            'DELETE RISK BATCH %d-%s',
+            '批量删除风控记录 %d-%s',
             count($riskIds),
             strtoupper(substr(md5(implode(',', $riskIds)), 0, 6))
         );
@@ -808,7 +809,7 @@ class RiskController
             static function (array $item): string {
                 $label = trim((string)($item['risk_label'] ?? ''));
                 $riskId = (int)($item['risk_id'] ?? 0);
-                return $label !== '' ? $label : ('Risk #' . $riskId);
+                return $label !== '' ? $label : ('风控记录 #' . $riskId);
             },
             array_values(array_filter(
                 (array)($audit['items'] ?? []),

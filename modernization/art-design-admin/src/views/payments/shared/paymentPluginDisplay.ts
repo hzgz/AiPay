@@ -22,14 +22,7 @@ export interface PluginConfigSection {
   fields: PaymentPluginConfigField[]
 }
 
-export type PluginPaymentFilterKey =
-  | 'all'
-  | 'alipay'
-  | 'wxpay'
-  | 'qqpay'
-  | 'usdt'
-  | 'gateway'
-  | 'other'
+export type PluginPaymentFilterKey = 'all' | 'alipay' | 'wxpay' | 'qqpay' | 'usdt' | 'other'
 
 export type PluginOverviewCardTone = 'info' | 'success' | 'warning' | 'danger'
 
@@ -83,6 +76,18 @@ export const resourceKindLabel = (kind: string | null | undefined) => {
   return kind || '--'
 }
 
+const cleanupPluginVisibleWords = (value: string) =>
+  value
+    .replace(/认证示例/g, '认证测试')
+    .replace(/AiPay官方示例/g, 'AiPay官方测试')
+    .replace(/注册残留示例/g, '注册残留检查')
+    .replace(/演示/g, '测试')
+    .replace(/示例/g, '测试')
+    .replace(/旧版/g, '原有')
+    .replace(/联调/g, '测试')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+
 export const normalizePluginCopy = (value: string | null | undefined) => {
   const text = String(value || '').trim()
   if (!text) {
@@ -92,16 +97,16 @@ export const normalizePluginCopy = (value: string | null | undefined) => {
   const exactLabels: Record<string, string> = {
     'Forbidden Probe': '禁测探针',
     'Forbidden Probe Default': '禁测探针默认通道',
-    'Auth Smoke': '认证示例',
-    'Legacy Epay Compatibility': '易支付网关插件',
+    'Auth Smoke': '认证测试',
+    'Legacy Epay Compatibility': '易支付协议插件',
     'AiPay modernization': 'AiPay官方',
-    'AiPay modernization smoke': 'AiPay官方示例',
+    'AiPay modernization smoke': 'AiPay官方测试',
     'AiPay 现代化改造': 'AiPay官方',
-    'AiPay 联调': 'AiPay官方示例',
+    'AiPay 联调': 'AiPay官方测试',
     'AiPay 改造项目': 'AiPay官方',
     'Forbidden probe': '禁测探针插件',
     forbidden_probe_default: '禁测探针默认通道',
-    registry_residue_probe: '注册残留示例',
+    registry_residue_probe: '注册残留检查',
     registry_residue_smoke: '注册残留恢复快照',
     executed: '已执行',
     install: '安装',
@@ -139,11 +144,11 @@ export const normalizePluginCopy = (value: string | null | undefined) => {
     merchant_id: '商户号字段',
     merchant_key: '商户密钥字段',
     notify_secret: '回调密钥字段',
-    gateway_url: '网关地址字段',
+    gateway_url: '接口地址字段',
     text: '单行文本',
     password: '密码框',
-    'Compatibility wrapper for the legacy payment flow during the ThinkPHP to Webman migration.':
-      '用于接入易支付网关模式的插件。',
+    ['Compatibility wrapper for the legacy payment flow during the legacy framework to Webman migration.']:
+      '用于接入易支付协议的插件。',
     'Plugin-managed channel seeded from plugin.json.': '根据插件清单自动初始化的插件托管通道。',
     'Enabled plugin routing after runtime, config, and migration checks passed.':
       '已通过运行目录、配置和版本检查，并启用插件路由。',
@@ -199,14 +204,14 @@ export const normalizePluginCopy = (value: string | null | undefined) => {
   }
 
   if (exactLabels[text]) {
-    return exactLabels[text]
+    return cleanupPluginVisibleWords(exactLabels[text])
   }
 
   let normalized = text
 
   normalized = normalized.replace(/^managed_channel_smoke$/g, '托管通道恢复快照')
   normalized = normalized.replace(/^smoke-restore-(\d{8})$/g, '恢复快照 $1')
-  normalized = normalized.replace(/^global-vault-smoke-(\d{8})$/g, '恢复仓库快照 $1')
+  normalized = normalized.replace(/^global-vault-smoke-(\d{8})$/g, '恢复中心快照 $1')
   normalized = normalized.replace(/^(\d+)_create_config_table\.sql$/g, '配置表初始化脚本 $1')
   normalized = normalized.replace(/^(\d+)_create_plugin_log_table\.sql$/g, '日志表初始化脚本 $1')
   normalized = normalized.replace(
@@ -259,7 +264,7 @@ export const normalizePluginCopy = (value: string | null | undefined) => {
   )
   normalized = normalized.replace(
     /Channel still has (\d+) historical order\(s\) linked through payment accounts\./g,
-    '该通道仍通过支付账号关联 $1 条历史订单。'
+    '该通道仍通过支付账号关联 $1 条订单记录。'
   )
   normalized = normalized.replace(
     /Managed channel sync drift detected: (\d+) missing and (\d+) drifted channel row\(s\)\. Run repair to resync plugin-owned channel metadata\./g,
@@ -280,14 +285,14 @@ export const normalizePluginCopy = (value: string | null | undefined) => {
       return `已安装插件版本 [${currentVersion}] 落后于清单版本 [${manifestVersion}]，请执行升级以应用 ${fileCount} 个待执行脚本${releaseSuffix}。`
     }
   )
-  normalized = normalized.replace(/认证联调/g, '认证示例')
-  normalized = normalized.replace(/平台改造联调/g, 'AiPay官方示例')
+  normalized = normalized.replace(/认证联调/g, '认证测试')
+  normalized = normalized.replace(/平台改造联调/g, 'AiPay官方测试')
   normalized = normalized.replace(/禁测探针联调插件/g, '禁测探针插件')
-  normalized = normalized.replace(/易支付兼容插件/g, '易支付网关插件')
-  normalized = normalized.replace(/易支付兼容/g, '易支付网关')
+  normalized = normalized.replace(/易支付兼容插件/g, '易支付协议插件')
+  normalized = normalized.replace(/易支付兼容/g, '易支付协议')
   normalized = normalized.replace(
     /用于旧版系统迁移期间承接历史支付流程的兼容插件。/g,
-    '用于接入易支付网关模式的插件。'
+    '用于接入易支付协议的插件。'
   )
   normalized = normalized.replace(
     /已通过运行目录、配置与迁移检查，并启用插件路由。/g,
@@ -312,9 +317,9 @@ export const normalizePluginCopy = (value: string | null | undefined) => {
   normalized = normalized.replace(/托管通道联调快照/g, '托管通道恢复快照')
   normalized = normalized.replace(/联调恢复快照/g, '恢复快照')
   normalized = normalized.replace(/注册残留联调快照/g, '注册残留恢复快照')
-  normalized = normalized.replace(/注册残留联调/g, '注册残留示例')
+  normalized = normalized.replace(/注册残留联调/g, '注册残留检查')
 
-  return normalized
+  return cleanupPluginVisibleWords(normalized)
 }
 
 export const pluginCodeSummary = (code: string | null | undefined) => {
@@ -383,16 +388,16 @@ export const tableTargetLabel = (table: string | null | undefined) => {
 }
 
 export const pluginWorkspaceLabel = (profile: PaymentPluginLegacyProfile) => {
-  if (profile.workspace === 'account') return '收款账号维护'
-  if (profile.workspace === 'merchant-channel') return '商户通道维护'
-  return '仅展示字段'
+  if (profile.workspace === 'account') return '收款账号填写'
+  if (profile.workspace === 'merchant-channel') return '商户通道填写'
+  return '字段参考'
 }
 
 export const pluginAccessLabel = (code: string | null | undefined) => {
   const profile = legacyProfileForCode(code)
-  if (profile?.workspace === 'account') return '收款账号'
-  if (profile?.workspace === 'merchant-channel') return '商户通道'
-  return '独立流程'
+  if (profile?.workspace === 'account') return '账号配置'
+  if (profile?.workspace === 'merchant-channel') return '通道配置'
+  return '独立接入'
 }
 
 export const resolvePluginPaymentFilter = (
@@ -406,7 +411,7 @@ export const resolvePluginPaymentFilter = (
   if (normalized.startsWith('wxpay_') || normalized === 'jiaofeiyi_wxpay') return 'wxpay'
   if (normalized.startsWith('qqpay_')) return 'qqpay'
   if (normalized === 'usdt') return 'usdt'
-  if (normalized === 'legacy_epay') return 'gateway'
+  if (normalized === 'legacy_epay') return 'other'
   return 'other'
 }
 
@@ -416,7 +421,6 @@ export const pluginPaymentLabel = (code: string | null | undefined) => {
     wxpay: '微信',
     qqpay: 'QQ',
     usdt: 'USDT',
-    gateway: '网关',
     other: '其他'
   }
 
@@ -434,8 +438,8 @@ export const pluginPaymentTagType = (
 }
 
 export const pluginWorkspaceButtonLabel = (profile: PaymentPluginLegacyProfile) => {
-  if (profile.workspace === 'account') return '前往收款账号'
-  if (profile.workspace === 'merchant-channel') return '前往商户通道'
+  if (profile.workspace === 'account') return '去收款账号'
+  if (profile.workspace === 'merchant-channel') return '去商户通道'
   return ''
 }
 
@@ -729,7 +733,7 @@ export const retainScopeLabel = (scope: string | null | undefined) => {
     merchants: '商户',
     accounts: '账号',
     tickets: '工单',
-    'merchant order history': '商户订单历史',
+    'merchant order history': '商户订单记录',
     'recharge records': '充值记录',
     'fund and balance logs': '资金与余额日志',
     'settlement records': '结算记录',
@@ -820,7 +824,7 @@ const pluginConfigSectionCatalog = [
   {
     key: 'callback',
     title: '地址与回调',
-    description: '统一维护网关地址、通知地址和接口域名。'
+    description: '统一维护接口地址、通知地址和接口域名。'
   },
   {
     key: 'advanced',

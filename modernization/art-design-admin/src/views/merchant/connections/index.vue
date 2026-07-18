@@ -3,13 +3,17 @@
     <section class="merchant-page-header">
       <div class="merchant-page-header__title">
         <h1>绑定中心</h1>
-        <p>统一管理快捷登录、邮箱、手机、微信推送和电报通知绑定，常用联系信息可直接在这里完成校验与维护。</p>
+        <p>管理快捷登录和通知联系方式。</p>
       </div>
 
       <div v-if="payload" class="merchant-chip-row">
         <span class="merchant-chip">快捷登录 {{ payload.summary?.quick_login_count ?? 0 }} 项</span>
-        <span class="merchant-chip">已绑定 {{ payload.summary?.bound_quick_login_count ?? 0 }} 项</span>
-        <span class="merchant-chip">联系渠道已配置 {{ payload.summary?.configured_contact_count ?? 0 }} 项</span>
+        <span class="merchant-chip"
+          >已绑定 {{ payload.summary?.bound_quick_login_count ?? 0 }} 项</span
+        >
+        <span class="merchant-chip"
+          >已配渠道 {{ payload.summary?.configured_contact_count ?? 0 }} 项</span
+        >
       </div>
     </section>
 
@@ -43,7 +47,7 @@
           <div class="merchant-card__head">
             <div>
               <h2>快捷登录绑定</h2>
-              <p>QQ 与微信快捷登录状态统一在此查看，已绑定关系可直接解除；如需新增授权，请在对应接入页面中处理。</p>
+              <p>查看 QQ、微信快捷登录绑定状态，可直接解除已绑定关系。</p>
             </div>
           </div>
 
@@ -62,7 +66,7 @@
                   <strong>{{ translateMerchantText(item.label) }}</strong>
                   <p>{{ translateMerchantText(item.write_message) }}</p>
                   <small>
-                    标识：{{ translateMerchantText(item.identifier_masked || 'Not configured') }}
+                    标识：{{ translateMerchantText(item.identifier_masked || '未配置') }}
                   </small>
                 </div>
               </div>
@@ -96,7 +100,7 @@
           <div class="merchant-card__head">
             <div>
               <h2>联系渠道总览</h2>
-              <p>邮箱、手机、微信推送与电报通知的当前状态会在这里汇总展示，便于检查通知链路是否齐全。</p>
+              <p>汇总邮箱、手机、微信推送和电报通知状态。</p>
             </div>
           </div>
 
@@ -107,7 +111,9 @@
               class="merchant-connection-item"
             >
               <div class="merchant-connection-item__main">
-                <div class="merchant-connection-item__icon merchant-connection-item__icon--secondary">
+                <div
+                  class="merchant-connection-item__icon merchant-connection-item__icon--secondary"
+                >
                   <Icon :icon="connectionIcon(item.id, item.label)" />
                 </div>
 
@@ -127,7 +133,7 @@
                               fallbackLabel: '手机已脱敏',
                               maskMode: 'mobile'
                             })
-                          : translateMerchantText(item.value_display || 'Not configured')
+                          : translateMerchantText(item.value_display || '未配置')
                     }}
                   </p>
                   <small>{{ translateMerchantText(item.write_message) }}</small>
@@ -152,7 +158,7 @@
           <div class="merchant-form-card__head">
             <div>
               <h2>邮箱验证绑定</h2>
-              <p>未绑定时可发送验证码完成绑定，已绑定时会自动切换为解绑流程。</p>
+              <p>发送验证码后完成绑定或解绑。</p>
             </div>
           </div>
 
@@ -195,7 +201,7 @@
 
           <div class="merchant-form-actions merchant-form-actions--split">
             <span class="merchant-fine-print">
-              {{ emailInputDisabled ? '将发送到当前已绑定邮箱完成解绑校验。' : '验证码发送成功后可直接提交绑定。' }}
+              {{ emailInputDisabled ? '验证码会发送到已绑定邮箱。' : '收到验证码后提交即可。' }}
             </span>
             <ElButton
               type="primary"
@@ -212,7 +218,7 @@
           <div class="merchant-form-card__head">
             <div>
               <h2>手机验证绑定</h2>
-              <p>手机校验与邮箱保持同一交互逻辑，适合补齐短信通知与安全联系信息。</p>
+              <p>用于补齐短信通知和安全联系。</p>
             </div>
           </div>
 
@@ -256,7 +262,7 @@
 
           <div class="merchant-form-actions merchant-form-actions--split">
             <span class="merchant-fine-print">
-              {{ mobileInputDisabled ? '将发送到当前已绑定手机号完成解绑校验。' : '短信发送成功后可直接提交绑定。' }}
+              {{ mobileInputDisabled ? '验证码会发送到已绑定手机号。' : '收到验证码后提交即可。' }}
             </span>
             <ElButton
               type="primary"
@@ -275,12 +281,14 @@
           <div class="merchant-form-card__head">
             <div>
               <h2>微信推送标识</h2>
-              <p>支持扫码自动绑定，也支持手动填写 UID 作为兜底方式，订单提醒与安全通知会使用当前商户保存的 WxPusher 标识。</p>
+              <p>支持扫码绑定，也支持手动填写推送标识。</p>
             </div>
           </div>
 
           <div class="merchant-chip-row">
-            <span class="merchant-chip">当前状态：{{ wxpusherConfigured ? '已配置' : '未配置' }}</span>
+            <span class="merchant-chip"
+              >当前状态：{{ wxpusherConfigured ? '已配置' : '未配置' }}</span
+            >
             <span class="merchant-chip">扫码绑定：{{ wxpusherQrEnabled ? '可用' : '未开启' }}</span>
             <span class="merchant-chip">手动录入：可用</span>
           </div>
@@ -296,7 +304,7 @@
               </div>
 
               <div v-else-if="wxpusherQrImage" class="merchant-wxpusher-panel__qr">
-                <img :src="wxpusherQrImage" alt="WxPusher 绑定二维码" />
+                <img :src="wxpusherQrImage" alt="微信推送绑定二维码" />
                 <div class="merchant-fine-print">有效期：{{ wxpusherQrExpireLabel }}</div>
               </div>
 
@@ -304,9 +312,7 @@
                 <Icon icon="ri:qr-code-line" />
                 <p>
                   {{
-                    wxpusherQrEnabled
-                      ? '点击下方按钮生成扫码绑定二维码。'
-                      : '请联系管理员开启 WxPusher 并完成应用令牌配置。'
+                    wxpusherQrEnabled ? '点击下方按钮生成二维码。' : '当前未开启扫码绑定能力。'
                   }}
                 </p>
               </div>
@@ -321,11 +327,14 @@
                   {{ wxpusherQrImage ? '刷新二维码' : '获取二维码' }}
                 </ElButton>
                 <ElButton plain :loading="wxpusherStatusLoading" @click="checkWxPusherStatus()">
-                  检查绑定状态
+                  检查状态
                 </ElButton>
               </div>
 
-              <div v-if="wxpusherStatusMessage" class="merchant-fine-print merchant-wxpusher-panel__status">
+              <div
+                v-if="wxpusherStatusMessage"
+                class="merchant-fine-print merchant-wxpusher-panel__status"
+              >
                 {{ wxpusherStatusMessage }}
               </div>
             </div>
@@ -337,17 +346,17 @@
 
               <ElInput
                 v-model.trim="wxpusherUid"
-                placeholder="请输入微信推送标识，例如 UID_xxxxxxxx"
+                placeholder="请输入微信推送标识"
                 autocomplete="off"
               />
 
               <div class="merchant-fine-print merchant-wxpusher-panel__tip">
-                如果扫码绑定未自动回写，可手动填写 UID 后直接保存。
+                扫码未回写时，可手动填写后保存。
               </div>
 
               <div class="merchant-form-actions merchant-form-actions--split">
                 <span class="merchant-fine-print">
-                  {{ wxpusherConfigured ? '已存在已绑定标识，可重新填写新 UID 覆盖保存。' : '未绑定时也可以直接粘贴 UID 保存。' }}
+                  {{ wxpusherConfigured ? '填写新标识后会覆盖保存。' : '也可直接粘贴标识保存。' }}
                 </span>
                 <div class="merchant-action-row">
                   <ElButton
@@ -355,7 +364,7 @@
                     plain
                     type="danger"
                     :loading="wxUnbindLoading"
-                    @click="handleUnbind('wxpusher_uid', 'WxPusher')"
+                    @click="handleUnbind('wxpusher_uid', '微信推送')"
                   >
                     清空
                   </ElButton>
@@ -372,13 +381,15 @@
           <div class="merchant-form-card__head">
             <div>
               <h2>电报会话标识</h2>
-              <p>适合接收订单、余额和安全提醒，保存后立即写入当前商户通知资料。</p>
+              <p>用于接收订单、余额和安全提醒。</p>
             </div>
           </div>
 
           <div class="merchant-chip-row">
-            <span class="merchant-chip">当前状态：{{ telegramConfigured ? '已配置' : '未配置' }}</span>
-            <span class="merchant-chip">维护方式：直接保存</span>
+            <span class="merchant-chip"
+              >当前状态：{{ telegramConfigured ? '已配置' : '未配置' }}</span
+            >
+            <span class="merchant-chip">维护方式：手动填写</span>
           </div>
 
           <ElInput
@@ -388,9 +399,7 @@
           />
 
           <div class="merchant-form-actions merchant-form-actions--split">
-            <span class="merchant-fine-print">
-              当前值：{{ telegramCurrentValueLabel }}
-            </span>
+            <span class="merchant-fine-print"> 当前值：{{ telegramCurrentValueLabel }} </span>
             <div class="merchant-action-row">
               <ElButton
                 v-if="telegramConfigured"
@@ -502,24 +511,20 @@
     translateMerchantText(String(wxpusherBinding.value?.value_display || '未配置'))
   )
   const telegramCurrentValueLabel = computed(() =>
-    translateMerchantText(String(telegramBinding.value?.value_display || '未配置，保存后立即生效'))
+    translateMerchantText(String(telegramBinding.value?.value_display || '未配置'))
   )
   const wxpusherEnrollmentHint = computed(() =>
     translateMerchantText(
-      String(
-        wxpusherEnrollment.value?.write_message ||
-          '扫码关注后会自动写入当前商户的 WxPusher UID，也支持手动填写 UID 作为兜底。'
-      )
+      String(wxpusherEnrollment.value?.write_message || '扫码后会自动写入推送标识，也可手动填写。')
     )
   )
-  const wxpusherQrImage = computed(
-    () =>
-      String(
-        wxpusherQrPayload.value?.qrcode_url ||
-          wxpusherQrPayload.value?.short_url ||
-          wxpusherQrPayload.value?.shortUrl ||
-          ''
-      ).trim()
+  const wxpusherQrImage = computed(() =>
+    String(
+      wxpusherQrPayload.value?.qrcode_url ||
+        wxpusherQrPayload.value?.short_url ||
+        wxpusherQrPayload.value?.shortUrl ||
+        ''
+    ).trim()
   )
   const wxpusherQrExpireLabel = computed(() => {
     const value = String(
@@ -537,25 +542,25 @@
     {
       label: '快捷登录配置',
       value: String(payload.value?.summary?.quick_login_count ?? 0),
-      hint: '当前商户可查看的快捷登录接入数量',
+      hint: '可用快捷登录数',
       icon: 'ri:flashlight-line'
     },
     {
       label: '已绑定快捷登录',
       value: String(payload.value?.summary?.bound_quick_login_count ?? 0),
-      hint: '已完成第三方账号关联的快捷登录数量',
+      hint: '已完成第三方绑定',
       icon: 'ri:link-m'
     },
     {
       label: '联系渠道总数',
       value: String(payload.value?.summary?.contact_binding_count ?? 0),
-      hint: '邮箱、手机、推送与通知渠道总量',
+      hint: '联系方式总数',
       icon: 'ri:contacts-book-2-line'
     },
     {
       label: '已完成配置',
       value: String(payload.value?.summary?.configured_contact_count ?? 0),
-      hint: '当前已经保存到商户资料中的联系信息数量',
+      hint: '已保存到商户资料',
       icon: 'ri:checkbox-circle-line'
     }
   ])
@@ -567,14 +572,21 @@
   }
 
   function findBinding(id: string) {
-    return (payload.value?.contact_bindings || []).find((item: Record<string, any>) => item.id === id) || {}
+    return (
+      (payload.value?.contact_bindings || []).find((item: Record<string, any>) => item.id === id) ||
+      {}
+    )
   }
 
   function applyPayload(data: Record<string, any>) {
     payload.value = data
 
-    const nextEmail = (data.contact_bindings || []).find((item: Record<string, any>) => item.id === 'email')
-    const nextMobile = (data.contact_bindings || []).find((item: Record<string, any>) => item.id === 'mobile')
+    const nextEmail = (data.contact_bindings || []).find(
+      (item: Record<string, any>) => item.id === 'email'
+    )
+    const nextMobile = (data.contact_bindings || []).find(
+      (item: Record<string, any>) => item.id === 'mobile'
+    )
     const nextWx = (data.contact_bindings || []).find(
       (item: Record<string, any>) => item.id === 'wxpusher_uid'
     )
@@ -597,7 +609,7 @@
 
     if (nextWx?.value_present) {
       stopWxPusherStatusPolling()
-      wxpusherStatusMessage.value = '已检测到当前商户完成 WxPusher 绑定。'
+      wxpusherStatusMessage.value = '已绑定微信推送标识。'
     }
   }
 
@@ -655,7 +667,7 @@
   async function generateWxPusherQr(silent = false) {
     if (!wxpusherQrEnabled.value) {
       if (!silent) {
-        ElMessage.warning('请联系管理员开启 WxPusher 并完成应用令牌配置')
+        ElMessage.warning('当前未开启微信推送扫码绑定能力')
       }
       return
     }
@@ -664,13 +676,13 @@
     try {
       const data = await fetchMerchantWxPusherQrCode()
       wxpusherQrPayload.value = data
-      wxpusherStatusMessage.value = '二维码已生成，扫码关注后系统会自动写入当前商户的 UID。'
+      wxpusherStatusMessage.value = '二维码已生成，扫码后会自动写入标识。'
       startWxPusherStatusPolling()
       if (!silent) {
-        ElMessage.success('WxPusher 绑定二维码已生成')
+        ElMessage.success('二维码已生成')
       }
     } catch (error) {
-      const message = resolveMerchantError(error, 'WxPusher 二维码生成失败')
+      const message = resolveMerchantError(error, '微信推送二维码生成失败')
       wxpusherStatusMessage.value = message
       if (!silent) {
         ElMessage.error(message)
@@ -691,24 +703,24 @@
 
       if (result.code === 1) {
         wxpusherStatusMessage.value = !wxpusherConfigured.value
-          ? '已检测到扫码绑定成功，正在刷新当前状态。'
+          ? '已检测到扫码绑定，正在刷新状态。'
           : draftUid
-            ? '已检测到当前填写的 UID 与已保存配置不同，可直接保存覆盖。'
-            : '当前商户已存在 WxPusher 绑定。'
+            ? '检测到新的推送标识，可直接保存覆盖。'
+            : '当前已存在微信推送绑定。'
         stopWxPusherStatusPolling()
         await loadConnections()
         if (!silent) {
-          ElMessage.success('已检测到 WxPusher 绑定状态')
+          ElMessage.success('已获取当前绑定状态')
         }
         return
       }
 
       if (!silent) {
-        wxpusherStatusMessage.value = '暂未检测到新的扫码绑定结果，请完成扫码后再试。'
-        ElMessage.info('暂未检测到新的扫码绑定结果')
+        wxpusherStatusMessage.value = '暂未检测到新的扫码结果，请稍后再试。'
+        ElMessage.info('暂未检测到新的扫码结果')
       }
     } catch (error) {
-      const message = resolveMerchantError(error, 'WxPusher 状态检查失败')
+      const message = resolveMerchantError(error, '微信推送状态检查失败')
       wxpusherStatusMessage.value = message
       if (!silent) {
         ElMessage.error(message)
@@ -761,7 +773,11 @@
 
     emailSubmitLoading.value = true
     try {
-      await submitMerchantEmailBinding(emailMode.value === 'bind' ? 1 : 2, target, emailCaptcha.value.trim())
+      await submitMerchantEmailBinding(
+        emailMode.value === 'bind' ? 1 : 2,
+        target,
+        emailCaptcha.value.trim()
+      )
       ElMessage.success(emailMode.value === 'bind' ? '邮箱绑定成功' : '邮箱解绑成功')
       await loadConnections()
     } catch (error) {
@@ -830,9 +846,9 @@
 
   async function handleUnbind(type: string, label: string) {
     try {
-      await ElMessageBox.confirm(`确认解除当前 ${label} 绑定吗？`, '解除绑定确认', {
+      await ElMessageBox.confirm(`确认解除当前 ${label} 吗？`, '解除绑定', {
         type: 'warning',
-        confirmButtonText: '确认解除',
+        confirmButtonText: '确认',
         cancelButtonText: '取消'
       })
     } catch {

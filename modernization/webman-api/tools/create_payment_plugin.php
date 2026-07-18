@@ -3,12 +3,12 @@
 
 declare(strict_types=1);
 
-use app\payment\PaymentPluginScaffoldGenerator;
+use app\service\payment\PaymentPluginScaffoldGenerator;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 if (PHP_SAPI !== 'cli') {
-    fwrite(STDERR, "This script must be run from CLI.\n");
+    fwrite(STDERR, "该脚本只能在命令行环境中运行。\n");
     exit(1);
 }
 
@@ -36,8 +36,8 @@ function parseArguments(array $argv): array
     $options = [
         'code' => null,
         'name' => null,
-        'provider' => 'Aipay modernization',
-        'description' => 'Generated payment plugin scaffold for the Webman payment lifecycle flow.',
+        'provider' => 'AiPay 官方',
+        'description' => 'AiPay 支付插件脚手架，用于生成独立插件目录与生命周期配置。',
         'version' => '0.1.0',
         'capabilities' => PaymentPluginScaffoldGenerator::defaultCapabilities(),
     ];
@@ -65,7 +65,7 @@ function parseArguments(array $argv): array
                 $options['capabilities'] = $value === '' ? [] : array_map('trim', explode(',', $value));
                 break;
             default:
-                throw new InvalidArgumentException("unknown option [--$key]");
+                throw new InvalidArgumentException("未知参数 [--$key]");
         }
     }
 
@@ -77,11 +77,11 @@ function parseArguments(array $argv): array
         $options['name'] = $positionals[1];
     }
 
-    if ($options['provider'] === 'Aipay modernization' && isset($positionals[2])) {
+    if ($options['provider'] === 'AiPay 官方' && isset($positionals[2])) {
         $options['provider'] = $positionals[2];
     }
 
-    if ($options['description'] === 'Generated payment plugin scaffold for the Webman payment lifecycle flow.' && isset($positionals[3])) {
+    if ($options['description'] === 'AiPay 支付插件脚手架，用于生成独立插件目录与生命周期配置。' && isset($positionals[3])) {
         $options['description'] = $positionals[3];
     }
 
@@ -102,7 +102,7 @@ function parseOption(array $args, int &$index): array
 
     $key = substr($argument, 2);
     if (!isset($args[$index + 1])) {
-        throw new InvalidArgumentException("missing value for option [--$key]");
+        throw new InvalidArgumentException("参数 [--$key] 缺少取值");
     }
 
     $index++;
@@ -112,35 +112,35 @@ function parseOption(array $args, int &$index): array
 
 function printSummary(array $created): void
 {
-    echo 'Created payment plugin scaffold.' . PHP_EOL;
-    echo 'Code: ' . ($created['plugin_code'] ?? '') . PHP_EOL;
-    echo 'Class: ' . ($created['class'] ?? '') . PHP_EOL;
-    echo 'Directory: ' . ($created['plugin_directory'] ?? '') . PHP_EOL;
-    echo 'Capabilities: ' . implode(', ', (array)($created['capabilities'] ?? [])) . PHP_EOL;
-    echo 'Files:' . PHP_EOL;
+    echo '支付插件脚手架已创建。' . PHP_EOL;
+    echo '插件编码：' . ($created['plugin_code'] ?? '') . PHP_EOL;
+    echo '插件类名：' . ($created['class'] ?? '') . PHP_EOL;
+    echo '插件目录：' . ($created['plugin_directory'] ?? '') . PHP_EOL;
+    echo '声明能力：' . implode(', ', (array)($created['capabilities'] ?? [])) . PHP_EOL;
+    echo '生成文件：' . PHP_EOL;
 
     foreach ((array)($created['files'] ?? []) as $file) {
         echo '  - ' . $file . PHP_EOL;
     }
 
-    echo 'Next: implement the payment logic in src/Plugin.php, then use the admin plugin lifecycle APIs to install and verify it.' . PHP_EOL;
+    echo '下一步：先在 src/Plugin.php 中补齐真实支付逻辑，再通过后台插件生命周期接口完成安装与验证。' . PHP_EOL;
 }
 
 function printUsage(): void
 {
     $usage = <<<TXT
-Usage:
-  php tools/create_payment_plugin.php --code=demo_gateway --name="Demo Gateway"
-  php tools/create_payment_plugin.php demo_gateway "Demo Gateway" "Aipay modernization" "Gateway scaffold"
+用法：
+  php tools/create_payment_plugin.php --code=demo_gateway --name="演示通道"
+  php tools/create_payment_plugin.php demo_gateway "演示通道" "AiPay 官方" "演示插件脚手架"
 
-Options:
-  --code            Plugin code. Lowercase letters, numbers, and underscores only.
-  --name            Human-readable plugin name.
-  --provider        Provider label written into plugin.json.
-  --description     Plugin description written into plugin.json and README.md.
-  --version         Semantic version for the initial scaffold. Default: 0.1.0
-  --capabilities    Comma-separated capability list. Default: create_order,query,refund,notify
-  --help, -h        Show this help message.
+参数：
+  --code            插件编码，只允许小写字母、数字和下划线。
+  --name            插件显示名称。
+  --provider        写入 plugin.json 的提供方名称。
+  --description     写入 plugin.json 与 README.md 的插件说明。
+  --version         初始语义化版本，默认：0.1.0
+  --capabilities    逗号分隔的能力列表，默认：create_order,query,refund,notify
+  --help, -h        显示帮助信息。
 TXT;
 
     echo $usage . PHP_EOL;

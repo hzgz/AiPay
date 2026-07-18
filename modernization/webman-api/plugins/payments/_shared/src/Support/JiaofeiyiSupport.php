@@ -125,18 +125,18 @@ final class JiaofeiyiSupport
                 'key' => $timeKey,
                 'type' => 'number',
                 'index' => 0,
-                'label' => 'Pay Amount',
+                'label' => '支付金额',
                 'value' => $formattedAmount,
                 'origin' => 'number' . $timeKey . '0',
                 'options' => [
-                    'label' => 'Pay Amount',
+                    'label' => '支付金额',
                     'content' => $formattedAmount,
                     'required' => true,
                     'labelAlign' => '',
                 ],
-                'displayName' => 'Amount',
+                'displayName' => '支付金额',
                 'formItemFlag' => false,
-                'settingsTitle' => 'Amount Setting',
+                'settingsTitle' => '金额设置',
                 'marginLeftRight' => 10,
                 'marginTopBottom' => 5,
                 'cashierTemplateName' => $cashierTemplateName,
@@ -238,7 +238,7 @@ final class JiaofeiyiSupport
     {
         $identifier = trim($identifier);
         if ($identifier === '') {
-            throw new RuntimeException('query identifier cannot be empty');
+            throw new RuntimeException('查询订单标识不能为空');
         }
 
         $lastError = null;
@@ -516,7 +516,7 @@ final class JiaofeiyiSupport
 
         throw new RuntimeException(
             $lastError instanceof Throwable
-                ? '代理请求失败: ' . $lastError->getMessage()
+                ? '代理请求失败：' . $lastError->getMessage()
                 : '代理请求失败'
         );
     }
@@ -529,7 +529,7 @@ final class JiaofeiyiSupport
     private function curlRequest(string $url, array $payload, array $headers, ?array $proxy = null): array
     {
         if (!function_exists('curl_init')) {
-            throw new RuntimeException('cURL extension is not installed');
+            throw new RuntimeException('当前 PHP 环境未安装 cURL 扩展');
         }
 
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -689,7 +689,7 @@ final class JiaofeiyiSupport
     private function httpGetText(string $url): string
     {
         if (!function_exists('curl_init')) {
-            throw new RuntimeException('cURL extension is not installed');
+            throw new RuntimeException('当前 PHP 环境未安装 cURL 扩展');
         }
 
         $ch = curl_init();

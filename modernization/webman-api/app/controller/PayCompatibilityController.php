@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace app\controller;
 
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\FrontendUrlBuilder;
 use app\support\LegacyMojibakeGuard;
 use app\support\MerchantPortalMessageCatalog;
@@ -130,10 +131,10 @@ class PayCompatibilityController
 
     private function findOrder(string $field, string $value): ?array
     {
-        $row = Db::table('ypay_order as orders')
-            ->leftJoin('ypay_user as merchant', 'orders.user_id', '=', 'merchant.id')
-            ->leftJoin('ypay_userbasic as basic', 'orders.user_id', '=', 'basic.user_id')
-            ->leftJoin('ypay_account as account', 'orders.account_id', '=', 'account.id')
+        $row = Db::table(BusinessTable::order() . ' as orders')
+            ->leftJoin(BusinessTable::user() . ' as merchant', 'orders.user_id', '=', 'merchant.id')
+            ->leftJoin(BusinessTable::userbasic() . ' as basic', 'orders.user_id', '=', 'basic.user_id')
+            ->leftJoin(BusinessTable::account() . ' as account', 'orders.account_id', '=', 'account.id')
             ->select(
                 'orders.id',
                 'orders.name',

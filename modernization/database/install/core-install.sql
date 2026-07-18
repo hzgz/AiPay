@@ -137,7 +137,7 @@ CREATE TABLE `money_log` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_account` (
+CREATE TABLE `aipay_account` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `code` varchar(50) DEFAULT NULL,
   `type` varchar(50) DEFAULT NULL,
@@ -168,7 +168,7 @@ CREATE TABLE `ypay_account` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_cdk` (
+CREATE TABLE `aipay_cdk` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `type` int(3) DEFAULT NULL,
   `value` varchar(50) DEFAULT NULL,
@@ -178,7 +178,7 @@ CREATE TABLE `ypay_cdk` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_domain` (
+CREATE TABLE `aipay_domain` (
   `id` int(100) NOT NULL AUTO_INCREMENT,
   `user_id` int(100) NOT NULL,
   `sitename` varchar(255) DEFAULT NULL,
@@ -190,7 +190,7 @@ CREATE TABLE `ypay_domain` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_navs` (
+CREATE TABLE `aipay_navs` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) DEFAULT NULL,
   `url` text DEFAULT NULL,
@@ -202,7 +202,7 @@ CREATE TABLE `ypay_navs` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_news` (
+CREATE TABLE `aipay_news` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `type` int(11) NOT NULL DEFAULT 1,
   `title` varchar(2500) DEFAULT NULL,
@@ -215,7 +215,7 @@ CREATE TABLE `ypay_news` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_order` (
+CREATE TABLE `aipay_order` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   `sitename` varchar(50) DEFAULT NULL,
@@ -243,13 +243,13 @@ CREATE TABLE `ypay_order` (
   `pay_type` int(11) NOT NULL DEFAULT 1,
   `is_order_tips` int(1) DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_ypay_order_out_trade_no` (`out_trade_no`),
+  UNIQUE KEY `uq_aipay_order_out_trade_no` (`out_trade_no`),
   KEY `idx_trade_no` (`trade_no`),
   KEY `idx_account_status_money_time` (`account_id`,`status`,`truemoney`,`out_time`),
   KEY `idx_alipay_order_no` (`alipay_order_no`(191))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_order_callback_task` (
+CREATE TABLE `aipay_order_callback_task` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `task_key` varchar(160) NOT NULL,
   `order_id` int(11) NOT NULL,
@@ -279,7 +279,7 @@ CREATE TABLE `ypay_order_callback_task` (
   KEY `idx_order_scene` (`order_id`,`scene`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_order_reconcile_task` (
+CREATE TABLE `aipay_order_reconcile_task` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `task_key` varchar(160) NOT NULL,
   `order_id` int(11) NOT NULL,
@@ -309,7 +309,7 @@ CREATE TABLE `ypay_order_reconcile_task` (
   KEY `idx_order_id` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_paylist` (
+CREATE TABLE `aipay_paylist` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `type` varchar(255) DEFAULT NULL,
@@ -323,7 +323,7 @@ CREATE TABLE `ypay_paylist` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_payment` (
+CREATE TABLE `aipay_payment` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   `type` varchar(255) DEFAULT NULL,
@@ -335,7 +335,7 @@ CREATE TABLE `ypay_payment` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_payment_transaction_claim` (
+CREATE TABLE `aipay_payment_transaction_claim` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `provider` varchar(32) NOT NULL,
   `transaction_id` varchar(255) NOT NULL,
@@ -350,7 +350,7 @@ CREATE TABLE `ypay_payment_transaction_claim` (
   KEY `idx_account_id` (`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_plug` (
+CREATE TABLE `aipay_plug` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) DEFAULT NULL,
   `downurl` text DEFAULT NULL,
@@ -362,7 +362,7 @@ CREATE TABLE `ypay_plug` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_poll_pool` (
+CREATE TABLE `aipay_poll_pool` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `name` varchar(64) NOT NULL,
@@ -378,7 +378,7 @@ CREATE TABLE `ypay_poll_pool` (
   KEY `idx_user_type_status` (`user_id`,`type`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_poll_pool_item` (
+CREATE TABLE `aipay_poll_pool_item` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `pool_id` int(11) NOT NULL,
@@ -393,7 +393,7 @@ CREATE TABLE `ypay_poll_pool_item` (
   KEY `idx_account_id` (`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_proxy` (
+CREATE TABLE `aipay_proxy` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) DEFAULT NULL,
   `sort` int(25) DEFAULT 0,
@@ -407,7 +407,7 @@ CREATE TABLE `ypay_proxy` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_quicklogin` (
+CREATE TABLE `aipay_quicklogin` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `type` varchar(255) DEFAULT NULL,
   `status` int(1) DEFAULT 1,
@@ -419,7 +419,7 @@ CREATE TABLE `ypay_quicklogin` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_recharge` (
+CREATE TABLE `aipay_recharge` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `type` varchar(50) DEFAULT NULL,
   `rtype` int(1) DEFAULT 0,
@@ -437,7 +437,7 @@ CREATE TABLE `ypay_recharge` (
   KEY `idx_out_trade_no` (`out_trade_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_risk` (
+CREATE TABLE `aipay_risk` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL DEFAULT 0,
   `name` varchar(225) DEFAULT NULL,
@@ -447,7 +447,7 @@ CREATE TABLE `ypay_risk` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_ticket` (
+CREATE TABLE `aipay_ticket` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `type` int(1) unsigned zerofill NOT NULL DEFAULT 0,
   `title` varchar(255) NOT NULL,
@@ -462,7 +462,7 @@ CREATE TABLE `ypay_ticket` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_ticket_category` (
+CREATE TABLE `aipay_ticket_category` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   `sort` varchar(255) DEFAULT NULL,
@@ -472,7 +472,7 @@ CREATE TABLE `ypay_ticket_category` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_user` (
+CREATE TABLE `aipay_user` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(50) DEFAULT NULL,
   `password` varchar(50) DEFAULT NULL,
@@ -503,7 +503,7 @@ CREATE TABLE `ypay_user` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_userbasic` (
+CREATE TABLE `aipay_userbasic` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
   `user_id` int(255) NOT NULL,
   `timeout_method` int(1) NOT NULL DEFAULT 2,
@@ -532,7 +532,7 @@ CREATE TABLE `ypay_userbasic` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ypay_vip` (
+CREATE TABLE `aipay_vip` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `icon` text DEFAULT NULL,
   `avatar_frame` varchar(255) DEFAULT NULL,
@@ -584,7 +584,7 @@ INSERT IGNORE INTO `admin_permission` (`id`, `pid`, `title`, `href`, `icon`, `so
 (20, 17, '菜单配置状态切换', '/admin.permission/status', '', 99, 1, 1),
 (21, 17, '删除菜单配置', '/admin.permission/remove', '', 99, 1, 1),
 (22, 0, '系统管理', '', 'layui-icon layui-icon-set', 3, 0, 1),
-(23, 22, '管理员日志 log', '/admin.admin/log', '', 2, 1, 1),
+(23, 22, '管理员日志', '/admin.admin/log', '', 2, 1, 1),
 (24, 23, '清空管理员日志', '/admin.admin/removeLog', '', 1, 1, 1),
 (25, 22, '配置总览', '/config/index', '', 1, 1, 1),
 (26, 22, '图片素材', '/admin.photo/index', '', 2, 1, 1),
@@ -614,63 +614,63 @@ INSERT IGNORE INTO `admin_permission` (`id`, `pid`, `title`, `href`, `icon`, `so
 (57, 54, '删除资金日志', '/money.log/remove', NULL, 99, 1, 1),
 (58, 54, '批量删除资金日志', '/money.log/batchRemove', NULL, 99, 1, 1),
 (59, 54, '资金日志回收站', '/money.log/recycle', NULL, 99, 1, 1),
-(60, 53, '商户管理', '/ypay.user/index', 'layui-icon layui-icon layui-icon-fire', 98, 1, 1),
-(61, 60, '新增商户管理', '/ypay.user/add', NULL, 99, 1, 1),
-(62, 60, '编辑商户管理', '/ypay.user/edit', NULL, 99, 1, 1),
-(63, 60, '删除商户管理', '/ypay.user/remove', NULL, 99, 1, 1),
-(64, 60, '批量删除商户管理', '/ypay.user/batchRemove', NULL, 99, 1, 1),
-(65, 60, '商户管理回收站', '/ypay.user/recycle', NULL, 99, 1, 1),
-(66, 53, '会员套餐', '/ypay.vip/index', 'layui-icon layui-icon-fire', 99, 1, 1),
-(67, 66, '新增会员套餐', '/ypay.vip/add', NULL, 99, 1, 1),
-(68, 66, '编辑会员套餐', '/ypay.vip/edit', NULL, 99, 1, 1),
-(69, 66, '删除会员套餐', '/ypay.vip/remove', NULL, 99, 1, 1),
-(70, 66, '批量删除会员套餐', '/ypay.vip/batchRemove', NULL, 99, 1, 1),
-(71, 66, '会员套餐回收站', '/ypay.vip/recycle', NULL, 99, 1, 1),
-(72, 34, '收款账号', '/ypay.account/index', 'layui-icon layui-icon layui-icon-fire', 98, 1, 1),
-(73, 72, '新增收款账号', '/ypay.account/add', NULL, 99, 1, 2),
-(74, 72, '编辑收款账号', '/ypay.account/edit', NULL, 99, 1, 1),
-(75, 72, '删除收款账号', '/ypay.account/remove', NULL, 99, 1, 1),
-(76, 72, '批量删除收款账号', '/ypay.account/batchRemove', NULL, 99, 1, 1),
-(77, 72, '收款账号回收站', '/ypay.account/recycle', NULL, 99, 1, 2),
+(60, 53, '商户管理', '/aipay.user/index', 'layui-icon layui-icon layui-icon-fire', 98, 1, 1),
+(61, 60, '新增商户管理', '/aipay.user/add', NULL, 99, 1, 1),
+(62, 60, '编辑商户管理', '/aipay.user/edit', NULL, 99, 1, 1),
+(63, 60, '删除商户管理', '/aipay.user/remove', NULL, 99, 1, 1),
+(64, 60, '批量删除商户管理', '/aipay.user/batchRemove', NULL, 99, 1, 1),
+(65, 60, '商户管理回收站', '/aipay.user/recycle', NULL, 99, 1, 1),
+(66, 53, '会员套餐', '/aipay.vip/index', 'layui-icon layui-icon-fire', 99, 1, 1),
+(67, 66, '新增会员套餐', '/aipay.vip/add', NULL, 99, 1, 1),
+(68, 66, '编辑会员套餐', '/aipay.vip/edit', NULL, 99, 1, 1),
+(69, 66, '删除会员套餐', '/aipay.vip/remove', NULL, 99, 1, 1),
+(70, 66, '批量删除会员套餐', '/aipay.vip/batchRemove', NULL, 99, 1, 1),
+(71, 66, '会员套餐回收站', '/aipay.vip/recycle', NULL, 99, 1, 1),
+(72, 34, '收款账号', '/aipay.account/index', 'layui-icon layui-icon layui-icon-fire', 98, 1, 1),
+(73, 72, '新增收款账号', '/aipay.account/add', NULL, 99, 1, 2),
+(74, 72, '编辑收款账号', '/aipay.account/edit', NULL, 99, 1, 1),
+(75, 72, '删除收款账号', '/aipay.account/remove', NULL, 99, 1, 1),
+(76, 72, '批量删除收款账号', '/aipay.account/batchRemove', NULL, 99, 1, 1),
+(77, 72, '收款账号回收站', '/aipay.account/recycle', NULL, 99, 1, 2),
 (78, 0, '订单中心', '', 'layui-icon layui-icon-rmb', 10, 0, 1),
-(79, 78, '订单中心', '/ypay.order/index', 'layui-icon layui-icon layui-icon-fire', 3, 1, 1),
-(80, 79, '新增订单中心', '/ypay.order/add', NULL, 99, 1, 1),
-(81, 79, '编辑订单中心', '/ypay.order/edit', NULL, 99, 1, 1),
-(82, 79, '删除订单中心', '/ypay.order/remove', NULL, 99, 1, 1),
-(83, 79, '批量删除订单中心', '/ypay.order/batchRemove', NULL, 99, 1, 1),
-(84, 79, '订单中心回收站', '/ypay.order/recycle', NULL, 99, 1, 2),
-(85, 78, '充值记录', '/ypay.recharge/index', 'layui-icon layui-icon layui-icon-fire', 2, 1, 1),
-(86, 85, '新增充值记录', '/ypay.recharge/add', NULL, 99, 1, 1),
-(87, 85, '编辑充值记录', '/ypay.recharge/edit', NULL, 99, 1, 1),
-(88, 85, '删除充值记录', '/ypay.recharge/remove', NULL, 99, 1, 1),
-(89, 85, '批量删除充值记录', '/ypay.recharge/batchRemove', NULL, 99, 1, 1),
-(90, 85, '充值记录回收站', '/ypay.recharge/recycle', NULL, 99, 1, 1),
+(79, 78, '订单中心', '/aipay.order/index', 'layui-icon layui-icon layui-icon-fire', 3, 1, 1),
+(80, 79, '新增订单中心', '/aipay.order/add', NULL, 99, 1, 1),
+(81, 79, '编辑订单中心', '/aipay.order/edit', NULL, 99, 1, 1),
+(82, 79, '删除订单中心', '/aipay.order/remove', NULL, 99, 1, 1),
+(83, 79, '批量删除订单中心', '/aipay.order/batchRemove', NULL, 99, 1, 1),
+(84, 79, '订单中心回收站', '/aipay.order/recycle', NULL, 99, 1, 2),
+(85, 78, '充值记录', '/aipay.recharge/index', 'layui-icon layui-icon layui-icon-fire', 2, 1, 1),
+(86, 85, '新增充值记录', '/aipay.recharge/add', NULL, 99, 1, 1),
+(87, 85, '编辑充值记录', '/aipay.recharge/edit', NULL, 99, 1, 1),
+(88, 85, '删除充值记录', '/aipay.recharge/remove', NULL, 99, 1, 1),
+(89, 85, '批量删除充值记录', '/aipay.recharge/batchRemove', NULL, 99, 1, 1),
+(90, 85, '充值记录回收站', '/aipay.recharge/recycle', NULL, 99, 1, 1),
 (91, 0, '风控中心', '', 'layui-icon layui-icon-diamond', 10, 0, 1),
-(92, 91, '风控记录', '/ypay.risk/index', 'layui-icon layui-icon-fire', 99, 1, 1),
-(93, 92, '新增风控记录', '/ypay.risk/add', NULL, 99, 1, 1),
-(94, 92, '编辑风控记录', '/ypay.risk/edit', NULL, 99, 1, 1),
-(95, 92, '删除风控记录', '/ypay.risk/remove', NULL, 99, 1, 1),
-(96, 92, '批量删除风控记录', '/ypay.risk/batchRemove', NULL, 99, 1, 1),
-(97, 92, '风控记录回收站', '/ypay.risk/recycle', NULL, 99, 1, 1),
+(92, 91, '风控记录', '/aipay.risk/index', 'layui-icon layui-icon-fire', 99, 1, 1),
+(93, 92, '新增风控记录', '/aipay.risk/add', NULL, 99, 1, 1),
+(94, 92, '编辑风控记录', '/aipay.risk/edit', NULL, 99, 1, 1),
+(95, 92, '删除风控记录', '/aipay.risk/remove', NULL, 99, 1, 1),
+(96, 92, '批量删除风控记录', '/aipay.risk/batchRemove', NULL, 99, 1, 1),
+(97, 92, '风控记录回收站', '/aipay.risk/recycle', NULL, 99, 1, 1),
 (98, 0, '内容中心', '', 'layui-icon layui-icon-download-circle', 10, 0, 1),
-(99, 98, '插件下载', '/ypay.plug/index', 'layui-icon layui-icon-fire', 99, 1, 1),
-(100, 99, '新增插件下载', '/ypay.plug/add', NULL, 99, 1, 1),
-(101, 99, '编辑插件下载', '/ypay.plug/edit', NULL, 99, 1, 1),
-(102, 99, '删除插件下载', '/ypay.plug/remove', NULL, 99, 1, 1),
-(103, 99, '批量删除插件下载', '/ypay.plug/batchRemove', NULL, 99, 1, 1),
-(104, 99, '插件下载回收站', '/ypay.plug/recycle', NULL, 99, 1, 1),
-(105, 22, '导航管理', '/ypay.navs/index', 'layui-icon layui-icon-fire', 99, 1, 1),
-(106, 105, '新增导航管理', '/ypay.navs/add', NULL, 99, 1, 1),
-(107, 105, '编辑导航管理', '/ypay.navs/edit', NULL, 99, 1, 1),
-(108, 105, '删除导航管理', '/ypay.navs/remove', NULL, 99, 1, 1),
-(109, 105, '批量删除导航管理', '/ypay.navs/batchRemove', NULL, 99, 1, 1),
-(110, 105, '导航管理回收站', '/ypay.navs/recycle', NULL, 99, 1, 1),
-(111, 22, '公告管理', '/ypay.news/index', 'layui-icon layui-icon-fire', 99, 1, 1),
-(112, 111, '新增公告管理', '/ypay.news/add', NULL, 99, 1, 1),
-(113, 111, '编辑公告管理', '/ypay.news/edit', NULL, 99, 1, 1),
-(114, 111, '删除公告管理', '/ypay.news/remove', NULL, 99, 1, 1),
-(115, 111, '批量删除公告管理', '/ypay.news/batchRemove', NULL, 99, 1, 1),
-(116, 111, '公告管理回收站', '/ypay.news/recycle', NULL, 99, 1, 1),
+(99, 98, '插件下载', '/aipay.plug/index', 'layui-icon layui-icon-fire', 99, 1, 1),
+(100, 99, '新增插件下载', '/aipay.plug/add', NULL, 99, 1, 1),
+(101, 99, '编辑插件下载', '/aipay.plug/edit', NULL, 99, 1, 1),
+(102, 99, '删除插件下载', '/aipay.plug/remove', NULL, 99, 1, 1),
+(103, 99, '批量删除插件下载', '/aipay.plug/batchRemove', NULL, 99, 1, 1),
+(104, 99, '插件下载回收站', '/aipay.plug/recycle', NULL, 99, 1, 1),
+(105, 22, '导航管理', '/aipay.navs/index', 'layui-icon layui-icon-fire', 99, 1, 1),
+(106, 105, '新增导航管理', '/aipay.navs/add', NULL, 99, 1, 1),
+(107, 105, '编辑导航管理', '/aipay.navs/edit', NULL, 99, 1, 1),
+(108, 105, '删除导航管理', '/aipay.navs/remove', NULL, 99, 1, 1),
+(109, 105, '批量删除导航管理', '/aipay.navs/batchRemove', NULL, 99, 1, 1),
+(110, 105, '导航管理回收站', '/aipay.navs/recycle', NULL, 99, 1, 1),
+(111, 22, '公告管理', '/aipay.news/index', 'layui-icon layui-icon-fire', 99, 1, 1),
+(112, 111, '新增公告管理', '/aipay.news/add', NULL, 99, 1, 1),
+(113, 111, '编辑公告管理', '/aipay.news/edit', NULL, 99, 1, 1),
+(114, 111, '删除公告管理', '/aipay.news/remove', NULL, 99, 1, 1),
+(115, 111, '批量删除公告管理', '/aipay.news/batchRemove', NULL, 99, 1, 1),
+(116, 111, '公告管理回收站', '/aipay.news/recycle', NULL, 99, 1, 1),
 (117, 0, '经营总览', '/index/home', 'layui-icon layui-icon layui-icon layui-icon-home', 1, 1, 1),
 (118, 0, '在线更新', '/update', 'layui-icon layui-icon-auz', 99, 1, 1),
 (119, 53, '商户日志', '/admin.front_log/index', 'layui-icon layui-icon-fire', 99, 1, 1),
@@ -679,35 +679,32 @@ INSERT IGNORE INTO `admin_permission` (`id`, `pid`, `title`, `href`, `icon`, `so
 (122, 119, '删除商户日志', '/admin.front_log/remove', NULL, 99, 1, 1),
 (123, 119, '批量删除商户日志', '/admin.front_log/batchRemove', NULL, 99, 1, 1),
 (124, 119, '商户日志回收站', '/admin.front_log/recycle', NULL, 99, 1, 1),
-(138, 78, '商城总览', '/ypay.shop/index', 'layui-icon layui-inline layui-iconpicker-title', 1, 1, 1),
-(139, 78, '人工调整资金日志', '/ypay.shop/plus', 'layui-icon layui-icon layui-icon layui-icon-face-s', 4, 1, 1),
-(140, 22, '支付插件', '/ypay.paylist/index', 'layui-icon layui-icon layui-icon layui-icon layui-', 10, 1, 1),
-(141, 22, '快捷登录', '/ypay.quicklogin/index', 'layui-icon layui-icon layui-icon-face-smile', 10, 1, 1),
-(142, 53, '域名审核', '/ypay.domain/index', 'layui-icon layui-icon layui-icon-senior', 99, 1, 1),
-(143, 78, '清理数据清理', '/ypay.shop/clear', 'layui-icon layui-icon layui-icon-face-smile', 99, 1, 1),
-(144, 174, '主题模板', '/ypay.home/index', 'layui-icon layui-icon layui-icon layui-icon-face-s', 99, 1, 1),
-(145, 148, '工单列表 ticket', '/ypay.shop/ticket', 'layui-icon layui-icon-tips', 99, 1, 1),
-(146, 78, '卡券管理 cdk', '/ypay.shop/cdk', 'layui-icon layui-icon-face-smile', 99, 1, 1),
-(147, 53, '商户管理邮件发送', '/ypay.user/email', 'layui-icon layui-icon-face-smile', 99, 1, 1),
+(138, 78, '商城总览', '/aipay.shop/index', 'layui-icon layui-inline layui-iconpicker-title', 1, 1, 1),
+(139, 78, '人工调整资金日志', '/aipay.shop/plus', 'layui-icon layui-icon layui-icon layui-icon-face-s', 4, 1, 1),
+(140, 22, '支付插件', '/aipay.paylist/index', 'layui-icon layui-icon layui-icon layui-icon layui-', 10, 1, 1),
+(141, 22, '快捷登录', '/aipay.quicklogin/index', 'layui-icon layui-icon layui-icon-face-smile', 10, 1, 1),
+(142, 53, '域名审核', '/aipay.domain/index', 'layui-icon layui-icon layui-icon-senior', 99, 1, 1),
+(143, 78, '数据清理', '/aipay.shop/clear', 'layui-icon layui-icon layui-icon-face-smile', 99, 1, 1),
+(144, 174, '主题模板', '/aipay.home/index', 'layui-icon layui-icon layui-icon layui-icon-face-s', 99, 1, 1),
+(145, 148, '工单列表', '/aipay.shop/ticket', 'layui-icon layui-icon-tips', 99, 1, 1),
+(146, 78, '卡券管理', '/aipay.shop/cdk', 'layui-icon layui-icon-face-smile', 99, 1, 1),
+(147, 53, '商户管理邮件发送', '/aipay.user/email', 'layui-icon layui-icon-face-smile', 99, 1, 1),
 (148, 0, '工单中心', '', 'layui-icon layui-icon-about', 10, 0, 1),
-(161, 148, '工单分类', '/ypay.ticket_category/index', 'layui-icon layui-icon layui-icon-fire', 98, 1, 1),
-(162, 161, '新增工单分类', '/ypay.ticket_category/add', NULL, 99, 1, 1),
-(163, 161, '编辑工单分类', '/ypay.ticket_category/edit', NULL, 99, 1, 1),
-(164, 161, '删除工单分类', '/ypay.ticket_category/remove', NULL, 99, 1, 1),
-(165, 161, '批量删除工单分类', '/ypay.ticket_category/batchRemove', NULL, 99, 1, 1),
-(166, 161, '工单分类回收站', '/ypay.ticket_category/recycle', NULL, 99, 1, 1),
-(167, 34, '支付方式', '/ypay.payment/index', 'layui-icon layui-icon layui-icon-fire', 96, 1, 1),
-(168, 167, '新增支付方式', '/ypay.payment/add', NULL, 99, 1, 1),
-(169, 167, '编辑支付方式', '/ypay.payment/edit', NULL, 99, 1, 1),
-(170, 167, '删除支付方式', '/ypay.payment/remove', NULL, 99, 1, 1),
-(171, 167, '批量删除支付方式', '/ypay.payment/batchRemove', NULL, 99, 1, 1),
-(172, 167, '支付方式回收站', '/ypay.payment/recycle', NULL, 99, 1, 1),
-(173, 174, '主题模板', '/ypay.user_theme/index', 'layui-icon layui-icon-username', 99, 1, 1),
+(161, 148, '工单分类', '/aipay.ticket_category/index', 'layui-icon layui-icon layui-icon-fire', 98, 1, 1),
+(162, 161, '新增工单分类', '/aipay.ticket_category/add', NULL, 99, 1, 1),
+(163, 161, '编辑工单分类', '/aipay.ticket_category/edit', NULL, 99, 1, 1),
+(164, 161, '删除工单分类', '/aipay.ticket_category/remove', NULL, 99, 1, 1),
+(165, 161, '批量删除工单分类', '/aipay.ticket_category/batchRemove', NULL, 99, 1, 1),
+(166, 161, '工单分类回收站', '/aipay.ticket_category/recycle', NULL, 99, 1, 1),
+(167, 34, '支付方式', '/aipay.payment/index', 'layui-icon layui-icon layui-icon-fire', 96, 1, 1),
+(168, 167, '新增支付方式', '/aipay.payment/add', NULL, 99, 1, 1),
+(169, 167, '编辑支付方式', '/aipay.payment/edit', NULL, 99, 1, 1),
+(170, 167, '删除支付方式', '/aipay.payment/remove', NULL, 99, 1, 1),
+(171, 167, '批量删除支付方式', '/aipay.payment/batchRemove', NULL, 99, 1, 1),
+(172, 167, '支付方式回收站', '/aipay.payment/recycle', NULL, 99, 1, 1),
+(173, 174, '主题模板', '/aipay.user_theme/index', 'layui-icon layui-icon-username', 99, 1, 1),
 (174, 0, '主题模板', '', 'layui-icon layui-icon-layouts', 4, 0, 1),
-(175, 174, '主题模板', '/ypay.pay_theme/index', 'layui-icon layui-icon-face-smile', 99, 1, 1),
-(176, 174, '主题模板', '/ypay.demo_theme/index', 'layui-icon layui-icon-face-smile', 99, 1, 1),
-(177, 174, '主题模板', '/ypay.doc_theme/index', 'layui-icon layui-icon-face-smile', 99, 1, 1),
-(178, 174, '主题模板', '/ypay.news_theme/index', 'layui-icon layui-icon-face-smile', 99, 1, 1);
+(175, 174, '主题模板', '/aipay.pay_theme/index', 'layui-icon layui-icon-face-smile', 99, 1, 1),
 
 INSERT IGNORE INTO `admin_role` (`id`, `name`, `desc`, `create_time`, `update_time`, `delete_time`) VALUES
 (1, '超级管理员', '默认超级管理员角色', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL);

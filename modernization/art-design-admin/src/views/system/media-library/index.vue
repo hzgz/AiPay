@@ -133,10 +133,10 @@
               <ElDescriptionsItem label="目录名">
                 <span class="mono-text">{{ activeItem.path }}</span>
               </ElDescriptionsItem>
-              <ElDescriptionsItem label="目录入口">
+              <ElDescriptionsItem label="关联页面">
                 <span class="mono-text">{{ displayAdminFixtureText(activeItem.legacy_page) }}</span>
               </ElDescriptionsItem>
-              <ElDescriptionsItem label="素材接口">
+              <ElDescriptionsItem label="目录接口">
                 <span class="mono-text">{{
                   displayAdminFixtureText(activeItem.legacy_list_endpoint)
                 }}</span>
@@ -534,7 +534,7 @@
       pagination.size = response.size
       pagination.total = response.total
       Object.assign(summary, response.summary || emptySummary())
-    } catch (_error) {
+    } catch {
       ElMessage.error('素材目录加载失败')
     } finally {
       loading.value = false
@@ -585,7 +585,7 @@
         throw new Error('detail missing')
       }
       activeItem.value = response.item
-    } catch (_error) {
+    } catch {
       detailVisible.value = false
       activeItem.value = null
       ElMessage.error('素材目录详情加载失败')
@@ -625,7 +625,7 @@
         await openDetail(response.item)
       }
       ElMessage.success(`目录 ${response.created_path} 已创建`)
-    } catch (_error) {
+    } catch {
       ElMessage.error('创建目录失败')
     } finally {
       creatingDirectory.value = false
@@ -896,7 +896,7 @@
         throw new Error('detail missing')
       }
       activeItem.value = response.item
-    } catch (_error) {
+    } catch {
       detailVisible.value = false
       activeItem.value = null
     } finally {
@@ -1048,7 +1048,7 @@
         ) {
           return `${mediaAssetBaseUrl}${assetUrl.pathname}${assetUrl.search}${assetUrl.hash}`
         }
-      } catch (_error) {
+      } catch {
         return normalizedUrl
       }
 

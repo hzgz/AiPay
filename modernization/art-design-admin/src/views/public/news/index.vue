@@ -1,31 +1,11 @@
 <template>
-  <PublicShell
-    :site-name="siteName"
-    :navs="navs"
-    :is-logged-in="isLoggedIn"
-    page-label="公告中心"
-  >
+  <PublicShell :site-name="siteName" :navs="navs" :is-logged-in="isLoggedIn" page-label="公告中心">
     <div class="public-news-page">
       <section class="news-hero">
         <div>
-          <span class="news-eyebrow">公告中心</span>
+          <span class="news-eyebrow">{{ heroEyebrow }}</span>
           <h1>{{ pageTitle }}</h1>
           <p>{{ pageDescription }}</p>
-        </div>
-
-        <div class="news-hero__meta">
-          <div>
-            <small>内容总数</small>
-            <strong>{{ payload?.total ?? 0 }}</strong>
-          </div>
-          <div>
-            <small>当前页</small>
-            <strong>{{ payload?.current ?? currentPage }}</strong>
-          </div>
-          <div>
-            <small>当前栏目</small>
-            <strong>{{ currentTypeTitle }}</strong>
-          </div>
         </div>
       </section>
 
@@ -34,10 +14,16 @@
           v-for="item in typeCards"
           :key="item.type"
           :to="item.to"
-          :class="['news-type', { 'is-active': item.type === currentType && isCategoryMode }]"
+          :class="[
+            'news-type',
+            {
+              'is-active':
+                (!isCategoryMode && item.type === 0) ||
+                (isCategoryMode && item.type === currentType)
+            }
+          ]"
         >
           <strong>{{ item.title }}</strong>
-          <small>{{ item.description }}</small>
         </RouterLink>
       </section>
 
@@ -53,12 +39,8 @@
 
       <section v-else class="news-list-section">
         <div class="news-list-section__head">
-          <div>
-            <span class="news-eyebrow">内容列表</span>
-            <h2>{{ listTitle }}</h2>
-          </div>
-
-          <div class="news-list-section__meta">共 {{ payload?.total ?? 0 }} 条</div>
+          <h2>{{ listTitle }}</h2>
+          <div class="news-list-section__meta">{{ payload?.total ?? 0 }} 条</div>
         </div>
 
         <div class="news-list">
@@ -72,17 +54,17 @@
               <h3>
                 <RouterLink :to="`/news/detail/${item.id}`">{{ item.title }}</RouterLink>
               </h3>
-              <p>{{ item.excerpt || '点击查看全文。' }}</p>
+              <p>{{ item.excerpt || '点击查看详情。' }}</p>
             </div>
 
             <div class="news-row__action">
-              <RouterLink :to="`/news/detail/${item.id}`">查看详情</RouterLink>
+              <RouterLink :to="`/news/detail/${item.id}`">查看</RouterLink>
             </div>
           </article>
 
           <div v-if="!records.length" class="news-empty">
-            <strong>当前栏目暂无内容</strong>
-            <p>这里会展示平台公告、行业资讯或常见问题，暂时还没有可发布的内容。</p>
+            <strong>暂无公告</strong>
+            <p>后续更新会显示在这里。</p>
           </div>
         </div>
 
@@ -135,24 +117,10 @@
   const isLoggedIn = computed(() => Boolean(payload.value?.is_logged_in))
 
   const typeCards = [
-    {
-      type: 1,
-      title: '平台公告',
-      description: '平台更新与站点通知',
-      to: '/news/categories/1'
-    },
-    {
-      type: 2,
-      title: '行业资讯',
-      description: '行业动态与环境变化',
-      to: '/news/categories/2'
-    },
-    {
-      type: 3,
-      title: '常见问题',
-      description: '接入与使用常见问题',
-      to: '/news/categories/3'
-    }
+    { type: 0, title: '全部', to: '/news/index' },
+    { type: 1, title: '平台公告', to: '/news/categories/1' },
+    { type: 2, title: '行业资讯', to: '/news/categories/2' },
+    { type: 3, title: '常见问题', to: '/news/categories/3' }
   ]
 
   const currentTypeTitle = computed(() => {
@@ -163,13 +131,12 @@
     return resolveTypeTitle(currentType.value)
   })
 
+  const heroEyebrow = computed(() => (isCategoryMode.value ? '分类内容' : '公告中心'))
   const pageTitle = computed(() => (isCategoryMode.value ? currentTypeTitle.value : '公告中心'))
   const pageDescription = computed(() =>
-    isCategoryMode.value
-      ? `集中查看${currentTypeTitle.value}内容。`
-      : '查看平台公告、行业资讯与常见问题。'
+    isCategoryMode.value ? `查看${currentTypeTitle.value}内容。` : '查看平台公告与帮助内容。'
   )
-  const listTitle = computed(() => (isCategoryMode.value ? currentTypeTitle.value : '最新公告'))
+  const listTitle = computed(() => (isCategoryMode.value ? currentTypeTitle.value : '最新内容'))
 
   async function loadPage() {
     loading.value = true
@@ -196,16 +163,20 @@
 
   function resolveTypeTitle(type: number) {
     return (
-      {
-        1: '平台公告',
-        2: '行业资讯',
-        3: '常见问题'
-      } as Record<number, string>
-    )[type] || '公告中心'
+      (
+        {
+          1: '平台公告',
+          2: '行业资讯',
+          3: '常见问题'
+        } as Record<number, string>
+      )[type] || '公告中心'
+    )
   }
 
   function handlePageChange(page: number) {
-    const targetPath = isCategoryMode.value ? `/news/categories/${currentType.value}` : '/news/index'
+    const targetPath = isCategoryMode.value
+      ? `/news/categories/${currentType.value}`
+      : '/news/index'
 
     void router.push({
       path: targetPath,
@@ -237,11 +208,12 @@
     text-transform: uppercase;
   }
 
-  .news-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
-    gap: 30px;
-    align-items: end;
+  .news-hero,
+  .news-types,
+  .news-state,
+  .news-list-section {
+    border-top: 1px solid var(--public-border-strong);
+    padding-top: 16px;
   }
 
   .news-hero h1 {
@@ -259,58 +231,29 @@
     line-height: 1.9;
   }
 
-  .news-hero__meta,
-  .news-types,
-  .news-state,
-  .news-list-section {
-    border-top: 1px solid var(--public-border-strong);
-    padding-top: 14px;
-  }
-
-  .news-hero__meta {
-    display: grid;
-    gap: 14px;
-  }
-
-  .news-hero__meta small {
-    display: block;
-    color: var(--public-muted);
-  }
-
-  .news-hero__meta strong {
-    display: block;
-    margin-top: 8px;
-    color: var(--public-title);
-  }
-
   .news-types {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
   .news-type {
-    display: block;
-    padding-bottom: 14px;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--public-title);
     text-decoration: none;
   }
 
-  .news-type strong {
-    display: block;
-    color: var(--public-title);
-  }
-
-  .news-type small {
-    display: block;
-    margin-top: 8px;
-    color: var(--public-text);
-    line-height: 1.75;
-  }
-
-  .news-type.is-active strong {
-    color: var(--public-accent);
+  .news-type.is-active {
+    background: #18202f;
+    border-color: #18202f;
+    color: #fff;
   }
 
   .news-state h2 {
@@ -338,14 +281,14 @@
 
   .news-list-section__head {
     display: flex;
-    align-items: end;
+    align-items: center;
     justify-content: space-between;
     gap: 18px;
     margin-bottom: 16px;
   }
 
   .news-list-section__head h2 {
-    margin: 10px 0 0;
+    margin: 0;
     color: var(--public-title);
     font-size: 1.72rem;
     line-height: 1.25;
@@ -452,11 +395,6 @@
   }
 
   @media (max-width: 980px) {
-    .news-hero,
-    .news-types {
-      grid-template-columns: 1fr;
-    }
-
     .news-row {
       grid-template-columns: 1fr;
     }
@@ -467,9 +405,59 @@
   }
 
   @media (max-width: 720px) {
+    .public-news-page {
+      gap: 22px;
+    }
+
+    .news-hero h1 {
+      font-size: 2.18rem;
+    }
+
+    .news-hero p {
+      line-height: 1.72;
+    }
+
+    .news-types {
+      gap: 8px;
+    }
+
+    .news-type {
+      min-height: 40px;
+      padding: 0 14px;
+      font-size: 0.94rem;
+    }
+
     .news-list-section__head {
       flex-direction: column;
       align-items: stretch;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .news-list-section__head h2 {
+      font-size: 1.5rem;
+    }
+
+    .news-row {
+      gap: 12px;
+      padding: 14px 0;
+    }
+
+    .news-row__meta {
+      gap: 4px;
+    }
+
+    .news-row__body p {
+      margin-top: 8px;
+      line-height: 1.74;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow: hidden;
+    }
+
+    .news-row__action a {
+      min-height: 36px;
     }
   }
 </style>

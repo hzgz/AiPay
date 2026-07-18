@@ -2,32 +2,33 @@
 
 declare(strict_types=1);
 
-namespace Plugins\Payments\Shared\Legacy;
+namespace Plugins\Payments\Shared\EpayProtocol;
 
+use app\support\BusinessTable;
 use app\support\MerchantChannelMetadata;
 use Plugins\Payments\Shared\Support\PaymentPluginException;
 use support\Db;
 
-class LegacyEpayMerchantRepository
+class EpayMerchantRepository
 {
     public function findMerchant(int $merchantId): array
     {
         if ($merchantId <= 0) {
-            throw PaymentPluginException::validation('pid is required');
+            throw PaymentPluginException::validation('商户ID不能为空');
         }
 
-        $merchant = Db::table('ypay_user')
+        $merchant = Db::table(BusinessTable::user())
             ->select('id', 'username', 'user_key', 'is_frozen', 'vip_id', 'vip_time', 'feilv', 'money')
             ->where('id', $merchantId)
             ->first();
 
         if (!$merchant) {
-            throw PaymentPluginException::notFound('merchant was not found');
+            throw PaymentPluginException::notFound('商户不存在');
         }
 
         $merchantArray = (array)$merchant;
         if ((int)($merchantArray['is_frozen'] ?? 0) !== 0) {
-            throw PaymentPluginException::conflict('merchant account is frozen');
+            throw PaymentPluginException::conflict('商户账户已冻结');
         }
 
         return $merchantArray;
@@ -38,9 +39,8 @@ class LegacyEpayMerchantRepository
         ?string $type = 'epay',
         ?string $paymentMethodType = null,
         ?string $pluginCode = null
-    ): ?array
-    {
-        $query = Db::table('ypay_paylist')
+    ): ?array {
+        $query = Db::table(BusinessTable::paylist())
             ->select('id', 'user_id', 'type', 'status', 'name', 'url', 'pid', 'key', 'other', 'create_time')
             ->where('user_id', $merchantId)
             ->where('status', 1);
@@ -87,7 +87,7 @@ class LegacyEpayMerchantRepository
             return null;
         }
 
-        $paylist = Db::table('ypay_paylist')
+        $paylist = Db::table(BusinessTable::paylist())
             ->select('id', 'user_id', 'type', 'status', 'name', 'url', 'pid', 'key', 'other', 'create_time')
             ->where('id', $paylistId)
             ->first();
@@ -97,7 +97,7 @@ class LegacyEpayMerchantRepository
 
     public function findBasicSettings(int $merchantId): array
     {
-        $basic = Db::table('ypay_userbasic')
+        $basic = Db::table(BusinessTable::userBasic())
             ->select('user_id', 'timeout_time', 'callback_hiddenName', 'order_tips', 'is_money_tips', 'money_tips')
             ->where('user_id', $merchantId)
             ->first();

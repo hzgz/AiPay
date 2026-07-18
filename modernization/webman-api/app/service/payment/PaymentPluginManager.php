@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace app\service\payment;
 
+use app\support\BusinessTable;
 use app\support\CorePaymentMethodCatalog;
 use app\support\DatabaseColumnInspector;
 use DomainException;
@@ -46,6 +47,8 @@ class PaymentPluginManager
                 'installed_at' => $state['installed_at'],
                 'updated_at' => $state['updated_at'],
                 'capabilities' => $manifest['capabilities'],
+                'merchant_enabled' => (bool)($manifest['merchant_enabled'] ?? true),
+                'supported_payment_types' => $manifest['supported_payment_types'],
                 'state_audit' => $snapshot['state_audit'],
                 'cleanup_policy' => [
                     'safe_files' => $manifest['cleanup']['safe']['files'],
@@ -152,24 +155,24 @@ class PaymentPluginManager
         $capability = match ($field) {
             'qr_url' => 'merchant_qrcode',
             'extra_value' => 'bill_qrcode',
-            default => throw new InvalidArgumentException('the requested field does not support qrcode decoding'),
+            default => throw new InvalidArgumentException('当前字段不支持二维码解析'),
         };
 
         $capabilities = is_array($manifest['capabilities'] ?? null) ? $manifest['capabilities'] : [];
         if (!in_array($capability, $capabilities, true)) {
             throw new DomainException(sprintf(
-                'payment plugin [%s] does not declare the [%s] capability',
+                '支付插件[%s]未声明[%s]能力',
                 $manifest['code'],
                 $capability
             ));
         }
 
         if (!(bool)($state['installed'] ?? false)) {
-            throw new DomainException(sprintf('payment plugin [%s] is not installed', $manifest['code']));
+            throw new DomainException(sprintf('支付插件[%s]未安装', $manifest['code']));
         }
 
         if (!(bool)($state['enabled'] ?? false)) {
-            throw new DomainException(sprintf('payment plugin [%s] is disabled', $manifest['code']));
+            throw new DomainException(sprintf('支付插件[%s]已停用', $manifest['code']));
         }
 
         return [
@@ -199,7 +202,7 @@ class PaymentPluginManager
             'snapshot_created',
             $state,
             $operator,
-            sprintf('Captured a recovery snapshot%s.', $label !== null && trim($label) !== '' ? ' [' . trim($label) . ']' : ''),
+            sprintf('已创建恢复快照%s。', $label !== null && trim($label) !== '' ? ' [' . trim($label) . ']' : ''),
             [
                 'snapshot_id' => $snapshotId,
                 'snapshot_path' => $this->snapshotRelativePath($manifest['code'], $snapshotId),
@@ -224,7 +227,7 @@ class PaymentPluginManager
         $archivedCode = trim((string)($payload['plugin_code'] ?? ''));
 
         if ($archivedCode !== $code) {
-            throw new RuntimeException('snapshot code does not match the requested plugin code');
+            throw new RuntimeException('快照所属插件编码与当前请求不匹配');
         }
 
         $registry = $this->loadRegistry();
@@ -235,7 +238,7 @@ class PaymentPluginManager
         );
 
         if ((bool)($currentState['enabled'] ?? false)) {
-            throw new RuntimeException('disable the plugin before restoring a recovery snapshot');
+            throw new RuntimeException('请先停用插件，再恢复恢复快照');
         }
 
         $this->restoreSnapshotArchives($code, $payload);
@@ -261,7 +264,7 @@ class PaymentPluginManager
             $restoredState,
             $operator,
             sprintf(
-                'Restored plugin assets from recovery snapshot %s%s.',
+                '已从恢复快照 %s%s 还原插件资源。',
                 $snapshotId,
                 isset($payload['label']) && trim((string)$payload['label']) !== ''
                     ? ' [' . trim((string)$payload['label']) . ']'
@@ -292,7 +295,7 @@ class PaymentPluginManager
         $archivedCode = trim((string)($payload['plugin_code'] ?? ''));
 
         if ($archivedCode !== $code) {
-            throw new RuntimeException('snapshot code does not match the requested plugin code');
+            throw new RuntimeException('快照所属插件编码与当前请求不匹配');
         }
 
         $path = $this->snapshotPath($code, $snapshotId);
@@ -346,11 +349,11 @@ class PaymentPluginManager
         $code = $this->normalizeCode($code);
         $registry = $this->loadRegistry();
         if (!is_array($registry[$code] ?? null)) {
-            throw new InvalidArgumentException("payment plugin registry residue [$code] was not found");
+            throw new InvalidArgumentException("支付插件注册残留[$code]不存在");
         }
 
         if ($this->pluginCatalogAvailable($code)) {
-            throw new DomainException('plugin catalog is still available; use the standard plugin lifecycle actions instead');
+            throw new DomainException('插件目录仍存在，请使用标准插件生命周期操作');
         }
 
         $tableAudit = $this->namespacedTableAudit($code);
@@ -366,7 +369,7 @@ class PaymentPluginManager
         ));
         if ($blockedManagedChannels !== []) {
             throw new DomainException(sprintf(
-                'plugin-managed channel residue is still blocked for [%s]; clear account, pool, or order dependencies before orphan cleanup can continue',
+                '插件[%s]仍有关联通道残留，请先清理账户、轮询池或订单依赖后再继续清理孤立残留',
                 $code
             ));
         }
@@ -443,13 +446,13 @@ class PaymentPluginManager
         $state = $snapshot['state'];
 
         if (!$state['installed']) {
-            throw new RuntimeException('plugin must be installed before config can be updated');
+            throw new RuntimeException('请先安装插件，再更新配置');
         }
 
         $schema = $snapshot['config_schema'];
         $table = $this->configTableName($manifest);
         if (!$this->tableExists($table)) {
-            throw new RuntimeException('plugin config table is not available; install migrations first');
+            throw new RuntimeException('插件配置表不可用，请先安装插件迁移');
         }
 
         $values = $this->normalizeConfigInput($schema, $config);
@@ -496,7 +499,7 @@ class PaymentPluginManager
             'config_update',
             $state,
             $operator,
-            sprintf('Saved plugin config across %d field(s).', count($schema)),
+            sprintf('已保存插件配置，共处理 %d 个字段。', count($schema)),
             [
                 'field_count' => count($schema),
                 'required_field_count' => count(array_filter(
@@ -545,7 +548,7 @@ class PaymentPluginManager
             'install',
             $state,
             $operator,
-            sprintf('Installed plugin version %s and left it disabled for validation.', $manifest['version']),
+            sprintf('已安装插件版本 %s，当前保持停用状态，等待验证。', $manifest['version']),
             [
                 'version' => $manifest['version'],
                 'config_table' => $this->configTableName($manifest),
@@ -572,8 +575,8 @@ class PaymentPluginManager
         if (!(bool)($audit['repair_recommended'] ?? false)) {
             throw new RuntimeException(
                 $state['installed']
-                    ? 'plugin install assets are already healthy; no repair is required'
-                    : 'plugin does not currently require repair; use install to initialize it'
+                    ? '插件安装资源正常，无需修复'
+                    : '当前插件无需修复，请使用安装进行初始化'
             );
         }
 
@@ -602,7 +605,7 @@ class PaymentPluginManager
             'repair',
             $state,
             $operator,
-            sprintf('Reconciled install assets and aligned the plugin to manifest version %s.', $manifest['version']),
+            sprintf('已修复安装资源，并同步到清单版本 %s。', $manifest['version']),
             [
                 'version' => $manifest['version'],
                 'config_table' => $this->configTableName($manifest),
@@ -628,15 +631,15 @@ class PaymentPluginManager
         $audit = $snapshot['state_audit'];
 
         if (!$state['installed']) {
-            throw new RuntimeException('plugin must be installed before it can be upgraded');
+            throw new RuntimeException('请先安装插件，再执行升级');
         }
 
         if ((bool)($audit['repair_recommended'] ?? false)) {
-            throw new RuntimeException('plugin install assets are incomplete; repair the plugin before upgrading it');
+            throw new RuntimeException('插件安装资源不完整，请先修复后再升级');
         }
 
         if (!(bool)($audit['upgrade_recommended'] ?? false)) {
-            throw new RuntimeException('plugin is already on the latest manifest version');
+            throw new RuntimeException('插件已是最新版本');
         }
 
         $fromVersion = (string)($audit['registry_version'] ?? $state['version'] ?? '0.0.0');
@@ -662,7 +665,7 @@ class PaymentPluginManager
             'upgrade',
             $state,
             $operator,
-            sprintf('Upgraded plugin from %s to %s.', $fromVersion, $toVersion),
+            sprintf('已将插件从版本 %s 升级到 %s。', $fromVersion, $toVersion),
             [
                 'from_version' => $fromVersion,
                 'to_version' => $toVersion,
@@ -689,20 +692,20 @@ class PaymentPluginManager
         $audit = $snapshot['state_audit'];
 
         if (!$state['installed']) {
-            throw new RuntimeException('plugin must be installed before it can be enabled');
+            throw new RuntimeException('请先安装插件，再执行启用');
         }
 
         if (!(bool)($audit['runtime_exists'] ?? false) || !(bool)($audit['config_table_exists'] ?? false)) {
-            throw new RuntimeException('plugin install assets are incomplete; repair or reinstall the plugin before enabling it');
+            throw new RuntimeException('插件安装资源不完整，请先修复或重装后再启用');
         }
 
         if ((int)($audit['managed_channel_missing_count'] ?? 0) > 0) {
-            throw new RuntimeException('plugin-managed channels are incomplete; repair the plugin before enabling it');
+            throw new RuntimeException('插件托管通道不完整，请先修复插件后再启用');
         }
 
         $missingFields = $this->missingRequiredConfigFields($snapshot['config_schema']);
         if (!empty($missingFields)) {
-            throw new RuntimeException('plugin config is incomplete: ' . implode(', ', $missingFields));
+            throw new RuntimeException('插件配置不完整：' . implode(', ', $missingFields));
         }
 
         $state['enabled'] = true;
@@ -737,7 +740,7 @@ class PaymentPluginManager
         $state = $snapshot['state'];
 
         if (!$state['installed']) {
-            throw new RuntimeException('plugin is not installed');
+            throw new RuntimeException('插件未安装');
         }
 
         $state['enabled'] = false;
@@ -780,7 +783,7 @@ class PaymentPluginManager
         $plugin = $snapshot['plugin'];
 
         if (!$state['installed']) {
-            throw new RuntimeException('plugin is not installed');
+            throw new RuntimeException('插件未安装');
         }
 
         $plugin->uninstall($purge);
@@ -802,8 +805,8 @@ class PaymentPluginManager
             $state,
             $operator,
             $purge
-                ? 'Marked plugin uninstalled and captured a purge plan for operator review.'
-                : 'Marked plugin uninstalled and deferred cleanup to the safe cleanup flow.',
+                ? '插件已标记为卸载，并生成彻底清理计划供管理员确认。'
+                : '插件已标记为卸载，后续清理将交由安全清理流程执行。',
             [
                 'purge_requested' => $purge,
                 'cleanup_execution' => $state['cleanup_execution'] ?? 'deferred',
@@ -825,7 +828,7 @@ class PaymentPluginManager
         $plugin = $snapshot['plugin'];
 
         if ($state['installed'] || $state['enabled']) {
-            throw new RuntimeException('plugin must be uninstalled before safe cleanup can run');
+            throw new RuntimeException('请先卸载插件，再执行安全清理');
         }
 
         $plan = $this->buildUninstallPlan($manifest, false);
@@ -878,12 +881,12 @@ class PaymentPluginManager
             $state,
             $operator,
             sprintf(
-                'Completed safe cleanup: removed %d file target(s), %d table(s), and %d row(s)%s.',
+                '安全清理已完成：删除 %d 个文件目标、%d 张数据表、%d 条数据记录%s。',
                 (int)$report['removed_file_count'],
                 (int)$report['removed_table_count'],
                 (int)$report['removed_row_count'],
                 $hookReport['executed']
-                    ? sprintf(' after the plugin cleanup hook reported %d step(s)', count($hookReport['steps']))
+                    ? sprintf('，插件清理钩子共返回 %d 个步骤', count($hookReport['steps']))
                     : ''
             ),
             [
@@ -917,7 +920,7 @@ class PaymentPluginManager
         $plugin = $snapshot['plugin'];
 
         if ($state['installed'] || $state['enabled']) {
-            throw new RuntimeException('plugin must be uninstalled before purge cleanup can run');
+            throw new RuntimeException('请先卸载插件，再执行彻底清理');
         }
 
         $plan = $this->buildUninstallPlan($manifest, true);
@@ -1007,8 +1010,8 @@ class PaymentPluginManager
             is_array($snapshot['state'] ?? null) ? $snapshot['state'] : [],
             [],
             empty($issues)
-                ? 'Auto-reconciled stored registry state to match the effective plugin state.'
-                : 'Auto-reconciled stored registry state after drift was detected during plugin inspection.',
+                ? '已自动校正注册表状态，使其与当前插件实际状态一致。'
+                : '插件巡检发现状态漂移，已自动校正注册表状态。',
             [
                 'issues' => $issues,
                 'reconciled_actions' => $reconciledActions,
@@ -1047,7 +1050,7 @@ class PaymentPluginManager
         $code = $this->normalizeCode($code);
         $manifestPath = $this->pluginRootPath() . DIRECTORY_SEPARATOR . $code . DIRECTORY_SEPARATOR . 'plugin.json';
         if (!is_file($manifestPath)) {
-            throw new InvalidArgumentException("payment plugin [$code] was not found");
+            throw new InvalidArgumentException("支付插件[$code]不存在");
         }
 
         return $this->parseManifest($manifestPath, $code);
@@ -1058,12 +1061,12 @@ class PaymentPluginManager
         $contents = file_get_contents($manifestPath);
         $decoded = json_decode($contents ?: '', true);
         if (!is_array($decoded)) {
-            throw new RuntimeException('invalid plugin manifest: ' . $manifestPath);
+            throw new RuntimeException('插件清单无效：' . $manifestPath);
         }
 
         $manifestCode = $this->normalizeCode((string)($decoded['code'] ?? $directoryCode));
         if ($manifestCode !== $directoryCode) {
-            throw new RuntimeException("plugin manifest code [$manifestCode] does not match directory [$directoryCode]");
+            throw new RuntimeException("插件清单编码[$manifestCode]与目录[$directoryCode]不一致");
         }
 
         $cleanup = is_array($decoded['cleanup'] ?? null) ? $decoded['cleanup'] : [];
@@ -1111,22 +1114,22 @@ class PaymentPluginManager
                     'files' => $this->stringList($safe['files'] ?? ["runtime/payment-plugins/$manifestCode"]),
                     'tables' => $this->stringList($safe['tables'] ?? []),
                     'notes' => $this->stringList($safe['notes'] ?? [
-                        'Phase 1 only records this cleanup plan. No files or tables are deleted automatically.',
+                        '第一阶段仅记录清理计划，不会自动删除文件或数据表。',
                     ]),
                 ],
                 'purge' => [
                     'files' => $this->stringList($purge['files'] ?? ["plugins/payments/$manifestCode"]),
                     'tables' => $this->stringList($purge['tables'] ?? []),
                     'notes' => $this->stringList($purge['notes'] ?? [
-                        'Purge is deferred until plugin-specific cleanup has been audited and explicitly approved.',
+                        '彻底清理需要在插件专项清理审计通过后，由管理员明确确认执行。',
                     ]),
                 ],
                 'retain' => $this->stringList($cleanup['retain'] ?? [
-                    'merchant order history',
-                    'recharge records',
-                    'fund and balance logs',
-                    'settlement records',
-                    'notify and audit traces',
+                    '商户订单历史',
+                    '充值记录',
+                    '资金与余额日志',
+                    '结算记录',
+                    '回调与审计轨迹',
                 ]),
                 'purge_requires_confirmation' => (bool)($cleanup['purge_requires_confirmation'] ?? true),
             ],
@@ -1206,7 +1209,7 @@ class PaymentPluginManager
             'purge_confirmation_phrase' => $this->purgeConfirmationPhrase($code),
             'missing_snapshot_confirmation_phrase' => $this->purgeWithoutSnapshotConfirmationPhrase($code),
             'warning' => $purge && empty($items)
-                ? 'No recovery snapshot is currently available for this plugin. Capture one before purge cleanup, or explicitly acknowledge irreversible removal.'
+                ? '当前插件暂无恢复快照。建议先创建快照，再执行彻底清理；如确认不可逆删除，请明确确认。'
                 : null,
         ];
     }
@@ -1220,9 +1223,9 @@ class PaymentPluginManager
         }
 
         return [
-            'No recovery snapshot exists for this plugin right now.',
-            'Capture a recovery snapshot before purge cleanup whenever possible.',
-            'If you intentionally accept irreversible removal, purge confirmation must use [' . $this->purgeWithoutSnapshotConfirmationPhrase($code) . '].',
+            '当前插件暂无可用恢复快照。',
+            '如条件允许，建议在彻底清理前先创建恢复快照。',
+            '如你确认接受不可逆删除，确认口令必须填写为 [' . $this->purgeWithoutSnapshotConfirmationPhrase($code) . ']。',
         ];
     }
 
@@ -1300,20 +1303,20 @@ class PaymentPluginManager
     {
         $code = strtolower(trim($code));
         if ($code === '') {
-            throw new RuntimeException('managed channel code is required');
+            throw new RuntimeException('插件托管通道编码不能为空');
         }
 
         if (mb_strlen($code) > 50) {
-            throw new RuntimeException('managed channel code is too long');
+            throw new RuntimeException('插件托管通道编码过长');
         }
 
         if (!preg_match('/^[a-z][a-z0-9_]*$/', $code)) {
-            throw new RuntimeException('managed channel code must start with a letter and contain only lowercase letters, digits, or underscores');
+            throw new RuntimeException('插件托管通道编码必须以字母开头，且只能包含小写字母、数字或下划线');
         }
 
         if ($code !== $pluginCode && !str_starts_with($code, $pluginCode . '_')) {
             throw new RuntimeException(
-                'managed channel code must equal the plugin code [' . $pluginCode . '] or start with the plugin code prefix [' . $pluginCode . '_]'
+                '插件托管通道编码必须等于插件编码[' . $pluginCode . ']，或以插件前缀[' . $pluginCode . '_]开头'
             );
         }
 
@@ -1345,7 +1348,7 @@ class PaymentPluginManager
         }
 
         if (is_bool($value) || is_array($value) || is_object($value)) {
-            throw new RuntimeException('managed channel info must be a scalar');
+            throw new RuntimeException('插件托管通道说明必须是标量值');
         }
 
         $normalized = trim((string)$value);
@@ -1354,7 +1357,7 @@ class PaymentPluginManager
         }
 
         if (mb_strlen($normalized) > 225) {
-            throw new RuntimeException('managed channel info is too long');
+            throw new RuntimeException('插件托管通道说明过长');
         }
 
         return $normalized;
@@ -1363,16 +1366,16 @@ class PaymentPluginManager
     private function normalizeManagedChannelType(mixed $value): string
     {
         if (is_bool($value) || is_array($value) || is_object($value)) {
-            throw new RuntimeException('managed channel type must be a scalar');
+            throw new RuntimeException('托管通道类型必须是标量值');
         }
 
         $normalized = $this->normalizePaymentTypeAlias((string)$value);
         if ($normalized === '') {
-            throw new RuntimeException('managed channel type is required');
+            throw new RuntimeException('托管通道类型不能为空');
         }
 
         if (!$this->paymentTypeExists($normalized)) {
-            throw new RuntimeException('managed channel payment type is not supported');
+            throw new RuntimeException('托管通道支付方式不受支持');
         }
 
         return $normalized;
@@ -1396,7 +1399,7 @@ class PaymentPluginManager
         return match ($normalized) {
             '1', 'true', 'yes', 'on', 'enable', 'enabled' => 1,
             '0', 'false', 'no', 'off', 'disable', 'disabled' => 0,
-            default => throw new RuntimeException('managed channel status must be 0 or 1'),
+            default => throw new RuntimeException('插件托管通道状态只能为 0 或 1'),
         };
     }
 
@@ -1489,7 +1492,7 @@ class PaymentPluginManager
 
         CorePaymentMethodCatalog::seedWhenTableEmpty();
 
-        $exists = Db::table('ypay_payment')
+        $exists = Db::table(BusinessTable::payment())
             ->where('type', $type)
             ->exists();
 
@@ -1554,22 +1557,22 @@ class PaymentPluginManager
             $drift = [];
 
             if (!$exists) {
-                $blockingReasons[] = 'Managed channel row is currently missing from admin_channel.';
+                $blockingReasons[] = '当前插件托管通道记录在 admin_channel 中不存在。';
             } else {
                 if ((int)($row['create_type'] ?? 0) !== self::CHANNEL_CREATE_TYPE_PLUGIN) {
-                    $blockingReasons[] = 'Managed channel row does not use create_type = 2.';
+                    $blockingReasons[] = '当前插件托管通道记录的 create_type 不是 2。';
                 }
 
                 if ($dependencySummary['account_count'] > 0) {
-                    $blockingReasons[] = sprintf('Channel is still referenced by %d payment account(s).', $dependencySummary['account_count']);
+                    $blockingReasons[] = sprintf('当前通道仍被 %d 个收款账号引用。', $dependencySummary['account_count']);
                 }
 
                 if ($dependencySummary['pool_item_count'] > 0) {
-                    $blockingReasons[] = sprintf('Channel is still referenced by %d pool item(s).', $dependencySummary['pool_item_count']);
+                    $blockingReasons[] = sprintf('当前通道仍被 %d 个轮询池项引用。', $dependencySummary['pool_item_count']);
                 }
 
                 if ($dependencySummary['order_count'] > 0) {
-                    $blockingReasons[] = sprintf('Channel still has %d historical order(s) linked through payment accounts.', $dependencySummary['order_count']);
+                    $blockingReasons[] = sprintf('当前通道仍有 %d 条通过收款账号关联的历史订单。', $dependencySummary['order_count']);
                 }
 
                 if (!$purge && !$this->channelTableHasDeleteTime()) {
@@ -1623,20 +1626,20 @@ class PaymentPluginManager
             $blockingReasons = [];
 
             if ((int)($row['create_type'] ?? 0) !== self::CHANNEL_CREATE_TYPE_PLUGIN) {
-                $blockingReasons[] = 'Managed channel row does not use create_type = 2.';
+                $blockingReasons[] = '当前插件托管通道记录的 create_type 不是 2。';
             }
 
             if ($dependencySummary['account_count'] > 0) {
-                $blockingReasons[] = sprintf('Channel is still referenced by %d payment account(s).', $dependencySummary['account_count']);
+                $blockingReasons[] = sprintf('当前通道仍被 %d 个收款账号引用。', $dependencySummary['account_count']);
             }
 
             if ($dependencySummary['pool_item_count'] > 0) {
-                $blockingReasons[] = sprintf('Channel is still referenced by %d pool item(s).', $dependencySummary['pool_item_count']);
+                $blockingReasons[] = sprintf('当前通道仍被 %d 个轮询池项引用。', $dependencySummary['pool_item_count']);
             }
 
             if ($dependencySummary['order_count'] > 0) {
                 $blockingReasons[] = sprintf(
-                    'Channel still has %d historical order(s) linked through payment accounts.',
+                    '当前通道仍有 %d 条通过收款账号关联的历史订单。',
                     $dependencySummary['order_count']
                 );
             }
@@ -1705,7 +1708,7 @@ class PaymentPluginManager
             'latest_order_time' => null,
         ];
 
-        $account = Db::table('ypay_account')
+        $account = Db::table(BusinessTable::account())
             ->selectRaw('COUNT(*) as account_count')
             ->selectRaw('COUNT(DISTINCT user_id) as merchant_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as online_account_count')
@@ -1717,8 +1720,8 @@ class PaymentPluginManager
             $stats = array_merge($stats, (array)$account);
         }
 
-        $pool = Db::table('ypay_poll_pool_item as item')
-            ->join('ypay_account as account', 'account.id', '=', 'item.account_id')
+        $pool = Db::table(BusinessTable::pollPoolItem('item'))
+            ->join(BusinessTable::account('account'), 'account.id', '=', 'item.account_id')
             ->selectRaw('COUNT(item.id) as pool_item_count')
             ->selectRaw('COUNT(DISTINCT item.pool_id) as pool_count')
             ->where('account.code', $code)
@@ -1727,8 +1730,8 @@ class PaymentPluginManager
             $stats = array_merge($stats, (array)$pool);
         }
 
-        $orders = Db::table('ypay_order as orders')
-            ->join('ypay_account as account', 'account.id', '=', 'orders.account_id')
+        $orders = Db::table(BusinessTable::order('orders'))
+            ->join(BusinessTable::account('account'), 'account.id', '=', 'orders.account_id')
             ->selectRaw('COUNT(*) as order_count')
             ->selectRaw('SUM(CASE WHEN orders.status = 1 THEN 1 ELSE 0 END) as paid_order_count')
             ->selectRaw(
@@ -1857,7 +1860,7 @@ class PaymentPluginManager
     {
         $code = trim((string)($archive['code'] ?? ''));
         if ($code === '' || !$this->isAllowedManagedChannelCode($pluginCode, $code)) {
-            throw new RuntimeException('snapshot managed channel code is outside the allowed plugin scope');
+            throw new RuntimeException('快照中的托管通道编码超出允许的插件范围');
         }
 
         $existing = $this->loadManagedChannelRow($code);
@@ -1871,7 +1874,7 @@ class PaymentPluginManager
 
         $row = is_array($archive['row'] ?? null) ? $archive['row'] : null;
         if ($row === null) {
-            throw new RuntimeException('snapshot managed channel payload is missing row data for [' . $code . ']');
+            throw new RuntimeException('快照中的托管通道[' . $code . ']缺少行数据');
         }
 
         unset($row['id']);
@@ -1895,7 +1898,7 @@ class PaymentPluginManager
         }
 
         if (!$this->isAllowedManagedChannelCode($pluginCode, $code)) {
-            throw new RuntimeException("managed channel [$code] is outside the allowed plugin namespace");
+            throw new RuntimeException("插件托管通道[$code]超出允许的插件命名空间");
         }
 
         if (!(bool)($audit['can_cleanup'] ?? false)) {
@@ -1946,7 +1949,7 @@ class PaymentPluginManager
         }
 
         if (!$this->isAllowedManagedChannelCode($pluginCode, $code)) {
-            throw new RuntimeException("managed channel [$code] is outside the allowed plugin namespace");
+            throw new RuntimeException("插件托管通道[$code]超出允许的插件命名空间");
         }
 
         if (!(bool)($audit['can_cleanup'] ?? false)) {
@@ -2180,8 +2183,8 @@ class PaymentPluginManager
             'cleanup_confirmation_phrase' => $this->cleanupRegistryResidueConfirmationPhrase($code),
             'cleanup_without_snapshot_confirmation_phrase' => $this->cleanupRegistryResidueWithoutSnapshotConfirmationPhrase($code),
             'warning' => empty($items)
-                ? 'No recovery snapshot exists for this orphaned plugin code. Cleaning the residue will remove the last live runtime/history/table footprint without leaving an admin restore point.'
-                : 'Recovery snapshots exist and will be retained in the Recovery Vault after residue cleanup.',
+                ? '当前孤立插件编码没有恢复快照。清理残留后，将移除最后一份运行目录、历史与数据表痕迹，且不会留下后台恢复点。'
+                : '当前已存在恢复快照，残留清理完成后会继续保留在恢复仓库中。',
         ];
     }
 
@@ -3135,7 +3138,7 @@ class PaymentPluginManager
             )),
             'notes' => $this->stringList(array_merge(
                 [
-                    'Purge executes all audited safe-cleanup targets, then removes the plugin package and lifecycle audit artifacts.',
+                    '彻底清理会先执行所有已审计的安全清理目标，再移除插件包与生命周期审计产物。',
                 ],
                 $manifest['cleanup']['safe']['notes'],
                 $manifest['cleanup']['purge']['notes']
@@ -3329,7 +3332,7 @@ class PaymentPluginManager
         }
 
         if (!$state['installed'] && ($runtimeExists || $configTableExists)) {
-            $issues[] = 'Plugin is marked not installed, but plugin-owned runtime or config residue still exists.';
+            $issues[] = '插件当前标记为未安装，但仍存在插件自有运行目录或配置残留。';
         }
 
         if ((bool)($state['installed'] ?? false) && $managedChannelIssues !== []) {
@@ -3340,7 +3343,7 @@ class PaymentPluginManager
 
         if ($state['installed'] && version_compare($registryVersion, $manifestVersion, '<')) {
             $issues[] = sprintf(
-                'Installed plugin version [%s] is behind manifest version [%s]. Run upgrade to apply the latest plugin assets.',
+                '已安装插件版本 [%s] 低于清单版本 [%s]，请执行升级以应用最新插件资源。',
                 $registryVersion,
                 $manifestVersion
             );
@@ -3348,7 +3351,7 @@ class PaymentPluginManager
 
         if ($state['installed'] && version_compare($registryVersion, $manifestVersion, '>')) {
             $issues[] = sprintf(
-                'Registry version [%s] is newer than manifest version [%s]. Local plugin files may have been rolled back.',
+                '注册表版本 [%s] 高于清单版本 [%s]，本地插件文件可能已被回滚。',
                 $registryVersion,
                 $manifestVersion
             );
@@ -3356,14 +3359,14 @@ class PaymentPluginManager
 
         if ($state['installed'] && ($migrationAudit['drifted_file_count'] ?? 0) > 0) {
             $issues[] = sprintf(
-                '%d applied migration file(s) no longer match the manifest files on disk.',
+                '%d 个已执行迁移文件与当前磁盘中的清单文件不一致。',
                 (int)$migrationAudit['drifted_file_count']
             );
         }
 
         if ($pendingCurrentMigrationFiles > 0) {
             $issues[] = sprintf(
-                'The current manifest version still has %d unapplied migration file(s). Run repair to reconcile plugin-owned database assets.',
+                '当前清单版本仍有 %d 个迁移文件未执行，请运行修复以同步插件自有数据库资源。',
                 $pendingCurrentMigrationFiles
             );
         }
@@ -3387,14 +3390,14 @@ class PaymentPluginManager
         $repairReason = $this->repairReason($state, $runtimeExists, $configTableExists, $pendingCurrentMigrationFiles);
         if ($repairReason === null && (bool)($state['installed'] ?? false) && ($managedChannelMissingCount > 0 || $managedChannelDriftCount > 0)) {
             $repairReason = sprintf(
-                'Managed channel sync drift detected: %d missing and %d drifted channel row(s). Run repair to resync plugin-owned channel metadata.',
+                '检测到托管通道同步漂移：缺失 %d 条、漂移 %d 条，请运行修复以重新同步插件托管通道元数据。',
                 $managedChannelMissingCount,
                 $managedChannelDriftCount
             );
         }
         if ($repairReason === null && !(bool)($state['installed'] ?? false) && $managedChannelExistingCount > 0) {
             $repairReason = sprintf(
-                'Plugin-managed channel residue still exists for %d row(s). Run repair to restore a consistent installed state or purge cleanup to remove them.',
+                '仍存在 %d 条插件托管通道残留，请执行修复恢复一致安装状态，或执行彻底清理将其移除。',
                 $managedChannelExistingCount
             );
         }
@@ -3763,7 +3766,7 @@ class PaymentPluginManager
         }
 
         if (!$this->isAllowedSafeFilePath($code, $absolutePath)) {
-            throw new RuntimeException("safe cleanup target [$target] is outside the allowed runtime scope");
+            throw new RuntimeException("安全清理目标[$target]超出允许的运行目录范围");
         }
 
         if (!file_exists($absolutePath)) {
@@ -3781,7 +3784,7 @@ class PaymentPluginManager
         $this->removePath($absolutePath);
 
         if (file_exists($absolutePath)) {
-            throw new RuntimeException("failed to remove cleanup target [$target]");
+            throw new RuntimeException("清理目标[$target]删除失败");
         }
 
         return [
@@ -3809,7 +3812,7 @@ class PaymentPluginManager
         }
 
         if (!$this->isAllowedSafeTableName($code, $table)) {
-            throw new RuntimeException("safe cleanup table [$table] is outside the allowed plugin namespace");
+            throw new RuntimeException("安全清理数据表[$table]超出允许的插件命名空间");
         }
 
         $currentAudit = $this->auditCleanupTable($table);
@@ -3854,7 +3857,7 @@ class PaymentPluginManager
         }
 
         if (!$this->isAllowedPurgeFilePath($code, $absolutePath)) {
-            throw new RuntimeException("purge cleanup target [$target] is outside the allowed plugin scope");
+            throw new RuntimeException("彻底清理目标[$target]超出允许的插件范围");
         }
 
         if (!file_exists($absolutePath)) {
@@ -5139,20 +5142,20 @@ class PaymentPluginManager
         }
 
         if ((bool)($state['installed'] ?? false) && !$runtimeExists) {
-            return 'The plugin runtime directory is missing and should be rebuilt.';
+            return '插件运行目录缺失，需要重建。';
         }
 
         if ((bool)($state['installed'] ?? false) && !$configTableExists) {
-            return 'The plugin config table is missing and should be rebuilt.';
+            return '插件配置表缺失，需要重建。';
         }
 
         if (($state['last_action'] ?? null) === 'state_reconciled' && !$runtimeExists && !$configTableExists) {
-            return 'The plugin was auto-reconciled after its install assets disappeared. Run repair to rebuild them.';
+            return '插件安装资源消失后，系统已自动校正状态；请执行修复以重新构建资源。';
         }
 
         if ((bool)($state['installed'] ?? false) && $pendingCurrentMigrationFiles > 0) {
             return sprintf(
-                'The current manifest version still has %d unapplied migration file(s). Run repair to reconcile plugin-owned database assets.',
+                '当前清单版本仍有 %d 个迁移文件未执行，请运行修复以同步插件自有数据库资源。',
                 $pendingCurrentMigrationFiles
             );
         }

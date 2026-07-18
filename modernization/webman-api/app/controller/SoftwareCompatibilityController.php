@@ -6,8 +6,9 @@ namespace app\controller;
 
 use app\support\ApiResponse;
 use app\service\order\OrderCallbackTaskService;
+use app\support\BusinessTable;
 use app\support\SystemConfig;
-use Plugins\Payments\Shared\Legacy\LegacyEpayOrderRepository;
+use Plugins\Payments\Shared\EpayProtocol\EpayOrderRepository;
 use support\Db;
 use Webman\Http\Request;
 use Webman\Http\Response;
@@ -53,7 +54,7 @@ class SoftwareCompatibilityController
             return $errorResponse;
         }
 
-        $orders = Db::table('ypay_order')
+        $orders = Db::table(BusinessTable::order())
             ->select(
                 'id',
                 'name',
@@ -135,7 +136,7 @@ class SoftwareCompatibilityController
             }
         }
 
-        Db::table('ypay_account')
+        Db::table(BusinessTable::account())
             ->where('id', (int)($account['id'] ?? 0))
             ->update($update);
 
@@ -236,7 +237,7 @@ class SoftwareCompatibilityController
         $channelId = (int)$request->input('channel_id', 0);
         $account = null;
         if ($channelId > 0) {
-            $account = Db::table('ypay_account')
+            $account = Db::table(BusinessTable::account())
                 ->select('id', 'user_id', 'code', 'type', 'status', 'is_status', 'wxname', 'zfb_pid', 'qq')
                 ->where('id', $channelId)
                 ->where('user_id', (int)($merchant['id'] ?? 0))
@@ -341,20 +342,20 @@ class SoftwareCompatibilityController
 
     private function findSoftwareMerchant(int $merchantId, string $appKey): array
     {
-        $row = Db::table('ypay_userbasic')
-            ->leftJoin('ypay_user', 'ypay_userbasic.user_id', '=', 'ypay_user.id')
+        $row = Db::table(BusinessTable::userBasic('basic'))
+            ->leftJoin(BusinessTable::user('merchant'), 'basic.user_id', '=', 'merchant.id')
             ->select(
-                'ypay_userbasic.user_id',
-                'ypay_userbasic.appkey',
-                'ypay_user.id',
-                'ypay_user.username',
-                'ypay_user.user_key',
-                'ypay_user.money',
-                'ypay_user.is_frozen',
-                'ypay_user.frozen_reason'
+                'basic.user_id',
+                'basic.appkey',
+                'merchant.id',
+                'merchant.username',
+                'merchant.user_key',
+                'merchant.money',
+                'merchant.is_frozen',
+                'merchant.frozen_reason'
             )
-            ->where('ypay_userbasic.user_id', $merchantId)
-            ->where('ypay_userbasic.appkey', $appKey)
+            ->where('basic.user_id', $merchantId)
+            ->where('basic.appkey', $appKey)
             ->first();
 
         if (!$row) {
@@ -377,7 +378,7 @@ class SoftwareCompatibilityController
             return [null, $this->monitorResponse(201, 'channel_id 不能为空')];
         }
 
-        $account = Db::table('ypay_account')
+        $account = Db::table(BusinessTable::account())
             ->select(
                 'id',
                 'user_id',
@@ -522,7 +523,7 @@ class SoftwareCompatibilityController
             return $this->monitorResponse(201, '当前已开启软件回调强签名，缺少 signature、timestamp、nonce 参数', [
                 'current_mode' => $mode,
                 'required_fields' => ['signature', 'timestamp', 'nonce'],
-                'hint' => '旧版软件若仍只提交 id + key/token，请先切回旧版签名模式，或升级软件端后按 HMAC-SHA256 强签名协议接入。',
+                'hint' => '如果软件端当前仍只提交 id + key/token，请先切换到基础校验模式，或升级软件端后按 HMAC-SHA256 强签名协议接入。',
             ]);
         }
 
@@ -771,7 +772,7 @@ class SoftwareCompatibilityController
         string $type,
         string $orderNo
     ): ?array {
-        $query = Db::table('ypay_order')
+        $query = Db::table(BusinessTable::order())
             ->select(
                 'id',
                 'name',
@@ -834,7 +835,7 @@ class SoftwareCompatibilityController
         $thresholdTimestamp = time() - 900;
         $thresholdDateTime = date('Y-m-d H:i:s', $thresholdTimestamp);
 
-        $query = Db::table('ypay_order')
+        $query = Db::table(BusinessTable::order())
             ->select(
                 'id',
                 'name',
@@ -920,7 +921,7 @@ class SoftwareCompatibilityController
 
     private function settleAndNotifyMerchant(array $order, array $merchant, array $payload): array
     {
-        $repository = new LegacyEpayOrderRepository();
+        $repository = new EpayOrderRepository();
         $settlement = $repository->settlePaidOrder($order, $merchant, $payload);
         $settledOrder = (array)($settlement['order'] ?? $order);
         $callbackTask = (new OrderCallbackTaskService())->enqueueForSettledOrder($settledOrder, $merchant, [

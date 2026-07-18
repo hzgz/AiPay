@@ -7,10 +7,8 @@
       :loading="loading"
       :plugin-views="pluginViews"
       :plugin-payment-filters="pluginPaymentFilters"
-      :active-plugin-payment-filter-label="activePluginPaymentFilterLabel"
       :filtered-plugins="filteredPlugins"
       :columns="columns"
-      :current-plugin-view-label="currentPluginViewLabel"
       :has-plugin-scaffold-auth="hasPluginScaffoldAuth"
       :has-governance-data="hasGovernanceData"
       :show-governance-panels="showGovernancePanels"
@@ -202,7 +200,6 @@
     overviewMigrationTone,
     overviewMigrationValue,
     pluginAccessLabel,
-    pluginCodeSummary,
     pluginPaymentLabel,
     pluginPaymentTagType,
     residueManagedChannelBlockSummary,
@@ -416,12 +413,8 @@
     { key: 'wxpay' as const, label: '微信' },
     { key: 'qqpay' as const, label: 'QQ' },
     { key: 'usdt' as const, label: 'USDT' },
-    { key: 'gateway' as const, label: '网关' },
     { key: 'other' as const, label: '其它' }
   ]
-  const currentPluginViewLabel = computed(
-    () => pluginViews.value.find((item) => item.key === activePluginView.value)?.label || '全部插件'
-  )
   const pluginOverviewCards = computed<
     Array<{ key: string; label: string; value: string; tone: PluginOverviewCardTone }>
   >(() => {
@@ -431,25 +424,25 @@
     return [
       {
         key: 'audit',
-        label: '运行状态',
+        label: '运行',
         value: auditSummaryLabel(detail.state_audit),
         tone: overviewAuditTone(detail)
       },
       {
         key: 'config',
-        label: '配置状态',
+        label: '配置',
         value: overviewConfigValue(detail),
         tone: overviewConfigTone(detail)
       },
       {
         key: 'migration',
-        label: '版本信息',
+        label: '版本',
         value: overviewMigrationValue(detail),
         tone: overviewMigrationTone(detail)
       },
       {
         key: 'channel',
-        label: '关联通道',
+        label: '通道',
         value: overviewChannelValue(detail),
         tone: overviewChannelTone(detail)
       }
@@ -503,13 +496,13 @@
       return '请先选择一个插件，查看其彻底清理范围。'
     }
     if (detail.state.installed || detail.state.enabled) {
-      return '请先卸载并停用插件，再执行彻底清理。'
+      return '请先停用并卸载插件，再继续。'
     }
     if (detail.purge_plan.snapshot_guard && !detail.purge_plan.snapshot_guard.has_snapshot) {
-      return '当前没有恢复快照。建议先创建快照，或使用更严格的无快照确认方式。'
+      return '当前没有恢复快照，建议先创建后再继续。'
     }
 
-    return '当前没有可执行彻底清理的残留项。'
+    return '当前没有可清理项。'
   })
 
   const toggleCleanupVisibility = (key: keyof CleanupVisibilityState) => {
@@ -612,11 +605,6 @@
       }))
       .filter((item) => item.key === 'all' || item.count > 0)
   })
-  const activePluginPaymentFilterLabel = computed(
-    () =>
-      pluginPaymentFilters.value.find((item) => item.key === activePluginPaymentFilter.value)
-        ?.label || '全部方式'
-  )
   const filteredPlugins = computed(() => {
     if (activePluginPaymentFilter.value === 'all') {
       return keywordFilteredPlugins.value
@@ -681,21 +669,18 @@
       formatter: (row) =>
         h('div', { class: 'plugin-main-cell plugin-main-cell--compact plugin-main-cell--dense' }, [
           h('strong', { class: 'plugin-name' }, normalizePluginCopy(row.name)),
-          h('div', { class: 'plugin-meta-row plugin-meta-row--compact' }, [
-            h('span', { class: 'plugin-code-chip' }, pluginCodeSummary(row.code)),
-            pluginTableCompact.value
-              ? h(
-                  ElButton,
-                  {
-                    type: 'primary',
-                    link: true,
-                    class: 'plugin-inline-action',
-                    onClick: () => openDetail(row.code)
-                  },
-                  () => '详情'
-                )
-              : null
-          ])
+          pluginTableCompact.value
+            ? h(
+                ElButton,
+                {
+                  type: 'primary',
+                  link: true,
+                  class: 'plugin-inline-action',
+                  onClick: () => openDetail(row.code)
+                },
+                () => '详情'
+              )
+            : null
         ])
     },
     {
@@ -974,7 +959,7 @@
     lifecycleActionLoading.value = 'disable'
     try {
       const detail = await fetchDisablePaymentPlugin(code)
-      ElMessage.success('插件已停用')
+      ElMessage.success('插件已关闭')
       await reloadAfterAction(code, detail)
     } finally {
       lifecycleActionLoading.value = ''
@@ -1070,7 +1055,7 @@
     const { value } = await ElMessageBox.prompt(
       [
         '建议在彻底清理、替换插件包或高风险修复前先创建恢复快照。',
-        '快照会归档插件目录、运行目录、生命周期历史、插件专属数据表以及托管通道记录。',
+        '快照会归档插件目录、运行目录、运行记录、插件专属数据表以及托管通道记录。',
         `当前彻底清理范围：${detail.purge_plan.summary.existing_file_count} 个文件根目录、${detail.purge_plan.summary.existing_table_count} 张数据表、${detail.purge_plan.summary.existing_managed_channel_count} 条托管通道、${detail.purge_plan.summary.table_row_count} 行数据。`,
         '可选：输入一个简短标签，方便后续识别该恢复点。'
       ].join('\n'),
@@ -1112,7 +1097,7 @@
         '恢复快照会用归档内容覆盖当前插件专属文件和数据表。',
         `快照：${label}`,
         `创建时间：${snapshot.created_at || '--'}`,
-        `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，数据行 ${snapshot.summary.row_count}`,
+        `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，记录 ${snapshot.summary.row_count}`,
         `请输入 ${phrase} 后继续。`
       ].join('\n'),
       '恢复快照',
@@ -1159,7 +1144,7 @@
         '如果这是该插件最后一个快照，空快照目录也会一并清除。',
         `快照：${label}`,
         `创建时间：${snapshot.created_at || '--'}`,
-        `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，数据行 ${snapshot.summary.row_count}`,
+        `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，记录 ${snapshot.summary.row_count}`,
         `请输入 ${phrase} 后继续。`
       ].join('\n'),
       '删除恢复快照',
@@ -1202,13 +1187,13 @@
     const label = snapshot.label || snapshot.snapshot_id
     const { value } = await ElMessageBox.prompt(
       [
-        '本次恢复来自全局恢复仓库，可重建已从本地目录彻底移除的插件。',
+        '本次恢复来自恢复中心，可重建已从本地目录彻底移除的插件。',
         `插件：${snapshot.plugin_name}（${snapshot.plugin_code}）`,
         `快照：${label}`,
-        `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，数据行 ${snapshot.summary.row_count}`,
+        `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，记录 ${snapshot.summary.row_count}`,
         `请输入 ${phrase} 后继续。`
       ].join('\n'),
-      '从恢复仓库恢复',
+      '从恢复中心恢复',
       {
         confirmButtonText: '确认恢复',
         cancelButtonText: '取消',
@@ -1227,7 +1212,7 @@
         confirm_phrase: String(value || '')
       })
 
-      ElMessage.success(`恢复仓库快照已恢复：${label}`)
+      ElMessage.success(`恢复中心快照已恢复：${label}`)
       await loadPlugins()
       const snapshots = await fetchGetPaymentPluginSnapshots(snapshot.plugin_code)
       applyDetailState(response.detail, snapshots)
@@ -1245,14 +1230,14 @@
     const label = snapshot.label || snapshot.snapshot_id
     const { value } = await ElMessageBox.prompt(
       [
-        '删除该恢复仓库条目会永久移除归档回滚包。',
+        '删除该恢复中心条目会永久移除归档回滚包。',
         '仅在确认该恢复点已失效、后续不再需要时使用。',
         `插件：${snapshot.plugin_name}（${snapshot.plugin_code}）`,
         `快照：${label}`,
-        `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，数据行 ${snapshot.summary.row_count}`,
+        `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，记录 ${snapshot.summary.row_count}`,
         `请输入 ${phrase} 后继续。`
       ].join('\n'),
-      '删除恢复仓库条目',
+      '删除恢复中心条目',
       {
         confirmButtonText: '确认删除',
         cancelButtonText: '取消',
@@ -1271,7 +1256,7 @@
         confirm_phrase: String(value || '')
       })
 
-      ElMessage.success(`恢复仓库快照已删除：${label}`)
+      ElMessage.success(`恢复中心快照已删除：${label}`)
       await applySnapshotDeleteState(snapshot.plugin_code, response)
     } finally {
       snapshotDeletingId.value = ''
@@ -1292,17 +1277,17 @@
     const missingSnapshot = !item.snapshot_guard.has_snapshot
     const { value } = await ElMessageBox.prompt(
       [
-        '本次清理针对的是已经脱离现有插件目录的孤立插件残留。',
+        '本次清理针对已经不在当前插件目录中的孤立插件项。',
         missingSnapshot
-          ? '当前没有可用恢复快照。继续清理将移除最后一份运行目录、历史和数据表痕迹，后台将无法直接恢复。'
-          : `当前保留恢复快照：${item.snapshot_guard.snapshot_total} 个。清理后这些恢复点仍会保留在恢复仓库中。`,
+          ? '当前没有可用恢复快照。继续清理将移除最后一份运行目录、运行记录和数据表，后台将无法直接恢复。'
+          : `当前保留恢复快照：${item.snapshot_guard.snapshot_total} 个。清理后这些恢复点仍会保留在恢复中心中。`,
         `插件编码：${item.plugin_code}`,
         `运行目录：${item.runtime_audit.exists ? '有' : '无'}，运行记录：${item.history_audit.exists ? '有' : '无'}，插件目录：${item.plugin_directory_audit.exists ? '有' : '无'}`,
-        `命名空间数据表：${item.summary.existing_table_count}，数据行：${item.summary.table_row_count}`,
+        `命名空间数据表：${item.summary.existing_table_count}，记录：${item.summary.table_row_count}`,
         `托管通道：${item.summary.existing_managed_channel_count}（可清理 ${item.summary.deletable_managed_channel_count}，阻塞 ${item.summary.blocked_managed_channel_count}）`,
         `请输入 ${phrase} 后继续。`
       ].join('\n'),
-      '清理孤立注册表残留',
+      '清理孤立插件项',
       {
         confirmButtonText: missingSnapshot ? '无快照清理' : '确认清理',
         cancelButtonText: '取消',
@@ -1580,7 +1565,6 @@
     gap: 4px;
   }
 
-  .plugin-meta-row,
   .capability-cell,
   .plugin-action-row {
     display: flex;
@@ -1595,34 +1579,6 @@
     min-width: 0;
     font-size: 14px;
     line-height: 1.45;
-  }
-
-  .plugin-code-chip {
-    display: inline-flex;
-    align-items: center;
-    align-self: center;
-    flex-shrink: 0;
-    min-height: 24px;
-    padding: 2px 8px;
-    border: 1px solid rgb(203 213 225 / 0.96);
-    border-radius: 999px;
-    background: linear-gradient(180deg, rgb(248 250 252 / 0.98), rgb(241 245 249 / 0.96));
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8);
-    color: #475569;
-    font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
-    font-size: 11px;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .plugin-meta-row {
-    color: #9ca3af;
-    font-size: 12px;
-  }
-
-  .plugin-meta-row--compact {
-    gap: 6px;
-    align-items: center;
   }
 
   .capability-summary-cell {

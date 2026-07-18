@@ -37,17 +37,17 @@ class MerchantImpersonationService
         }
 
         if ($systemSecurityEnabled && $googlekeyConfigured) {
-            $warnings[] = '当前商户已绑定谷歌验证，部分旧页面登录后可能跳转到 /My/GoogleAuth。';
+            $warnings[] = '当前商户已绑定谷歌验证，登录后可能跳转到 /My/GoogleAuth 完成安全校验。';
             $possibleRedirects[] = '/My/GoogleAuth';
         }
 
         if ($systemSecurityEnabled && $securityForceEnabled && !$googlekeyConfigured) {
-            $warnings[] = '系统已开启强制安全设置，未绑定谷歌验证的商户进入部分旧页面时可能跳转到 /My/Security。';
+            $warnings[] = '系统已开启强制安全设置，未绑定谷歌验证的商户登录后可能跳转到 /My/Security 完成安全设置。';
             $possibleRedirects[] = '/My/Security';
         }
 
         if ($securityLoginEnabled && $googlekeyConfigured) {
-            $warnings[] = '当前商户若走旧版密码登录需要额外填写谷歌验证码；代登录仅会写入 front_token 会话。';
+            $warnings[] = '当前商户登录时需要额外填写谷歌验证码；代登录仅会写入 front_token 会话。';
         }
 
         return [
@@ -147,7 +147,7 @@ class MerchantImpersonationService
 
     private function merchant(int $merchantId): ?array
     {
-        $row = Db::table('ypay_user')
+        $row = Db::table(BusinessTable::user())
             ->select('id', 'username', 'token', 'is_frozen', 'frozen_reason', 'googlekey')
             ->where('id', $merchantId)
             ->first();
@@ -159,7 +159,7 @@ class MerchantImpersonationService
     {
         $newToken = $this->newMerchantToken($merchantId);
 
-        Db::table('ypay_user')
+        Db::table(BusinessTable::user())
             ->where('id', $merchantId)
             ->update([
                 'token' => $newToken,

@@ -6,6 +6,7 @@ use app\controller\concerns\AdminControllerFormatSupport;
 use app\support\AdminRouteAuthorization;
 use app\support\AdminTicketFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\RequestPayload;
 use Illuminate\Database\Query\Builder;
 use support\Db;
@@ -25,11 +26,11 @@ class TicketController
         $this->applyFilters($query, $request);
 
         $summary = $this->summary(clone $query);
-        $total = (int)(clone $query)->count('ypay_ticket.id');
+        $total = (int)(clone $query)->count('ticket.id');
         $rows = array_map(
             static fn($row): array => (array)$row,
             $query
-                ->orderByDesc('ypay_ticket.id')
+                ->orderByDesc('ticket.id')
                 ->offset(($current - 1) * $size)
                 ->limit($size)
                 ->get()
@@ -103,7 +104,7 @@ class TicketController
             $update['assignee_id'] = $adminId;
         }
 
-        Db::table('ypay_ticket')
+        Db::table(BusinessTable::ticket())
             ->where('id', $id)
             ->update($update);
 
@@ -158,7 +159,7 @@ class TicketController
             $update['assignee_id'] = $adminId;
         }
 
-        Db::table('ypay_ticket')
+        Db::table(BusinessTable::ticket())
             ->where('id', $id)
             ->update($update);
 
@@ -312,23 +313,23 @@ class TicketController
 
     private function ticketQuery(): Builder
     {
-        return Db::table('ypay_ticket')
-            ->leftJoin('ypay_ticket_category', 'ypay_ticket.type', '=', 'ypay_ticket_category.id')
-            ->leftJoin('ypay_user as creator', 'ypay_ticket.creator_id', '=', 'creator.id')
-            ->leftJoin('admin_admin as assignee', 'ypay_ticket.assignee_id', '=', 'assignee.id')
+        return Db::table(BusinessTable::ticket('ticket'))
+            ->leftJoin(BusinessTable::ticketCategory('category'), 'ticket.type', '=', 'category.id')
+            ->leftJoin(BusinessTable::user('creator'), 'ticket.creator_id', '=', 'creator.id')
+            ->leftJoin('admin_admin as assignee', 'ticket.assignee_id', '=', 'assignee.id')
             ->select(
-                'ypay_ticket.id',
-                'ypay_ticket.type',
-                'ypay_ticket.title',
-                'ypay_ticket.content',
-                'ypay_ticket.reply_content',
-                'ypay_ticket.creator_id',
-                'ypay_ticket.assignee_id',
-                'ypay_ticket.create_time',
-                'ypay_ticket.update_time',
-                'ypay_ticket.reply_time',
-                'ypay_ticket.status',
-                'ypay_ticket_category.name as category_name',
+                'ticket.id',
+                'ticket.type',
+                'ticket.title',
+                'ticket.content',
+                'ticket.reply_content',
+                'ticket.creator_id',
+                'ticket.assignee_id',
+                'ticket.create_time',
+                'ticket.update_time',
+                'ticket.reply_time',
+                'ticket.status',
+                'category.name as category_name',
                 'creator.username as creator_username',
                 'creator.name as creator_name',
                 'creator.email as creator_email',
@@ -344,10 +345,10 @@ class TicketController
         if ($keyword !== '') {
             $query->where(function (Builder $builder) use ($keyword): void {
                 $builder
-                    ->where('ypay_ticket.title', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_ticket.content', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_ticket.reply_content', 'like', '%' . $keyword . '%')
-                    ->orWhere('ypay_ticket_category.name', 'like', '%' . $keyword . '%')
+                    ->where('ticket.title', 'like', '%' . $keyword . '%')
+                    ->orWhere('ticket.content', 'like', '%' . $keyword . '%')
+                    ->orWhere('ticket.reply_content', 'like', '%' . $keyword . '%')
+                    ->orWhere('category.name', 'like', '%' . $keyword . '%')
                     ->orWhere('creator.username', 'like', '%' . $keyword . '%')
                     ->orWhere('creator.name', 'like', '%' . $keyword . '%')
                     ->orWhere('creator.email', 'like', '%' . $keyword . '%')
@@ -355,48 +356,48 @@ class TicketController
 
                 if (ctype_digit($keyword)) {
                     $builder
-                        ->orWhere('ypay_ticket.id', (int)$keyword)
-                        ->orWhere('ypay_ticket.creator_id', (int)$keyword)
-                        ->orWhere('ypay_ticket.assignee_id', (int)$keyword);
+                        ->orWhere('ticket.id', (int)$keyword)
+                        ->orWhere('ticket.creator_id', (int)$keyword)
+                        ->orWhere('ticket.assignee_id', (int)$keyword);
                 }
             });
         }
 
         $creatorId = trim((string)$request->get('creator_id', ''));
         if ($creatorId !== '') {
-            $query->where('ypay_ticket.creator_id', 'like', '%' . $creatorId . '%');
+            $query->where('ticket.creator_id', 'like', '%' . $creatorId . '%');
         }
 
         $status = trim((string)$request->get('status', ''));
         if ($status !== '' && in_array($status, ['0', '1', '2', '3'], true)) {
-            $query->where('ypay_ticket.status', (int)$status);
+            $query->where('ticket.status', (int)$status);
         }
 
         $type = trim((string)$request->get('type', ''));
         if ($type !== '' && ctype_digit($type)) {
-            $query->where('ypay_ticket.type', (int)$type);
+            $query->where('ticket.type', (int)$type);
         }
 
         $startDate = $this->normalizeDate((string)$request->get('start_date', ''));
         $endDate = $this->normalizeDate((string)$request->get('end_date', ''));
         if ($startDate !== null && $endDate !== null) {
             $query
-                ->where('ypay_ticket.create_time', '>=', $startDate . ' 00:00:00')
-                ->where('ypay_ticket.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
+                ->where('ticket.create_time', '>=', $startDate . ' 00:00:00')
+                ->where('ticket.create_time', '<', date('Y-m-d 00:00:00', strtotime($endDate . ' +1 day')));
         }
     }
 
     private function summary(Builder $query): array
     {
         return [
-            'new_count' => (int)(clone $query)->where('ypay_ticket.status', 0)->count('ypay_ticket.id'),
-            'processing_count' => (int)(clone $query)->where('ypay_ticket.status', 1)->count('ypay_ticket.id'),
-            'resolved_count' => (int)(clone $query)->where('ypay_ticket.status', 2)->count('ypay_ticket.id'),
-            'closed_count' => (int)(clone $query)->where('ypay_ticket.status', 3)->count('ypay_ticket.id'),
+            'new_count' => (int)(clone $query)->where('ticket.status', 0)->count('ticket.id'),
+            'processing_count' => (int)(clone $query)->where('ticket.status', 1)->count('ticket.id'),
+            'resolved_count' => (int)(clone $query)->where('ticket.status', 2)->count('ticket.id'),
+            'closed_count' => (int)(clone $query)->where('ticket.status', 3)->count('ticket.id'),
             'replied_count' => (int)(clone $query)
-                ->whereNotNull('ypay_ticket.reply_content')
-                ->where('ypay_ticket.reply_content', '<>', '')
-                ->count('ypay_ticket.id'),
+                ->whereNotNull('ticket.reply_content')
+                ->where('ticket.reply_content', '<>', '')
+                ->count('ticket.id'),
         ];
     }
 
@@ -404,7 +405,7 @@ class TicketController
     {
         $rows = array_map(
             static fn($row): array => (array)$row,
-            Db::table('ypay_ticket_category')
+            Db::table(BusinessTable::ticketCategory())
                 ->select('id', 'name', 'status')
                 ->orderByRaw("CAST(COALESCE(NULLIF(sort, ''), '0') AS UNSIGNED)")
                 ->orderBy('id')
@@ -433,7 +434,7 @@ class TicketController
     private function loadTicketRow(int $ticketId): ?array
     {
         $row = $this->ticketQuery()
-            ->where('ypay_ticket.id', $ticketId)
+            ->where('ticket.id', $ticketId)
             ->first();
 
         return $row ? (array)$row : null;
@@ -452,7 +453,7 @@ class TicketController
         $rows = array_map(
             static fn($row): array => (array)$row,
             $this->ticketQuery()
-                ->whereIn('ypay_ticket.id', $ticketIds)
+                ->whereIn('ticket.id', $ticketIds)
                 ->get()
                 ->toArray()
         );
@@ -480,17 +481,17 @@ class TicketController
         $warnings = [];
 
         if ($openTicketCount > 0) {
-            $warnings[] = 'This ticket is still open and will be permanently removed.';
+            $warnings[] = '当前工单仍处于未完结状态，删除后将被永久移除。';
         }
 
         if ($isReplied) {
-            $warnings[] = 'The stored admin reply will also be permanently removed.';
+            $warnings[] = '已保存的管理员回复也会一并永久删除。';
         } else {
-            $warnings[] = 'No admin reply is stored on this ticket yet.';
+            $warnings[] = '当前工单还没有管理员回复记录。';
         }
 
         if ($creatorId > 0) {
-            $warnings[] = 'The merchant support record will lose this ticket entry after deletion.';
+            $warnings[] = '删除后，商户侧的工单记录中也会移除这一项。';
         }
 
         return [
@@ -533,18 +534,18 @@ class TicketController
                 $missingTicketIds[] = $ticketId;
                 $items[] = [
                     'ticket_id' => $ticketId,
-                    'ticket_label' => 'Ticket #' . $ticketId,
+                    'ticket_label' => '工单 #' . $ticketId,
                     'exists' => false,
                     'can_delete' => false,
                     'status' => null,
-                    'status_label' => 'Missing',
+                    'status_label' => '缺失',
                     'type' => 0,
-                    'type_name' => 'Unknown Category',
+                    'type_name' => '未知分类',
                     'creator_id' => 0,
                     'assignee_id' => 0,
                     'is_replied' => false,
-                    'blocking_reasons' => ['This ticket no longer exists in the live table.'],
-                    'warnings' => ['Refresh the selection before retrying the batch delete.'],
+                    'blocking_reasons' => ['当前工单在实时数据表中已不存在。'],
+                    'warnings' => ['请先刷新选择列表，再重新执行批量删除。'],
                     'summary' => [
                         'delete_row_count' => 0,
                         'open_ticket_count' => 0,
@@ -588,19 +589,19 @@ class TicketController
         $warnings = [];
         if ($summary['missing_count'] > 0) {
             $warnings[] = sprintf(
-                '%d selected ticket(s) are already missing and must be reselected before deletion.',
+                '%d 条已选工单已不存在，请重新选择后再删除。',
                 $summary['missing_count']
             );
         }
         if ($summary['open_ticket_count'] > 0) {
             $warnings[] = sprintf(
-                '%d selected ticket(s) are still open and will be permanently removed.',
+                '%d 条已选工单仍处于未完结状态，删除后将被永久移除。',
                 $summary['open_ticket_count']
             );
         }
         if ($summary['replied_count'] > 0) {
             $warnings[] = sprintf(
-                '%d selected ticket(s) already contain stored admin replies that will also be removed.',
+                '%d 条已选工单已包含管理员回复，删除时会一并移除这些回复。',
                 $summary['replied_count']
             );
         }
@@ -623,7 +624,7 @@ class TicketController
 
     private function deleteTicketRow(int $ticketId): void
     {
-        Db::table('ypay_ticket')
+        Db::table(BusinessTable::ticket())
             ->where('id', $ticketId)
             ->delete();
     }
@@ -734,12 +735,12 @@ class TicketController
             return $title;
         }
 
-        return 'Ticket #' . (int)($record['id'] ?? 0);
+        return '工单 #' . (int)($record['id'] ?? 0);
     }
 
     private function ticketDeleteConfirmationPhrase(int $ticketId): string
     {
-        return 'DELETE TICKET ' . $ticketId;
+        return '删除工单 ' . $ticketId;
     }
 
     /**
@@ -748,7 +749,7 @@ class TicketController
     private function batchTicketDeleteConfirmationPhrase(array $ticketIds): string
     {
         return sprintf(
-            'DELETE TICKET BATCH %d-%s',
+            '批量删除工单 %d-%s',
             count($ticketIds),
             strtoupper(substr(md5(implode(',', $ticketIds)), 0, 6))
         );
@@ -854,7 +855,7 @@ class TicketController
             static function (array $item): string {
                 $label = trim((string)($item['ticket_label'] ?? ''));
                 $ticketId = (int)($item['ticket_id'] ?? 0);
-                return $label !== '' ? $label : ('Ticket #' . $ticketId);
+                return $label !== '' ? $label : ('工单 #' . $ticketId);
             },
             array_values(array_filter(
                 (array)($audit['items'] ?? []),

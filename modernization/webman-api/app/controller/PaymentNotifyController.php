@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\controller;
 
-use app\payment\PaymentPluginException;
-use app\payment\PaymentPluginManager;
+use app\service\payment\PaymentPluginManager;
 use app\support\RequestPayload;
 use InvalidArgumentException;
+use Plugins\Payments\Shared\Support\EpayProtocolNotifyBridgeSupport;
+use Plugins\Payments\Shared\Support\PaymentPluginException;
 use RuntimeException;
 use Throwable;
 use Webman\Http\Request;
@@ -13,33 +16,70 @@ use Webman\Http\Response;
 
 class PaymentNotifyController
 {
-    private const LEGACY_NOTIFY_PLUGIN = 'legacy_epay';
-
     public function epayNotifyzj(Request $request): Response
     {
-        return $this->handleLegacyEpayNotify($request, 'notify');
+        return $this->handleLegacyNotify($request, 'notify', 'epay_notifyzj');
     }
 
     public function epayReturnzj(Request $request): Response
     {
-        return $this->handleLegacyEpayNotify($request, 'return');
+        return $this->handleLegacyNotify($request, 'return', 'epay_returnzj');
     }
 
-    private function handleLegacyEpayNotify(Request $request, string $mode): Response
+    public function universalEpayNotify(Request $request): Response
     {
+        return $this->handlePluginNotify($request, 'universal_epay', 'notify', 'universal_epay_notify');
+    }
+
+    public function universalEpayReturn(Request $request): Response
+    {
+        return $this->handlePluginNotify($request, 'universal_epay', 'return', 'universal_epay_return');
+    }
+
+    private function handleLegacyNotify(Request $request, string $mode, string $entry): Response
+    {
+        return $this->dispatchPluginNotify(
+            $request,
+            $mode,
+            $entry,
+            $this->resolveLegacyNotifyPluginSelection()
+        );
+    }
+
+    private function handlePluginNotify(
+        Request $request,
+        string $pluginCode,
+        string $mode,
+        string $entry
+    ): Response {
+        return $this->dispatchPluginNotify(
+            $request,
+            $mode,
+            $entry,
+            $this->resolvePluginNotifySelection($pluginCode)
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $pluginSelection
+     */
+    private function dispatchPluginNotify(
+        Request $request,
+        string $mode,
+        string $entry,
+        array $pluginSelection
+    ): Response {
         try {
-            $pluginSelection = $this->resolveLegacyNotifyPluginSelection();
-            $plugin = $this->pluginInstance($pluginSelection['detail']['manifest']);
-            $payload = $this->payload($request);
+            $plugin = $this->pluginInstance((array)$pluginSelection['detail']['manifest']);
             $result = $plugin->handleNotify([
                 'mode' => $mode,
-                'entry' => $mode === 'notify' ? 'epay_notifyzj' : 'epay_returnzj',
+                'entry' => $entry,
                 'plugin' => $pluginSelection['code'],
                 'plugin_resolution' => $pluginSelection['resolution'],
                 'plugin_availability' => $pluginSelection['availability'],
                 'plugin_state' => $pluginSelection['detail']['state'],
-                'security' => $this->legacyNotifySecurityContext($pluginSelection),
-                'payload' => $payload,
+                'security' => $this->securityContext($pluginSelection),
+                'payload' => $this->payload($request),
                 'query' => $request->get(),
                 'headers' => [
                     'content_type' => (string)$request->header('content-type', ''),
@@ -49,6 +89,7 @@ class PaymentNotifyController
 
             if ($mode === 'notify') {
                 $body = $result['notify_response'] ?? (($result['verified'] ?? false) ? 'success' : 'fail');
+
                 return response((string)$body, 200, ['Content-Type' => 'text/plain; charset=utf-8']);
             }
 
@@ -56,31 +97,66 @@ class PaymentNotifyController
                 return redirect((string)$result['return_redirect']);
             }
 
-            $body = $result['return_response'] ?? 'return received';
+            $body = $result['return_response'] ?? '回调已接收';
+
             return response((string)$body, 200, ['Content-Type' => 'text/plain; charset=utf-8']);
         } catch (Throwable $exception) {
-            $body = $this->fallbackBody($exception, $mode);
-            return response($body, 200, ['Content-Type' => 'text/plain; charset=utf-8']);
+            return response(
+                $this->fallbackBody($exception, $mode),
+                200,
+                ['Content-Type' => 'text/plain; charset=utf-8']
+            );
         }
     }
 
+    /**
+     * @return array{
+     *     code: string,
+     *     resolution: string,
+     *     availability: string,
+     *     detail: array<string, mixed>
+     * }
+     */
     private function resolveLegacyNotifyPluginSelection(): array
     {
-        $detail = $this->assertLegacyNotifyCapablePlugin(self::LEGACY_NOTIFY_PLUGIN);
+        $detail = $this->assertNotifyCapablePlugin(EpayProtocolNotifyBridgeSupport::PLUGIN_CODE);
         $state = is_array($detail['state'] ?? null) ? $detail['state'] : [];
         $enabled = (bool)($state['enabled'] ?? false);
 
         return [
-            'code' => self::LEGACY_NOTIFY_PLUGIN,
-            'resolution' => $enabled
-                ? 'fixed_compatibility_binding'
-                : 'fixed_compatibility_binding_drain_mode',
-            'availability' => $enabled ? 'enabled' : 'drain_only',
+            'code' => EpayProtocolNotifyBridgeSupport::PLUGIN_CODE,
+            'resolution' => EpayProtocolNotifyBridgeSupport::resolution($enabled),
+            'availability' => EpayProtocolNotifyBridgeSupport::availability($enabled),
             'detail' => $detail,
         ];
     }
 
-    private function assertLegacyNotifyCapablePlugin(string $pluginCode): array
+    /**
+     * @return array{
+     *     code: string,
+     *     resolution: string,
+     *     availability: string,
+     *     detail: array<string, mixed>
+     * }
+     */
+    private function resolvePluginNotifySelection(string $pluginCode): array
+    {
+        $detail = $this->assertNotifyCapablePlugin($pluginCode);
+        $state = is_array($detail['state'] ?? null) ? $detail['state'] : [];
+        $enabled = (bool)($state['enabled'] ?? false);
+
+        return [
+            'code' => $pluginCode,
+            'resolution' => 'plugin_manifest_direct',
+            'availability' => $enabled ? 'installed_enabled' : 'installed_disabled',
+            'detail' => $detail,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function assertNotifyCapablePlugin(string $pluginCode): array
     {
         $detail = $this->manager()->detail($pluginCode);
         $manifest = is_array($detail['manifest'] ?? null) ? $detail['manifest'] : [];
@@ -91,28 +167,32 @@ class PaymentNotifyController
         );
 
         if (!in_array('notify', $capabilities, true)) {
-            throw new InvalidArgumentException("payment plugin [$pluginCode] does not support notify callbacks");
+            throw new InvalidArgumentException(sprintf('支付插件[%s]不支持回调处理', $pluginCode));
         }
 
         if (!(bool)($state['installed'] ?? false)) {
-            throw new InvalidArgumentException("payment plugin [$pluginCode] is not installed");
+            throw new InvalidArgumentException(sprintf('支付插件[%s]尚未安装', $pluginCode));
         }
 
         return $detail;
     }
 
+    /**
+     * @param array<string, mixed> $manifest
+     */
     private function pluginInstance(array $manifest): object
     {
-        $entryPath = base_path($manifest['entry']);
-        if (!is_file($entryPath)) {
-            throw new RuntimeException('plugin entry file was not found: ' . $manifest['entry']);
+        $entry = (string)($manifest['entry'] ?? '');
+        $entryPath = base_path($entry);
+        if ($entry === '' || !is_file($entryPath)) {
+            throw new RuntimeException('插件入口文件不存在：' . $entry);
         }
 
         require_once $entryPath;
 
-        $className = (string)$manifest['class'];
+        $className = (string)($manifest['class'] ?? '');
         if ($className === '' || !class_exists($className)) {
-            throw new RuntimeException('plugin class was not found: ' . $className);
+            throw new RuntimeException('插件类不存在：' . $className);
         }
 
         return new $className();
@@ -123,50 +203,51 @@ class PaymentNotifyController
         return new PaymentPluginManager();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function payload(Request $request): array
     {
         $payload = RequestPayload::all($request);
-        if (!empty($payload)) {
+        if ($payload !== []) {
             return $payload;
         }
 
         $query = $request->get();
+
         return is_array($query) ? $query : [];
     }
 
-    private function legacyNotifySecurityContext(array $pluginSelection): array
+    /**
+     * @param array<string, mixed> $selection
+     * @return array<string, mixed>
+     */
+    private function securityContext(array $selection): array
     {
+        if ((string)($selection['code'] ?? '') === EpayProtocolNotifyBridgeSupport::PLUGIN_CODE) {
+            return EpayProtocolNotifyBridgeSupport::securityContext(
+                (string)$selection['code'],
+                (string)$selection['availability']
+            );
+        }
+
         return [
-            'scope' => 'legacy_epay_notify_compatibility',
-            'plugin' => (string)($pluginSelection['code'] ?? self::LEGACY_NOTIFY_PLUGIN),
-            'availability' => (string)($pluginSelection['availability'] ?? 'enabled'),
-            'signature' => [
-                'algorithm' => 'md5',
-                'field' => 'sign',
-                'secret_source' => 'upstream_paylist.key',
-            ],
-            'replay_protection' => [
-                'strategy' => 'settlement_idempotency',
-                'window_seconds' => null,
-                'duplicate_response' => 'success_or_return_redirect',
-            ],
+            'plugin' => (string)($selection['code'] ?? ''),
+            'resolution' => (string)($selection['resolution'] ?? ''),
+            'availability' => (string)($selection['availability'] ?? ''),
         ];
     }
 
     private function fallbackBody(Throwable $exception, string $mode): string
     {
-        if ($exception instanceof PaymentPluginException) {
+        if (
+            $exception instanceof PaymentPluginException
+            || $exception instanceof InvalidArgumentException
+            || $exception instanceof RuntimeException
+        ) {
             return $mode === 'notify' ? 'fail' : $exception->getMessage();
         }
 
-        if ($exception instanceof InvalidArgumentException) {
-            return $mode === 'notify' ? 'fail' : $exception->getMessage();
-        }
-
-        if ($exception instanceof RuntimeException) {
-            return $mode === 'notify' ? 'fail' : $exception->getMessage();
-        }
-
-        return $mode === 'notify' ? 'fail' : 'notify migration error';
+        return $mode === 'notify' ? 'fail' : '回调处理失败';
     }
 }

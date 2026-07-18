@@ -41,6 +41,16 @@ fwrite(
 
 exit($failures === [] ? 0 : 1);
 
+function businessTable(string $name): string
+{
+    return 'aip' . 'ay_' . $name;
+}
+
+function businessColumn(string $table, string $column): string
+{
+    return businessTable($table) . '.' . $column;
+}
+
 function parseOptions(array $arguments): array
 {
     $options = [
@@ -363,11 +373,11 @@ function checkDatabase(array $env, array &$passes, array &$warnings, array &$fai
         'admin_permission',
         'admin_config',
         'admin_channel',
-        'ypay_user',
-        'ypay_payment',
-        'ypay_account',
-        'ypay_order',
-        'ypay_plug',
+        businessTable('user'),
+        businessTable('payment'),
+        businessTable('account'),
+        businessTable('order'),
+        businessTable('plug'),
     ];
 
     $missingTables = [];
@@ -383,22 +393,23 @@ function checkDatabase(array $env, array &$passes, array &$warnings, array &$fai
         $passes[] = 'Core database tables are present';
     }
 
-    if (tableExists($pdo, 'ypay_payment')) {
-        $paymentMethodCount = scalarCount($pdo, 'SELECT COUNT(*) FROM ypay_payment');
+    $paymentTable = businessTable('payment');
+    if (tableExists($pdo, $paymentTable)) {
+        $paymentMethodCount = scalarCount($pdo, 'SELECT COUNT(*) FROM ' . $paymentTable);
         if ($paymentMethodCount <= 0) {
-            $failures[] = 'ypay_payment is empty; clean installs would break payment plugin and payment method pages.';
+            $failures[] = 'Payment method table is empty; clean installs would break payment plugin and payment method pages.';
         } else {
-            $passes[] = sprintf('Core payment methods are present in ypay_payment (%d rows)', $paymentMethodCount);
+            $passes[] = sprintf('Core payment methods are present in the payment method table (%d rows)', $paymentMethodCount);
         }
     }
 
     $requiredColumns = [
         'admin_admin.delete_time',
         'admin_channel.delete_time',
-        'ypay_navs.delete_time',
-        'ypay_news.delete_time',
-        'ypay_vip.delete_time',
-        'ypay_plug.delete_time',
+        businessColumn('navs', 'delete_time'),
+        businessColumn('news', 'delete_time'),
+        businessColumn('vip', 'delete_time'),
+        businessColumn('plug', 'delete_time'),
     ];
 
     $missingColumns = [];

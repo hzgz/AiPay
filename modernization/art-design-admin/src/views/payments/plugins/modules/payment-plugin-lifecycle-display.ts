@@ -55,7 +55,7 @@ function cleanupResidueConfirmationPhrase(code: string) {
 }
 
 function cleanupResidueWithoutSnapshotConfirmationPhrase(code: string) {
-  return `无快照清理残留 ${code}`
+  return `无快照确认清理 ${code}`
 }
 
 export function cleanupResiduePhraseForItem(item: PaymentPluginRegistryResidueItem) {
@@ -164,10 +164,10 @@ export function buildPluginUninstallConfirmationMessage(
 export function buildPluginSafeCleanupConfirmationMessage(detail: PaymentPluginDetail) {
   return [
     '只会处理清理清单中声明过的安全插件资源。',
-    `运行目录目标：${detail.uninstall_plan.summary.existing_file_count}`,
-    `配置表：${detail.uninstall_plan.summary.existing_table_count}`,
+    `文件：${detail.uninstall_plan.summary.existing_file_count}`,
+    `数据表：${detail.uninstall_plan.summary.existing_table_count}`,
     `托管通道：${detail.uninstall_plan.summary.existing_managed_channel_count}（可清理 ${detail.uninstall_plan.summary.deletable_managed_channel_count}，阻塞 ${detail.uninstall_plan.summary.blocked_managed_channel_count}）`,
-    `待清理数据行：${detail.uninstall_plan.summary.table_row_count}`
+    `记录：${detail.uninstall_plan.summary.table_row_count}`
   ].join('\n')
 }
 
@@ -179,12 +179,12 @@ export function buildPluginPurgeCleanupPrompt(detail: PaymentPluginDetail, phras
     '该操作具有破坏性，无法在后台界面中直接撤销。',
     '它会移除已确认的插件专属配置表、日志表、运行目录、运行记录、托管通道记录以及插件目录。',
     missingSnapshot
-      ? '当前没有恢复快照。继续后，插件目录和插件专属数据表可能无法再通过后台恢复。'
+      ? '当前没有恢复快照。继续后，插件目录和插件专属数据表将无法通过后台直接恢复。'
       : `可用恢复快照：${guard?.snapshot_total || 0}`,
-    `现存文件：${detail.purge_plan.summary.existing_file_count}`,
-    `现存数据表：${detail.purge_plan.summary.existing_table_count}`,
+    `文件：${detail.purge_plan.summary.existing_file_count}`,
+    `数据表：${detail.purge_plan.summary.existing_table_count}`,
     `托管通道：${detail.purge_plan.summary.existing_managed_channel_count}（可清理 ${detail.purge_plan.summary.deletable_managed_channel_count}，阻塞 ${detail.purge_plan.summary.blocked_managed_channel_count}）`,
-    `待删除数据行：${detail.purge_plan.summary.table_row_count}`,
+    `记录：${detail.purge_plan.summary.table_row_count}`,
     `请输入 ${phrase} 后继续。`
   ].join('\n')
 }
@@ -205,7 +205,7 @@ export function buildRegistryResidueCleanupSuccessMessage(
   report: PaymentPluginRegistryResidueCleanupReport
 ) {
   return [
-    `注册表残留已清理：共移除 ${report.removed_file_count} 个文件目标、${report.removed_table_count} 张数据表、${Number(report.removed_managed_channel_count || 0)} 条托管通道`,
+    `孤立插件项已清理：共移除 ${report.removed_file_count} 个文件目标、${report.removed_table_count} 张数据表、${Number(report.removed_managed_channel_count || 0)} 条托管通道`,
     report.snapshot_retained ? `保留 ${report.retained_snapshot_count} 个恢复快照` : null
   ]
     .filter(Boolean)

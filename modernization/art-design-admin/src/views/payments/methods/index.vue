@@ -22,7 +22,9 @@
             </ElButton>
             <ElTag size="small" effect="plain">总数 {{ pagination.total }}</ElTag>
             <ElTag size="small" type="success" effect="plain">启用 {{ enabledMethodCount }}</ElTag>
-            <ElTag size="small" type="warning" effect="plain">在线账户 {{ onlineAccountCount }}</ElTag>
+            <ElTag size="small" type="warning" effect="plain"
+              >在线账户 {{ onlineAccountCount }}</ElTag
+            >
             <ElButton
               v-if="hasMethodRecycleAuth"
               size="small"
@@ -191,13 +193,7 @@
       </div>
     </ElDrawer>
 
-    <ElDialog
-      v-model="createVisible"
-      width="560px"
-      destroy-on-close
-      align-center
-      title="新增方式"
-    >
+    <ElDialog v-model="createVisible" width="560px" destroy-on-close align-center title="新增方式">
       <ElForm label-position="top">
         <div class="dialog-grid">
           <ElFormItem label="方式名称">
@@ -212,7 +208,7 @@
             <ElInput
               v-model="createForm.type"
               maxlength="32"
-              placeholder="示例：alipay、wxpay、usdt"
+              placeholder="请输入支付标识，如 alipay、wxpay、usdt"
             />
           </ElFormItem>
           <ElFormItem label="排序权重">
@@ -244,13 +240,7 @@
       </template>
     </ElDialog>
 
-    <ElDialog
-      v-model="editVisible"
-      width="520px"
-      destroy-on-close
-      align-center
-      title="编辑方式"
-    >
+    <ElDialog v-model="editVisible" width="520px" destroy-on-close align-center title="编辑方式">
       <ElForm label-position="top">
         <ElFormItem label="支付标识">
           <ElInput :model-value="activeMethod?.type || ''" disabled />

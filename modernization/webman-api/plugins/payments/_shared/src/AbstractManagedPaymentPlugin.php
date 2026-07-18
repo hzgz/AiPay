@@ -37,7 +37,7 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
     {
         $this->ensureRuntimeDirectory();
         $this->seedConfigSkeleton();
-        $this->recordPluginLog('info', $this->pluginName() . ' installed.', [
+        $this->recordPluginLog('info', $this->pluginName() . ' 安装完成', [
             'plugin' => $this->code(),
             'version' => $this->pluginVersion(),
         ]);
@@ -53,7 +53,7 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
     {
         $this->ensureRuntimeDirectory();
         $this->seedConfigSkeleton();
-        $this->recordPluginLog('info', $this->pluginName() . ' upgraded.', [
+        $this->recordPluginLog('info', $this->pluginName() . ' 升级完成', [
             'plugin' => $this->code(),
             'from_version' => $fromVersion,
             'to_version' => $toVersion,
@@ -71,7 +71,7 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
     public function uninstall(bool $purge = false): void
     {
         $this->ensureRuntimeDirectory();
-        $this->recordPluginLog('warning', $this->pluginName() . ' uninstall requested.', [
+        $this->recordPluginLog('warning', $this->pluginName() . ' 已提交卸载请求', [
             'plugin' => $this->code(),
             'purge_requested' => $purge,
         ]);
@@ -90,10 +90,10 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
 
         $steps = [
             sprintf(
-                'Reviewed %d audited file target(s) and %d table target(s) before %s cleanup.',
+                '开始%s前，已审计 %d 个文件目标与 %d 个数据表目标。',
+                $mode === 'purge' ? '彻底清理' : '安全清理',
                 $fileTargets,
-                $tableTargets,
-                $mode
+                $tableTargets
             ),
         ];
 
@@ -103,14 +103,14 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
                 'cleanup_mode' => $mode,
                 'cleanup_requested_at' => $this->now(),
             ]);
-            $steps[] = 'Updated lifecycle metadata so the cleanup handoff remains visible during execution.';
+            $steps[] = '已更新生命周期元数据，方便清理执行期间继续追踪状态。';
         } else {
-            $steps[] = 'Skipped runtime metadata handoff because the plugin runtime directory is already absent.';
+            $steps[] = '插件运行目录已不存在，跳过运行态元数据交接。';
         }
 
         $this->recordPluginLog(
             $mode === 'purge' ? 'warning' : 'info',
-            $this->pluginName() . ' cleanup prepared.',
+            $this->pluginName() . ' 清理任务已准备完成',
             [
                 'plugin' => $this->code(),
                 'mode' => $mode,
@@ -121,8 +121,8 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
 
         return [
             'summary' => $mode === 'purge'
-                ? 'Prepared the plugin for final package removal and namespaced data purge.'
-                : 'Prepared the plugin runtime for safe cleanup while leaving business records untouched.',
+                ? '已完成彻底清理前置准备，可继续删除插件包与插件独立数据。'
+                : '已完成安全清理前置准备，业务订单等数据将继续保留。',
             'steps' => $steps,
             'metadata' => [
                 'file_target_count' => $fileTargets,
@@ -140,7 +140,7 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
     {
         return $this->unsupportedCapabilityResponse(
             'create_order',
-            $this->pluginName() . ' is an admin-managed account plugin and does not handle gateway order creation.',
+            $this->pluginName() . ' 属于后台托管型插件，不负责统一网关下单。',
             ['payload' => $payload]
         );
     }
@@ -149,7 +149,7 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
     {
         return $this->unsupportedCapabilityResponse(
             'query',
-            $this->pluginName() . ' is an admin-managed account plugin and does not provide order query traffic.',
+            $this->pluginName() . ' 属于后台托管型插件，不提供统一查单能力。',
             ['order_no' => $orderNo]
         );
     }
@@ -158,7 +158,7 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
     {
         return $this->unsupportedCapabilityResponse(
             'refund',
-            $this->pluginName() . ' is an admin-managed account plugin and does not provide refund traffic.',
+            $this->pluginName() . ' 属于后台托管型插件，不提供统一退款能力。',
             ['payload' => $payload]
         );
     }
@@ -167,7 +167,7 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
     {
         return $this->unsupportedCapabilityResponse(
             'notify',
-            $this->pluginName() . ' is an admin-managed account plugin and does not handle callback traffic.',
+            $this->pluginName() . ' 属于后台托管型插件，不处理统一回调流量。',
             ['payload' => $payload]
         );
     }
@@ -176,7 +176,7 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
     {
         return match ($configKey) {
             'display_name' => $this->pluginName(),
-            'operator_note' => 'Installed from the managed payment plugin catalog.',
+            'operator_note' => '通过支付插件目录安装。',
             default => null,
         };
     }
@@ -243,6 +243,7 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
         return array_merge([
             'plugin' => $this->code(),
             'status' => 'unsupported',
+            'status_text' => '未接入',
             'capability' => $capability,
             'message' => $message,
         ], $context);
@@ -256,11 +257,11 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
         }
 
         if (file_exists($directory)) {
-            throw new RuntimeException('payment plugin runtime path is not a directory');
+            throw new RuntimeException('支付插件运行目录目标不是文件夹');
         }
 
         if (!mkdir($directory, 0777, true) && !is_dir($directory)) {
-            throw new RuntimeException('failed to create payment plugin runtime directory');
+            throw new RuntimeException('创建支付插件运行目录失败');
         }
     }
 
@@ -270,7 +271,7 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
         $metadataPath = $this->metadataPath();
 
         if (is_file($metadataPath)) {
-            $decoded = json_decode((string)file_get_contents($metadataPath), true);
+            $decoded = json_decode((string) file_get_contents($metadataPath), true);
             if (is_array($decoded)) {
                 $existing = $decoded;
             }
@@ -283,11 +284,11 @@ abstract class AbstractManagedPaymentPlugin implements PaymentPluginInterface, P
 
         $encoded = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($encoded === false) {
-            throw new RuntimeException('failed to encode payment plugin lifecycle metadata');
+            throw new RuntimeException('编码支付插件生命周期元数据失败');
         }
 
         if (file_put_contents($metadataPath, $encoded . PHP_EOL) === false) {
-            throw new RuntimeException('failed to write payment plugin lifecycle metadata');
+            throw new RuntimeException('写入支付插件生命周期元数据失败');
         }
     }
 

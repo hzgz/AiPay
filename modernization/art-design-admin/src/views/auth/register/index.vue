@@ -3,8 +3,8 @@
     <div class="register-closed-card">
       <ElResult
         icon="warning"
-        title="管理员注册未开放"
-        sub-title="当前系统不提供公共管理员注册入口，请使用已创建的管理员账号登录。"
+        title="管理员注册入口未启用"
+        sub-title="管理员账号由系统安装或后台维护创建，请使用现有管理员账号登录。"
       >
         <template #extra>
           <div class="register-closed-actions">

@@ -5,6 +5,7 @@ namespace app\controller;
 use app\support\AdminRouteAuthorization;
 use app\support\AdminQuickLoginFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use app\support\RequestPayload;
 use Illuminate\Database\Query\Builder;
 use support\Db;
@@ -77,7 +78,7 @@ class QuickLoginController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        $quickLoginId = (int)Db::table('ypay_quicklogin')->insertGetId([
+        $quickLoginId = (int)Db::table(BusinessTable::quickLogin())->insertGetId([
             'type' => $payload['type'],
             'status' => $payload['status'],
             'name' => $payload['name'],
@@ -124,7 +125,7 @@ class QuickLoginController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_quicklogin')
+        Db::table(BusinessTable::quickLogin())
             ->where('id', $id)
             ->update([
                 'type' => $payload['type'],
@@ -172,7 +173,7 @@ class QuickLoginController
             return ApiResponse::error($exception->getMessage(), 422, null, 422);
         }
 
-        Db::table('ypay_quicklogin')
+        Db::table(BusinessTable::quickLogin())
             ->where('id', $id)
             ->update([
                 'status' => $status,
@@ -336,7 +337,7 @@ class QuickLoginController
 
     private function quickLoginQuery(): Builder
     {
-        return Db::table('ypay_quicklogin')
+        return Db::table(BusinessTable::quickLogin())
             ->select('id', 'type', 'status', 'name', 'url', 'appid', 'appkey', 'create_time');
     }
 
@@ -440,7 +441,7 @@ class QuickLoginController
 
         $rows = array_map(
             static fn($row): array => (array)$row,
-            Db::table('ypay_quicklogin')
+            Db::table(BusinessTable::quickLogin())
                 ->select('id', 'type', 'status', 'name', 'url', 'appid', 'appkey', 'create_time')
                 ->whereIn('id', $quickLoginIds)
                 ->get()
@@ -723,7 +724,7 @@ class QuickLoginController
                     'can_delete' => false,
                     'binding_config_names' => [],
                     'binding_labels' => [],
-                    'blocking_reasons' => ['快捷登录配置在 ypay_quicklogin 中不存在。'],
+                    'blocking_reasons' => ['快捷登录配置记录不存在。'],
                     'summary' => [
                         'delete_row_count' => 0,
                         'binding_count' => 0,
@@ -805,7 +806,7 @@ class QuickLoginController
 
     private function deleteQuickLoginRow(int $id): void
     {
-        Db::table('ypay_quicklogin')
+        Db::table(BusinessTable::quickLogin())
             ->where('id', $id)
             ->delete();
     }
@@ -874,12 +875,12 @@ class QuickLoginController
             return $type . ' #' . (int)($record['id'] ?? 0);
         }
 
-        return 'Quick Login #' . (int)($record['id'] ?? 0);
+        return '快捷登录 #' . (int)($record['id'] ?? 0);
     }
 
     private function quickLoginDeleteConfirmationPhrase(int $id): string
     {
-        return 'DELETE QUICK LOGIN ' . $id;
+        return '删除快捷登录 ' . $id;
     }
 
     /**
@@ -888,7 +889,7 @@ class QuickLoginController
     private function batchQuickLoginDeleteConfirmationPhrase(array $quickLoginIds): string
     {
         return sprintf(
-            'DELETE QUICK LOGIN BATCH %d-%s',
+            '批量删除快捷登录 %d-%s',
             count($quickLoginIds),
             strtoupper(substr(md5(implode(',', $quickLoginIds)), 0, 6))
         );
@@ -1020,7 +1021,7 @@ class QuickLoginController
             static function (array $item): string {
                 $label = trim((string)($item['quick_login_label'] ?? ''));
                 $quickLoginId = (int)($item['quick_login_id'] ?? 0);
-                return $label !== '' ? $label : ('quick login #' . $quickLoginId);
+                return $label !== '' ? $label : ('快捷登录 #' . $quickLoginId);
             },
             array_values(array_filter(
                 (array)($audit['items'] ?? []),

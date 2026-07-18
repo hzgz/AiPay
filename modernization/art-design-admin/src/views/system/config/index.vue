@@ -4,13 +4,13 @@
       <div class="config-toolbar">
         <div class="config-toolbar-copy">
           <p class="toolbar-eyebrow">系统配置</p>
-          <h2 class="toolbar-title">系统配置中心</h2>
+          <h2 class="toolbar-title">配置总览</h2>
           <p class="toolbar-desc">{{ resolveToolbarDescription() }}</p>
 
           <div class="toolbar-stat-row">
             <span class="toolbar-stat-chip">可编辑 {{ summary.editable_key_count }} 项</span>
             <span class="toolbar-stat-chip">已配置 {{ summary.editable_filled_count }} 项</span>
-            <span class="toolbar-stat-chip">当前展示 {{ totalVisibleFieldCount }} 项</span>
+            <span class="toolbar-stat-chip">当前显示 {{ totalVisibleFieldCount }} 项</span>
           </div>
         </div>
 
@@ -19,7 +19,7 @@
             v-model.trim="keyword"
             clearable
             class="config-toolbar-search"
-            placeholder="搜索配置项名称或说明"
+            placeholder="搜索配置项名称"
           />
           <ElButton size="small" plain @click="resetSearch">清空</ElButton>
           <ElButton size="small" plain :loading="loading" @click="loadConfig">刷新</ElButton>
@@ -65,11 +65,11 @@
             <div class="config-editor-copy">
               <p class="config-editor-eyebrow">当前分组</p>
               <h3 class="config-editor-title">{{ activeForm.title }}</h3>
-              <p class="config-editor-desc">{{ resolveGroupDescription(activeForm.description) }}</p>
+              <p class="config-editor-desc">{{ activeForm.description }}</p>
             </div>
 
             <div class="config-editor-actions">
-              <ElTag effect="plain">{{ activeForm.visibleFields.length }} 项展示中</ElTag>
+              <ElTag effect="plain">{{ activeForm.visibleFields.length }} 项显示中</ElTag>
               <ElTag type="success" effect="plain">
                 {{ countFilledFields(activeForm) }} 项已配置
               </ElTag>
@@ -94,7 +94,7 @@
             >
               <div class="config-row__meta">
                 <div class="config-row__title">
-                  <strong>{{ field.label || field.key }}</strong>
+                  <strong>{{ resolveFieldLabel(field) }}</strong>
                   <ElTag
                     v-if="isFieldFilled(activeForm.key, field)"
                     size="small"
@@ -103,7 +103,7 @@
                   >
                     已配置
                   </ElTag>
-                  <ElTag v-else size="small" effect="plain">待配置</ElTag>
+                  <ElTag v-else size="small" effect="plain">未设置</ElTag>
                 </div>
 
                 <p v-if="resolveFieldHelpText(field)" class="config-row__help">
@@ -134,7 +134,9 @@
                   <ElOption
                     v-for="option in field.options || []"
                     :key="`${field.key}-${option.value}`"
-                    :label="option.label || option.value"
+                    :label="
+                      resolveOptionLabel(field.key, option.value, option.label || option.value)
+                    "
                     :value="option.value"
                   />
                 </ElSelect>
@@ -229,6 +231,7 @@
   import { Icon } from '@iconify/vue'
   import { fetchGetSystemConfigSummary, fetchUpdateSystemConfigGroup } from '@/api/config'
   import { useAuth } from '@/hooks'
+  import { displayAdminFixtureText } from '@/utils/adminFixtureText'
 
   type ConfigField = Api.Configs.ConfigItem
   type ConfigForm = Api.Configs.EditableForm
@@ -238,133 +241,252 @@
     visibleFields: ConfigField[]
   }
 
-  const CONFIG_HELP_TEXT_EXACT_MAP: Record<string, string> = {
-    '在前台与后台展示的主品牌名称。': '前后台统一品牌名。',
-    '在后台与系统标识区域展示的产品名称。': '后台产品名称。',
-    '用于页面标题和系统简短说明。': '页面标题。',
-    '显示在前台页面与控制台摘要中。': '前台简介。',
-    '启用邮件发送后用于接收系统通知；留空则不向该邮箱投递。': '接收系统通知的邮箱。',
-    '配置后显示在前台页脚。': '前台页脚展示。',
-    '支持内部路径或完整图片 URL。': '支持站内路径或图片链接。',
-    '选择使用本地背景资源，或改为自定义背景接口。': '选择本地背景或自定义接口。',
-    '支持相对路径或完整资源链接。': '支持相对路径或完整链接。',
-    '切换接口页使用默认模板还是自定义模板内容。': '切换默认或自定义模板。',
-    '从当前模板目录中选择已存在的主题，避免手填目录名。': '从模板目录直接选择。',
-    '仅在接口模板切换为“自定义模板”后生效，支持直接填写 HTML 内容。': '切到自定义模板后生效，支持 HTML。',
-    '前台首页弹窗文案，支持 HTML 内容。': '支持 HTML。',
-    '前台入口页弹窗文案，支持 HTML 内容。': '支持 HTML。',
-    '前台注册页弹窗文案，支持 HTML 内容。': '支持 HTML。',
-    '前台隐私政策内容，支持 HTML 内容。': '支持 HTML。',
-    '前台用户协议内容，支持 HTML 内容。': '支持 HTML。',
-    '显示在商户域名管理相关流程附近。': '显示在商户域名流程附近。',
-    '显示在商户或域名审核场景附近。': '显示在审核场景附近。',
-    '显示在支付通道或账户引导相关区域。': '显示在支付通道引导区域。',
-    '开启后显示举报弹窗及相关文案配置。': '开启后显示举报弹窗。',
-    '支持 HTML 内容，用于展示举报与风控说明。': '支持 HTML。',
-    '请填写完整可访问地址。': '请填写完整可访问地址。',
-    '启用后，商户端通道管理可发起测试支付。': '开启后商户可发起测试。',
-    '开启后允许商户按既定规则自定义订单号。': '开启后允许商户自定义订单号。',
-    '商户测试支付时默认使用的金额。': '测试支付默认金额。',
-    '商户测试支付或演示收银台中显示的收款人名称。': '测试支付显示的收款人名称。',
-    '支持换行、英文逗号或中文逗号分隔，决定测试支付可选的支付方式。': '支持逗号或换行分隔。',
-    '用于测试支付或演示收银台的易支付商户号。': '测试支付使用的商户号。',
-    '默认隐藏显示，点击查看后可编辑演示支付密钥。': '点击查看后可编辑。',
-    '用于演示支付跳转或接口请求的易支付网关地址。': '测试支付使用的网关地址。',
-    '单笔订单允许的最小支付金额。': '单笔最小支付金额。',
-    '单笔订单允许的最大支付金额。': '单笔最大支付金额。',
-    '订单未支付时自动失效的秒数。': '订单未支付自动失效秒数。',
-    '开启后，对外网关地址将改为这里维护的自定义 API 线路。': '开启后使用自定义 API 线路。',
-    '支持填写一条或多条自定义网关地址，使用换行或逗号分隔；如需沿用当前站点根路径，可填写 / 。': '支持逗号或换行分隔，填 / 表示当前站点。',
-    '同一来源每天最多请求多少次验证码，用于防止短信或邮箱验证码被刷。': '限制验证码每日请求次数。',
-    '支付账号连续多少分钟未上报即判定为掉线，1 表示 1 分钟。': '连续未上报多少分钟判定掉线。',
-    '控制前台订单记录列表默认展示条数，建议不要设置过大。': '控制前台订单默认展示条数。',
-    '决定二维码图片由本地生成，还是调用外部接口生成。': '选择本地生码或外部生码。',
-    '支付账号图片入库时，决定使用外部接口解码还是本地解码。': '选择外部解码或本地解码。',
-    '基础校验沿用通讯密钥与 token 校验；安全签名要求软件端同时提交时间戳、随机串和签名，正式商用建议优先使用安全签名。': '正式商用建议优先启用安全签名。',
-    '强签名模式允许的最大时间漂移，单位秒，默认 300 秒。': '强签名允许的最大时间漂移秒数。',
-    '填写外部卡密购买页地址，用户购买卡密后再回本站充值消费。': '填写外部卡密购买页地址。',
-    '支持英文逗号、中文逗号或换行分隔，多项内容会统一整理后保存。': '支持逗号或换行分隔。',
-    '开启后，前台可跳转到外部卡密购买页，用户购买卡密后回站充值。': '开启后允许跳转外部卡密购买页。',
-    '控制订单日志页是否显示补单按钮。': '控制订单日志是否显示补单按钮。',
-    '允许新商户通过前台入口注册。': '允许前台注册商户。',
-    '商户注册完成前必须先支付注册费用。': '注册前需先支付费用。',
-    '启用付费注册后收取的金额。': '付费注册金额。',
-    '商户充值流程允许的最小金额。': '商户充值最小金额。',
-    '商户充值流程允许的最大金额。': '商户充值最大金额。',
-    '启用商户域名提交与审核流程。': '启用商户域名提审流程。',
-    '商户每日最多可提交的域名数量，0 表示不限制。': '商户每日可提交域名数量，0 为不限。',
-    '命中白名单的域名可直接放行，支持换行或逗号分隔。': '白名单域名直接放行，支持逗号或换行分隔。',
-    '命中黑名单的域名将被拒绝提交，支持换行或逗号分隔。': '黑名单域名直接拒绝，支持逗号或换行分隔。',
-    '新注册商户需人工审核后才能完全可用。': '新商户注册后需人工审核。',
-    '允许商户使用工单/支持模块。': '允许商户使用工单模块。',
-    '启用实名认证功能。': '启用实名认证。',
-    '决定实名认证使用人脸核验方案，还是使用支付宝身份授权方案。': '选择实名认证方案。',
-    '决定实名认证所需费用由平台承担，还是由商户自行承担。': '选择实名费用承担方。',
-    '当实名费用由商户承担时，按这里设置的金额进行扣费。': '商户承担实名费用时的扣费金额。',
-    '启用实名认证后，要求受保护的商户操作必须先完成实名认证。': '开启后受保护操作需先完成实名。',
-    '开启后，商户邀请下级注册并消费时可按返佣规则获得收益。': '开启后支持推广返佣。',
-    '决定上级返佣是在商户充值时结算，还是在购买会员时结算。': '选择返佣结算时机。',
-    '请输入 0 到 1 之间的小数，例如 0.10 表示返佣 10%。': '填写 0 到 1 之间的小数。',
-    '开启后，新注册商户会从指定起始 ID 开始递增分配编号。': '开启后按指定起始 ID 递增。',
-    '只允许填写数字，设置后新商户编号会从这个起始值开始递增。': '仅填数字。',
-    '开启后，新注册商户会自动获赠一笔账户余额。': '开启后注册送余额。',
-    '注册成功后自动发放到商户账户余额中的金额。': '注册赠送余额金额。',
-    '开启后，新注册商户会自动获赠指定会员套餐。': '开启后注册送会员套餐。',
-    '从会员套餐列表中选择一个作为注册赠送套餐。': '选择注册赠送的会员套餐。',
-    '开启后，系统会在会员即将到期前按设定天数发送提醒。': '开启后在会员到期前发送提醒。',
-    '会员到期前多少天开始提醒，通常设置为 1 到 7 天。': '会员到期前提醒天数。',
-    '控制前台页面是否展示赞助位模块。': '控制前台是否显示赞助位。',
-    '开启后，商户端个人设置页允许申请注销账户。': '开启后允许商户申请注销账户。',
-    '控制登录、注册、找回密码等流程使用的验证码能力。': '控制登录注册找回密码的验证码能力。',
-    '决定商户端登录时采用账号密码、短信、邮箱、社交或 TG 验证。': '选择商户登录方式。',
-    '决定新商户注册时使用账号密码、短信、邮箱或 TG 验证。': '选择商户注册方式。',
-    '决定忘记密码时可通过短信、邮箱或 TG 完成找回。': '选择找回密码方式。',
-    '用于下单或商品风控拦截，支持换行或逗号分隔多个关键词。': '用于下单或商品风控拦截，支持逗号或换行分隔。',
-    '默认隐藏显示，展开后可编辑当前敏感配置。': '',
-    '请先在“快捷登录管理”中创建 QQ 配置，再在这里绑定前台入口。': '先在快捷登录管理中创建 QQ 配置。',
-    '请先在“快捷登录管理”中创建微信配置，再在这里绑定前台入口。': '先在快捷登录管理中创建微信配置。',
-    '允许系统通知走邮件通道。': '允许系统通知走邮件通道。',
-    '邮件服务连接时使用的传输加密方式。': '邮件服务传输加密方式。',
-    '短信验证码开启后，系统会按这里选择的短信通道发送验证码。': '短信验证码发送所用通道。',
-    '允许系统通知走 Telegram 通道。': '允许系统通知走 Telegram 通道。',
-    '允许系统通知走 WxPusher 通道。': '允许系统通知走 WxPusher 通道。',
-    '启用 Telegram 投递后发送充值通知。': 'Telegram 发送充值通知。',
-    '启用 Telegram 投递后发送注册通知。': 'Telegram 发送注册通知。',
-    '启用 Telegram 投递后发送工单通知。': 'Telegram 发送工单通知。',
-    '启用 Telegram 投递后发送 VIP 通知。': 'Telegram 发送会员通知。',
-    '支持 [code] 占位符。': '支持 [code] 占位符。',
-    '支持 [login_uid]、[login_ip] 和 [login_time] 占位符。': '支持登录通知占位符。',
-    '商户注册完成后使用。': '商户注册完成后使用。',
-    '支持订单通知占位符。': '支持订单通知占位符。',
-    '用于提醒商户账户余额不足。': '用于提醒商户余额不足。',
-    '支持 [account_id]、[account_type]、[account_code] 和 [lose_time] 占位符。': '支持账号掉线通知占位符。',
-    '用于 VIP 到期提醒。': '用于会员到期提醒。',
-    '引导管理员或商户在使用 Telegram 通知前先绑定机器人。': '提示先绑定 Telegram 机器人。',
-    '本地上传、支付账号图片与媒体库会按这里选择的存储方式执行。': '选择上传和素材的存储方式。',
-    '仅支持非负数值。': '仅填数字。',
-    '维护模式开启后，决定展示默认维护页还是自定义维护页内容。': '维护模式下选择默认或自定义页面。'
+  const GROUP_COPY_MAP: Record<string, { title: string; description: string }> = {
+    basic_display: {
+      title: '基础展示',
+      description: '站点名称、标题、Logo 和首页入口配置。'
+    },
+    template_content: {
+      title: '模板内容',
+      description: '公告、协议、弹窗和公共页面设置。'
+    },
+    transaction_rules: {
+      title: '交易规则',
+      description: '订单金额、测试支付和线路配置。'
+    },
+    merchant_access: {
+      title: '商户准入',
+      description: '注册、实名、域名、返佣与充值限制。'
+    },
+    security_auth: {
+      title: '安全验证',
+      description: '验证码、安全校验和风控提示。'
+    },
+    notifications: {
+      title: '通知提醒',
+      description: '邮件、短信、电报和通知模板配置。'
+    },
+    storage_integrations: {
+      title: '存储集成',
+      description: '上传、压缩和对象存储配置。'
+    },
+    maintenance: {
+      title: '维护设置',
+      description: '停站、维护页和清理设置。'
+    }
   }
 
-  const CONFIG_GROUP_DESCRIPTION_EXACT_MAP: Record<string, string> = {
-    '按分组维护站点、模板、支付、商户、安全、通知与系统运行配置。':
-      '统一维护站点、模板、支付与系统配置。',
-    '站点名称、页面标题、Logo、图标以及首页基础展示配置。': '站点名称、标题与首页基础配置。',
-    '前台公告、弹窗、协议、公示文案与主题模板设置。': '公告、弹窗、协议与主题配置。',
-    '订单金额、通道测试支付、演示支付与二维码相关配置。': '订单金额、测试支付与二维码配置。',
-    '商户注册、实名、域名、工单、分销与充值限制配置。': '商户注册、实名、域名与分销配置。',
-    '验证码、安全校验与风控提示等常用配置。': '验证码、安全校验与风控配置。',
-    '邮件、Telegram、WxPusher 开关与常用通知模板。': '邮件与消息通知配置。',
-    '文件策略、上传大小以及存储接入基础配置。': '上传策略与存储接入配置。',
-    '停站、维护页和数据清理相关配置。': '停站、维护页与数据清理配置。'
+  const FIELD_LABEL_MAP: Record<string, string> = {
+    sitename: '站点名称',
+    software_name: '软件名称',
+    title: '页面标题',
+    desc: '站点简介',
+    key: '站点关键字',
+    adminMail: '管理员邮箱',
+    icp: 'ICP备案',
+    logo: '站点 Logo',
+    favicon: '浏览器图标',
+    bgtype: '背景类型',
+    bg: '全站背景',
+    api_bg: '接口页背景',
+    apiTemp: '接口页模板',
+    home_temp: '首页模板',
+    home_url: '首页入口地址',
+    diyApiTemp: '自定义接口页模板',
+    is_notice: '公告开关',
+    demo_theme: '测试页模板',
+    doc_theme: '文档页模板',
+    home_popup: '首页弹窗',
+    index_popup: '入口弹窗',
+    news_theme: '公告中心模板',
+    reg_popup: '注册弹窗',
+    privacy: '隐私政策',
+    user_agreement: '用户协议',
+    domain_notice: '域名提示',
+    sh_notice: '首页公告',
+    td_notice: '支付页公告',
+    user_theme: '商户中心模板',
+    is_channelPay: '商户通道测试支付',
+    isDiy_orderNo: '自定义订单号开关',
+    diy_orderNo: '自定义订单号规则',
+    demopay_money: '测试默认金额',
+    demopay_name: '测试收款人名称',
+    diy_demoPay: '测试可用支付方式',
+    epayid_demo: '测试商户号',
+    epaykey_demo: '测试密钥',
+    epayurl_demo: '测试网关地址',
+    min_orderprice: '单笔最小金额',
+    max_orderprice: '单笔最大金额',
+    timeout: '订单超时时间',
+    is_pay_money: '金额校验',
+    is_pay_api: '自定义线路',
+    pay_api: '线路地址',
+    daily_limit: '验证码日请求上限',
+    disconnect_minute: '账号掉线判定分钟',
+    orderDisplay: '订单默认条数',
+    create_qrCode: '生码方式',
+    qr_codeType: '解码方式',
+    software_callback_sign_mode: '软件回调签名模式',
+    software_callback_sign_window: '软件回调签名时效',
+    is_reg: '允许前台注册',
+    paid_reg: '付费注册',
+    paid_reg_price: '注册费用',
+    min_recharge: '商户充值最小金额',
+    max_recharge: '商户充值最大金额',
+    is_domain: '商户域名提审',
+    domainNum: '每日提交域名数量',
+    domain_white: '域名白名单',
+    domain_black: '域名黑名单',
+    is_examine: '新商户人工审核',
+    isTicket: '工单支持',
+    isRealName: '实名认证',
+    realNameType: '实名认证方式',
+    realNameBear: '实名费用承担方',
+    bearMoney: '实名费用',
+    forceRealName: '强制实名保护',
+    is_aff: '推广返佣',
+    aff_type: '返佣模式',
+    aff_percentage: '返佣比例',
+    is_diyUserId: '自定义商户编号',
+    diy_userId: '起始商户编号',
+    is_reg_give_price: '注册赠送余额',
+    reg_give_price: '赠送余额金额',
+    is_reg_give_vip: '注册赠送会员',
+    reg_give_vip: '赠送会员套餐',
+    is_vip_expire: '会员到期提醒',
+    vip_expire: '提前提醒天数',
+    is_paypage_realname: '支付页实名展示',
+    is_sponsor: '赞助位展示',
+    is_logOff: '允许注销账户',
+    isAdminSecurity: '后台安全验证',
+    isSecurity: '安全绑定',
+    isSecurityForce: '强制安全绑定',
+    isSecurityLogin: '登录安全验证',
+    code_switch: '短信验证码',
+    'captcha-type': '验证码服务',
+    'logincode-type': '登录方式',
+    'regcode-type': '注册方式',
+    'retrieve-type': '找回密码方式',
+    smstype: '短信服务商',
+    shield_tips: '风控提示',
+    shield_key: '风控密钥',
+    email_switch: '邮件通知',
+    'smtp-host': 'SMTP 主机',
+    'smtp-port': 'SMTP 端口',
+    'smtp-user': 'SMTP 账号',
+    'smtp-pass': 'SMTP 密码',
+    SmtpSecure: 'SMTP 加密方式',
+    'alisms-accessKeyId': '阿里云短信 AccessKey ID',
+    'alisms-Secret': '阿里云短信 AccessKey Secret',
+    'alisms-SignName': '阿里云短信签名',
+    'alisms-LoginCodeId': '阿里云登录模板 ID',
+    'alisms-RegCodeId': '阿里云注册模板 ID',
+    'tensms-AppId': '腾讯云短信 AppID',
+    'tensms-accessKeyId': '腾讯云短信 AccessKey ID',
+    'tensms-Secret': '腾讯云短信 AccessKey Secret',
+    'tensms-SignName': '腾讯云短信签名',
+    'tensms-LoginCodeId': '腾讯云登录模板 ID',
+    'tensms-RegCodeId': '腾讯云注册模板 ID',
+    'smsbao-user': '短信宝账号',
+    'smsbao-pass': '短信宝密码',
+    'smsbao-api': '短信宝 API',
+    'smsbao-SignName': '短信宝签名',
+    tg_switch: '电报通知',
+    tg_admin_id: '电报管理员 ID',
+    tg_bot_token: '电报机器人令牌',
+    wxpusher_switch: '微信推送通知',
+    wxpusher_appToken: '微信推送应用令牌',
+    tg_notice_recharge: '电报充值通知',
+    tg_notice_register: '电报注册通知',
+    tg_notice_ticket: '电报工单通知',
+    tg_notice_vip: '电报会员通知',
+    diy_codeTemp: '验证码模板',
+    diy_loginTips: '登录通知模板',
+    diy_regTips: '注册通知模板',
+    diy_orderTips: '订单通知模板',
+    diy_moneyTips: '余额提醒模板',
+    diy_loseTips: '掉线通知模板',
+    diy_vipTemp: '会员通知模板',
+    tg_bind_tips: '电报绑定提示',
+    'file-type': '文件存储方式',
+    imageSize: '图片压缩大小',
+    'file-endpoint': '对象存储 Endpoint',
+    'file-accessKeyId': '对象存储 AccessKey ID',
+    'file-accessKeySecret': '对象存储 AccessKey Secret',
+    'file-OssName': '对象存储 Bucket',
+    'qiniu-Domain': '七牛云访问域名',
+    'qiniu-Bucket': '七牛云空间名',
+    'qiniu-AK': '七牛云 AccessKey',
+    'qiniu-SK': '七牛云 SecretKey',
+    isMtce: '维护模式',
+    is_weboff: '前台停站',
+    mtceType: '维护页类型',
+    diyMtceHtml: '自定义维护页',
+    is_dataClear: '自动数据清理',
+    dataClearDays: '数据保留天数',
+    diy_task_key: '计划任务密钥',
+    diy_dataClear: '清理目标'
   }
 
-  const SUPPRESSED_HELP_TEXTS = new Set([
-    '前后台统一品牌名。',
-    '后台产品名称。',
-    '页面标题。',
-    '前台简介。',
-    '前台页脚展示。'
-  ])
+  const FIELD_HELP_MAP: Record<string, string> = {
+    home_url: '启用外链首页时填写完整地址。',
+    diyApiTemp: '仅自定义接口页模板时生效，支持 HTML。',
+    domain_notice: '显示在商户域名提审入口附近。',
+    is_channelPay: '开启后，商户可在通道列表发起“测试”。',
+    diy_demoPay: '每行一个支付方式编码，例如 wxpay、alipay、qqpay。',
+    epayurl_demo: '填写网关地址，留空时按当前站点处理。',
+    pay_api: '多条线路可用换行或逗号分隔，填 / 表示当前站点。',
+    domain_white: '命中白名单的域名可直接放行。',
+    domain_black: '命中黑名单的域名将直接拒绝。',
+    diy_userId: '新商户编号会从这里开始递增。',
+    tg_bind_tips: '显示在商户端电报绑定入口。',
+    diy_task_key: '供计划任务或清理接口调用。',
+    diy_dataClear: '填写需要清理的表或目录，一行一个。',
+    create_qrCode: '建议优先使用稳定的外部生码服务。',
+    qr_codeType: '选择本地或远程解析方式。',
+    software_callback_sign_mode: '正式商用建议启用强签名模式。',
+    software_callback_sign_window: '单位秒，默认建议 300。',
+    imageSize: '仅在启用本地图片压缩时生效。'
+  }
+
+  const OPTION_LABEL_MAP: Record<string, Record<string, string>> = {
+    SmtpSecure: {
+      ssl: 'SSL/TLS 加密',
+      tls: 'STARTTLS 加密'
+    },
+    smstype: {
+      aliyun: '阿里云',
+      qcloud: '腾讯云',
+      smsbao: '短信宝'
+    },
+    software_callback_sign_mode: {
+      compat: '基础校验',
+      strict: '安全签名'
+    },
+    apiTemp: {
+      default: '标准模板',
+      diyApiTemp: '自定义模板'
+    },
+    mtceType: {
+      default: '标准模板',
+      diyMtceHtml: '自定义模板'
+    }
+  }
+
+  const BROKEN_TEXT_FRAGMENTS = [
+    '绯荤',
+    '鍟嗘',
+    '鏀',
+    '寮€',
+    '鏂囨',
+    '鍥炶',
+    '璇疯',
+    '閫氱',
+    '缁存',
+    '榛樿',
+    '鍚敤',
+    '鐢ㄤ簬'
+  ]
 
   const GROUP_ICONS: Record<string, string> = {
     basic_display: 'ri:global-line',
@@ -376,6 +498,38 @@
     storage_integrations: 'ri:database-2-line',
     maintenance: 'ri:tools-line'
   }
+
+  const HTML_FIELDS = new Set([
+    'diyApiTemp',
+    'home_popup',
+    'index_popup',
+    'reg_popup',
+    'privacy',
+    'user_agreement',
+    'diyMtceHtml'
+  ])
+
+  const LIST_TEXT_FIELDS = new Set([
+    'diy_demoPay',
+    'pay_api',
+    'domain_white',
+    'domain_black',
+    'diy_dataClear'
+  ])
+
+  const SENSITIVE_FIELDS = new Set([
+    'epaykey_demo',
+    'shield_key',
+    'smtp-pass',
+    'alisms-Secret',
+    'tensms-Secret',
+    'smsbao-pass',
+    'tg_bot_token',
+    'wxpusher_appToken',
+    'file-accessKeySecret',
+    'qiniu-SK',
+    'diy_task_key'
+  ])
 
   const ASSET_FIELDS = new Set([
     'logo',
@@ -408,10 +562,7 @@
   const response = ref<Api.Configs.SummaryResponse | null>(null)
   const groupModels = reactive<Record<string, Record<string, string | boolean>>>({})
 
-  const canSaveConfig = computed(() => {
-    return hasAuth('groupUpdate') || hasAuth('update') || hasAuth('index')
-  })
-
+  const canSaveConfig = computed(() => hasAuth('groupUpdate') || hasAuth('update'))
   const summary = computed(() => response.value?.summary ?? emptySummary)
   const baseForms = computed(() => response.value?.editable_forms ?? [])
 
@@ -420,17 +571,22 @@
 
     return baseForms.value
       .map((form) => {
-        const formText = `${form.title} ${form.description} ${form.key}`.toLowerCase()
+        const resolvedTitle = resolveFormTitle(form)
+        const resolvedDescription = resolveFormDescription(form)
+        const formText = `${resolvedTitle} ${resolvedDescription} ${form.key}`.toLowerCase()
         const matchGroup = !search || formText.includes(search)
         const visibleFields = matchGroup
           ? form.fields
           : form.fields.filter((field) => {
-              const fieldText = `${field.label} ${field.key} ${field.help_text}`.toLowerCase()
+              const fieldText =
+                `${resolveFieldLabel(field)} ${resolveFieldHelpText(field)} ${field.key}`.toLowerCase()
               return fieldText.includes(search)
             })
 
         return {
           ...form,
+          title: resolvedTitle,
+          description: resolvedDescription,
           icon: GROUP_ICONS[form.key] || 'ri:settings-3-line',
           visibleFields
         }
@@ -466,7 +622,7 @@
   )
 
   onMounted(() => {
-    loadConfig()
+    void loadConfig()
   })
 
   function normalizeSwitchValue(value: unknown) {
@@ -523,71 +679,53 @@
     ensureGroupModel(groupKey)[fieldKey] = value === true || value === 'true' || value === '1'
   }
 
-  function resolveFieldPlaceholder(field: ConfigField) {
-    const placeholder = String(field.placeholder || '').trim()
-    if (placeholder) {
-      return placeholder
-    }
-
-    if (field.editor === 'select') {
-      return '请选择'
-    }
-
-    if (field.editor === 'textarea') {
-      return '请输入配置内容'
-    }
-
-    return '请输入配置值'
-  }
-
-  function compactConfigText(value: string) {
-    const raw = String(value || '').trim()
-    if (!raw) {
-      return ''
-    }
-
-    const exact = CONFIG_HELP_TEXT_EXACT_MAP[raw]
-    if (typeof exact === 'string') {
-      return exact
-    }
-
-    return raw
-      .replace(/支持相对路径或完整资源链接。/g, '支持相对路径或完整链接。')
-      .replace(/支持内部路径或完整图片 URL。/g, '支持站内路径或图片链接。')
-      .replace(/支持英文逗号、中文逗号或换行分隔，多项内容会统一整理后保存。/g, '支持逗号或换行分隔。')
-      .replace(/支持换行、英文逗号或中文逗号分隔/g, '支持逗号或换行分隔')
-      .replace(/，支持 HTML 内容。/g, '，支持 HTML。')
-      .replace(/支持 HTML 内容。/g, '支持 HTML。')
-  }
-
   function resolveToolbarDescription() {
-    return '统一维护站点、支付与系统配置。'
+    return '集中维护站点、支付和系统设置。'
   }
 
-  function resolveGroupDescription(description: string) {
-    const normalized = String(description || '').trim()
-    return CONFIG_GROUP_DESCRIPTION_EXACT_MAP[normalized] || compactConfigText(normalized)
+  function resolveFormTitle(form: ConfigForm) {
+    return GROUP_COPY_MAP[form.key]?.title || safeDisplayText(form.title) || form.key
+  }
+
+  function resolveFormDescription(form: ConfigForm) {
+    return GROUP_COPY_MAP[form.key]?.description || safeDisplayText(form.description)
+  }
+
+  function resolveFieldLabel(field: ConfigField) {
+    return (
+      FIELD_LABEL_MAP[field.key] || safeDisplayText(field.label) || humanizeConfigKey(field.key)
+    )
   }
 
   function resolveFieldHelpText(field: ConfigField) {
-    const helpText = compactConfigText(String(field.help_text || ''))
-    const normalized = helpText.trim()
-    if (SUPPRESSED_HELP_TEXTS.has(normalized)) {
-      return ''
-    }
+    return FIELD_HELP_MAP[field.key] || ''
+  }
 
-    return normalized
+  function resolveOptionLabel(fieldKey: string, optionValue: string, optionLabel: string) {
+    const mapped = OPTION_LABEL_MAP[fieldKey]?.[String(optionValue)]
+    if (mapped) return mapped
+
+    const normalized = safeDisplayText(optionLabel)
+    if (normalized) return normalized
+
+    const fieldLabel = resolveFieldLabel({ key: fieldKey } as ConfigField)
+    return `${fieldLabel}：${optionValue}`
+  }
+
+  function resolveFieldPlaceholder(field: ConfigField) {
+    if (field.editor === 'select') return '请选择'
+    if (HTML_FIELDS.has(field.key) || field.type === 'html') return '请输入 HTML 内容'
+    if (LIST_TEXT_FIELDS.has(field.key)) return '每行一项，或使用英文逗号分隔'
+    if (ASSET_FIELDS.has(field.key)) return '请输入图片地址'
+    if (SENSITIVE_FIELDS.has(field.key) || field.editor === 'password') return '请输入密钥或密码'
+    if (field.editor === 'textarea') return '请输入内容'
+    return '请输入配置值'
   }
 
   function resolveTextareaRows(field: ConfigField) {
-    if (field.type === 'html') {
-      return 7
-    }
-
-    if ((field.max_length || 0) >= 1000) {
-      return 6
-    }
-
+    if (HTML_FIELDS.has(field.key) || field.type === 'html') return 8
+    if (LIST_TEXT_FIELDS.has(field.key)) return 5
+    if ((field.max_length || 0) >= 1000) return 6
     return 4
   }
 
@@ -596,10 +734,7 @@
   }
 
   function isFieldFilled(groupKey: string, field: ConfigField) {
-    if (field.editor === 'switch') {
-      return true
-    }
-
+    if (field.editor === 'switch') return true
     return readStringValue(groupKey, field.key).trim().length > 0
   }
 
@@ -608,27 +743,13 @@
   }
 
   function resolveAssetUrl(groupKey: string, field: ConfigField) {
-    if (!ASSET_FIELDS.has(field.key)) {
-      return ''
-    }
+    if (!ASSET_FIELDS.has(field.key)) return ''
 
     const rawValue = readStringValue(groupKey, field.key).trim()
-    if (!rawValue) {
-      return ''
-    }
-
-    if (/^https?:\/\//i.test(rawValue)) {
-      return rawValue
-    }
-
-    if (rawValue.startsWith('//')) {
-      return `${window.location.protocol}${rawValue}`
-    }
-
-    if (rawValue.startsWith('/')) {
-      return rawValue
-    }
-
+    if (!rawValue) return ''
+    if (/^https?:\/\//i.test(rawValue)) return rawValue
+    if (rawValue.startsWith('//')) return `${window.location.protocol}${rawValue}`
+    if (rawValue.startsWith('/')) return rawValue
     return `/${rawValue.replace(/^\/+/, '')}`
   }
 
@@ -659,9 +780,7 @@
   }
 
   async function saveGroup(groupKey: string) {
-    if (!groupKey || !canSaveConfig.value) {
-      return
-    }
+    if (!groupKey || !canSaveConfig.value) return
 
     savingGroupKey.value = groupKey
 
@@ -677,15 +796,35 @@
   }
 
   async function saveActiveGroup() {
-    if (!activeForm.value) {
-      return
-    }
-
+    if (!activeForm.value) return
     await saveGroup(activeForm.value.key)
   }
 
   function resetSearch() {
     keyword.value = ''
+  }
+
+  function safeDisplayText(value: unknown) {
+    const raw = String(value ?? '').trim()
+    if (!raw) return ''
+
+    const normalized = displayAdminFixtureText(raw, raw).replace(/\s+/g, ' ').trim()
+    if (!normalized || looksLikeBrokenText(normalized)) {
+      return ''
+    }
+
+    return normalized
+  }
+
+  function looksLikeBrokenText(value: string) {
+    return BROKEN_TEXT_FRAGMENTS.some((fragment) => value.includes(fragment))
+  }
+
+  function humanizeConfigKey(value: string) {
+    return String(value || '')
+      .replace(/[-_]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
   }
 </script>
 
@@ -1082,6 +1221,11 @@
 
     .config-sidebar-card {
       position: static;
+    }
+
+    .config-sidebar-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     }
 
     .config-editor-head {

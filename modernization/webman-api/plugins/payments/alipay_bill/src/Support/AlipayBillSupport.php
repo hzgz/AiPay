@@ -53,13 +53,13 @@ final class AlipayBillSupport
             $responseNode = str_replace('.', '_', $request->getApiMethodName()) . '_response';
             $response = is_object($result) ? ($result->$responseNode ?? $result->error_response ?? null) : null;
             if (!is_object($response)) {
-                throw new RuntimeException('Alipay bill query returned an invalid response');
+                throw new RuntimeException('支付宝账单接口返回无效响应');
             }
 
             $code = trim((string)($response->code ?? ''));
             if ($code !== '10000') {
-                $message = trim((string)($response->sub_msg ?? $response->msg ?? 'Alipay bill query failed'));
-                throw new RuntimeException($message !== '' ? $message : 'Alipay bill query failed');
+                $message = trim((string)($response->sub_msg ?? $response->msg ?? '支付宝账单查询失败'));
+                throw new RuntimeException($message !== '' ? $message : '支付宝账单查询失败');
             }
 
             $detailList = $this->detailList($response->detail_list ?? []);
@@ -80,7 +80,7 @@ final class AlipayBillSupport
         }
 
         if ($hitFullPageCap) {
-            throw new RuntimeException('Alipay bill query hit the page cap with a full final page');
+            throw new RuntimeException('支付宝账单查询超过分页上限');
         }
 
         $transactions = array_values($transactions);
@@ -204,7 +204,7 @@ final class AlipayBillSupport
 
         foreach (['app_id', 'private_key', 'public_key'] as $field) {
             if ($credentials[$field] === '') {
-                throw new RuntimeException('Alipay bill credentials are incomplete: ' . $field);
+                throw new RuntimeException('支付宝账单插件凭证不完整：' . $field);
             }
         }
 
@@ -341,7 +341,7 @@ final class AlipayBillSupport
         $sdkRoot = base_path() . DIRECTORY_SEPARATOR . 'support' . DIRECTORY_SEPARATOR . 'legacy-sdk' . DIRECTORY_SEPARATOR . 'alipay';
         foreach (['AopClient.php', 'AlipayDataBillAccountlogQueryRequest.php'] as $requiredFile) {
             if (!is_file($sdkRoot . DIRECTORY_SEPARATOR . $requiredFile)) {
-                throw new RuntimeException('Alipay SDK file is missing: ' . $requiredFile);
+                throw new RuntimeException('支付宝 SDK 文件缺失：' . $requiredFile);
             }
         }
 

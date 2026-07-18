@@ -1,0 +1,120 @@
+{
+  "code": "universal_epay",
+  "name": "通用易支付插件",
+  "description": "Managed universal epay account plugin for Webman.",
+  "version": "1.0.0",
+  "provider": "AiPay Official",
+  "entry": "plugins/payments/universal_epay/src/Plugin.php",
+  "class": "Plugins\\Payments\\UniversalEpay\\Plugin",
+  "capabilities": [
+    "admin_account",
+    "create_order",
+    "query",
+    "refund",
+    "notify",
+    "merchant_qrcode"
+  ],
+  "merchant_enabled": true,
+  "supported_payment_types": [
+    "alipay",
+    "wxpay",
+    "qqpay"
+  ],
+  "managed_channels": [
+    {
+      "code": "universal_epay",
+      "name": "通用易支付插件",
+      "type": "alipay",
+      "info": "One plugin directory that manages Alipay, WeChat, and QQ epay upstream accounts.",
+      "status": 1,
+      "sort": 120,
+      "maxcount": 999
+    }
+  ],
+  "migrations": {
+    "strategy": "versioned_sql",
+    "releases": [
+      {
+        "version": "1.0.0",
+        "files": [
+          "001_create_config_table.sql",
+          "002_create_plugin_log_table.sql"
+        ],
+        "notes": [
+          "Initialize the universal epay plugin config table and log table.",
+          "Store managed upstream merchant id, gateway url, merchant key, and mode in the shared account fields."
+        ]
+      }
+    ]
+  },
+  "upgrade": {
+    "impact": "low",
+    "downtime": "none",
+    "requires_disable_after_upgrade": false,
+    "notes": [
+      "This plugin provides one managed account model for Alipay, WeChat, and QQ epay upstream gateways.",
+      "Order creation, callback settlement, and basic query/refund entrypoints are handled inside Webman."
+    ],
+    "checklist": [
+      "Verify there is no pending cleanup plan before upgrade.",
+      "Confirm admin_channel still keeps universal_epay in managed-plugin mode after upgrade."
+    ],
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "summary": "First standalone universal epay plugin directory release.",
+        "breaking": false,
+        "migration_files": [
+          "001_create_config_table.sql",
+          "002_create_plugin_log_table.sql"
+        ],
+        "notes": [
+          "Use one plugin directory to manage Alipay, WeChat, and QQ epay channels.",
+          "Shared account fields map to gateway url, merchant id, merchant key, and interface mode."
+        ]
+      }
+    ],
+    "rollback": {
+      "supported": true,
+      "mode": "backup_restore",
+      "automatic": false,
+      "requires_backup": true,
+      "notes": [
+        "Restore the plugin directory and pay_plugin_universal_epay_* tables before rollback.",
+        "Business order, merchant, fund, and settlement data remain outside plugin cleanup scope."
+      ]
+    }
+  },
+  "cleanup": {
+    "safe": {
+      "files": [
+        "runtime/payment-plugins/universal_epay"
+      ],
+      "tables": [
+        "pay_plugin_universal_epay_config"
+      ],
+      "notes": [
+        "Safe cleanup removes only runtime files and the plugin-owned config table."
+      ]
+    },
+    "purge": {
+      "files": [
+        "plugins/payments/universal_epay"
+      ],
+      "tables": [
+        "pay_plugin_universal_epay_log"
+      ],
+      "notes": [
+        "Purge removes the package directory and plugin log table, then attempts managed-channel cleanup."
+      ]
+    },
+    "retain": [
+      "payment account master records",
+      "historical orders",
+      "fund and settlement records",
+      "merchant business data",
+      "platform audit logs"
+    ],
+    "purge_requires_confirmation": true
+  }
+}

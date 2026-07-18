@@ -3,7 +3,7 @@
 namespace app\controller;
 
 use DomainException;
-use app\payment\PaymentPluginManager;
+use app\service\payment\PaymentPluginManager;
 use app\support\AdminRouteAuthorization;
 use app\support\ApiResponse;
 use app\support\RequestPayload;
@@ -41,7 +41,7 @@ class PaymentPluginController
                     RequestPayload::all($request),
                     $this->operatorFromRequest($request)
                 ),
-                'payment plugin scaffold created'
+                '支付插件脚手架已创建'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -110,7 +110,7 @@ class PaymentPluginController
                     $label,
                     $this->operatorFromRequest($request)
                 ),
-                'recovery snapshot created'
+                '恢复快照已创建'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -151,7 +151,7 @@ class PaymentPluginController
         try {
             return ApiResponse::success(
                 $this->manager()->restoreSnapshot($code, $snapshotId, $this->operatorFromRequest($request)),
-                'recovery snapshot restored'
+                '恢复快照已还原'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -192,7 +192,7 @@ class PaymentPluginController
         try {
             return ApiResponse::success(
                 $this->manager()->deleteSnapshot($code, $snapshotId, $this->operatorFromRequest($request)),
-                'recovery snapshot deleted'
+                '恢复快照已删除'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -246,7 +246,7 @@ class PaymentPluginController
 
             return ApiResponse::success(
                 $this->manager()->cleanupRegistryResidue($code, $this->operatorFromRequest($request)),
-                'plugin registry residue cleaned'
+                '插件注册残留已清理'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -263,7 +263,7 @@ class PaymentPluginController
         try {
             return ApiResponse::success(
                 $this->manager()->install($this->codeFromRequest($request), $this->operatorFromRequest($request)),
-                'plugin installed'
+                '插件已安装'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -280,7 +280,7 @@ class PaymentPluginController
         try {
             return ApiResponse::success(
                 $this->manager()->repair($this->codeFromRequest($request), $this->operatorFromRequest($request)),
-                'plugin repaired'
+                '插件已修复'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -297,7 +297,7 @@ class PaymentPluginController
         try {
             return ApiResponse::success(
                 $this->manager()->upgrade($this->codeFromRequest($request), $this->operatorFromRequest($request)),
-                'plugin upgraded'
+                '插件已升级'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -314,7 +314,7 @@ class PaymentPluginController
         try {
             return ApiResponse::success(
                 $this->manager()->enable($this->codeFromRequest($request), $this->operatorFromRequest($request)),
-                'plugin enabled'
+                '插件已启用'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -338,7 +338,7 @@ class PaymentPluginController
         try {
             return ApiResponse::success(
                 $this->manager()->saveConfig($this->codeFromRequest($request), $config, $this->operatorFromRequest($request)),
-                'plugin config saved'
+                '插件配置已保存'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -355,7 +355,7 @@ class PaymentPluginController
         try {
             return ApiResponse::success(
                 $this->manager()->disable($this->codeFromRequest($request), $this->operatorFromRequest($request)),
-                'plugin disabled'
+                '插件已停用'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -370,7 +370,7 @@ class PaymentPluginController
 
             return ApiResponse::success(
                 $this->manager()->uninstallPlan($this->codeFromRequest($request), $purge),
-                'uninstall plan generated'
+                '卸载计划已生成'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -390,7 +390,7 @@ class PaymentPluginController
 
             return ApiResponse::success(
                 $this->manager()->uninstall($this->codeFromRequest($request), $purge, $this->operatorFromRequest($request)),
-                $purge ? 'plugin marked uninstalled with purge plan' : 'plugin marked uninstalled'
+                $purge ? '插件已标记为卸载，并生成彻底清理计划' : '插件已标记为卸载'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -415,7 +415,7 @@ class PaymentPluginController
         try {
             return ApiResponse::success(
                 $this->manager()->cleanupSafe($code, $this->operatorFromRequest($request)),
-                'plugin safe cleanup completed'
+                '插件安全清理已完成'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -458,7 +458,7 @@ class PaymentPluginController
 
             return ApiResponse::success(
                 $this->manager()->cleanupPurge($code, $this->operatorFromRequest($request)),
-                'plugin purge cleanup completed'
+                '插件彻底清理已完成'
             );
         } catch (Throwable $exception) {
             return $this->handleException($exception);
@@ -544,7 +544,7 @@ class PaymentPluginController
             return ApiResponse::error($exception->getMessage(), 409, null, 409);
         }
 
-        return ApiResponse::error('payment plugin operation failed', 500, [
+        return ApiResponse::error('支付插件操作失败', 500, [
             'exception' => $exception->getMessage(),
         ], 500);
     }

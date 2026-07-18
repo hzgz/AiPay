@@ -2,11 +2,9 @@
   <ElCard class="vault-card recovery-card" shadow="never">
     <div class="vault-header">
       <div class="vault-copy">
-        <p class="vault-eyebrow">恢复仓库</p>
-        <h3 class="vault-title">全局恢复点</h3>
-        <p class="vault-desc">
-          即使插件包已从本地目录彻底移除，也会保留可恢复快照，统一归档到系统恢复仓库。
-        </p>
+        <p class="vault-eyebrow">恢复中心</p>
+        <h3 class="vault-title">恢复快照</h3>
+        <p class="vault-desc">即使本地插件包已不在当前目录中，恢复快照仍会保留在这里，方便后续恢复。</p>
       </div>
 
       <div class="vault-summary-grid">
@@ -23,7 +21,7 @@
           <strong>{{ recoveryVault?.summary.catalog_missing_count || 0 }}</strong>
         </div>
         <div class="vault-stat success">
-          <span>可恢复</span>
+          <span>可恢复插件</span>
           <strong>{{ recoveryVault?.summary.restore_ready_count || 0 }}</strong>
         </div>
       </div>
@@ -42,7 +40,7 @@
       type="info"
       :closable="false"
       show-icon
-      title="当前还没有恢复快照。建议在执行彻底清理或高风险维护前，先在插件详情中创建快照。"
+      title="当前还没有恢复快照，建议先创建。"
     />
 
     <ElTable
@@ -63,7 +61,7 @@
             </div>
             <div class="capability-list">
               <ElTag :type="row.catalog_available ? 'success' : 'warning'" effect="plain">
-                {{ row.catalog_available ? '插件目录可用' : '插件目录已移除' }}
+                {{ row.catalog_available ? '插件目录可用' : '插件目录缺失' }}
               </ElTag>
               <ElTag :type="row.current_state.enabled ? 'danger' : 'info'" effect="plain">
                 {{ row.current_state.enabled ? '恢复前请先停用' : '允许恢复' }}
@@ -95,7 +93,7 @@
             <ElTag effect="plain">根目录 {{ row.summary.file_root_count }}</ElTag>
             <ElTag type="success" effect="plain">文件 {{ row.summary.archived_file_count }}</ElTag>
             <ElTag type="warning" effect="plain">数据表 {{ row.summary.table_count }}</ElTag>
-            <ElTag type="danger" effect="plain">数据行 {{ row.summary.row_count }}</ElTag>
+            <ElTag type="danger" effect="plain">记录 {{ row.summary.row_count }}</ElTag>
             <ElTag type="info" effect="plain">操作人 {{ operatorLabel(row.operator) }}</ElTag>
           </div>
         </template>
@@ -117,7 +115,7 @@
             </div>
             <div class="vault-plugin-meta">
               <span>更新时间 {{ row.current_state.updated_at || '--' }}</span>
-              <span>最近动作 {{ historyActionLabel(row.current_state.last_action) }}</span>
+              <span>最近操作 {{ historyActionLabel(row.current_state.last_action) }}</span>
             </div>
           </div>
         </template>
@@ -163,10 +161,10 @@
   <ElCard class="vault-card residue-card" shadow="never">
     <div class="vault-header">
       <div class="vault-copy">
-        <p class="vault-eyebrow">注册表残留</p>
-        <h3 class="vault-title">插件目录缺失残留项</h3>
+        <p class="vault-eyebrow">孤立项检查</p>
+        <h3 class="vault-title">孤立插件项</h3>
         <p class="vault-desc">
-          识别那些已从插件目录移除，但运行目录、运行记录、插件目录、命名空间数据表或托管通道记录仍然残留的孤立插件条目。
+          识别那些已经不在当前插件目录中，但运行目录、运行记录、数据表或托管通道记录仍然保留的插件项。
         </p>
       </div>
 
@@ -176,11 +174,11 @@
           <strong>{{ registryResidue?.summary.total_items || 0 }}</strong>
         </div>
         <div class="vault-stat">
-          <span>运行残留</span>
+          <span>运行目录</span>
           <strong>{{ registryResidue?.summary.runtime_residue_count || 0 }}</strong>
         </div>
         <div class="vault-stat warning">
-          <span>历史残留</span>
+          <span>运行记录</span>
           <strong>{{ registryResidue?.summary.history_residue_count || 0 }}</strong>
         </div>
         <div class="vault-stat">
@@ -203,7 +201,7 @@
       type="warning"
       :closable="false"
       show-icon
-      title="这些编码已不在当前插件目录中。请先确认是否保留恢复快照、是否已解除托管通道阻塞，再执行残留清理。"
+      title="这些插件编码已不在当前目录中。请先确认是否保留恢复快照、是否已解除托管通道阻塞，再执行清理。"
     />
 
     <ElAlert
@@ -211,7 +209,7 @@
       type="success"
       :closable="false"
       show-icon
-      title="当前没有发现已登记的孤立插件残留。"
+      title="当前没有发现需要处理的孤立插件项。"
     />
 
     <ElTable
@@ -227,7 +225,7 @@
           <div class="vault-plugin-cell">
             <strong>{{ normalizePluginCopy(row.plugin_code) }}</strong>
             <div class="vault-plugin-meta">
-              <span>最近动作 {{ historyActionLabel(row.current_state.last_action) }}</span>
+              <span>最近操作 {{ historyActionLabel(row.current_state.last_action) }}</span>
               <span>更新时间 {{ row.current_state.updated_at || '--' }}</span>
             </div>
             <div class="capability-list">
@@ -240,7 +238,7 @@
         </template>
       </ElTableColumn>
 
-      <ElTableColumn label="残留范围" min-width="280">
+      <ElTableColumn label="影响范围" min-width="280">
         <template #default="{ row }">
           <div class="vault-plugin-cell">
             <div class="capability-list vault-scope-tags">
@@ -260,7 +258,7 @@
                 数据表 {{ row.summary.existing_table_count }}
               </ElTag>
               <ElTag :type="row.summary.table_row_count > 0 ? 'warning' : 'info'" effect="plain">
-                数据行 {{ row.summary.table_row_count }}
+                记录 {{ row.summary.table_row_count }}
               </ElTag>
               <ElTag
                 :type="row.summary.existing_managed_channel_count > 0 ? 'primary' : 'info'"
@@ -285,7 +283,7 @@
         </template>
       </ElTableColumn>
 
-      <ElTableColumn label="恢复保护" min-width="260">
+      <ElTableColumn label="快照保护" min-width="260">
         <template #default="{ row }">
           <div class="vault-plugin-cell">
             <div class="capability-list">
@@ -338,20 +336,18 @@
   <ElCard class="vault-card residue-ledger-card" shadow="never">
     <div class="vault-header">
       <div class="vault-copy">
-        <p class="vault-eyebrow">残留台账</p>
-        <h3 class="vault-title">清理回执</h3>
-        <p class="vault-desc">
-          保留孤立残留清理的全局记录，便于回看运行目录、运行记录、插件目录、命名空间数据表和托管通道记录的清理结果。
-        </p>
+        <p class="vault-eyebrow">处理台账</p>
+        <h3 class="vault-title">清理记录</h3>
+        <p class="vault-desc">这里保留清理记录，方便回看目录、数据表和通道的处理结果。</p>
       </div>
 
       <div class="vault-summary-grid">
         <div class="vault-stat">
-          <span>回执数</span>
+          <span>记录数</span>
           <strong>{{ registryResidueLedger?.summary.total_events || 0 }}</strong>
         </div>
         <div class="vault-stat warning">
-          <span>无快照清理</span>
+          <span>无快照</span>
           <strong>{{ registryResidueLedger?.summary.without_snapshot_count || 0 }}</strong>
         </div>
         <div class="vault-stat success">
@@ -374,16 +370,10 @@
       type="info"
       :closable="false"
       show-icon
-      :title="`当前展示最近 ${registryResidueLedger?.summary.visible_items || 0} 条残留清理回执。`"
+      :title="`当前展示最近 ${registryResidueLedger?.summary.visible_items || 0} 条清理记录。`"
     />
 
-    <ElAlert
-      v-else
-      type="success"
-      :closable="false"
-      show-icon
-      title="当前还没有孤立残留清理回执。"
-    />
+    <ElAlert v-else type="success" :closable="false" show-icon title="当前还没有清理记录。" />
 
     <ElTable
       v-if="(registryResidueLedger?.items.length || 0) > 0"
@@ -461,7 +451,7 @@
                 :type="(row.details?.removed_row_count || 0) > 0 ? 'warning' : 'info'"
                 effect="plain"
               >
-                数据行 {{ row.details?.removed_row_count || 0 }}
+                记录 {{ row.details?.removed_row_count || 0 }}
               </ElTag>
               <ElTag :type="row.details?.runtime_exists ? 'warning' : 'info'" effect="plain">
                 运行目录 {{ row.details?.runtime_exists ? '清理前存在' : '已为空' }}
@@ -480,11 +470,11 @@
         </template>
       </ElTableColumn>
 
-      <ElTableColumn label="回执内容" min-width="320">
+      <ElTableColumn label="结果" min-width="320">
         <template #default="{ row }">
           <div class="ledger-summary-stack">
             <p class="ledger-summary-copy">
-              {{ normalizePluginCopy(row.summary) || '残留清理已完成。' }}
+              {{ normalizePluginCopy(row.summary) || '清理已完成。' }}
             </p>
             <div class="capability-list">
               <ElTag :type="row.details?.registry_removed ? 'success' : 'warning'" effect="plain">
@@ -495,7 +485,7 @@
                 {{ row.details?.existing_table_count || 0 }} 张数据表
               </ElTag>
               <ElTag effect="plain" type="info">
-                清理前数据行 {{ row.details?.table_row_count || 0 }}
+                清理前记录 {{ row.details?.table_row_count || 0 }}
               </ElTag>
             </div>
           </div>

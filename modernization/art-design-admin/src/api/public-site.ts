@@ -40,7 +40,7 @@ export interface PublicHomePayload {
   news_index_url: string
   doc_url: string
   demo_url?: string
-  legacy_url: string
+  legacy_url?: string
   news_sections: PublicNewsSection[]
   navs: PublicNavItem[]
   summary: {
@@ -62,6 +62,7 @@ export interface PublicNewsListPayload {
   records: PublicNewsSummary[]
   navs: PublicNavItem[]
   merchant_register_url?: string
+  public_home_url?: string
   demo_url?: string
   summary: {
     total_count: number
@@ -79,7 +80,9 @@ export interface PublicNewsDetailPayload {
   }
   navs: PublicNavItem[]
   merchant_register_url?: string
+  public_home_url?: string
   demo_url?: string
+  legacy_url?: string
 }
 
 export interface PublicDocItem {

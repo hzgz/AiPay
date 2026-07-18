@@ -20,7 +20,7 @@
     </div>
 
     <div v-else-if="featureMessage" class="merchant-panel merchant-state-card">
-      <h3>当前不可用</h3>
+      <h3>功能未开启</h3>
       <p>{{ featureMessage }}</p>
     </div>
 
@@ -245,7 +245,7 @@
     {
       label: '累计返佣',
       value: payload.value?.summary?.total_rebate_display || '0.00',
-      hint: '历史累计返佣总额',
+      hint: '累计返佣总额',
       icon: 'ri:money-dollar-circle-line'
     },
     {

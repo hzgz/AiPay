@@ -138,15 +138,11 @@
                 <span>图标状态</span>
                 <strong>{{ iconConfiguredSummary(activePermission.icon) }}</strong>
               </div>
-              <div class="drawer-item">
-                <span>页面状态</span>
-                <strong>{{ activePermission.migration_status_label || '--' }}</strong>
-              </div>
             </div>
           </div>
 
           <div class="drawer-section">
-            <h4>页面归属</h4>
+            <h4>路由信息</h4>
             <ElDescriptions :column="1" border>
               <ElDescriptionsItem label="当前分组">
                 {{ activePermission.modern_group_title || '--' }}
@@ -525,7 +521,7 @@
     },
     {
       prop: 'modern_route_path',
-      label: '页面归属',
+      label: '菜单归属',
       minWidth: 320,
       formatter: (row) => renderModernCell(row)
     },
@@ -765,12 +761,7 @@
   function renderLegacyCell(row: PermissionItem) {
     return h('div', { class: 'mapping-cell' }, [
       h('strong', { class: 'cell-title' }, legacyPathSummary(row.path)),
-      h('p', { class: 'cell-sub' }, `图标状态：${iconConfiguredSummary(row.icon)}`),
-      h(
-        'p',
-        { class: 'cell-note' },
-        `页面状态：${row.migration_status_label || '--'}`
-      )
+      h('p', { class: 'cell-sub' }, `图标状态：${iconConfiguredSummary(row.icon)}`)
     ])
   }
 

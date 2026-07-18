@@ -4,6 +4,7 @@ namespace app\controller;
 
 use app\support\AdminOrderFormatter;
 use app\support\ApiResponse;
+use app\support\BusinessTable;
 use support\Db;
 use Webman\Http\Request;
 use Webman\Http\Response;
@@ -42,42 +43,42 @@ class CommerceOverviewController
         [$lastWeekStart, $lastWeekEnd] = $this->previousWeekRange();
         [$lastMonthStart, $lastMonthEnd] = $this->previousMonthRange();
 
-        $totalPaidOrderCount = (int)Db::table('ypay_order')->where('status', 1)->count();
-        $totalPaidRechargeCount = (int)Db::table('ypay_recharge')->where('status', 1)->count();
+        $totalPaidOrderCount = (int)Db::table(BusinessTable::order())->where('status', 1)->count();
+        $totalPaidRechargeCount = (int)Db::table(BusinessTable::recharge())->where('status', 1)->count();
 
         return [
-            'total_user_count' => (int)Db::table('ypay_user')->count(),
+            'total_user_count' => (int)Db::table(BusinessTable::user())->count(),
             'total_paid_order_count' => $totalPaidOrderCount,
             'total_paid_recharge_count' => $totalPaidRechargeCount,
             'total_paid_trade_count' => $totalPaidOrderCount + $totalPaidRechargeCount,
-            'total_balance_pool' => $this->sumColumn(Db::table('ypay_user'), 'money'),
-            'total_online_account_count' => (int)Db::table('ypay_account')->where('status', 1)->count(),
-            'today_new_user_count' => (int)$this->betweenQuery('ypay_user', $todayStart, $tomorrowStart)->count(),
-            'today_paid_recharge_count' => (int)$this->betweenQuery('ypay_recharge', $todayStart, $tomorrowStart)
+            'total_balance_pool' => $this->sumColumn(Db::table(BusinessTable::user()), 'money'),
+            'total_online_account_count' => (int)Db::table(BusinessTable::account())->where('status', 1)->count(),
+            'today_new_user_count' => (int)$this->betweenQuery(BusinessTable::user(), $todayStart, $tomorrowStart)->count(),
+            'today_paid_recharge_count' => (int)$this->betweenQuery(BusinessTable::recharge(), $todayStart, $tomorrowStart)
                 ->where('status', 1)
                 ->count(),
-            'yesterday_paid_order_count' => (int)$this->betweenQuery('ypay_order', $yesterdayStart, $todayStartAgain)
+            'yesterday_paid_order_count' => (int)$this->betweenQuery(BusinessTable::order(), $yesterdayStart, $todayStartAgain)
                 ->where('status', 1)
                 ->count(),
             'yesterday_paid_amount' => $this->sumSettledAmount(
-                $this->betweenQuery('ypay_order', $yesterdayStart, $todayStartAgain)->where('status', 1)
+                $this->betweenQuery(BusinessTable::order(), $yesterdayStart, $todayStartAgain)->where('status', 1)
             ),
             'last_week_paid_amount' => $this->sumSettledAmount(
-                $this->betweenQuery('ypay_order', $lastWeekStart, $lastWeekEnd)->where('status', 1)
+                $this->betweenQuery(BusinessTable::order(), $lastWeekStart, $lastWeekEnd)->where('status', 1)
             ),
             'last_month_paid_amount' => $this->sumSettledAmount(
-                $this->betweenQuery('ypay_order', $lastMonthStart, $lastMonthEnd)->where('status', 1)
+                $this->betweenQuery(BusinessTable::order(), $lastMonthStart, $lastMonthEnd)->where('status', 1)
             ),
-            'qq_online_account_count' => (int)Db::table('ypay_account')->where('status', 1)->where('type', 'qqpay')->count(),
-            'wx_online_account_count' => (int)Db::table('ypay_account')->where('status', 1)->where('type', 'wxpay')->count(),
-            'alipay_online_account_count' => (int)Db::table('ypay_account')->where('status', 1)->where('type', 'alipay')->count(),
+            'qq_online_account_count' => (int)Db::table(BusinessTable::account())->where('status', 1)->where('type', 'qqpay')->count(),
+            'wx_online_account_count' => (int)Db::table(BusinessTable::account())->where('status', 1)->where('type', 'wxpay')->count(),
+            'alipay_online_account_count' => (int)Db::table(BusinessTable::account())->where('status', 1)->where('type', 'alipay')->count(),
         ];
     }
 
     private function periodItem(string $key, string $label): array
     {
         [$start, $end] = $this->currentRange($key);
-        $query = $this->betweenQuery('ypay_order', $start, $end);
+        $query = $this->betweenQuery(BusinessTable::order(), $start, $end);
         $paidOrderCount = (int)(clone $query)->where('status', 1)->count();
         $totalOrderCount = (int)(clone $query)->count();
         $unpaidOrderCount = (int)(clone $query)->where('status', 0)->count();
@@ -101,7 +102,7 @@ class CommerceOverviewController
         $start = $trendStart->format('Y-m-d 00:00:00');
         $end = $trendEnd->format('Y-m-d 00:00:00');
 
-        $rows = Db::table('ypay_order')
+        $rows = Db::table(BusinessTable::order())
             ->selectRaw("DATE_FORMAT(create_time, '%Y-%m-%d') as date_key")
             ->selectRaw('COUNT(*) as total_order_count')
             ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as paid_order_count')
@@ -146,12 +147,12 @@ class CommerceOverviewController
 
     private function collectionComparison(): array
     {
-        return $this->amountComparison('ypay_order', false);
+        return $this->amountComparison(BusinessTable::order(), false);
     }
 
     private function rechargeComparison(): array
     {
-        return $this->amountComparison('ypay_recharge', true);
+        return $this->amountComparison(BusinessTable::recharge(), true);
     }
 
     private function amountComparison(string $table, bool $recharge): array

@@ -419,19 +419,22 @@ export const pluginAccessLabel = (code: string | null | undefined) => {
   return '独立接入'
 }
 
-const fallbackPluginPaymentFilter = (
+const fallbackPluginPaymentFilters = (
   code: string | null | undefined
-): Exclude<PluginPaymentFilterKey, 'all'> => {
+): Array<Exclude<PluginPaymentFilterKey, 'all'>> => {
   const normalized = String(code || '')
     .trim()
     .toLowerCase()
 
-  if (normalized.startsWith('alipay_') || normalized === 'jiaofeiyi_alipay') return 'alipay'
-  if (normalized.startsWith('wxpay_') || normalized === 'jiaofeiyi_wxpay') return 'wxpay'
-  if (normalized.startsWith('qqpay_')) return 'qqpay'
-  if (normalized === 'usdt') return 'usdt'
-  if (normalized === 'universal_epay') return 'alipay'
-  return 'other'
+  if (normalized === 'universal_epay') {
+    return ['alipay', 'wxpay', 'qqpay']
+  }
+
+  if (normalized.startsWith('alipay_') || normalized === 'jiaofeiyi_alipay') return ['alipay']
+  if (normalized.startsWith('wxpay_') || normalized === 'jiaofeiyi_wxpay') return ['wxpay']
+  if (normalized.startsWith('qqpay_')) return ['qqpay']
+  if (normalized === 'usdt') return ['usdt']
+  return ['other']
 }
 
 const normalizePluginPaymentFilterKey = (
@@ -476,7 +479,7 @@ export const resolvePluginPaymentFilters = (
     return keys
   }
 
-  return [fallbackPluginPaymentFilter(payload.code)]
+  return fallbackPluginPaymentFilters(payload.code)
 }
 
 export const resolvePluginPaymentFilter = (

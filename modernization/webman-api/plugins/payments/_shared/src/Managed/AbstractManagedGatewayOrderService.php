@@ -294,7 +294,7 @@ abstract class AbstractManagedGatewayOrderService
             }
         }
 
-        $row = Db::table(BusinessTable::account())
+        $rows = Db::table(BusinessTable::account())
             ->select(
                 'id',
                 'user_id',
@@ -318,17 +318,19 @@ abstract class AbstractManagedGatewayOrderService
             ->where('code', $this->pluginCode())
             ->where('status', 1)
             ->where('is_status', 1)
-            ->orderByDesc('id')
-            ->first();
+            ->get()
+            ->toArray();
 
-        if (!$row) {
+        if ($rows === []) {
             throw PaymentPluginException::conflict(
                 sprintf('%s 没有可用的收款账号', $this->pluginName())
             );
         }
 
-        $account = (array)$row;
-        $account['_selected_via'] = 'latest_active_account';
+        $accounts = array_map(static fn ($row): array => (array)$row, $rows);
+        $selectedIndex = array_rand($accounts);
+        $account = $accounts[$selectedIndex];
+        $account['_selected_via'] = 'random_active_account';
 
         return $account;
     }

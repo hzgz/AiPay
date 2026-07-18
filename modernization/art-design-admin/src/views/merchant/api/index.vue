@@ -153,9 +153,20 @@
             <section class="merchant-soft-panel merchant-api-key-panel">
               <div class="merchant-api-key-panel__head">
                 <strong>商户密钥</strong>
-                <ElTag :type="payload.sign_key_configured ? 'success' : 'info'" effect="plain">
+                <div class="merchant-api-key-panel__actions">
+                  <ElButton
+                    size="small"
+                    text
+                    :loading="copyingSecretType === 'sign_key'"
+                    :disabled="!payload.sign_key_configured"
+                    @click="copyMerchantSecret('sign_key', '商户密钥')"
+                  >
+                    复制
+                  </ElButton>
+                  <ElTag :type="payload.sign_key_configured ? 'success' : 'info'" effect="plain">
                   {{ payload.sign_key_configured ? '已配置' : '未配置' }}
-                </ElTag>
+                  </ElTag>
+                </div>
               </div>
               <div class="merchant-api-key-panel__value">
                 {{ payload.sign_key_masked || '暂无可展示摘要' }}
@@ -166,9 +177,20 @@
             <section class="merchant-soft-panel merchant-api-key-panel">
               <div class="merchant-api-key-panel__head">
                 <strong>通讯密钥</strong>
-                <ElTag :type="payload.appkey_configured ? 'success' : 'info'" effect="plain">
+                <div class="merchant-api-key-panel__actions">
+                  <ElButton
+                    size="small"
+                    text
+                    :loading="copyingSecretType === 'appkey'"
+                    :disabled="!payload.appkey_configured"
+                    @click="copyMerchantSecret('appkey', '通讯密钥')"
+                  >
+                    复制
+                  </ElButton>
+                  <ElTag :type="payload.appkey_configured ? 'success' : 'info'" effect="plain">
                   {{ payload.appkey_configured ? '已配置' : '未配置' }}
-                </ElTag>
+                  </ElTag>
+                </div>
               </div>
               <div class="merchant-api-key-panel__value">
                 {{ payload.appkey_masked || '暂无可展示摘要' }}
@@ -292,6 +314,7 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     MerchantApiError,
+    fetchMerchantApiSecret,
     fetchMerchantApiInfo,
     generateMerchantApiQrcode,
     resetMerchantAppKey,
@@ -323,6 +346,7 @@
   const loading = ref(true)
   const signKeyLoading = ref(false)
   const appKeyLoading = ref(false)
+  const copyingSecretType = ref<'' | 'appkey' | 'sign_key'>('')
   const qrcodeLoading = ref(false)
   const qrcodeDialogVisible = ref(false)
   const payload = ref<Record<string, any> | null>(null)
@@ -569,6 +593,35 @@
     }
   }
 
+  async function copyMerchantSecret(keyType: 'sign_key' | 'appkey', label: string) {
+    const isConfigured =
+      keyType === 'sign_key'
+        ? Boolean(payload.value?.sign_key_configured)
+        : Boolean(payload.value?.appkey_configured)
+
+    if (!isConfigured) {
+      ElMessage.warning(`${label}未配置`)
+      return
+    }
+
+    copyingSecretType.value = keyType
+    try {
+      const data = await fetchMerchantApiSecret(keyType)
+      const secret = String(data?.key || '').trim()
+      if (!secret) {
+        ElMessage.warning(`${label}暂无可复制内容`)
+        return
+      }
+
+      await navigator.clipboard.writeText(secret)
+      ElMessage.success(`${label}已复制`)
+    } catch (error) {
+      ElMessage.error(resolveMerchantError(error, `${label}复制失败`))
+    } finally {
+      copyingSecretType.value = ''
+    }
+  }
+
   async function handleResetSignKey() {
     signKeyLoading.value = true
     try {
@@ -804,6 +857,14 @@
     gap: 12px;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .merchant-api-key-panel__actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
   }
 
   .merchant-api-key-panel__head strong {

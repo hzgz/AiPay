@@ -2397,6 +2397,44 @@ HTML;
         return $this->merchantSpaRedirectForCurrentRequest($request);
     }
 
+    public function apiSecret(Request $request): Response
+    {
+        $merchant = $this->apiKeyMerchantGuard($request);
+        if ($merchant instanceof Response) {
+            return $merchant;
+        }
+
+        $payload = $this->requestPayload($request);
+        $requestedType = strtolower(trim((string)($payload['key_type'] ?? '')));
+        $keyType = match ($requestedType) {
+            'sign', 'sign_key', 'user_key', 'merchant_sign_key' => 'sign_key',
+            'app', 'appkey', 'app_key', 'merchant_app_key', 'communication', 'communication_key' => 'appkey',
+            default => '',
+        };
+
+        if ($keyType === '') {
+            return $this->merchantValidationError('密钥类型无效');
+        }
+
+        $merchantId = (int)($merchant['id'] ?? 0);
+        $basic = MerchantPortalAccountSupport::basic($merchantId);
+        $secret = $keyType === 'sign_key'
+            ? trim((string)($merchant['user_key'] ?? ''))
+            : trim((string)($basic['appkey'] ?? ''));
+        $label = $keyType === 'sign_key' ? '商户密钥' : '通讯密钥';
+
+        if ($secret === '') {
+            return $this->merchantValidationError($label . '未配置');
+        }
+
+        return $this->merchantJson(200, $label . '读取成功', 200, [
+            'key_type' => $keyType,
+            'key' => $secret,
+            'key_masked' => $this->maskSecret($secret),
+            'key_length' => strlen($secret),
+        ]);
+    }
+
     public function apiQrcode(Request $request): Response
     {
         $merchant = $this->merchantFromRequest($request);

@@ -74,6 +74,7 @@ Route::group('/api/merchant', function () {
     Route::post('/vips', [app\controller\MerchantPortalController::class, 'vip']);
 
     Route::get('/api', [app\controller\MerchantPortalController::class, 'api']);
+    Route::post('/api/secret', [app\controller\MerchantPortalController::class, 'apiSecret']);
     Route::post('/api/qrcode', [app\controller\MerchantPortalController::class, 'apiQrcode']);
     Route::post('/api/sign-key/reset', [app\controller\MerchantPortalController::class, 'generateKey']);
     Route::post('/api/app-key/reset', [app\controller\MerchantPortalController::class, 'generateAppKey']);

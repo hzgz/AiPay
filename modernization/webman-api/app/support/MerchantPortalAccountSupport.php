@@ -73,6 +73,7 @@ class MerchantPortalAccountSupport
                 'key_reset' => true,
                 'sign_key_reset' => true,
                 'appkey_reset' => true,
+                'secret_copy' => true,
                 'qrcode' => true,
                 'secret_export' => false,
             ],

@@ -830,6 +830,21 @@ export async function fetchMerchantApiInfo() {
   return payload.data
 }
 
+export async function fetchMerchantApiSecret(keyType: 'sign_key' | 'appkey') {
+  const payload = await merchantRequest<Record<string, any>>(
+    {
+      url: '/api/merchant/api/secret',
+      method: 'POST',
+      data: {
+        key_type: keyType
+      }
+    },
+    [200]
+  )
+
+  return payload.data
+}
+
 export async function generateMerchantApiQrcode(
   lineUrl: string,
   options: {

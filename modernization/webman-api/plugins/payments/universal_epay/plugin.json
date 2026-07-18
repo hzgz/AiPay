@@ -1,9 +1,9 @@
 {
   "code": "universal_epay",
-  "name": "通用易支付插件",
-  "description": "Managed universal epay account plugin for Webman.",
+  "name": "通用易支付V1插件",
+  "description": "用于统一管理易支付上游账号的托管插件。",
   "version": "1.0.0",
-  "provider": "AiPay Official",
+  "provider": "AiPay 官方",
   "entry": "plugins/payments/universal_epay/src/Plugin.php",
   "class": "Plugins\\Payments\\UniversalEpay\\Plugin",
   "capabilities": [
@@ -23,9 +23,9 @@
   "managed_channels": [
     {
       "code": "universal_epay",
-      "name": "通用易支付插件",
+      "name": "通用易支付V1插件",
       "type": "alipay",
-      "info": "One plugin directory that manages Alipay, WeChat, and QQ epay upstream accounts.",
+      "info": "一个插件目录统一管理支付宝、微信、QQ 三种易支付上游账号。",
       "status": 1,
       "sort": 120,
       "maxcount": 999
@@ -41,8 +41,8 @@
           "002_create_plugin_log_table.sql"
         ],
         "notes": [
-          "Initialize the universal epay plugin config table and log table.",
-          "Store managed upstream merchant id, gateway url, merchant key, and mode in the shared account fields."
+          "初始化通用易支付 V1 插件的配置表和日志表。",
+          "将上游商户号、接口地址、商户密钥和接口模式统一放入共享账户字段。"
         ]
       }
     ]
@@ -52,25 +52,25 @@
     "downtime": "none",
     "requires_disable_after_upgrade": false,
     "notes": [
-      "This plugin provides one managed account model for Alipay, WeChat, and QQ epay upstream gateways.",
-      "Order creation, callback settlement, and basic query/refund entrypoints are handled inside Webman."
+      "该插件以一个托管账户模型统一处理支付宝、微信和 QQ 的易支付上游网关。",
+      "下单、回调结算、查询和退款都在系统后端内完成。"
     ],
     "checklist": [
-      "Verify there is no pending cleanup plan before upgrade.",
-      "Confirm admin_channel still keeps universal_epay in managed-plugin mode after upgrade."
+      "升级前确认没有未完成的清理计划。",
+      "确认 admin_channel 仍保持 universal_epay 的托管模式。"
     ],
     "changelog": [
       {
         "version": "1.0.0",
-        "summary": "First standalone universal epay plugin directory release.",
+        "summary": "通用易支付 V1 插件目录首版。",
         "breaking": false,
         "migration_files": [
           "001_create_config_table.sql",
           "002_create_plugin_log_table.sql"
         ],
         "notes": [
-          "Use one plugin directory to manage Alipay, WeChat, and QQ epay channels.",
-          "Shared account fields map to gateway url, merchant id, merchant key, and interface mode."
+          "使用一个插件目录统一管理支付宝、微信和 QQ 易支付通道。",
+          "共享账户字段映射为接口地址、商户编号、商户密钥和接口模式。"
         ]
       }
     ],
@@ -80,8 +80,8 @@
       "automatic": false,
       "requires_backup": true,
       "notes": [
-        "Restore the plugin directory and pay_plugin_universal_epay_* tables before rollback.",
-        "Business order, merchant, fund, and settlement data remain outside plugin cleanup scope."
+        "回滚前需要恢复插件目录和 pay_plugin_universal_epay_* 数据表。",
+        "业务订单、商户、资金和结算数据不在插件清理范围内。"
       ]
     }
   },
@@ -94,7 +94,7 @@
         "pay_plugin_universal_epay_config"
       ],
       "notes": [
-        "Safe cleanup removes only runtime files and the plugin-owned config table."
+        "安全清理只移除运行时文件和插件自有配置表。"
       ]
     },
     "purge": {
@@ -105,15 +105,15 @@
         "pay_plugin_universal_epay_log"
       ],
       "notes": [
-        "Purge removes the package directory and plugin log table, then attempts managed-channel cleanup."
+        "彻底清理会移除插件目录和日志表，并尝试同步清理托管通道。"
       ]
     },
     "retain": [
-      "payment account master records",
-      "historical orders",
-      "fund and settlement records",
-      "merchant business data",
-      "platform audit logs"
+      "支付账户主记录",
+      "历史订单",
+      "资金和结算记录",
+      "商户业务数据",
+      "平台审计日志"
     ],
     "purge_requires_confirmation": true
   }

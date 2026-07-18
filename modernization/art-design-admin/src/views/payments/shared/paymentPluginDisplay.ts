@@ -98,12 +98,16 @@ export const normalizePluginCopy = (value: string | null | undefined) => {
     'Forbidden Probe': '禁测探针',
     'Forbidden Probe Default': '禁测探针默认通道',
     'Auth Smoke': '认证测试',
-    'Legacy Epay Compatibility': '易支付协议插件',
-    'AiPay modernization': 'AiPay官方',
+    'Legacy Epay Compatibility': '已移除旧易支付插件',
+    'AiPay Official': 'AiPay 官方',
+    'AiPay official': 'AiPay 官方',
+    'AiPay modernization': 'AiPay 官方',
     'AiPay modernization smoke': 'AiPay官方测试',
-    'AiPay 现代化改造': 'AiPay官方',
+    'AiPay 现代化改造': 'AiPay 官方',
     'AiPay 联调': 'AiPay官方测试',
-    'AiPay 改造项目': 'AiPay官方',
+    'AiPay 改造项目': 'AiPay 官方',
+    '通用易支付插件': '通用易支付V1插件',
+    universal_epay: '通用易支付V1插件',
     'Forbidden probe': '禁测探针插件',
     forbidden_probe_default: '禁测探针默认通道',
     registry_residue_probe: '注册残留检查',
@@ -147,6 +151,8 @@ export const normalizePluginCopy = (value: string | null | undefined) => {
     gateway_url: '接口地址字段',
     text: '单行文本',
     password: '密码框',
+    'Managed universal epay account plugin for Webman.': '用于统一管理易支付上游账号的托管插件。',
+    'Managed universal epay account plugin for Webman': '用于统一管理易支付上游账号的托管插件。',
     ['Compatibility wrapper for the legacy payment flow during the legacy framework to Webman migration.']:
       '用于接入易支付协议的插件。',
     'Plugin-managed channel seeded from plugin.json.': '根据插件清单自动初始化的插件托管通道。',
@@ -411,7 +417,6 @@ export const resolvePluginPaymentFilter = (
   if (normalized.startsWith('wxpay_') || normalized === 'jiaofeiyi_wxpay') return 'wxpay'
   if (normalized.startsWith('qqpay_')) return 'qqpay'
   if (normalized === 'usdt') return 'usdt'
-  if (normalized === 'legacy_epay') return 'other'
   return 'other'
 }
 

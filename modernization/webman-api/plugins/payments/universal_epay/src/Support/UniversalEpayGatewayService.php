@@ -17,7 +17,7 @@ final class UniversalEpayGatewayService extends AbstractManagedGatewayOrderServi
 
     protected function pluginName(): string
     {
-        return '通用易支付插件';
+        return '通用易支付V1插件';
     }
 
     protected function paymentType(): string
@@ -176,7 +176,7 @@ final class UniversalEpayGatewayService extends AbstractManagedGatewayOrderServi
         $value = (string)($payload['_resolved_payment_type'] ?? $payload['type'] ?? $fallback);
         $normalized = $this->normalizePaymentType($value);
         if (!in_array($normalized, ['alipay', 'wxpay', 'qqpay'], true)) {
-            throw PaymentPluginException::validation('通用易支付插件仅支持支付宝、微信和QQ订单');
+            throw PaymentPluginException::validation('通用易支付V1插件仅支持支付宝、微信和QQ订单');
         }
 
         return $normalized;
@@ -190,17 +190,17 @@ final class UniversalEpayGatewayService extends AbstractManagedGatewayOrderServi
     {
         $merchantId = trim((string)($account['wxname'] ?? ''));
         if ($merchantId === '') {
-            throw new \InvalidArgumentException('通用易支付插件商户ID未配置');
+            throw new \InvalidArgumentException('通用易支付V1插件商户ID未配置');
         }
 
         $gatewayUrl = trim((string)($account['qr_url'] ?? ''));
         if ($gatewayUrl === '' || !preg_match('/^https?:\/\/.+/i', $gatewayUrl)) {
-            throw new \InvalidArgumentException('通用易支付插件接口地址未配置或格式不正确');
+            throw new \InvalidArgumentException('通用易支付V1插件接口地址未配置或格式不正确');
         }
 
         $merchantKey = trim((string)($account['cookie'] ?? ''));
         if ($merchantKey === '') {
-            throw new \InvalidArgumentException('通用易支付插件商户密钥未配置');
+            throw new \InvalidArgumentException('通用易支付V1插件商户密钥未配置');
         }
 
         return [
@@ -257,7 +257,7 @@ final class UniversalEpayGatewayService extends AbstractManagedGatewayOrderServi
             || trim((string)($result['urlscheme'] ?? '')) !== '';
         if (!$success) {
             $message = trim((string)($result['msg'] ?? $result['message'] ?? ''));
-            throw new \RuntimeException($message !== '' ? $message : '通用易支付插件未返回可用支付地址');
+            throw new \RuntimeException($message !== '' ? $message : '通用易支付V1插件未返回可用支付地址');
         }
 
         $payUrl = trim((string)($result['payurl'] ?? ''));

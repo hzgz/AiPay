@@ -25,7 +25,7 @@ class Plugin extends AbstractManagedPaymentPlugin
 
     protected function pluginName(): string
     {
-        return '通用易支付插件';
+        return '通用易支付V1插件';
     }
 
     protected function configTable(): string
@@ -65,7 +65,7 @@ class Plugin extends AbstractManagedPaymentPlugin
     protected function defaultConfigValue(string $configKey): ?string
     {
         return match ($configKey) {
-            'display_name' => '通用易支付插件',
+            'display_name' => '通用易支付V1插件',
             'operator_note' => '用于统一管理易支付上游接口地址、商户ID、商户密钥和接口模式。',
             'account_hint' => '账户编码固定为 universal_epay，常用字段为商户ID、接口地址、商户密钥和接口模式，可挂载到支付宝、微信、QQ 三种支付方式。',
             default => parent::defaultConfigValue($configKey),
@@ -83,12 +83,12 @@ class Plugin extends AbstractManagedPaymentPlugin
         $account = $this->loadBoundAccount($order);
         $result = $this->coreForAccount($account)->queryOrderByOutTradeNo((string)($order['out_trade_no'] ?? ''));
         if (!is_array($result)) {
-            throw new RuntimeException('通用易支付插件查单响应无效');
+            throw new RuntimeException('通用易支付V1插件查单响应无效');
         }
 
         if ((int)($result['code'] ?? 1) !== 0) {
             $message = trim((string)($result['msg'] ?? $result['message'] ?? ''));
-            throw new RuntimeException($message !== '' ? $message : '通用易支付插件查单失败');
+            throw new RuntimeException($message !== '' ? $message : '通用易支付V1插件查单失败');
         }
 
         return [
@@ -130,7 +130,7 @@ class Plugin extends AbstractManagedPaymentPlugin
 
         $result = $this->coreForAccount($account)->refund($refundNo, $gatewayTradeNo, $money);
         if (!is_array($result)) {
-            throw new RuntimeException('通用易支付插件退款响应无效');
+            throw new RuntimeException('通用易支付V1插件退款响应无效');
         }
 
         return [
@@ -192,7 +192,7 @@ class Plugin extends AbstractManagedPaymentPlugin
 
         $account = (array)$row;
         if (strtolower(trim((string)($account['code'] ?? ''))) !== $this->code()) {
-            throw new RuntimeException('订单绑定的收款账户不属于通用易支付插件');
+            throw new RuntimeException('订单绑定的收款账户不属于通用易支付V1插件');
         }
 
         return $account;
@@ -205,17 +205,17 @@ class Plugin extends AbstractManagedPaymentPlugin
     {
         $merchantId = trim((string)($account['wxname'] ?? ''));
         if ($merchantId === '') {
-            throw new RuntimeException('通用易支付插件商户ID未配置');
+            throw new RuntimeException('通用易支付V1插件商户ID未配置');
         }
 
         $gatewayUrl = trim((string)($account['qr_url'] ?? ''));
         if ($gatewayUrl === '') {
-            throw new RuntimeException('通用易支付插件接口地址未配置');
+            throw new RuntimeException('通用易支付V1插件接口地址未配置');
         }
 
         $merchantKey = trim((string)($account['cookie'] ?? ''));
         if ($merchantKey === '') {
-            throw new RuntimeException('通用易支付插件商户密钥未配置');
+            throw new RuntimeException('通用易支付V1插件商户密钥未配置');
         }
 
         return new UniversalEpayCore([

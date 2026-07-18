@@ -25,7 +25,7 @@ final class UniversalEpayCore
         $baseUrl = rtrim(trim((string)($config['apiurl'] ?? '')), '/') . '/';
 
         if ($this->pid === '' || $this->key === '' || !preg_match('/^https?:\/\/.+/i', $baseUrl)) {
-            throw new RuntimeException('通用易支付插件上游配置无效');
+            throw new RuntimeException('通用易支付V1插件上游配置无效');
         }
 
         $this->submitUrl = $baseUrl . 'submit.php';
@@ -61,7 +61,7 @@ final class UniversalEpayCore
         $response = $this->request($this->mapiUrl, $this->buildSignedParams($params), true);
         $decoded = json_decode($response, true);
         if (!is_array($decoded)) {
-            throw new RuntimeException('通用易支付插件下单响应解析失败');
+            throw new RuntimeException('通用易支付V1插件下单响应解析失败');
         }
 
         return $decoded;
@@ -139,7 +139,7 @@ final class UniversalEpayCore
         ], true);
         $decoded = json_decode($response, true);
         if (!is_array($decoded)) {
-            throw new RuntimeException('通用易支付插件退款响应解析失败');
+            throw new RuntimeException('通用易支付V1插件退款响应解析失败');
         }
 
         return $decoded;
@@ -189,7 +189,7 @@ final class UniversalEpayCore
         );
         $decoded = json_decode($response, true);
         if (!is_array($decoded)) {
-            throw new RuntimeException('通用易支付插件查单响应解析失败');
+            throw new RuntimeException('通用易支付V1插件查单响应解析失败');
         }
 
         return $decoded;
@@ -202,7 +202,7 @@ final class UniversalEpayCore
     {
         $curl = curl_init($url);
         if ($curl === false) {
-            throw new RuntimeException('初始化通用易支付插件请求失败');
+            throw new RuntimeException('初始化通用易支付V1插件请求失败');
         }
 
         curl_setopt($curl, CURLOPT_TIMEOUT, $timeout);
@@ -226,7 +226,7 @@ final class UniversalEpayCore
         curl_close($curl);
 
         if (!is_string($response) || $response === '') {
-            throw new RuntimeException($error !== '' ? $error : '通用易支付插件请求上游失败');
+            throw new RuntimeException($error !== '' ? $error : '通用易支付V1插件请求上游失败');
         }
 
         return $response;

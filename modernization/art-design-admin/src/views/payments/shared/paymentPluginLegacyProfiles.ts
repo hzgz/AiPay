@@ -199,7 +199,7 @@ const PAYMENT_PLUGIN_LEGACY_PROFILE_MAP: Record<string, PaymentPluginLegacyProfi
   },
   universal_epay: {
     code: 'universal_epay',
-    title: '通用易支付插件',
+    title: '通用易支付V1插件',
     summary: '填写上游易支付商户ID、接口地址、商户密钥和接口模式，可用于支付宝、微信、QQ。',
     workspace: 'account',
     fields: [
@@ -308,23 +308,6 @@ const PAYMENT_PLUGIN_LEGACY_PROFILE_MAP: Record<string, PaymentPluginLegacyProfi
         source: legacyAccountSource('wxname')
       },
       { key: 'memo', label: 'Memo / 附加参数', source: legacyAccountSource('qr_url') }
-    ]
-  },
-  legacy_epay: {
-    code: 'legacy_epay',
-    title: '易支付协议插件',
-    summary: '在商户通道中填写接口地址、商户号和密钥。',
-    workspace: 'merchant-channel',
-    fields: [
-      { key: 'gateway_url', label: '接口地址', required: true, source: 'merchant_channel.url' },
-      { key: 'pid', label: '商户号 / PID', required: true, source: 'merchant_channel.pid' },
-      {
-        key: 'key',
-        label: '签名密钥',
-        required: true,
-        secret: true,
-        source: 'merchant_channel.key'
-      }
     ]
   }
 }

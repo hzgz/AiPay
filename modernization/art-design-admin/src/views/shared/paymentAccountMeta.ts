@@ -282,7 +282,7 @@ export const ACCOUNT_CODE_META = {
   },
   universal_epay: {
     createEnabled: true,
-    label: '通用易支付插件',
+    label: '通用易支付V1插件',
     typeLabel: '易支付',
     identifierLabel: '商户ID',
     identifierPlaceholder: '请输入上游易支付商户ID',

@@ -11,7 +11,7 @@ use support\Db;
 
 class EpayOrderRepository
 {
-    private const SETTLEMENT_MEMO = 'legacy_epay_fee_deduct';
+    private const SETTLEMENT_MEMO = 'universal_epay_fee_deduct';
 
     public function findByOutTradeNo(string $outTradeNo): ?array
     {
@@ -343,12 +343,12 @@ class EpayOrderRepository
     private function buildApiMemo(array $payload, array $merchant, ?array $paylist, int $timeoutSeconds): string
     {
         $memo = [
-            'migration' => 'webman_legacy_epay',
+            'migration' => 'webman_universal_epay_v1',
             'merchant_id' => (int)($merchant['id'] ?? 0),
             'merchant_username' => (string)($merchant['username'] ?? ''),
             'paylist_id' => (int)($paylist['id'] ?? 0),
             'paylist_type' => (string)($paylist['type'] ?? ''),
-            'source' => (string)($payload['_entry'] ?? 'legacy_submit'),
+            'source' => (string)($payload['_entry'] ?? 'submit'),
             'timeout_seconds' => $timeoutSeconds,
             'created_at' => date('c'),
         ];
@@ -367,7 +367,7 @@ class EpayOrderRepository
 
         $encoded = json_encode($memo, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-        return $encoded === false ? 'webman_legacy_epay' : $encoded;
+        return $encoded === false ? 'webman_universal_epay_v1' : $encoded;
     }
 
     private function payloadTransactionNo(array $payload): ?string

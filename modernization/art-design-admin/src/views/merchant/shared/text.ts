@@ -177,7 +177,7 @@ const REGEX_RULES: Array<[RegExp, string]> = [
   [/\blegacy smoke upstream\b/gi, '支付通道'],
   [/\bupstream channel\b/gi, '支付通道'],
   [/\blocal channel\b/gi, '本地通道'],
-  [/\blegacy_epay_smoke_[a-z0-9_]+\b/gi, '测试商户账号'],
+  [/\buniversal_epay_smoke_[a-z0-9_]+\b/gi, '测试商户账号'],
   [/\bmerchant_batch_delete_smoke_[a-z0-9_]+\b/gi, '测试商户账号'],
   [/\bsmoke_account_[a-z0-9_]+\b/gi, '测试收款账号'],
   [/\bmerchant_impersonation_smoke_[a-z0-9_]+\b/gi, '商户代登测试账号'],
@@ -195,7 +195,7 @@ const REGEX_RULES: Array<[RegExp, string]> = [
 
 const IDENTITY_FIXTURE_RULES: Array<[RegExp, string]> = [
   [/^art_merchant_demo$/i, '测试商户账号'],
-  [/^legacy_epay_smoke_[a-z0-9_]+$/i, '测试商户账号'],
+  [/^universal_epay_smoke_[a-z0-9_]+$/i, '测试商户账号'],
   [/^merchant_batch_delete_smoke_[a-z0-9_]+$/i, '测试商户账号'],
   [/^smoke_account_[a-z0-9_]+$/i, '测试收款账号'],
   [/^merchant_impersonation_smoke_[a-z0-9_]+$/i, '商户代登测试账号'],

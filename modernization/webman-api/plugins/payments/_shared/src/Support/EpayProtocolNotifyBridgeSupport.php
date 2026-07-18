@@ -6,7 +6,7 @@ namespace Plugins\Payments\Shared\Support;
 
 final class EpayProtocolNotifyBridgeSupport
 {
-    public const PLUGIN_CODE = 'legacy_epay';
+    public const PLUGIN_CODE = 'universal_epay';
 
     public static function resolution(bool $enabled): string
     {

@@ -144,7 +144,7 @@ final class UniversalEpayNotifyService
 
         $account = (array)$row;
         if (strtolower(trim((string)($account['code'] ?? ''))) !== 'universal_epay') {
-            throw new RuntimeException('当前订单不属于通用易支付插件');
+            throw new RuntimeException('当前订单不属于通用易支付V1插件');
         }
 
         if ((int)($account['user_id'] ?? 0) !== (int)($order['user_id'] ?? 0)) {

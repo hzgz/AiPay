@@ -101,10 +101,6 @@ final class PaymentGatewayResolutionSupport
             }
         }
 
-        if ($this->epayProtocolPaylistExists($merchantId, $paymentType) && $this->isGatewayCapablePluginCode('legacy_epay')) {
-            return 'legacy_epay';
-        }
-
         return '';
     }
 
@@ -160,19 +156,6 @@ final class PaymentGatewayResolutionSupport
             ->first();
 
         return $row ? (array)$row : null;
-    }
-
-    private function epayProtocolPaylistExists(int $merchantId, string $paymentType): bool
-    {
-        if ($merchantId <= 0 || $paymentType === '') {
-            return false;
-        }
-
-        return Db::table(BusinessTable::paylist())
-            ->where('user_id', $merchantId)
-            ->where('status', 1)
-            ->where('type', 'epay')
-            ->exists();
     }
 
     private function isGatewayCapablePluginCode(string $pluginCode): bool

@@ -8,10 +8,9 @@ class AdminFixtureTextNormalizer
 {
     private const EXACT_MAP = [
         'aipay modernization' => 'AiPay 官方',
-        'legacy_epay' => '易支付协议插件',
-        'legacy epay compatibility' => '易支付协议插件',
-        'legacy_epay_fee_deduct' => '易支付手续费扣减',
-        'universal_epay' => '通用易支付插件',
+        'aipay official' => 'AiPay 官方',
+        '通用易支付插件' => '通用易支付V1插件',
+        'universal_epay' => '通用易支付V1插件',
         'wxpay_v3' => '微信官方 V3 插件',
         'alipay_official' => '支付宝官方版 V3 插件',
         'alipay_bill' => '支付宝二维码账单插件',
@@ -55,6 +54,8 @@ class AdminFixtureTextNormalizer
         '/aipay.demo_theme/index' => '支付测试主题',
         '/aipay.doc_theme/index' => '开发文档主题',
         '/aipay.news_theme/index' => '公告中心主题',
+        'managed universal epay account plugin for webman.' => '用于统一管理易支付上游账号的托管插件。',
+        'managed universal epay account plugin for webman' => '用于统一管理易支付上游账号的托管插件。',
     ];
 
     private const PAYLOAD_KEY_MAP = [

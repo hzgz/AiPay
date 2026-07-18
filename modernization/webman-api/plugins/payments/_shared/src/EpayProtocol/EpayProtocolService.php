@@ -41,10 +41,10 @@ class EpayProtocolService
             (int)$merchant['id'],
             'epay',
             (string)($cleanPayload['type'] ?? ''),
-            'legacy_epay'
+            'universal_epay'
         );
         if (!$paylist) {
-            throw PaymentPluginException::conflict('易支付协议通道未启用');
+            throw PaymentPluginException::conflict('通用易支付V1通道未启用');
         }
 
         $basicSettings = $this->merchants->findBasicSettings((int)$merchant['id']);
@@ -61,7 +61,7 @@ class EpayProtocolService
         );
 
         return [
-            'plugin' => 'legacy_epay',
+            'plugin' => 'universal_epay',
             'entry' => $entry,
             'status' => 'created',
             'merchant' => [
@@ -138,7 +138,7 @@ class EpayProtocolService
         }
 
         return [
-            'plugin' => 'legacy_epay',
+            'plugin' => 'universal_epay',
             'mode' => $mode,
             'verified' => true,
             'paid' => $isPaid,

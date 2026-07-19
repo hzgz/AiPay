@@ -146,18 +146,21 @@ Description=AiPay Webman Backend (${SITE_NAME})
 After=network.target mariadb.service
 
 [Service]
-Type=simple
+Type=forking
 User=${BACKEND_USER}
 Group=${BACKEND_GROUP}
 WorkingDirectory=${BACKEND_ROOT}
 Environment=APP_ENV=production
 Environment=APP_PORT=${BACKEND_PORT}
-ExecStart=/usr/bin/php ${BACKEND_ROOT}/start.php start
+Environment=APP_PID_FILE=/run/${SITE_NAME}-webman/webman.pid
+RuntimeDirectory=${SITE_NAME}-webman
+RuntimeDirectoryMode=0755
+PIDFile=/run/${SITE_NAME}-webman/webman.pid
+ExecStart=/usr/bin/php ${BACKEND_ROOT}/start.php start -d
 ExecStop=/usr/bin/php ${BACKEND_ROOT}/start.php stop
 ExecReload=/usr/bin/php ${BACKEND_ROOT}/start.php reload
 Restart=always
 RestartSec=5
-KillSignal=SIGINT
 TimeoutStopSec=30
 
 [Install]

@@ -4,16 +4,17 @@ After=network.target mariadb.service
 
 [Service]
 Type=forking
-User=www-data
-Group=www-data
+User=root
+Group=root
 WorkingDirectory=/var/www/aipay/backend
 Environment=APP_ENV=production
 Environment=APP_PID_FILE=/run/aipay-webman/webman.pid
+Environment=APP_RUN_USER=www-data
 RuntimeDirectory=aipay-webman
 RuntimeDirectoryMode=0755
 PIDFile=/run/aipay-webman/webman.pid
-ExecStart=/usr/bin/php /var/www/aipay/backend/start.php start -d
-ExecStop=/usr/bin/php /var/www/aipay/backend/start.php stop
+ExecStart=/bin/bash /var/www/aipay/backend/deploy/linux/systemd-start.sh
+ExecStop=/bin/bash /var/www/aipay/backend/deploy/linux/systemd-stop.sh
 ExecReload=/usr/bin/php /var/www/aipay/backend/start.php reload
 Restart=always
 RestartSec=5

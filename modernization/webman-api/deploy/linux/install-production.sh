@@ -147,17 +147,18 @@ After=network.target mariadb.service
 
 [Service]
 Type=forking
-User=${BACKEND_USER}
-Group=${BACKEND_GROUP}
+User=root
+Group=root
 WorkingDirectory=${BACKEND_ROOT}
 Environment=APP_ENV=production
 Environment=APP_PORT=${BACKEND_PORT}
 Environment=APP_PID_FILE=/run/${SITE_NAME}-webman/webman.pid
+Environment=APP_RUN_USER=${BACKEND_USER}
 RuntimeDirectory=${SITE_NAME}-webman
 RuntimeDirectoryMode=0755
 PIDFile=/run/${SITE_NAME}-webman/webman.pid
-ExecStart=/usr/bin/php ${BACKEND_ROOT}/start.php start -d
-ExecStop=/usr/bin/php ${BACKEND_ROOT}/start.php stop
+ExecStart=/bin/bash ${BACKEND_ROOT}/deploy/linux/systemd-start.sh
+ExecStop=/bin/bash ${BACKEND_ROOT}/deploy/linux/systemd-stop.sh
 ExecReload=/usr/bin/php ${BACKEND_ROOT}/start.php reload
 Restart=always
 RestartSec=5

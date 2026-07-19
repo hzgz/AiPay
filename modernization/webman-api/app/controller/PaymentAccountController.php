@@ -1117,10 +1117,7 @@ class PaymentAccountController
         ))));
 
         if ($methodTypes === []) {
-            $fallbackType = strtolower(trim((string)($this->createCodeCatalog()[$pluginCode]['type'] ?? '')));
-            if ($fallbackType !== '') {
-                $methodTypes[] = $fallbackType;
-            }
+            $methodTypes = $this->supportedMethodTypesForCreateCode($pluginCode);
         }
 
         $paymentMethodType = strtolower(trim((string)($payload['payment_method_type'] ?? '')));
@@ -2252,7 +2249,7 @@ class PaymentAccountController
                 'identifier_label' => '应用ID',
             ],
             'universal_epay' => [
-                'type' => 'alipay',
+                'type' => '',
                 'identifier_field' => 'wxname',
                 'identifier_label' => '商户ID',
             ],
@@ -2353,16 +2350,29 @@ class PaymentAccountController
         }
 
         $record = (array)$row;
-        if ($code === 'universal_epay') {
-            return $record;
-        }
-
-        $expectedType = (string)($this->createCodeCatalog()[$code]['type'] ?? '');
-        if ($expectedType !== '' && trim((string)($record['type'] ?? '')) !== $expectedType) {
+        $expectedTypes = $this->supportedMethodTypesForCreateCode($code);
+        if (
+            $expectedTypes !== []
+            && !in_array(strtolower(trim((string)($record['type'] ?? ''))), $expectedTypes, true)
+        ) {
             return null;
         }
 
         return $record;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function supportedMethodTypesForCreateCode(string $code): array
+    {
+        if ($code === 'universal_epay') {
+            return ['alipay', 'wxpay', 'qqpay'];
+        }
+
+        $type = strtolower(trim((string)($this->createCodeCatalog()[$code]['type'] ?? '')));
+
+        return $type === '' ? [] : [$type];
     }
 
     private function paymentMethodMap(): array

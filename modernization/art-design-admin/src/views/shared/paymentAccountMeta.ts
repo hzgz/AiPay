@@ -436,7 +436,9 @@ export const PAYMENT_METHOD_LABEL_MAP: Record<PaymentAccountMethodType, string> 
   usdt: 'USDT'
 }
 
-export const ACCOUNT_METHOD_TYPE_MAP: Record<PaymentAccountCreateCode, PaymentAccountMethodType> = {
+export const ACCOUNT_METHOD_TYPE_MAP: Partial<
+  Record<PaymentAccountCreateCode, PaymentAccountMethodType>
+> = {
   alipay_software: 'alipay',
   wxpay_software: 'wxpay',
   qqpay_software: 'qqpay',
@@ -445,7 +447,6 @@ export const ACCOUNT_METHOD_TYPE_MAP: Record<PaymentAccountCreateCode, PaymentAc
   alipay_official: 'alipay',
   wxpay_v3: 'wxpay',
   alipay_mck: 'alipay',
-  universal_epay: 'alipay',
   jiaofeiyi_alipay: 'alipay',
   jiaofeiyi_wxpay: 'wxpay'
 }

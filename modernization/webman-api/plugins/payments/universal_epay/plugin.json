@@ -1,7 +1,7 @@
 {
   "code": "universal_epay",
   "name": "通用易支付V1插件",
-  "description": "用于统一管理易支付上游账号的托管插件。",
+  "description": "用于统一管理易支付上游商户号的托管插件。",
   "version": "1.0.0",
   "provider": "AiPay 官方",
   "entry": "plugins/payments/universal_epay/src/Plugin.php",
@@ -41,7 +41,7 @@
           "002_create_plugin_log_table.sql"
         ],
         "notes": [
-          "初始化通用易支付 V1 插件的配置表和日志表。",
+          "初始化通用易支付V1插件的配置表和日志表。",
           "将上游商户号、接口地址、商户密钥和接口模式统一放入共享账户字段。"
         ]
       }
@@ -62,7 +62,7 @@
     "changelog": [
       {
         "version": "1.0.0",
-        "summary": "通用易支付 V1 插件目录首版。",
+        "summary": "通用易支付V1插件目录首版。",
         "breaking": false,
         "migration_files": [
           "001_create_config_table.sql",

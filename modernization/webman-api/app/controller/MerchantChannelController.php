@@ -3316,7 +3316,7 @@ class MerchantChannelController
                 'identifier_label' => '应用 ID',
             ],
             'universal_epay' => [
-                'type' => 'alipay',
+                'type' => '',
                 'identifier_field' => 'wxname',
                 'identifier_label' => '商户ID',
             ],
@@ -3355,16 +3355,29 @@ class MerchantChannelController
         }
 
         $record = (array)$row;
-        if ($code === 'universal_epay') {
-            return $record;
-        }
-
-        $expectedType = (string)($this->createCodeCatalog()[$code]['type'] ?? '');
-        if ($expectedType !== '' && trim((string)($record['type'] ?? '')) !== $expectedType) {
+        $expectedTypes = $this->supportedMethodTypesForCreateCode($code);
+        if (
+            $expectedTypes !== []
+            && !in_array(strtolower(trim((string)($record['type'] ?? ''))), $expectedTypes, true)
+        ) {
             return null;
         }
 
         return $record;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function supportedMethodTypesForCreateCode(string $code): array
+    {
+        if ($code === 'universal_epay') {
+            return ['alipay', 'wxpay', 'qqpay'];
+        }
+
+        $type = strtolower(trim((string)($this->createCodeCatalog()[$code]['type'] ?? '')));
+
+        return $type === '' ? [] : [$type];
     }
 
     private function discoverMerchantPluginCatalog(array $paymentMethodMap): array
@@ -3423,7 +3436,7 @@ class MerchantChannelController
                 'description' => AdminFixtureTextNormalizer::normalize(trim((string)($plugin['description'] ?? ''))),
                 'enabled' => true,
                 'status' => trim((string)($plugin['status'] ?? 'enabled')),
-                'channel_type' => $supportedCodes[$code]['type'],
+                'channel_type' => count($pluginMethods) === 1 ? (array_key_first($pluginMethods) ?: '') : '',
                 'method_types' => array_values(array_keys($pluginMethods)),
                 'method_options' => array_values($pluginMethods),
                 'config_fields' => array_values(array_map(static function (array $field): array {
@@ -3465,8 +3478,7 @@ class MerchantChannelController
         }
 
         if ($types === []) {
-            $expectedType = strtolower(trim((string)($this->createCodeCatalog()[$pluginCode]['type'] ?? '')));
-            if ($expectedType !== '') {
+            foreach ($this->supportedMethodTypesForCreateCode($pluginCode) as $expectedType) {
                 $types[$expectedType] = true;
             }
         }

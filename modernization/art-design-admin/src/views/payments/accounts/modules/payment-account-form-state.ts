@@ -284,7 +284,9 @@ export function usePaymentAccountFormState({
             return []
           }
 
-          const fallbackMethodTypes = ACCOUNT_METHOD_TYPES_MAP[code] || [ACCOUNT_METHOD_TYPE_MAP[code]]
+          const fallbackMethodTypes =
+            ACCOUNT_METHOD_TYPES_MAP[code] ??
+            (ACCOUNT_METHOD_TYPE_MAP[code] ? [ACCOUNT_METHOD_TYPE_MAP[code]] : [])
           const methodTypes = Array.from(
             new Set(
               (

@@ -17,7 +17,7 @@ final class WxpayV3GatewayService extends AbstractManagedGatewayOrderService
 
     protected function pluginName(): string
     {
-        return '微信支付 V3 插件';
+        return '微信官方 V3 插件';
     }
 
     protected function paymentType(): string
@@ -37,11 +37,11 @@ final class WxpayV3GatewayService extends AbstractManagedGatewayOrderService
         WxpayV3SdkAutoloader::register();
         $client = new \WeChatPay\V3\PaymentService($this->sdkConfig($account));
         $mode = $this->resolveMode($account, $payload);
-        $orderName = (string)($order['name'] ?? 'AiPay Order');
+        $orderName = (string)($order['name'] ?? 'AiPay 支付订单');
         $totalCents = (int)round((float)($order['truemoney'] ?? $order['money'] ?? 0) * 100);
 
         if ($totalCents <= 0) {
-            throw new \RuntimeException('微信支付 V3 订单金额无效');
+            throw new \RuntimeException('微信官方 V3 插件订单金额无效');
         }
 
         $baseParams = [
@@ -72,27 +72,27 @@ final class WxpayV3GatewayService extends AbstractManagedGatewayOrderService
     {
         $appId = trim((string)($account['wxname'] ?? ''));
         if ($appId === '') {
-            throw new \InvalidArgumentException('微信支付 V3 插件应用 ID 未配置');
+            throw new \InvalidArgumentException('微信官方 V3 插件应用 ID 未配置');
         }
 
         $mchId = trim((string)($account['zfb_pid'] ?? ''));
         if ($mchId === '') {
-            throw new \InvalidArgumentException('微信支付 V3 插件商户号未配置');
+            throw new \InvalidArgumentException('微信官方 V3 插件商户号未配置');
         }
 
         $apiV3Key = trim((string)($account['remark'] ?? ''));
         if ($apiV3Key === '' || strlen($apiV3Key) !== 32) {
-            throw new \InvalidArgumentException('微信支付 V3 插件 API V3 密钥未配置或长度不正确');
+            throw new \InvalidArgumentException('微信官方 V3 插件 API V3 密钥未配置或长度不正确');
         }
 
         $serial = trim((string)($account['wx_guid'] ?? ''));
         if ($serial === '') {
-            throw new \InvalidArgumentException('微信支付 V3 插件商户证书序列号未配置');
+            throw new \InvalidArgumentException('微信官方 V3 插件商户证书序列号未配置');
         }
 
         $merchantPrivateKey = trim((string)($account['qr_url'] ?? ''));
         if ($merchantPrivateKey === '') {
-            throw new \InvalidArgumentException('微信支付 V3 插件商户私钥未配置');
+            throw new \InvalidArgumentException('微信官方 V3 插件商户私钥未配置');
         }
 
         $accountId = (int)($account['id'] ?? 0);
@@ -183,7 +183,7 @@ final class WxpayV3GatewayService extends AbstractManagedGatewayOrderService
         $result = $client->nativePay($baseParams);
         $codeUrl = trim((string)($result['code_url'] ?? ''));
         if ($codeUrl === '') {
-            throw new \RuntimeException('微信支付 V3 未返回 Native 支付地址');
+            throw new \RuntimeException('微信官方 V3 插件未返回 Native 支付地址');
         }
 
         return [
@@ -210,7 +210,7 @@ final class WxpayV3GatewayService extends AbstractManagedGatewayOrderService
         $result = $client->h5Pay($baseParams);
         $h5Url = trim((string)($result['h5_url'] ?? ''));
         if ($h5Url === '') {
-            throw new \RuntimeException('微信支付 V3 未返回 H5 支付地址');
+            throw new \RuntimeException('微信官方 V3 插件未返回 H5 支付地址');
         }
 
         return [

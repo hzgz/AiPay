@@ -45,7 +45,7 @@ final class UniversalEpayGatewayService extends AbstractManagedGatewayOrderServi
         ]);
 
         $merchant = $this->merchants->findMerchant((int)$cleanPayload['pid']);
-        if (!$this->legacy->verifySignature($cleanPayload, (string)($merchant['user_key'] ?? ''))) {
+        if (!$this->epayProtocol->verifySignature($cleanPayload, (string)($merchant['user_key'] ?? ''))) {
             throw PaymentPluginException::unauthorized();
         }
 

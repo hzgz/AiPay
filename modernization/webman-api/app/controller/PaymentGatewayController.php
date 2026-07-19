@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\controller;
 
 use app\support\ApiResponse;
 use app\support\RequestPayload;
 use InvalidArgumentException;
+use Plugins\Payments\Shared\Support\PaymentErrorMessageCatalog;
 use Plugins\Payments\Shared\Support\PaymentGatewayResolutionSupport;
 use Plugins\Payments\Shared\Support\PaymentPluginException;
 use RuntimeException;
@@ -39,7 +42,10 @@ class PaymentGatewayController
             ]);
         } catch (Throwable $exception) {
             return response(
-                $this->legacySubmitErrorPage($this->legacyExceptionMessage($exception), $this->inferReturnHost($payload)),
+                $this->legacySubmitErrorPage(
+                    $this->legacyExceptionMessage($exception, $payload),
+                    $this->inferReturnHost($payload)
+                ),
                 200,
                 ['Content-Type' => 'text/html; charset=utf-8']
             );
@@ -68,7 +74,7 @@ class PaymentGatewayController
         } catch (Throwable $exception) {
             return json([
                 'code' => 201,
-                'msg' => $this->legacyExceptionMessage($exception),
+                'msg' => $this->legacyExceptionMessage($exception, $payload),
             ], JSON_UNESCAPED_UNICODE);
         }
     }
@@ -91,6 +97,7 @@ class PaymentGatewayController
         }
 
         $query = $request->get();
+
         return is_array($query) ? $query : [];
     }
 
@@ -99,26 +106,15 @@ class PaymentGatewayController
         $pluginResolution = $this->gatewayResolution()->resolve($payload);
         $pluginCode = $pluginResolution['code'];
         $plugin = $pluginResolution['detail'];
+        $resolvedAccountId = (int)($pluginResolution['account_id'] ?? 0);
+
         $pluginResult = $this->pluginInstance($plugin['manifest'])->createOrder(array_merge($payload, [
             '_resolved_plugin_code' => $pluginCode,
             '_plugin_resolution' => $pluginResolution['resolution'],
+            '_resolved_account_id' => $resolvedAccountId,
         ]));
 
         return [$pluginCode, $plugin, $pluginResult, $pluginResolution];
-    }
-
-    private function requestSummary(Request $request, array $payload): array
-    {
-        return [
-            'method' => $request->method(),
-            'path' => $request->path(),
-            'query' => $request->get(),
-            'payload' => $payload,
-            'headers' => [
-                'content_type' => (string)$request->header('content-type', ''),
-                'user_agent' => (string)$request->header('user-agent', ''),
-            ],
-        ];
     }
 
     private function pluginInstance(array $manifest): object
@@ -130,7 +126,7 @@ class PaymentGatewayController
 
         require_once $entryPath;
 
-        $className = (string)$manifest['class'];
+        $className = (string)($manifest['class'] ?? '');
         if ($className === '' || !class_exists($className)) {
             throw new RuntimeException('插件类不存在：' . $className);
         }
@@ -183,6 +179,7 @@ class PaymentGatewayController
             }
 
             $scheme = !empty($parts['scheme']) ? $parts['scheme'] . '://' : 'http://';
+
             return $scheme . $parts['host'];
         }
 
@@ -209,7 +206,7 @@ class PaymentGatewayController
                 'plugin_result' => $pluginResult,
             ]);
         } catch (Throwable $exception) {
-            return $this->legacyJsonResponse(201, $this->legacyExceptionMessage($exception));
+            return $this->legacyJsonResponse(201, $this->legacyExceptionMessage($exception, $payload));
         }
     }
 
@@ -259,46 +256,39 @@ class PaymentGatewayController
 HTML;
     }
 
-    private function legacyExceptionMessage(Throwable $exception): string
+    private function legacyExceptionMessage(Throwable $exception, array $payload = []): string
     {
-        if ($exception instanceof PaymentPluginException) {
-            return $exception->getMessage();
+        if (
+            $exception instanceof PaymentPluginException
+            || $exception instanceof InvalidArgumentException
+            || $exception instanceof RuntimeException
+        ) {
+            return ApiResponse::normalizeText($exception->getMessage());
         }
 
-        if ($exception instanceof InvalidArgumentException) {
-            return $exception->getMessage();
-        }
+        $this->logUnexpectedException($exception, $payload);
 
-        if ($exception instanceof RuntimeException) {
-            return $exception->getMessage();
-        }
+        return PaymentErrorMessageCatalog::gatewayProcessingFailed();
+    }
 
-        return '支付网关处理失败';
+    private function logUnexpectedException(Throwable $exception, array $payload = []): void
+    {
+        $context = [
+            'class' => $exception::class,
+            'message' => $exception->getMessage(),
+            'pid' => (string)($payload['pid'] ?? ''),
+            'out_trade_no' => (string)($payload['out_trade_no'] ?? ''),
+            'type' => (string)($payload['type'] ?? ''),
+            'plugin' => (string)($payload['_resolved_plugin_code'] ?? ''),
+            'path' => (string)($payload['_request_path'] ?? ''),
+        ];
+
+        $encoded = json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        error_log('[payment_gateway_unexpected] ' . (is_string($encoded) ? $encoded : $exception->getMessage()));
     }
 
     private function gatewayResolution(): PaymentGatewayResolutionSupport
     {
         return new PaymentGatewayResolutionSupport();
-    }
-
-    private function handleException(Throwable $exception): Response
-    {
-        if ($exception instanceof PaymentPluginException) {
-            $code = $exception->getCode();
-            $status = $code >= 400 && $code < 600 ? $code : 422;
-            return ApiResponse::error($exception->getMessage(), $status, null, $status);
-        }
-
-        if ($exception instanceof InvalidArgumentException) {
-            return ApiResponse::error($exception->getMessage(), 404, null, 404);
-        }
-
-        if ($exception instanceof RuntimeException) {
-            return ApiResponse::error($exception->getMessage(), 409, null, 409);
-        }
-
-        return ApiResponse::error('支付网关处理失败', 500, [
-            'exception' => $exception->getMessage(),
-        ], 500);
     }
 }

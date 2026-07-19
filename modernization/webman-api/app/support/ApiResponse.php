@@ -151,7 +151,7 @@ class ApiResponse
             'notify migration error' => '回调处理失败',
             'return received' => '回调已接收',
             'no enabled gateway payment plugin is available' => '当前没有可用的网关支付插件',
-            'multiple gateway payment plugins are enabled; please specify plugin' => '当前启用了多个网关支付插件，请明确指定插件',
+            'multiple gateway payment plugins are enabled; please specify plugin' => '当前启用了多个网关支付插件，请先配置通道或显式传入 plugin',
             'gateway plugin resolution returned an empty plugin code' => '网关插件解析结果为空',
             'pid is required' => '商户 ID 不能为空',
             'out_trade_no is required' => '商户订单号不能为空',

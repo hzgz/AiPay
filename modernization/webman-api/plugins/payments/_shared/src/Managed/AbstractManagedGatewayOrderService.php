@@ -10,6 +10,7 @@ use Plugins\Payments\Shared\EpayProtocol\EpayMerchantRepository;
 use Plugins\Payments\Shared\EpayProtocol\EpayOrderRepository;
 use Plugins\Payments\Shared\EpayProtocol\EpayProtocolService;
 use Plugins\Payments\Shared\Support\LegacyTradeNumber;
+use Plugins\Payments\Shared\Support\PaymentErrorMessageCatalog;
 use Plugins\Payments\Shared\Support\PaymentPluginException;
 use support\Db;
 
@@ -66,7 +67,7 @@ abstract class AbstractManagedGatewayOrderService
 
         if ($paymentType !== $this->paymentType()) {
             throw PaymentPluginException::validation(
-                sprintf('%s 仅支持 %s 订单', $this->pluginName(), $this->paymentType())
+                PaymentErrorMessageCatalog::pluginPaymentTypeMismatch($this->pluginName(), $this->paymentType())
             );
         }
 
@@ -165,7 +166,7 @@ abstract class AbstractManagedGatewayOrderService
         foreach ($fields as $field) {
             $value = trim((string)($payload[$field] ?? ''));
             if ($value === '') {
-                throw PaymentPluginException::validation('缺少必填字段: ' . $field);
+                throw PaymentPluginException::validation(PaymentErrorMessageCatalog::requiredField($field));
             }
         }
     }
@@ -173,11 +174,11 @@ abstract class AbstractManagedGatewayOrderService
     protected function assertMoney(string $value): void
     {
         if (!is_numeric($value)) {
-            throw PaymentPluginException::validation('金额必须为数字');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::amountNotNumeric());
         }
 
         if ((float)$value <= 0) {
-            throw PaymentPluginException::validation('金额必须大于 0');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::amountMustBePositive());
         }
     }
 
@@ -194,11 +195,11 @@ abstract class AbstractManagedGatewayOrderService
             : 0.0;
 
         if ($money < $min) {
-            throw PaymentPluginException::validation('金额低于系统最小限额');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::amountBelowMin());
         }
 
         if ($max > 0 && $money > $max) {
-            throw PaymentPluginException::validation('金额高于系统最大限额');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::amountAboveMax());
         }
     }
 
@@ -208,7 +209,7 @@ abstract class AbstractManagedGatewayOrderService
     protected function assertOrderName(string $name, string $entry, array $systemConfig): void
     {
         if ($entry === 'submit' && str_contains($name, '=')) {
-            throw PaymentPluginException::validation('商品名称包含非法字符');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::orderNameInvalid());
         }
 
         $shieldKey = trim((string)($systemConfig['shield_key'] ?? ''));
@@ -219,8 +220,10 @@ abstract class AbstractManagedGatewayOrderService
         foreach (explode('|', $shieldKey) as $keyword) {
             $keyword = trim($keyword);
             if ($keyword !== '' && str_contains($name, $keyword)) {
-                $message = trim((string)($systemConfig['shield_tips'] ?? '商品存在风控风险'));
-                throw PaymentPluginException::validation($message !== '' ? $message : '商品名称触发风控关键词');
+                $message = trim((string)($systemConfig['shield_tips'] ?? ''));
+                throw PaymentPluginException::validation(
+                    $message !== '' ? $message : PaymentErrorMessageCatalog::orderNameRiskBlocked()
+                );
             }
         }
     }
@@ -236,11 +239,11 @@ abstract class AbstractManagedGatewayOrderService
         $allowZeroBalance = (string)($systemConfig['is_pay_money'] ?? '1') === '1';
 
         if (!$allowZeroBalance && $balance <= 0) {
-            throw PaymentPluginException::conflict('商户余额不足');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::merchantBalanceInsufficient());
         }
 
         if ($balance < $fee) {
-            throw PaymentPluginException::conflict('商户余额不足');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::merchantBalanceInsufficient());
         }
     }
 
@@ -251,12 +254,12 @@ abstract class AbstractManagedGatewayOrderService
     {
         $vipTime = trim((string)($merchant['vip_time'] ?? ''));
         if ($vipTime === '') {
-            throw PaymentPluginException::conflict('商户套餐不存在');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::merchantPackageMissing());
         }
 
         $timestamp = strtotime($vipTime);
         if ($timestamp === false || $timestamp < time()) {
-            throw PaymentPluginException::conflict('商户套餐已过期');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::merchantPackageExpired());
         }
     }
 
@@ -280,7 +283,7 @@ abstract class AbstractManagedGatewayOrderService
     protected function resolveAccount(array $merchant, array $payload, string $paymentType): array
     {
         $merchantId = (int)($merchant['id'] ?? 0);
-        $explicitAccountId = (int)($payload['account_id'] ?? ($payload['channel_id'] ?? 0));
+        $explicitAccountId = (int)($payload['_resolved_account_id'] ?? ($payload['account_id'] ?? ($payload['channel_id'] ?? 0)));
 
         if ($explicitAccountId > 0) {
             return $this->loadBoundAccount($explicitAccountId, $merchantId, $paymentType);
@@ -323,7 +326,7 @@ abstract class AbstractManagedGatewayOrderService
 
         if ($rows === []) {
             throw PaymentPluginException::conflict(
-                sprintf('%s 没有可用的收款账号', $this->pluginName())
+                PaymentErrorMessageCatalog::pluginNoAvailableAccount($this->pluginName())
             );
         }
 
@@ -353,16 +356,16 @@ abstract class AbstractManagedGatewayOrderService
                 ->first();
 
             if (!$pool) {
-                throw PaymentPluginException::notFound('轮询池不存在');
+                throw PaymentPluginException::notFound(PaymentErrorMessageCatalog::poolNotFound());
             }
 
             $poolRecord = (array)$pool;
             if ((int)($poolRecord['status'] ?? 0) !== 1) {
-                throw PaymentPluginException::conflict('轮询池已停用');
+                throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::poolDisabled());
             }
 
             if (trim((string)($poolRecord['type'] ?? '')) !== $paymentType) {
-                throw PaymentPluginException::validation('轮询池类型与订单类型不匹配');
+                throw PaymentPluginException::validation(PaymentErrorMessageCatalog::poolTypeMismatch());
             }
 
             $rows = Db::table(BusinessTable::pollPoolItem('item'))
@@ -401,7 +404,7 @@ abstract class AbstractManagedGatewayOrderService
 
             if ($rows === []) {
                 throw PaymentPluginException::conflict(
-                    sprintf('%s 轮询池里没有可用的收款账号', $this->pluginName())
+                    PaymentErrorMessageCatalog::pluginNoAvailableAccountInPool($this->pluginName())
                 );
             }
 
@@ -472,24 +475,24 @@ abstract class AbstractManagedGatewayOrderService
             ->first();
 
         if (!$row) {
-            throw PaymentPluginException::notFound('收款账号不存在');
+            throw PaymentPluginException::notFound(PaymentErrorMessageCatalog::accountNotFound());
         }
 
         $account = (array)$row;
         if ((int)($account['user_id'] ?? 0) !== $merchantId) {
-            throw PaymentPluginException::conflict('收款账号不属于当前商户');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::accountMerchantMismatch());
         }
 
         if (trim((string)($account['type'] ?? '')) !== $paymentType) {
-            throw PaymentPluginException::validation('收款账号类型与订单类型不匹配');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::accountTypeMismatch());
         }
 
         if (trim((string)($account['code'] ?? '')) !== $this->pluginCode()) {
-            throw PaymentPluginException::validation('收款账号插件与当前请求不匹配');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::accountPluginMismatch());
         }
 
         if ((int)($account['status'] ?? 0) !== 1 || (int)($account['is_status'] ?? 0) !== 1) {
-            throw PaymentPluginException::conflict('收款账号已停用');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::accountDisabled());
         }
 
         $account['_selected_via'] = 'explicit_account';
@@ -547,7 +550,7 @@ abstract class AbstractManagedGatewayOrderService
 
         $order = $this->orders->findByTradeNo($tradeNo);
         if (!$order) {
-            throw new \RuntimeException('订单已创建，但重新加载失败');
+            throw new \RuntimeException(PaymentErrorMessageCatalog::orderCreatedReloadFailed());
         }
 
         return $order;
@@ -602,7 +605,7 @@ abstract class AbstractManagedGatewayOrderService
         }
 
         if ($qrcode === '') {
-            throw new \RuntimeException($this->pluginName() . ' 未返回有效的支付地址');
+            throw new \RuntimeException(PaymentErrorMessageCatalog::invalidGatewayPayUrl($this->pluginName()));
         }
 
         $updates = [
@@ -621,7 +624,7 @@ abstract class AbstractManagedGatewayOrderService
 
         $reloaded = $this->orders->findById((int)($order['id'] ?? 0));
         if (!$reloaded) {
-            throw new \RuntimeException('订单网关字段已更新，但重新加载失败');
+            throw new \RuntimeException(PaymentErrorMessageCatalog::orderGatewayRefreshFailed());
         }
 
         return $reloaded;

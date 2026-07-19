@@ -8,7 +8,7 @@ use InvalidArgumentException;
 
 final class BusinessTable
 {
-    private const DEFAULT_PREFIX = 'aip' . 'ay' . '_';
+    private const DEFAULT_PREFIX = 'aipay_';
 
     /**
      * @var array<string, string>

@@ -7,6 +7,7 @@ namespace Plugins\Payments\Shared\EpayProtocol;
 use app\service\order\OrderCallbackBuilder;
 use app\service\order\OrderCallbackTaskService;
 use app\support\SystemConfig;
+use Plugins\Payments\Shared\Support\PaymentErrorMessageCatalog;
 use Plugins\Payments\Shared\Support\PaymentPluginException;
 
 class EpayProtocolService
@@ -44,7 +45,7 @@ class EpayProtocolService
             'universal_epay'
         );
         if (!$paylist) {
-            throw PaymentPluginException::conflict('通用易支付V1通道未启用');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::universalEpayChannelUnavailable());
         }
 
         $basicSettings = $this->merchants->findBasicSettings((int)$merchant['id']);
@@ -89,7 +90,7 @@ class EpayProtocolService
             'response_mode' => $entry === 'submit' ? 'html_form' : 'legacy_api_json',
             'migration' => [
                 'persisted' => true,
-                'reason' => '订单会先落库到 Webman，再跳转到上游通道继续支付。',
+                'reason' => PaymentErrorMessageCatalog::orderCreatePersistedReason(),
             ],
         ];
     }
@@ -101,12 +102,12 @@ class EpayProtocolService
 
         $outTradeNo = trim((string)($payload['out_trade_no'] ?? ''));
         if ($outTradeNo === '') {
-            throw PaymentPluginException::validation('回调缺少商户订单号');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::callbackOrderNoRequired());
         }
 
         $order = $this->orders->findByOutTradeNo($outTradeNo);
         if (!$order) {
-            throw PaymentPluginException::notFound('订单不存在');
+            throw PaymentPluginException::notFound(PaymentErrorMessageCatalog::orderNotFound());
         }
 
         $merchant = $this->merchants->findMerchant((int)$order['user_id']);
@@ -154,7 +155,7 @@ class EpayProtocolService
             ],
             'migration' => [
                 'persisted' => true,
-                'reason' => '回调结算在 Webman 内完成，商户通知通过队列异步派发。',
+                'reason' => PaymentErrorMessageCatalog::notifyPersistedReason(),
             ],
         ];
     }
@@ -192,7 +193,7 @@ class EpayProtocolService
         foreach ($fields as $field) {
             $value = trim((string)($payload[$field] ?? ''));
             if ($value === '') {
-                throw PaymentPluginException::validation('缺少必填参数：' . $field);
+                throw PaymentPluginException::validation(PaymentErrorMessageCatalog::requiredField($field));
             }
         }
     }
@@ -200,11 +201,11 @@ class EpayProtocolService
     private function assertMoney(string $value): void
     {
         if (!is_numeric($value)) {
-            throw PaymentPluginException::validation('金额格式不正确');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::amountNotNumeric());
         }
 
         if ((float)$value <= 0) {
-            throw PaymentPluginException::validation('金额必须大于 0');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::amountMustBePositive());
         }
     }
 
@@ -218,18 +219,18 @@ class EpayProtocolService
             : 0;
 
         if ($money < $min) {
-            throw PaymentPluginException::validation('金额低于系统最低限额');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::amountBelowMin());
         }
 
         if ($max > 0 && $money > $max) {
-            throw PaymentPluginException::validation('金额超过系统最高限额');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::amountAboveMax());
         }
     }
 
     private function assertOrderName(string $name, string $entry, array $systemConfig): void
     {
         if ($entry === 'submit' && str_contains($name, '=')) {
-            throw PaymentPluginException::validation('商品名称包含非法字符');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::orderNameInvalid());
         }
 
         $shieldKey = trim((string)($systemConfig['shield_key'] ?? ''));
@@ -245,8 +246,10 @@ class EpayProtocolService
             }
 
             if (str_contains($name, $keyword)) {
-                $message = trim((string)($systemConfig['shield_tips'] ?? '商品存在风控风险'));
-                throw PaymentPluginException::validation($message !== '' ? $message : '商品名称触发风控关键词');
+                $message = trim((string)($systemConfig['shield_tips'] ?? ''));
+                throw PaymentPluginException::validation(
+                    $message !== '' ? $message : PaymentErrorMessageCatalog::orderNameRiskBlocked()
+                );
             }
         }
     }
@@ -258,11 +261,11 @@ class EpayProtocolService
         $allowZeroBalance = (string)($systemConfig['is_pay_money'] ?? '1') === '1';
 
         if (!$allowZeroBalance && $balance <= 0) {
-            throw PaymentPluginException::conflict('商户余额不足');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::merchantBalanceInsufficient());
         }
 
         if ($balance < $fee) {
-            throw PaymentPluginException::conflict('商户余额不足');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::merchantBalanceInsufficient());
         }
     }
 
@@ -270,12 +273,12 @@ class EpayProtocolService
     {
         $vipTime = trim((string)($merchant['vip_time'] ?? ''));
         if ($vipTime === '') {
-            throw PaymentPluginException::conflict('商户套餐不存在');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::merchantPackageMissing());
         }
 
         $timestamp = strtotime($vipTime);
         if ($timestamp === false || $timestamp < time()) {
-            throw PaymentPluginException::conflict('商户套餐已过期');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::merchantPackageExpired());
         }
     }
 
@@ -337,7 +340,7 @@ class EpayProtocolService
     {
         $gatewayUrl = trim($gatewayUrl);
         if ($gatewayUrl === '') {
-            throw PaymentPluginException::conflict('易支付上游网关地址未配置');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::upstreamGatewayUrlMissing());
         }
 
         if (str_ends_with($gatewayUrl, 'submit.php')) {
@@ -410,7 +413,7 @@ class EpayProtocolService
         }
 
         if (!$paylist || trim((string)($paylist['key'] ?? '')) === '') {
-            throw PaymentPluginException::conflict('易支付协议通道不可用');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::upstreamChannelUnavailable());
         }
 
         return $paylist;

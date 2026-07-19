@@ -37,11 +37,22 @@ final class LegacyPaymentSdkAutoloader
 
     public static function sourceRoot(): string
     {
-        return dirname(base_path(), 2)
-            . DIRECTORY_SEPARATOR . 'vendor'
-            . DIRECTORY_SEPARATOR . 'iboxs'
-            . DIRECTORY_SEPARATOR . 'payment'
-            . DIRECTORY_SEPARATOR . 'src'
-            . DIRECTORY_SEPARATOR;
+        $candidates = [
+            base_path() . DIRECTORY_SEPARATOR . 'support' . DIRECTORY_SEPARATOR . 'iboxs-payment-sdk' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR,
+            dirname(base_path(), 2)
+                . DIRECTORY_SEPARATOR . 'vendor'
+                . DIRECTORY_SEPARATOR . 'iboxs'
+                . DIRECTORY_SEPARATOR . 'payment'
+                . DIRECTORY_SEPARATOR . 'src'
+                . DIRECTORY_SEPARATOR,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_dir($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return $candidates[0];
     }
 }

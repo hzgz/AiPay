@@ -7,7 +7,6 @@ namespace Plugins\Payments\Shared\Support;
 use app\service\payment\PaymentPluginManager;
 use app\support\BusinessTable;
 use InvalidArgumentException;
-use RuntimeException;
 use support\Db;
 use Throwable;
 
@@ -23,37 +22,43 @@ final class PaymentGatewayResolutionSupport
                 'code' => $requestedPluginCode,
                 'resolution' => 'explicit_request',
                 'detail' => $this->assertGatewayCapablePlugin($requestedPluginCode),
+                'account_id' => (int)($payload['account_id'] ?? ($payload['channel_id'] ?? 0)),
             ];
         }
 
-        $inferredPluginCode = $this->inferPluginCodeFromPayload($payload);
-        if ($inferredPluginCode !== '') {
+        $selectedAccount = $this->selectAccountForPayload($payload);
+        if ($selectedAccount !== null) {
+            $pluginCode = strtolower(trim((string)($selectedAccount['code'] ?? '')));
+
             return [
-                'code' => $inferredPluginCode,
-                'resolution' => 'merchant_channel_inference',
-                'detail' => $this->assertGatewayCapablePlugin($inferredPluginCode),
+                'code' => $pluginCode,
+                'resolution' => (string)($selectedAccount['_resolution'] ?? 'merchant_account_selection'),
+                'detail' => $this->assertGatewayCapablePlugin($pluginCode),
+                'account_id' => (int)($selectedAccount['id'] ?? 0),
+                'account' => [
+                    'id' => (int)($selectedAccount['id'] ?? 0),
+                    'user_id' => (int)($selectedAccount['user_id'] ?? 0),
+                    'type' => (string)($selectedAccount['type'] ?? ''),
+                    'code' => $pluginCode,
+                ],
             ];
         }
 
-        $gatewayPlugins = $this->gatewayCapablePlugins();
-        if ($gatewayPlugins === []) {
-            throw new InvalidArgumentException('当前没有可用的网关支付插件');
+        $paymentType = $this->normalizePaymentType((string)($payload['type'] ?? ''));
+        if ($paymentType === '') {
+            throw new InvalidArgumentException(PaymentErrorMessageCatalog::paymentTypeRequired());
         }
 
-        if (count($gatewayPlugins) > 1) {
-            throw new InvalidArgumentException('当前启用了多个网关支付插件，请明确指定插件');
+        if ($this->gatewayCapablePlugins() === []) {
+            throw new InvalidArgumentException(PaymentErrorMessageCatalog::noGatewayPluginAvailable());
         }
 
-        $pluginCode = trim((string)($gatewayPlugins[0]['code'] ?? ''));
-        if ($pluginCode === '') {
-            throw new RuntimeException('网关插件解析结果为空');
+        $merchantId = (int)($payload['pid'] ?? 0);
+        if ($merchantId > 0) {
+            throw new InvalidArgumentException(PaymentErrorMessageCatalog::merchantNoChannel($paymentType));
         }
 
-        return [
-            'code' => $pluginCode,
-            'resolution' => 'implicit_single_gateway_plugin',
-            'detail' => $this->assertGatewayCapablePlugin($pluginCode),
-        ];
+        throw new InvalidArgumentException(PaymentErrorMessageCatalog::requestChannelUnavailable());
     }
 
     private function resolvePluginCode(array $payload): string
@@ -61,47 +66,26 @@ final class PaymentGatewayResolutionSupport
         return strtolower(trim((string)($payload['plugin'] ?? $payload['plugin_code'] ?? '')));
     }
 
-    private function inferPluginCodeFromPayload(array $payload): string
+    private function selectAccountForPayload(array $payload): ?array
     {
+        $merchantId = (int)($payload['pid'] ?? 0);
+        $paymentType = $this->normalizePaymentType((string)($payload['type'] ?? ''));
+
         $accountId = (int)($payload['account_id'] ?? ($payload['channel_id'] ?? 0));
         if ($accountId > 0) {
-            $account = $this->loadPaymentAccount($accountId);
-            if ($account !== null && $this->isGatewayCapablePluginCode((string)($account['code'] ?? ''))) {
-                return strtolower(trim((string)($account['code'] ?? '')));
-            }
+            return $this->loadSelectableAccount($accountId, $merchantId, $paymentType, 'explicit_account');
         }
 
         $poolId = (int)($payload['pool_id'] ?? ($payload['poll_id'] ?? 0));
         if ($poolId > 0) {
-            $poolPluginCode = $this->inferPoolPluginCode($poolId);
-            if ($poolPluginCode !== '') {
-                return $poolPluginCode;
-            }
+            return $this->selectAccountFromPool($poolId, $merchantId, $paymentType);
         }
 
-        $merchantId = (int)($payload['pid'] ?? 0);
-        $paymentType = $this->normalizePaymentType((string)($payload['type'] ?? ''));
         if ($merchantId <= 0 || $paymentType === '') {
-            return '';
+            return null;
         }
 
-        $account = Db::table(BusinessTable::account())
-            ->select('code')
-            ->where('user_id', $merchantId)
-            ->where('type', $paymentType)
-            ->where('status', 1)
-            ->where('is_status', 1)
-            ->orderByDesc('id')
-            ->first();
-
-        if ($account !== null) {
-            $pluginCode = strtolower(trim((string)((array)$account)['code']));
-            if ($this->isGatewayCapablePluginCode($pluginCode)) {
-                return $pluginCode;
-            }
-        }
-
-        return '';
+        return $this->selectRandomMerchantAccount($merchantId, $paymentType);
     }
 
     private function assertMerchantReference(array $payload): void
@@ -120,42 +104,183 @@ final class PaymentGatewayResolutionSupport
             return;
         }
 
-        throw new InvalidArgumentException('商户 ID 不能为空');
+        throw new InvalidArgumentException(PaymentErrorMessageCatalog::merchantIdRequired());
     }
 
-    private function inferPoolPluginCode(int $poolId): string
-    {
-        $row = Db::table(BusinessTable::poll_pool_item() . ' as item')
-            ->join(BusinessTable::account() . ' as account', 'account.id', '=', 'item.account_id')
-            ->select('account.code')
-            ->where('item.pool_id', $poolId)
-            ->where('account.status', 1)
-            ->where('account.is_status', 1)
-            ->orderBy('item.sort')
-            ->orderByDesc('account.id')
-            ->first();
-
-        if ($row === null) {
-            return '';
-        }
-
-        $pluginCode = strtolower(trim((string)((array)$row)['code']));
-
-        return $this->isGatewayCapablePluginCode($pluginCode) ? $pluginCode : '';
-    }
-
-    private function loadPaymentAccount(int $accountId): ?array
-    {
-        if ($accountId <= 0) {
-            return null;
-        }
-
+    private function loadSelectableAccount(
+        int $accountId,
+        int $merchantId,
+        string $paymentType,
+        string $resolution
+    ): array {
         $row = Db::table(BusinessTable::account())
-            ->select('id', 'code', 'type', 'user_id', 'status', 'is_status')
+            ->select('id', 'user_id', 'code', 'type', 'status', 'is_status')
             ->where('id', $accountId)
             ->first();
 
-        return $row ? (array)$row : null;
+        if ($row === null) {
+            throw new InvalidArgumentException(PaymentErrorMessageCatalog::accountNotFound());
+        }
+
+        $account = (array)$row;
+        $accountMerchantId = (int)($account['user_id'] ?? 0);
+        if ($merchantId > 0 && $accountMerchantId !== $merchantId) {
+            throw new InvalidArgumentException(PaymentErrorMessageCatalog::accountMerchantMismatch());
+        }
+
+        $accountType = $this->normalizePaymentType((string)($account['type'] ?? ''));
+        if ($paymentType !== '' && $accountType !== $paymentType) {
+            throw new InvalidArgumentException(PaymentErrorMessageCatalog::accountTypeMismatch());
+        }
+
+        if ((int)($account['status'] ?? 0) !== 1 || (int)($account['is_status'] ?? 0) !== 1) {
+            throw new InvalidArgumentException(PaymentErrorMessageCatalog::accountDisabled());
+        }
+
+        $account['_resolution'] = $resolution;
+
+        return $account;
+    }
+
+    private function selectAccountFromPool(int $poolId, int $merchantId, string $paymentType): ?array
+    {
+        if ($poolId <= 0) {
+            return null;
+        }
+
+        return Db::transaction(function () use ($poolId, $merchantId, $paymentType): array {
+            $query = Db::table(BusinessTable::pollPool())
+                ->select('id', 'user_id', 'type', 'status', 'round_type', 'current_index', 'current_weight', 'last_account_id')
+                ->where('id', $poolId)
+                ->lockForUpdate();
+
+            if ($merchantId > 0) {
+                $query->where('user_id', $merchantId);
+            }
+
+            $pool = $query->first();
+            if ($pool === null) {
+                throw new InvalidArgumentException(PaymentErrorMessageCatalog::poolNotFound());
+            }
+
+            $poolRecord = (array)$pool;
+            if ((int)($poolRecord['status'] ?? 0) !== 1) {
+                throw new InvalidArgumentException(PaymentErrorMessageCatalog::poolDisabled());
+            }
+
+            $resolvedMerchantId = (int)($poolRecord['user_id'] ?? 0);
+            $resolvedType = $this->normalizePaymentType((string)($poolRecord['type'] ?? ''));
+            if ($paymentType !== '' && $resolvedType !== $paymentType) {
+                throw new InvalidArgumentException(PaymentErrorMessageCatalog::poolTypeMismatch());
+            }
+
+            $rows = Db::table(BusinessTable::pollPoolItem('item'))
+                ->join(BusinessTable::account('account'), 'account.id', '=', 'item.account_id')
+                ->select(
+                    'item.account_id',
+                    'item.weight',
+                    'item.sort',
+                    'account.id',
+                    'account.user_id',
+                    'account.code',
+                    'account.type',
+                    'account.status',
+                    'account.is_status'
+                )
+                ->where('item.pool_id', $poolId)
+                ->where('account.user_id', $resolvedMerchantId)
+                ->where('account.type', $resolvedType)
+                ->where('account.status', 1)
+                ->where('account.is_status', 1)
+                ->orderBy('item.sort')
+                ->orderByDesc('account.id')
+                ->get()
+                ->toArray();
+
+            $accounts = $this->filterGatewayCapableAccounts(array_map(
+                static fn ($row): array => (array)$row,
+                $rows
+            ));
+
+            if ($accounts === []) {
+                throw new InvalidArgumentException(PaymentErrorMessageCatalog::poolNoChannel($resolvedType));
+            }
+
+            $selectedIndex = 0;
+            if ((int)($poolRecord['round_type'] ?? 1) === 2) {
+                $totalWeight = 0;
+                foreach ($accounts as $account) {
+                    $totalWeight += max(1, (int)($account['weight'] ?? 1));
+                }
+
+                $ticket = random_int(1, max(1, $totalWeight));
+                foreach ($accounts as $index => $account) {
+                    $ticket -= max(1, (int)($account['weight'] ?? 1));
+                    if ($ticket <= 0) {
+                        $selectedIndex = $index;
+                        break;
+                    }
+                }
+            } else {
+                $currentIndex = max(0, (int)($poolRecord['current_index'] ?? 0));
+                $selectedIndex = $currentIndex % count($accounts);
+            }
+
+            $selected = $accounts[$selectedIndex];
+
+            Db::table(BusinessTable::pollPool())
+                ->where('id', $poolId)
+                ->update([
+                    'current_index' => (($selectedIndex + 1) % max(1, count($accounts))),
+                    'current_weight' => max(1, (int)($selected['weight'] ?? 1)),
+                    'last_account_id' => (int)($selected['id'] ?? 0),
+                    'update_time' => date('Y-m-d H:i:s'),
+                ]);
+
+            $selected['_resolution'] = 'merchant_pool_selection';
+
+            return $selected;
+        });
+    }
+
+    private function selectRandomMerchantAccount(int $merchantId, string $paymentType): ?array
+    {
+        $rows = Db::table(BusinessTable::account())
+            ->select('id', 'user_id', 'code', 'type', 'status', 'is_status')
+            ->where('user_id', $merchantId)
+            ->where('type', $paymentType)
+            ->where('status', 1)
+            ->where('is_status', 1)
+            ->get()
+            ->toArray();
+
+        $accounts = $this->filterGatewayCapableAccounts(array_map(
+            static fn ($row): array => (array)$row,
+            $rows
+        ));
+
+        if ($accounts === []) {
+            return null;
+        }
+
+        $selected = $accounts[array_rand($accounts)];
+        $selected['_resolution'] = count($accounts) === 1
+            ? 'merchant_single_account'
+            : 'merchant_random_account';
+
+        return $selected;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $accounts
+     * @return array<int, array<string, mixed>>
+     */
+    private function filterGatewayCapableAccounts(array $accounts): array
+    {
+        return array_values(array_filter(
+            $accounts,
+            fn (array $account): bool => $this->isGatewayCapablePluginCode((string)($account['code'] ?? ''))
+        ));
     }
 
     private function isGatewayCapablePluginCode(string $pluginCode): bool
@@ -197,15 +322,15 @@ final class PaymentGatewayResolutionSupport
         );
 
         if (!in_array('create_order', $capabilities, true)) {
-            throw new InvalidArgumentException("支付插件[$pluginCode]不支持网关下单");
+            throw new InvalidArgumentException(PaymentErrorMessageCatalog::pluginDoesNotSupportGateway($pluginCode));
         }
 
         if (!(bool)($state['installed'] ?? false)) {
-            throw new InvalidArgumentException("支付插件[$pluginCode]未安装");
+            throw new InvalidArgumentException(PaymentErrorMessageCatalog::pluginNotInstalled($pluginCode));
         }
 
         if (!(bool)($state['enabled'] ?? false)) {
-            throw new InvalidArgumentException("支付插件[$pluginCode]已停用");
+            throw new InvalidArgumentException(PaymentErrorMessageCatalog::pluginDisabled($pluginCode));
         }
 
         return $detail;

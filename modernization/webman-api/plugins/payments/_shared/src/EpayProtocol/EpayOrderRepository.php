@@ -6,6 +6,7 @@ namespace Plugins\Payments\Shared\EpayProtocol;
 
 use app\support\BusinessTable;
 use Plugins\Payments\Shared\Support\LegacyTradeNumber;
+use Plugins\Payments\Shared\Support\PaymentErrorMessageCatalog;
 use Plugins\Payments\Shared\Support\PaymentPluginException;
 use support\Db;
 
@@ -133,12 +134,12 @@ class EpayOrderRepository
     {
         $outTradeNo = trim((string)($payload['out_trade_no'] ?? ''));
         if ($outTradeNo === '') {
-            throw PaymentPluginException::validation('商户订单号不能为空');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::merchantOrderNoRequired());
         }
 
         $existing = $this->findByOutTradeNo($outTradeNo);
         if ($existing) {
-            throw PaymentPluginException::conflict('商户订单号重复');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::merchantOrderNoDuplicate());
         }
     }
 
@@ -153,7 +154,7 @@ class EpayOrderRepository
 
         $order = $this->findByTradeNo((string)$draft['trade_no']);
         if (!$order) {
-            throw new \RuntimeException('订单创建成功后重新加载失败');
+            throw new \RuntimeException(PaymentErrorMessageCatalog::orderCreatedReloadFailed());
         }
 
         return $order;
@@ -206,7 +207,7 @@ class EpayOrderRepository
         return Db::transaction(function () use ($order, $merchant, $payload): array {
             $orderId = (int)($order['id'] ?? 0);
             if ($orderId <= 0) {
-                throw PaymentPluginException::notFound('订单不存在');
+                throw PaymentPluginException::notFound(PaymentErrorMessageCatalog::orderNotFound());
             }
 
             $current = Db::table(BusinessTable::order())
@@ -225,11 +226,11 @@ class EpayOrderRepository
                     'return_url',
                     'alipay_order_no'
                 )
-                ->where('id', $orderId)
-                ->lockForUpdate()
-                ->first();
+            ->where('id', $orderId)
+            ->lockForUpdate()
+            ->first();
             if (!$current) {
-                throw PaymentPluginException::notFound('订单不存在');
+                throw PaymentPluginException::notFound(PaymentErrorMessageCatalog::orderNotFound());
             }
 
             $current = (array)$current;
@@ -239,7 +240,7 @@ class EpayOrderRepository
                 ($expectedOutTradeNo !== '' && !hash_equals((string)$current['out_trade_no'], $expectedOutTradeNo))
                 || ($expectedTradeNo !== '' && !hash_equals((string)$current['trade_no'], $expectedTradeNo))
             ) {
-                throw new \RuntimeException('订单标识在落账前发生变化');
+                throw new \RuntimeException(PaymentErrorMessageCatalog::orderIdentityChangedBeforeSettlement());
             }
 
             $alreadyPaid = (int)($current['status'] ?? 0) === 1;
@@ -265,7 +266,7 @@ class EpayOrderRepository
 
             $settled = $this->findById($orderId);
             if (!$settled) {
-                throw PaymentPluginException::notFound('订单不存在');
+                throw PaymentPluginException::notFound(PaymentErrorMessageCatalog::orderNotFound());
             }
 
             return [
@@ -414,7 +415,7 @@ class EpayOrderRepository
             ->lockForUpdate()
             ->first();
         if (!$claim || (int)(((array)$claim)['order_id'] ?? 0) !== (int)($order['id'] ?? 0)) {
-            throw new \RuntimeException('Payment transaction is already claimed by another order');
+            throw new \RuntimeException(PaymentErrorMessageCatalog::paymentTransactionClaimed());
         }
     }
 }

@@ -6,6 +6,7 @@ namespace Plugins\Payments\Shared\EpayProtocol;
 
 use app\support\BusinessTable;
 use app\support\MerchantChannelMetadata;
+use Plugins\Payments\Shared\Support\PaymentErrorMessageCatalog;
 use Plugins\Payments\Shared\Support\PaymentPluginException;
 use support\Db;
 
@@ -14,7 +15,7 @@ class EpayMerchantRepository
     public function findMerchant(int $merchantId): array
     {
         if ($merchantId <= 0) {
-            throw PaymentPluginException::validation('商户ID不能为空');
+            throw PaymentPluginException::validation(PaymentErrorMessageCatalog::merchantIdRequired());
         }
 
         $merchant = Db::table(BusinessTable::user())
@@ -23,12 +24,12 @@ class EpayMerchantRepository
             ->first();
 
         if (!$merchant) {
-            throw PaymentPluginException::notFound('商户不存在');
+            throw PaymentPluginException::notFound(PaymentErrorMessageCatalog::merchantNotFound());
         }
 
         $merchantArray = (array)$merchant;
         if ((int)($merchantArray['is_frozen'] ?? 0) !== 0) {
-            throw PaymentPluginException::conflict('商户账户已冻结');
+            throw PaymentPluginException::conflict(PaymentErrorMessageCatalog::merchantFrozen());
         }
 
         return $merchantArray;

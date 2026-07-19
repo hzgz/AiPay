@@ -8,7 +8,8 @@ $ErrorActionPreference = 'Stop'
 
 Push-Location $ProjectRoot
 try {
-    & $PhpBinary 'windows.php' 'restart'
+    & (Join-Path $PSScriptRoot 'stop-backend.ps1') -PhpBinary $PhpBinary -ProjectRoot $ProjectRoot
+    & (Join-Path $PSScriptRoot 'start-backend.ps1') -PhpBinary $PhpBinary -ProjectRoot $ProjectRoot
 }
 finally {
     Pop-Location

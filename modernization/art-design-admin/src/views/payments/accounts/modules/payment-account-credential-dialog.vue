@@ -56,7 +56,7 @@
           </ElCheckboxGroup>
           <ElSelect
             v-else
-            v-model="selectedCredentialQrTypes"
+            v-model="selectedCredentialQrType"
             :placeholder="qrTypeFieldPlaceholder"
           >
             <ElOption
@@ -361,6 +361,17 @@
       props.credentialForm.qr_type = isCredentialMultiMode.value ? formatModeCsv(value) : value[0] || ''
     }
   })
+  const selectedCredentialQrType = computed<string>({
+    get: () =>
+      resolveQrTypeSelections(
+        props.activeAccount?.code,
+        props.credentialForm.qr_type,
+        props.activeCredentialMeta
+      )[0] || '',
+    set: (value) => {
+      props.credentialForm.qr_type = String(value || '').trim()
+    }
+  })
 </script>
 
 <style scoped lang="scss">
@@ -407,6 +418,14 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    width: 100%;
+  }
+
+  .credential-field-shell :deep(.el-input),
+  .credential-field-shell :deep(.el-input-number),
+  .credential-field-shell :deep(.el-select),
+  .credential-field-shell :deep(.el-textarea) {
+    width: 100%;
   }
 
   .credential-field-actions {

@@ -106,11 +106,7 @@
       </ElButton>
     </div>
 
-    <ElCard
-      v-if="cleanupPreview.can_cleanup || cleanupPreview.warnings.length"
-      class="cleanup-card"
-      shadow="never"
-    >
+    <ElCard v-if="showCleanupCard" class="cleanup-card" shadow="never">
       <div class="cleanup-head">
         <div>
           <h3>重复主服务</h3>
@@ -467,6 +463,14 @@
     () => hasAuth('cleanupSupervisors') || hasAuth('index')
   )
   const showDuplicateCleanupAction = computed(() => {
+    return (
+      cleanupPreview.value.can_cleanup ||
+      cleanupPreview.value.remove_supervisor_pids.length > 0 ||
+      cleanupPreview.value.remove_worker_pids.length > 0 ||
+      summary.value.supervisor_total > 1
+    )
+  })
+  const showCleanupCard = computed(() => {
     return (
       cleanupPreview.value.can_cleanup ||
       cleanupPreview.value.remove_supervisor_pids.length > 0 ||

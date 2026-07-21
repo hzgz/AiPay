@@ -553,6 +553,7 @@
   const activeGroupKey = ref('')
   const response = ref<Api.Configs.SummaryResponse | null>(null)
   const groupModels = reactive<Record<string, Record<string, string | boolean>>>({})
+  const groupDirtyFields = reactive<Record<string, Record<string, boolean>>>({})
 
   const canSaveConfig = computed(() => hasAuth('groupUpdate') || hasAuth('update'))
   const summary = computed(() => response.value?.summary ?? emptySummary)
@@ -639,10 +640,17 @@
       }
     })
 
+    Object.keys(groupDirtyFields).forEach((key) => {
+      if (!activeKeys.has(key)) {
+        delete groupDirtyFields[key]
+      }
+    })
+
     forms.forEach((form) => {
       groupModels[form.key] = Object.fromEntries(
         form.fields.map((field) => [field.key, normalizeFieldValue(field)])
       )
+      groupDirtyFields[form.key] = {}
     })
   }
 
@@ -652,6 +660,18 @@
     }
 
     return groupModels[groupKey]
+  }
+
+  function ensureGroupDirtyState(groupKey: string) {
+    if (!groupDirtyFields[groupKey]) {
+      groupDirtyFields[groupKey] = {}
+    }
+
+    return groupDirtyFields[groupKey]
+  }
+
+  function markGroupFieldDirty(groupKey: string, fieldKey: string) {
+    ensureGroupDirtyState(groupKey)[fieldKey] = true
   }
 
   function readStringValue(groupKey: string, fieldKey: string) {
@@ -665,10 +685,12 @@
 
   function writeStringValue(groupKey: string, fieldKey: string, value: string) {
     ensureGroupModel(groupKey)[fieldKey] = String(value ?? '')
+    markGroupFieldDirty(groupKey, fieldKey)
   }
 
   function writeBooleanValue(groupKey: string, fieldKey: string, value: boolean | string | number) {
     ensureGroupModel(groupKey)[fieldKey] = value === true || value === 'true' || value === '1'
+    markGroupFieldDirty(groupKey, fieldKey)
   }
 
   function resolveToolbarDescription() {
@@ -768,12 +790,19 @@
   function buildGroupPayload(groupKey: string) {
     const form = baseForms.value.find((item) => item.key === groupKey)
     const model = ensureGroupModel(groupKey)
+    const dirtyState = ensureGroupDirtyState(groupKey)
     const payload: Record<string, string | boolean> = {}
 
     form?.fields.forEach((field) => {
+      if (!dirtyState[field.key]) {
+        return
+      }
+
       const currentValue = model[field.key]
-      payload[field.key] =
+      const normalizedValue =
         field.editor === 'switch' ? Boolean(currentValue) : String(currentValue ?? '')
+
+      payload[field.key] = normalizedValue
     })
 
     return payload

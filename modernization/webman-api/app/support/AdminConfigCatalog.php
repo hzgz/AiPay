@@ -1864,6 +1864,10 @@ https://api2.example.com/",
             }
         }
 
+        if ($sanitized === '') {
+            return '';
+        }
+
         $options = $definition['options'] ?? [];
         if (is_array($options) && $options !== []) {
             $sanitized = self::normalizeSelectableValue($key, $sanitized);
@@ -1898,10 +1902,6 @@ https://api2.example.com/",
             }
 
             $sanitized[$name] = self::sanitizeEditableValue($name, $value);
-        }
-
-        if ($sanitized === []) {
-            throw new \InvalidArgumentException('配置分组提交内容不能为空');
         }
 
         return $sanitized;

@@ -37,7 +37,12 @@ import AppConfig from '@/config'
 import { SystemThemeEnum, MenuThemeEnum, MenuTypeEnum, ContainerWidthEnum } from '@/enums/appEnum'
 import { setElementThemeColor } from '@/utils/ui'
 import { useCeremony } from '@/hooks/core/useCeremony'
-import { StorageConfig } from '@/utils'
+import {
+  resolveConsoleSettingStorageScope,
+  readScopedSettingItem,
+  scopedSettingStorage,
+  writeScopedThemeValue
+} from '@/utils/storage/setting-scope'
 import { SETTING_DEFAULT_CONFIG } from '@/config/setting'
 
 /**
@@ -117,6 +122,74 @@ export const useSettingStore = defineStore(
     /** 鑺傛棩鏃ユ湡 */
     const festivalDate = ref('')
 
+    const activeScope = ref(resolveConsoleSettingStorageScope())
+
+    const persistedStateRefs = {
+      menuType,
+      menuOpenWidth,
+      menuOpen,
+      dualMenuShowText,
+      systemThemeType,
+      systemThemeMode,
+      menuThemeType,
+      systemThemeColor,
+      showMenuButton,
+      showFastEnter,
+      showRefreshButton,
+      showCrumbs,
+      showWorkTab,
+      showLanguage,
+      showNprogress,
+      showSettingGuide,
+      showFestivalText,
+      watermarkVisible,
+      autoClose,
+      uniqueOpened,
+      colorWeak,
+      refresh,
+      holidayFireworksLoaded,
+      boxBorderMode,
+      pageTransition,
+      tabStyle,
+      customRadius,
+      containerWidth,
+      festivalDate
+    } as const
+
+    type PersistedStateKey = keyof typeof persistedStateRefs
+
+    const applyPersistedState = (payload?: Partial<Record<PersistedStateKey, unknown>>) => {
+      for (const key of Object.keys(persistedStateRefs) as PersistedStateKey[]) {
+        const stateRef = persistedStateRefs[key]
+        const defaultValue = SETTING_DEFAULT_CONFIG[key]
+        stateRef.value = (payload && key in payload ? payload[key] : defaultValue) as never
+      }
+    }
+
+    const syncPersistedScope = (path?: string) => {
+      const nextScope = resolveConsoleSettingStorageScope(path)
+      if (activeScope.value === nextScope) {
+        return false
+      }
+
+      activeScope.value = nextScope
+
+      const raw = readScopedSettingItem('setting', nextScope)
+      if (!raw) {
+        applyPersistedState()
+        return true
+      }
+
+      try {
+        applyPersistedState(JSON.parse(raw) as Partial<Record<PersistedStateKey, unknown>>)
+      } catch (error) {
+        console.warn('[SettingStore] Failed to parse scoped setting cache.', error)
+        applyPersistedState()
+      }
+
+      return true
+    }
+
     /**
      * 鑾峰彇鑿滃崟涓婚
      * 鏍规嵁褰撳墠涓婚绫诲瀷鍜屾殫鑹叉ā寮忚繑鍥炲搴旂殑涓婚閰嶇疆
@@ -183,7 +256,7 @@ export const useSettingStore = defineStore(
     const setGlopTheme = (theme: SystemThemeEnum, themeMode: SystemThemeEnum) => {
       systemThemeType.value = theme
       systemThemeMode.value = themeMode
-      localStorage.setItem(StorageConfig.THEME_KEY, theme)
+      writeScopedThemeValue(theme, activeScope.value)
     }
 
     /**
@@ -410,6 +483,7 @@ export const useSettingStore = defineStore(
       getMenuOpenWidth,
       getCustomRadius,
       isShowFireworks,
+      activeScope,
       switchMenuLayouts,
       setMenuOpenWidth,
       setGlopTheme,
@@ -435,6 +509,7 @@ export const useSettingStore = defineStore(
       reload,
       setWatermarkVisible,
       setCustomRadius,
+      syncPersistedScope,
       setholidayFireworksLoaded,
       setShowFestivalText,
       setFestivalDate,
@@ -444,7 +519,7 @@ export const useSettingStore = defineStore(
   {
     persist: {
       key: 'setting',
-      storage: localStorage
+      storage: scopedSettingStorage
     }
   }
 )

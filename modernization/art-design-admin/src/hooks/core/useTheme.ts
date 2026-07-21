@@ -37,7 +37,48 @@ import AppConfig from '@/config'
 import { SystemThemeTypes } from '@/types/store'
 import { getDarkColor, getLightColor, setElementThemeColor } from '@/utils/ui'
 import { usePreferredDark } from '@vueuse/core'
-import { watch } from 'vue'
+import { watch, type WatchStopHandle } from 'vue'
+
+let stopAutoThemeWatcher: WatchStopHandle | null = null
+
+function applyThemeByMode(settingStore: ReturnType<typeof useSettingStore>, prefersDark: boolean) {
+  const el = document.getElementsByTagName('html')[0]
+  let actualTheme = settingStore.systemThemeType
+
+  if (settingStore.systemThemeMode === SystemThemeEnum.AUTO) {
+    actualTheme = prefersDark ? SystemThemeEnum.DARK : SystemThemeEnum.LIGHT
+    settingStore.systemThemeType = actualTheme
+  }
+
+  const currentTheme = AppConfig.systemThemeStyles[actualTheme as keyof SystemThemeTypes]
+  if (currentTheme) {
+    el.setAttribute('class', currentTheme.className)
+  }
+
+  setElementThemeColor(settingStore.systemThemeColor)
+  document.documentElement.style.setProperty('--custom-radius', `${settingStore.customRadius}rem`)
+}
+
+function syncAutoThemeWatcher(settingStore: ReturnType<typeof useSettingStore>) {
+  const prefersDark = usePreferredDark()
+
+  if (stopAutoThemeWatcher) {
+    stopAutoThemeWatcher()
+    stopAutoThemeWatcher = null
+  }
+
+  if (settingStore.systemThemeMode === SystemThemeEnum.AUTO) {
+    stopAutoThemeWatcher = watch(
+      prefersDark,
+      () => {
+        if (settingStore.systemThemeMode === SystemThemeEnum.AUTO) {
+          applyThemeByMode(settingStore, prefersDark.value)
+        }
+      },
+      { immediate: false }
+    )
+  }
+}
 
 export function useTheme() {
   const settingStore = useSettingStore()
@@ -129,47 +170,21 @@ export function useTheme() {
 export function initializeTheme() {
   const settingStore = useSettingStore()
   const prefersDark = usePreferredDark()
+  applyThemeByMode(settingStore, prefersDark.value)
+  syncAutoThemeWatcher(settingStore)
+}
 
-  // 鏍规嵁绯荤粺鍋忓ソ搴旂敤涓婚
-  const applyThemeByMode = () => {
-    const el = document.getElementsByTagName('html')[0]
-    let actualTheme = settingStore.systemThemeType
+export function syncThemeScope(path?: string) {
+  const settingStore = useSettingStore()
+  const scopeChanged = settingStore.syncPersistedScope(path)
 
-    // 濡傛灉鏄?AUTO 妯″紡锛屾娴嬬郴缁熷亸濂?
-    if (settingStore.systemThemeMode === SystemThemeEnum.AUTO) {
-      actualTheme = prefersDark.value ? SystemThemeEnum.DARK : SystemThemeEnum.LIGHT
-      // 鏇存柊瀹為檯搴旂敤鐨勪富棰樼被鍨?
-      settingStore.systemThemeType = actualTheme
-    }
-
-    // 璁剧疆涓婚 class
-    const currentTheme = AppConfig.systemThemeStyles[actualTheme as keyof SystemThemeTypes]
-    if (currentTheme) {
-      el.setAttribute('class', currentTheme.className)
-    }
-
-    // 璁剧疆涓婚棰滆壊
-    setElementThemeColor(settingStore.systemThemeColor)
-
-    // 璁剧疆鍦嗚
-    document.documentElement.style.setProperty('--custom-radius', `${settingStore.customRadius}rem`)
+  if (!scopeChanged) {
+    return false
   }
 
-  // 搴旂敤涓婚
-  applyThemeByMode()
-
-  // 濡傛灉鏄?AUTO 妯″紡锛岀洃鍚郴缁熶富棰樺彉鍖栵紙浣跨敤 VueUse 鐨勫搷搴斿紡鐗规€э級
-  if (settingStore.systemThemeMode === SystemThemeEnum.AUTO) {
-    watch(
-      prefersDark,
-      () => {
-        // 鍙湁鍦?AUTO 妯″紡涓嬫墠鍝嶅簲绯荤粺涓婚鍙樺寲
-        if (settingStore.systemThemeMode === SystemThemeEnum.AUTO) {
-          applyThemeByMode()
-        }
-      },
-      { immediate: false }
-    )
-  }
+  const prefersDark = usePreferredDark()
+  applyThemeByMode(settingStore, prefersDark.value)
+  syncAutoThemeWatcher(settingStore)
+  return true
 }
 

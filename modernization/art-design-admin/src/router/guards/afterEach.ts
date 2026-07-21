@@ -3,6 +3,7 @@ import { useSettingStore } from '@/store/modules/setting'
 import { Router } from 'vue-router'
 import NProgress from 'nprogress'
 import { useCommon } from '@/hooks/core/useCommon'
+import { syncThemeScope } from '@/hooks/core/useTheme'
 import { loadingService } from '@/utils/ui'
 import { getPendingLoading, resetPendingLoading } from './beforeEach'
 
@@ -10,7 +11,8 @@ import { getPendingLoading, resetPendingLoading } from './beforeEach'
 export function setupAfterEachGuard(router: Router) {
   const { scrollToTop } = useCommon()
 
-  router.afterEach(() => {
+  router.afterEach((to) => {
+    syncThemeScope(to.path)
     scrollToTop()
 
     // 关闭进度条

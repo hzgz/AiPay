@@ -1,5 +1,8 @@
 <template>
-  <div class="system-config-page art-full-height">
+  <div
+    class="system-config-page art-full-height"
+    :class="{ 'system-config-page--dark': isDark }"
+  >
     <ElCard class="config-toolbar-card" shadow="never">
       <div class="config-toolbar">
         <div class="config-toolbar-copy">
@@ -227,8 +230,10 @@
 
 <script setup lang="ts">
   import { Icon } from '@iconify/vue'
+  import { storeToRefs } from 'pinia'
   import { fetchGetSystemConfigSummary, fetchUpdateSystemConfigGroup } from '@/api/config'
   import { useAuth } from '@/hooks'
+  import { useSettingStore } from '@/store/modules/setting'
   import { displayAdminFixtureText } from '@/utils/adminFixtureText'
 
   type ConfigField = Api.Configs.ConfigItem
@@ -546,6 +551,8 @@
   }
 
   const { hasAuth } = useAuth()
+  const settingStore = useSettingStore()
+  const { isDark } = storeToRefs(settingStore)
 
   const loading = ref(false)
   const savingGroupKey = ref('')
@@ -878,16 +885,77 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    --config-card-border: var(--el-border-color-light);
+    --config-panel-shadow: 0 20px 48px rgb(15 23 42 / 0.04);
+    --config-toolbar-bg: linear-gradient(180deg, rgb(248 250 252 / 1), rgb(255 255 255 / 1));
+    --config-sidebar-bg: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(248 250 252 / 1));
+    --config-editor-bg: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(250 250 250 / 1));
+    --config-title-color: #0f172a;
+    --config-text-color: #475569;
+    --config-muted-color: #94a3b8;
+    --config-accent-color: #2563eb;
+    --config-chip-border: rgb(226 232 240 / 0.92);
+    --config-chip-bg: rgb(241 245 249 / 0.95);
+    --config-chip-text: #475569;
+    --config-sidebar-hover-border: rgb(59 130 246 / 0.1);
+    --config-sidebar-hover-bg: rgb(59 130 246 / 0.05);
+    --config-sidebar-active-border: rgb(59 130 246 / 0.18);
+    --config-sidebar-active-bg:
+      radial-gradient(circle at top right, rgb(59 130 246 / 0.1), transparent 35%),
+      rgb(59 130 246 / 0.07);
+    --config-section-border: rgb(226 232 240 / 0.88);
+    --config-input-bg: rgb(255 255 255 / 0.96);
+    --config-input-border: rgb(226 232 240 / 0.95);
+    --config-input-text: #0f172a;
+    --config-input-placeholder: #94a3b8;
+    --config-preview-border: rgb(203 213 225 / 1);
+    --config-preview-bg: rgb(248 250 252 / 0.9);
+    --config-thumb-bg: #fff;
+    --config-thumb-border: rgb(226 232 240 / 0.92);
+    --config-fallback-bg: rgb(241 245 249 / 1);
+    --config-empty-bg: rgb(255 255 255 / 0.8);
+  }
+
+  .system-config-page--dark {
+    --config-card-border: rgb(71 85 105 / 0.42);
+    --config-panel-shadow: 0 24px 56px rgb(2 6 23 / 0.28);
+    --config-toolbar-bg: linear-gradient(180deg, rgb(15 23 42 / 0.96), rgb(17 24 39 / 0.9));
+    --config-sidebar-bg: linear-gradient(180deg, rgb(15 23 42 / 0.94), rgb(2 6 23 / 0.9));
+    --config-editor-bg: linear-gradient(180deg, rgb(17 24 39 / 0.95), rgb(15 23 42 / 0.92));
+    --config-title-color: #e5edf8;
+    --config-text-color: #cbd5e1;
+    --config-muted-color: #94a3b8;
+    --config-chip-border: rgb(71 85 105 / 0.52);
+    --config-chip-bg: rgb(30 41 59 / 0.84);
+    --config-chip-text: #dbe7f5;
+    --config-sidebar-hover-border: rgb(96 165 250 / 0.24);
+    --config-sidebar-hover-bg: rgb(59 130 246 / 0.14);
+    --config-sidebar-active-border: rgb(96 165 250 / 0.34);
+    --config-sidebar-active-bg:
+      radial-gradient(circle at top right, rgb(96 165 250 / 0.18), transparent 38%),
+      rgb(30 64 175 / 0.22);
+    --config-section-border: rgb(71 85 105 / 0.42);
+    --config-input-bg: rgb(15 23 42 / 0.84);
+    --config-input-border: rgb(71 85 105 / 0.74);
+    --config-input-text: #e2e8f0;
+    --config-input-placeholder: #64748b;
+    --config-preview-border: rgb(71 85 105 / 0.56);
+    --config-preview-bg: rgb(15 23 42 / 0.72);
+    --config-thumb-bg: rgb(15 23 42 / 0.92);
+    --config-thumb-border: rgb(71 85 105 / 0.54);
+    --config-fallback-bg: rgb(30 41 59 / 0.92);
+    --config-empty-bg: rgb(15 23 42 / 0.58);
   }
 
   .config-toolbar-card,
   .config-sidebar-card,
   .config-editor-card {
-    border: 1px solid var(--el-border-color-light);
+    border: 1px solid var(--config-card-border);
+    box-shadow: var(--config-panel-shadow);
   }
 
   .config-toolbar-card {
-    background: linear-gradient(180deg, rgb(248 250 252 / 1), rgb(255 255 255 / 1));
+    background: var(--config-toolbar-bg);
   }
 
   .config-toolbar-card :deep(.el-card__body) {
@@ -917,7 +985,7 @@
 
   .toolbar-eyebrow {
     margin: 0;
-    color: #2563eb;
+    color: var(--config-accent-color);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.16em;
@@ -926,7 +994,7 @@
 
   .toolbar-title {
     margin: 0;
-    color: #0f172a;
+    color: var(--config-title-color);
     font-size: 28px;
     font-weight: 700;
     line-height: 1.2;
@@ -934,7 +1002,7 @@
 
   .toolbar-desc {
     margin: 0;
-    color: #64748b;
+    color: var(--config-text-color);
     font-size: 13px;
     line-height: 1.7;
   }
@@ -949,10 +1017,10 @@
     display: inline-flex;
     align-items: center;
     padding: 6px 10px;
-    border: 1px solid rgb(226 232 240 / 0.92);
+    border: 1px solid var(--config-chip-border);
     border-radius: 999px;
-    background: rgb(241 245 249 / 0.95);
-    color: #475569;
+    background: var(--config-chip-bg);
+    color: var(--config-chip-text);
     font-size: 12px;
     line-height: 1;
   }
@@ -979,7 +1047,7 @@
   .config-sidebar-card {
     position: sticky;
     top: 0;
-    background: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(248 250 252 / 1));
+    background: var(--config-sidebar-bg);
   }
 
   .config-sidebar-list {
@@ -1007,15 +1075,13 @@
   }
 
   .config-sidebar-item:hover {
-    border-color: rgb(59 130 246 / 0.1);
-    background: rgb(59 130 246 / 0.05);
+    border-color: var(--config-sidebar-hover-border);
+    background: var(--config-sidebar-hover-bg);
   }
 
   .config-sidebar-item.active {
-    border-color: rgb(59 130 246 / 0.18);
-    background:
-      radial-gradient(circle at top right, rgb(59 130 246 / 0.1), transparent 35%),
-      rgb(59 130 246 / 0.07);
+    border-color: var(--config-sidebar-active-border);
+    background: var(--config-sidebar-active-bg);
   }
 
   .config-sidebar-item__icon {
@@ -1023,12 +1089,12 @@
     width: 18px;
     justify-content: center;
     flex-shrink: 0;
-    color: #64748b;
+    color: var(--config-text-color);
     font-size: 18px;
   }
 
   .config-sidebar-item.active .config-sidebar-item__icon {
-    color: #2563eb;
+    color: var(--config-accent-color);
   }
 
   .config-sidebar-item__copy {
@@ -1041,23 +1107,23 @@
   }
 
   .config-sidebar-item__copy strong {
-    color: #0f172a;
+    color: var(--config-title-color);
     font-size: 14px;
     font-weight: 600;
   }
 
   .config-sidebar-item.active .config-sidebar-item__copy strong {
-    color: #2563eb;
+    color: var(--config-accent-color);
   }
 
   .config-sidebar-item__copy small {
-    color: #94a3b8;
+    color: var(--config-muted-color);
     font-size: 12px;
     white-space: nowrap;
   }
 
   .config-editor-card {
-    background: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(250 250 250 / 1));
+    background: var(--config-editor-bg);
   }
 
   .config-editor-head {
@@ -1066,7 +1132,7 @@
     justify-content: space-between;
     gap: 16px;
     padding: 18px 20px 16px;
-    border-bottom: 1px solid rgb(226 232 240 / 0.88);
+    border-bottom: 1px solid var(--config-section-border);
   }
 
   .config-editor-copy {
@@ -1078,7 +1144,7 @@
 
   .config-editor-eyebrow {
     margin: 0;
-    color: #2563eb;
+    color: var(--config-accent-color);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.14em;
@@ -1087,7 +1153,7 @@
 
   .config-editor-title {
     margin: 0;
-    color: #0f172a;
+    color: var(--config-title-color);
     font-size: 26px;
     font-weight: 700;
     line-height: 1.2;
@@ -1096,7 +1162,7 @@
   .config-editor-desc {
     max-width: 760px;
     margin: 0;
-    color: #64748b;
+    color: var(--config-text-color);
     font-size: 13px;
     line-height: 1.7;
   }
@@ -1127,7 +1193,7 @@
     gap: 18px;
     align-items: center;
     padding: 16px 20px;
-    border-bottom: 1px solid rgb(226 232 240 / 0.82);
+    border-bottom: 1px solid var(--config-section-border);
   }
 
   .config-row--stacked {
@@ -1149,7 +1215,7 @@
   }
 
   .config-row__title strong {
-    color: #0f172a;
+    color: var(--config-title-color);
     font-size: 14px;
     font-weight: 600;
     line-height: 1.5;
@@ -1157,7 +1223,7 @@
 
   .config-row__help {
     margin: 0;
-    color: #64748b;
+    color: var(--config-text-color);
     font-size: 12px;
     line-height: 1.7;
   }
@@ -1178,11 +1244,34 @@
   .config-row__control :deep(.el-select__wrapper),
   .config-row__control :deep(.el-textarea__inner) {
     border-radius: 12px;
+    background: var(--config-input-bg);
+    color: var(--config-input-text);
+    box-shadow: 0 0 0 1px var(--config-input-border) inset;
   }
 
   .config-row__control :deep(.el-input__wrapper),
   .config-row__control :deep(.el-select__wrapper) {
     min-height: 40px;
+  }
+
+  .config-row__control :deep(.el-input__inner),
+  .config-row__control :deep(.el-textarea__inner),
+  .config-row__control :deep(.el-select__selected-item),
+  .config-row__control :deep(.el-select__placeholder) {
+    color: var(--config-input-text);
+  }
+
+  .config-row__control :deep(.el-input__inner::placeholder),
+  .config-row__control :deep(.el-textarea__inner::placeholder) {
+    color: var(--config-input-placeholder);
+  }
+
+  .config-row__control :deep(.el-input__wrapper.is-focus),
+  .config-row__control :deep(.el-select__wrapper.is-focused),
+  .config-row__control :deep(.el-textarea__inner:focus) {
+    box-shadow:
+      0 0 0 1px var(--config-accent-color) inset,
+      0 0 0 3px rgb(37 99 235 / 0.08);
   }
 
   .config-row__control :deep(.el-textarea__inner) {
@@ -1199,9 +1288,9 @@
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    border: 1px dashed rgb(203 213 225 / 1);
+    border: 1px dashed var(--config-preview-border);
     border-radius: 14px;
-    background: rgb(248 250 252 / 0.9);
+    background: var(--config-preview-bg);
   }
 
   .config-asset-preview__thumb {
@@ -1210,8 +1299,8 @@
     flex-shrink: 0;
     border-radius: 12px;
     overflow: hidden;
-    background: #fff;
-    border: 1px solid rgb(226 232 240 / 0.92);
+    background: var(--config-thumb-bg);
+    border: 1px solid var(--config-thumb-border);
   }
 
   .config-asset-preview__fallback {
@@ -1220,9 +1309,9 @@
     height: 100%;
     align-items: center;
     justify-content: center;
-    color: #94a3b8;
+    color: var(--config-muted-color);
     font-size: 20px;
-    background: rgb(241 245 249 / 1);
+    background: var(--config-fallback-bg);
   }
 
   .config-asset-preview__meta {
@@ -1233,13 +1322,13 @@
   }
 
   .config-asset-preview__meta span {
-    color: #0f172a;
+    color: var(--config-title-color);
     font-size: 13px;
     font-weight: 600;
   }
 
   .config-asset-preview__meta a {
-    color: #2563eb;
+    color: var(--config-accent-color);
     font-size: 12px;
     text-decoration: none;
   }
@@ -1255,8 +1344,13 @@
   .config-empty {
     padding: 24px 0;
     border-radius: 18px;
-    border: 1px dashed rgb(203 213 225 / 1);
-    background: rgb(255 255 255 / 0.8);
+    border: 1px dashed var(--config-preview-border);
+    background: var(--config-empty-bg);
+  }
+
+  .config-empty :deep(.el-empty__description),
+  .config-empty :deep(.el-empty__description p) {
+    color: var(--config-text-color);
   }
 
   @media (width <= 1080px) {

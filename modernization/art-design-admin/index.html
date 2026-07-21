@@ -29,7 +29,26 @@
             return
           }
 
-          const themeType = localStorage.getItem('sys-theme')
+          const hash = String(window.location.hash || '')
+          const routePath = hash.startsWith('#/') ? hash.slice(1).split('?')[0] : window.location.pathname
+          const isMerchantRoute =
+            routePath === '/merchant' || routePath.startsWith('/merchant/')
+          const merchantToken =
+            localStorage.getItem('aipay_merchant_front_token') ||
+            String(document.cookie || '')
+              .split(';')
+              .map((item) => item.trim())
+              .find((item) => item.startsWith('front_token='))?.slice('front_token='.length) ||
+            ''
+          const scope = isMerchantRoute
+            ? merchantToken
+              ? `merchant:${decodeURIComponent(merchantToken)}`
+              : 'merchant:guest'
+            : 'admin'
+          const scopedThemeKey = `sys-theme:${scope}`
+          const themeType =
+            localStorage.getItem(scopedThemeKey) ||
+            (scope === 'admin' ? localStorage.getItem('sys-theme') : null)
           if (themeType === 'dark') {
             document.documentElement.classList.add('dark')
           }

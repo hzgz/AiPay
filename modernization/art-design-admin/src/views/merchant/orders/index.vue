@@ -192,7 +192,12 @@
               <span>{{ detail?.trade_no || '查看单笔订单的交易回调与金额明细' }}</span>
             </div>
 
-            <ElTag v-if="detail" :type="detail.status_badge" effect="plain">
+            <ElTag
+              v-if="detail"
+              class="merchant-drawer-head__status"
+              :type="detail.status_badge"
+              effect="plain"
+            >
               {{ translateMerchantText(detail.status_label) }}
             </ElTag>
           </div>
@@ -530,6 +535,8 @@
     gap: 12px;
     align-items: flex-start;
     justify-content: space-between;
+    min-width: 0;
+    padding-right: 34px;
   }
 
   .merchant-drawer-head__copy {
@@ -551,6 +558,12 @@
     font-size: 13px;
     line-height: 1.6;
     word-break: break-all;
+  }
+
+  .merchant-drawer-head__status {
+    flex: none;
+    margin-top: 2px;
+    margin-right: 32px;
   }
 
   .merchant-detail-section__head {
@@ -599,6 +612,11 @@
   :deep(.merchant-order-drawer .el-drawer__header) {
     margin-bottom: 0;
     padding: 20px 22px 0;
+  }
+
+  :deep(.merchant-order-drawer .el-drawer__headerbtn) {
+    top: 20px;
+    right: 22px;
   }
 
   :deep(.merchant-order-drawer .el-drawer__body) {

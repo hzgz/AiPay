@@ -147,13 +147,12 @@ After=network.target mariadb.service
 
 [Service]
 Type=forking
-User=root
-Group=root
+User=${BACKEND_USER}
+Group=${BACKEND_GROUP}
 WorkingDirectory=${BACKEND_ROOT}
 Environment=APP_ENV=production
 Environment=APP_PORT=${BACKEND_PORT}
 Environment=APP_PID_FILE=/run/${SITE_NAME}-webman/webman.pid
-Environment=APP_RUN_USER=${BACKEND_USER}
 RuntimeDirectory=${SITE_NAME}-webman
 RuntimeDirectoryMode=0755
 PIDFile=/run/${SITE_NAME}-webman/webman.pid

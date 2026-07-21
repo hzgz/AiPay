@@ -54,11 +54,7 @@ trait MerchantPortalUrlSupport
 
     protected function merchantQrCodeUrl(Request $request, string $content, string $size = '250x250'): string
     {
-        return rtrim(FrontendUrlBuilder::publicBaseUrl($request), '/')
-            . '/qrcode.php?text='
-            . rawurlencode($content)
-            . '&size='
-            . rawurlencode($size);
+        return FrontendUrlBuilder::publicQrCodeUrl($request, $content, $size);
     }
 
     protected function requireLegacyProjectAutoload(): void
@@ -192,10 +188,12 @@ trait MerchantPortalUrlSupport
         $normalizedPath = '/' . ltrim($normalizedPath, '/');
         $normalizedPath = rtrim($normalizedPath, '/');
         if ($normalizedPath === '') {
-            $normalizedPath = '/User/Login';
+            $normalizedPath = '/merchant/login';
         }
 
         $map = [
+            '/merchant/login' => '/merchant/login',
+            '/merchant/dashboard' => '/merchant/dashboard',
             '/user/login' => '/merchant/login',
             '/user/index' => '/merchant/dashboard',
             '/user/logout' => '/merchant/login',

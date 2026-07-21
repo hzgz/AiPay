@@ -108,6 +108,24 @@ final class FrontendUrlBuilder
         return self::publicAppUrl($request, '/demo');
     }
 
+    public static function publicApiUrl(Request $request, string $path, array $query = []): string
+    {
+        $url = rtrim(self::publicBaseUrl($request), '/') . '/api/public/' . ltrim($path, '/');
+        if ($query === []) {
+            return $url;
+        }
+
+        return $url . '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+    }
+
+    public static function publicQrCodeUrl(Request $request, string $text, int|string $size = 180): string
+    {
+        return self::publicApiUrl($request, 'qrcode', [
+            'text' => $text,
+            'size' => (string)$size,
+        ]);
+    }
+
     public static function publicPath(Request $request, string $path): string
     {
         return rtrim(self::publicBaseUrl($request), '/') . '/' . ltrim($path, '/');

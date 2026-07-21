@@ -4,8 +4,8 @@
 
 SET @news_table := CONCAT('aip', 'ay_', 'news');
 SET @title := '欢迎使用 AiPay';
-SET @content := '<p>欢迎使用 AiPay，商户可在首页完成注册、登录与支付接入。</p><p>如需接入支付、回调或订单查询，请前往开发文档查看完整说明。</p>';
-SET @legacy_phrase_1 := '%Webman 架构升级%';
+SET @content := '<p>欢迎使用 AiPay，可在首页完成商户注册、登录与接入配置。</p><p>支付接入、回调规则与订单查询请查看开发文档。</p>';
+SET @legacy_phrase_1 := '%系统升级%';
 SET @legacy_phrase_2 := '%本地纯净预览环境%';
 SET @migration_sql := CONCAT(
     'UPDATE `', @news_table, '` ',
@@ -14,7 +14,7 @@ SET @migration_sql := CONCAT(
     '`update_time` = NOW() ',
     'WHERE `id` = 1 ',
     'AND `title` = ', QUOTE(@title), ' ',
-    'AND (`content` LIKE ', QUOTE(@legacy_phrase_1), ' OR `content` LIKE ', QUOTE(@legacy_phrase_2), ')'
+    'AND (`content` LIKE ', QUOTE(@legacy_phrase_1), ' OR `content` LIKE ', QUOTE(@legacy_phrase_2), ' OR `content` LIKE ''%Webman 架构升级%'')'
 );
 
 PREPARE stmt FROM @migration_sql;

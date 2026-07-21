@@ -37,13 +37,13 @@ class MerchantImpersonationService
         }
 
         if ($systemSecurityEnabled && $googlekeyConfigured) {
-            $warnings[] = '当前商户已绑定谷歌验证，登录后可能跳转到 /My/GoogleAuth 完成安全校验。';
-            $possibleRedirects[] = '/My/GoogleAuth';
+            $warnings[] = '当前商户已绑定谷歌验证，登录后可能跳转到 /merchant/security 完成安全校验。';
+            $possibleRedirects[] = '/merchant/security';
         }
 
         if ($systemSecurityEnabled && $securityForceEnabled && !$googlekeyConfigured) {
-            $warnings[] = '系统已开启强制安全设置，未绑定谷歌验证的商户登录后可能跳转到 /My/Security 完成安全设置。';
-            $possibleRedirects[] = '/My/Security';
+            $warnings[] = '系统已开启强制安全设置，未绑定谷歌验证的商户登录后可能跳转到 /merchant/security 完成安全设置。';
+            $possibleRedirects[] = '/merchant/security';
         }
 
         if ($securityLoginEnabled && $googlekeyConfigured) {

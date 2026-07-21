@@ -8,30 +8,43 @@ use support\Db;
 
 class AdminConfigCatalog
 {
+    private const MOJIBAKE_FRAGMENTS = [
+        "\u{FFFD}", "\u{20AC}", "\u{935F}", "\u{93B4}", "\u{7487}", "\u{95AB}",
+        "\u{93C0}", "\u{9427}", "\u{934F}", "\u{5BF0}", "\u{7039}", "\u{7490}",
+        "\u{7F01}", "\u{95C8}", "\u{7EEF}", "\u{7EFE}", "\u{7F03}", "\u{9422}",
+        "\u{9352}", "\u{9359}", "\u{95C2}", "\u{8930}", "\u{748B}", "\u{9365}",
+        "\u{93C3}", "\u{951B}", "\u{9286}", "\u{9369}", "\u{59AF}", "\u{95B0}",
+        "\u{93BB}", "\u{935A}", "\u{7481}", "\u{9475}", "\u{95C3}", "\u{942D}",
+        "\u{95AD}", "\u{74A7}", "\u{7F02}", "\u{93BA}", "\u{7ED4}", "\u{7EE0}",
+        "\u{935B}", "\u{6A40}", "\u{5056}", "\u{5D85}", "\u{608A}",
+    ];
     private const FORCED_DISPLAY_LABELS = [
         'adminMail' => '管理员邮箱',
-        'aff_percentage' => '返佣比例',
-        'aff_type' => '分销模式',
+        'aff_percentage' => '推广返佣比例',
+        'aff_type' => '返佣模式',
         'apiTemp' => '接口模板',
         'api_bg' => '接口页背景',
         'bg' => '全站背景',
         'bgtype' => '背景类型',
         'create_qrCode' => '二维码生成方式',
-        'daily_limit' => '验证码每日请求上限',
-        'disconnect_minute' => '掉线检测时间',
+        'daily_limit' => '验证码每日限制',
+        'disconnect_minute' => '掉线判定分钟',
         'domain_black' => '域名黑名单',
         'domain_white' => '域名白名单',
         'file-type' => '文件存储方式',
         'home_temp' => '首页模板',
         'home_url' => '首页入口开关',
         'is_channelPay' => '通道测试支付',
+        'merchant_login_drag_verify' => '商户登录滑动验证',
+        'merchant_register_drag_verify' => '商户注册滑动验证',
+        'merchant_retrieve_drag_verify' => '找回密码滑动验证',
         'max_orderprice' => '最大订单金额',
         'min_orderprice' => '最小订单金额',
         'orderDisplay' => '订单显示条数',
-        'pay_api' => 'API 地址',
-        'qq_login' => 'QQ 快捷登录',
+        'pay_api' => 'API地址',
+        'qq_login' => 'QQ快捷登录',
         'qr_codeType' => '二维码解码方式',
-        'reg_give_vip' => '赠送套餐',
+        'reg_give_vip' => '注册赠送套餐',
         'sitename' => '站点名称',
         'smstype' => '短信服务商',
         'software_callback_sign_mode' => '软件回调签名模式',
@@ -42,106 +55,145 @@ class AdminConfigCatalog
         'wechat_login' => '微信快捷登录',
     ];
 
-        private const DISPLAY_LABELS = [
-        'appid' => '应用 ID',
+    private const DISPLAY_LABELS = [
         'adminSecurityKey' => '后台安全验证密钥',
         'alipay' => '支付宝收款开关',
+        'alipayrsaPublicKey' => '支付宝公钥',
+        'api_url' => '接口地址',
+        'appid' => '应用编号',
         'bearMoney' => '实名认证费用',
+        'captcha-type' => '验证码类型',
+        'cdkPayUrl' => '卡密充值地址',
+        'code_switch' => '验证码开关',
         'dataClearDays' => '数据清理保留天数',
         'demo_theme' => '支付测试主题',
-        'demopay_money' => '测试金额',
-        'demopay_name' => '测试收款人',
+        'demopay_money' => '支付测试金额',
+        'demopay_name' => '支付测试收款人',
+        'desc' => '站点简介',
         'diyApiTemp' => '自定义接口模板',
-        'diyMtceHtml' => '维护页内容',
+        'diyMtceHtml' => '维护页模板',
+        'diy_codeTemp' => '验证码模板',
         'diy_dataClear' => '数据清理范围',
-        'diy_demoPay' => '测试支付方式',
+        'diy_demoPay' => '支付测试方式',
         'diy_js' => '自定义脚本',
+        'diy_loginTips' => '登录通知模板',
+        'diy_loseTips' => '掉线通知模板',
+        'diy_moneyTips' => '余额提醒模板',
         'diy_orderNo' => '自定义订单号',
+        'diy_orderTips' => '订单通知模板',
         'diy_recharge' => '充值支付方式',
+        'diy_regTips' => '注册通知模板',
         'diy_task_key' => '计划任务密钥',
         'diy_userAvatar' => '默认用户头像',
         'diy_userId' => '自定义商户编号',
-        'doc_theme' => '文档主题',
+        'diy_vipTemp' => 'VIP到期模板',
+        'doc_theme' => '开发文档主题',
+        'domainNum' => '域名每日新增上限',
+        'domain_black' => '域名黑名单',
         'domain_notice' => '域名提示',
+        'domain_white' => '域名白名单',
         'email_switch' => '邮件通知开关',
-        'epayid_demo' => '易支付测试商户号',
-        'epaykey_demo' => '易支付测试密钥',
-        'epayurl_demo' => '易支付测试地址',
+        'epayid_demo' => '支付测试商户号',
+        'epaykey_demo' => '支付测试密钥',
+        'epayurl_demo' => '支付测试网关地址',
+        'favicon' => '网站图标',
+        'forceRealName' => '强制实名认证',
         'home_popup' => '首页弹窗',
-        'icp' => 'ICP备案',
+        'icp' => 'ICP备案号',
+        'imageSize' => '图片压缩大小',
         'index_popup' => '入口页弹窗',
         'isAdminSecurity' => '后台安全验证开关',
         'isCdkPay' => '卡密充值开关',
         'isMtce' => '维护模式开关',
+        'isRealName' => '实名认证开关',
         'isSecurity' => '安全绑定开关',
         'isSecurityForce' => '强制安全绑定开关',
         'isSecurityLogin' => '登录安全验证开关',
-        'is_aff' => '分销功能开关',
+        'isTicket' => '工单中心开关',
+        'is_aff' => '推广返佣开关',
+        'is_channelPay' => '通道测试支付',
         'is_dataClear' => '数据清理开关',
         'is_diyUserId' => '自定义商户编号开关',
+        'is_domain' => '域名管理开关',
+        'is_examine' => '审核开关',
         'is_logOff' => '账户注销开关',
-        'is_notice' => '公告开关',
-        'is_pay_api' => '自定义 API 线路开关',
-        'is_pay_money' => '金额校验开关',
-        'is_paypage_realname' => '支付页实名开关',
+        'is_notice' => '公告中心开关',
+        'is_pay_api' => '自定义API线路开关',
+        'is_pay_money' => '支付金额校验开关',
+        'is_paypage_realname' => '支付页实名展示',
         'is_quotations' => '行情展示开关',
-        'is_reg_give_price' => '注册赠金额开关',
-        'is_reg_give_vip' => '注册赠套餐开关',
-        'is_smOrder' => '补单按钮开关',
+        'is_reg' => '注册开关',
+        'is_reg_give_price' => '注册赠送余额开关',
+        'is_reg_give_vip' => '注册赠送套餐开关',
+        'is_smOrder' => '手动补单按钮开关',
         'is_sponsor' => '赞助位开关',
-        'is_vip_expire' => '会员到期提醒',
-        'isDiy_orderNo' => '自定义订单号开关',
+        'is_vip_expire' => 'VIP到期提醒开关',
         'is_weboff' => '前台停站开关',
+        'isDiy_orderNo' => '自定义订单号开关',
+        'key' => '站点关键字',
+        'logo' => '网站标志',
+        'logincode-type' => '登录验证方式',
+        'merchant_login_drag_verify' => '商户登录滑动验证',
+        'merchant_register_drag_verify' => '商户注册滑动验证',
+        'merchant_retrieve_drag_verify' => '找回密码滑动验证',
         'mtceType' => '维护页模板',
-        'news_theme' => '公告主题',
+        'news_theme' => '公告中心主题',
+        'paid_reg' => '付费注册',
+        'paid_reg_price' => '付费注册金额',
         'privacy' => '隐私政策',
-        'qqpay' => 'QQ 支付开关',
+        'qqpay' => 'QQ支付开关',
         'quotations' => '行情展示内容',
         'randomKey' => '随机密钥',
-        'realNameBear' => '实名费用承担',
+        'realNameBear' => '实名费用承担方',
         'realNameType' => '实名通道类型',
-        'reg_give_price' => '赠送金额',
+        'regcode-type' => '注册验证方式',
+        'reg_give_price' => '注册赠送余额',
         'reg_popup' => '注册页弹窗',
-        'reportNo' => '举报否定文案',
-        'reportPos' => '举报弹窗位置',
+        'reportNo' => '举报按钮文案',
+        'reportPos' => '举报说明位置',
         'reportTips' => '举报说明',
-        'reportTitle' => '举报标题',
+        'reportTitle' => '举报弹窗标题',
         'reportUrl' => '举报跳转地址',
         'reportYes' => '举报确认文案',
-        'alipayrsaPublicKey' => '支付宝公钥',
+        'retrieve-type' => '找回方式',
         'rsaPrivateKey' => '站点私钥',
         'securityBindTips' => '安全绑定提示',
         'securityIcon' => '安全验证图标',
         'securityName' => '安全验证名称',
-        'securityPopContent' => '安全弹窗内容',
-        'securityPopTitle' => '安全弹窗标题',
-        'sh_notice' => '首页公告说明',
-        'SmtpSecure' => 'SMTP 加密方式',
-        'smtp-host' => 'SMTP 服务器',
-        'smtp-port' => 'SMTP 端口',
-        'smtp-user' => 'SMTP 账号',
-        'smtp-pass' => 'SMTP 密码',
-        'smsbao-api' => '短信宝 API 地址',
+        'securityPopContent' => '安全验证弹窗内容',
+        'securityPopTitle' => '安全验证弹窗标题',
+        'sh_notice' => '商户审核提示',
+        'shield_key' => '风控关键词',
+        'shield_tips' => '风控提示',
+        'SmtpSecure' => '邮件加密方式',
+        'smtp-host' => '邮件服务器',
+        'smtp-pass' => '发信密码',
+        'smtp-port' => '邮件端口',
+        'smtp-user' => '发信账号',
+        'smsbao-api' => '短信宝接口地址',
         'td_notice' => '支付说明',
         'tg_admin_id' => '电报管理员编号',
+        'tg_bind_tips' => '电报绑定提示',
         'tg_bot_token' => '电报机器人令牌',
+        'tg_notice_recharge' => '电报充值通知',
+        'tg_notice_register' => '电报注册通知',
+        'tg_notice_ticket' => '电报工单通知',
+        'tg_notice_vip' => '电报会员通知',
+        'tg_switch' => '电报通知开关',
         'thinkCode' => '验证码密钥',
         'user_agreement' => '用户协议',
         'user_theme' => '用户中心主题',
-        'vip_expire' => '会员到期提醒天数',
+        'vip_expire' => 'VIP到期提醒天数',
         'wechat' => '微信收款开关',
-        'wxpusher_appToken' => '微信推送应用令牌',
-        'imageSize' => '图片压缩大小',
-        'api_url' => '接口地址',
-        'code_switch' => '短信验证开关',
-        'key' => '站点关键词',
-        'shield_tips' => '风控提示',
         'web_url' => '前台地址',
+        'wxpusher_appToken' => '微信推送应用令牌',
+        'wxpusher_switch' => '微信推送开关',
     ];
+
     private const EDITABLE_FORM_GROUPS = [
         'basic_display' => [
             'title' => '基础展示',
-            'description' => '站点名称、页面标题、Logo、图标以及首页基础展示配置。',
+            'description' => '站点名称、页面标题、标志、图标以及首页展示相关配置。',
             'fields' => [
                 'sitename',
                 'software_name',
@@ -161,8 +213,8 @@ class AdminConfigCatalog
             ],
         ],
         'template_content' => [
-            'title' => '模板内容',
-            'description' => '前台公告、协议公示文案、首页弹窗与主题模板设置。',
+            'title' => '内容模板',
+            'description' => '首页文案、协议公告、支付说明和模板页面相关配置。',
             'fields' => [
                 'diyApiTemp',
                 'is_notice',
@@ -182,7 +234,7 @@ class AdminConfigCatalog
         ],
         'transaction_rules' => [
             'title' => '交易规则',
-            'description' => '订单金额、支付测试与二维码相关配置。',
+            'description' => '订单金额、支付测试、二维码生成与回调签名相关配置。',
             'fields' => [
                 'is_channelPay',
                 'isDiy_orderNo',
@@ -210,7 +262,7 @@ class AdminConfigCatalog
         ],
         'merchant_access' => [
             'title' => '商户准入',
-            'description' => '商户注册、实名、域名、工单、分销与充值限制配置。',
+            'description' => '商户注册、实名认证、域名管理、返佣和赠送能力配置。',
             'fields' => [
                 'is_reg',
                 'paid_reg',
@@ -246,7 +298,7 @@ class AdminConfigCatalog
         ],
         'security_auth' => [
             'title' => '安全验证',
-            'description' => '验证码、安全校验与风控提示等常用配置。',
+            'description' => '验证码、安全校验、登录保护与风控提示等配置。',
             'fields' => [
                 'isAdminSecurity',
                 'isSecurity',
@@ -254,6 +306,9 @@ class AdminConfigCatalog
                 'isSecurityLogin',
                 'code_switch',
                 'captcha-type',
+                'merchant_login_drag_verify',
+                'merchant_register_drag_verify',
+                'merchant_retrieve_drag_verify',
                 'logincode-type',
                 'regcode-type',
                 'retrieve-type',
@@ -263,8 +318,8 @@ class AdminConfigCatalog
             ],
         ],
         'notifications' => [
-            'title' => '通知提醒',
-            'description' => '邮件、电报、微信推送与常用通知模板配置。',
+            'title' => '通知服务',
+            'description' => '邮件、短信、电报、微信推送和模板通知相关配置。',
             'fields' => [
                 'email_switch',
                 'smtp-host',
@@ -308,8 +363,8 @@ class AdminConfigCatalog
             ],
         ],
         'storage_integrations' => [
-            'title' => '存储集成',
-            'description' => '文件策略、上传大小以及存储接入基础配置。',
+            'title' => '存储上传',
+            'description' => '文件上传、压缩大小和对象存储服务相关配置。',
             'fields' => [
                 'file-type',
                 'imageSize',
@@ -324,8 +379,8 @@ class AdminConfigCatalog
             ],
         ],
         'maintenance' => [
-            'title' => '维护设置',
-            'description' => '停站、维护页和数据清理相关配置。',
+            'title' => '维护清理',
+            'description' => '停站、维护页展示和数据清理相关配置。',
             'fields' => [
                 'isMtce',
                 'is_weboff',
@@ -346,31 +401,31 @@ class AdminConfigCatalog
             'value_type' => 'email',
             'max_length' => 120,
             'placeholder' => 'support@aipay.cn',
-            'help_text' => '接收系统告警、业务通知和关键操作提醒的管理员邮箱地址。',
+            'help_text' => '',
         ],
         'desc' => [
             'label' => '站点简介',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 255,
-            'placeholder' => '请输入站点简介',
-            'help_text' => '用于首页展示、搜索描述和系统简介。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'demopay_money' => [
-            'label' => '测试金额',
+            'label' => '支付测试金额',
             'editor' => 'input',
             'value_type' => 'non_negative_decimal',
             'max_length' => 12,
             'placeholder' => '0.01',
-            'help_text' => '用于支付测试页默认金额展示。',
+            'help_text' => '',
         ],
         'demopay_name' => [
-            'label' => '测试收款人',
+            'label' => '支付测试收款人',
             'editor' => 'input',
             'value_type' => 'text',
             'max_length' => 80,
-            'placeholder' => '测试收款商户',
-            'help_text' => '用于支付测试页和收银台展示的收款人名称。',
+            'placeholder' => '支付测试收款商户',
+            'help_text' => '',
         ],
         'diy_codeTemp' => [
             'label' => '验证码模板',
@@ -378,33 +433,31 @@ class AdminConfigCatalog
             'value_type' => 'text',
             'max_length' => 255,
             'placeholder' => '您的验证码是 [code]',
-            'help_text' => '使用 [code] 作为验证码变量。',
+            'help_text' => '',
         ],
         'diyApiTemp' => [
             'label' => '自定义接口模板',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 20000,
-            'placeholder' => '请输入完整的自定义接口模板内容',
-            'help_text' => '启用自定义接口模板后，接口展示页将按这里维护的 HTML 内容渲染。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'diy_loginTips' => [
             'label' => '登录通知模板',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 500,
-            'placeholder' => '账号 [login_uid] 于 [login_time] 在 [login_ip] 登录',
+            'placeholder' => '',
             'help_text' => '支持 [login_uid]、[login_ip]、[login_time] 变量。',
         ],
         'diy_demoPay' => [
-            'label' => '测试支付方式',
+            'label' => '支付测试方式',
             'editor' => 'textarea',
             'value_type' => 'list',
             'max_length' => 255,
-            'placeholder' => "wxpay
-alipay
-qqpay",
-            'help_text' => '每行一个支付方式编码，用于支付测试页展示。',
+            'placeholder' => "wxpay alipay qqpay",
+            'help_text' => '',
         ],
         'diy_loseTips' => [
             'label' => '掉线通知模板',
@@ -412,15 +465,15 @@ qqpay",
             'value_type' => 'text',
             'max_length' => 500,
             'placeholder' => '收款账号 [account_code] 已于 [lose_time] 掉线',
-            'help_text' => '支持 [account_id]、[account_type]、[account_code]、[lose_time] 变量。',
+            'help_text' => '',
         ],
         'diy_moneyTips' => [
             'label' => '余额提醒模板',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 255,
-            'placeholder' => '当前余额低于 [money] 元',
-            'help_text' => '支持 [money] 变量，用于余额不足提醒。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'diy_orderTips' => [
             'label' => '订单通知模板',
@@ -428,14 +481,14 @@ qqpay",
             'value_type' => 'text',
             'max_length' => 500,
             'placeholder' => '您有新的订单 [out_trade_no]',
-            'help_text' => '用于新订单通知和订单到账提醒内容。',
+            'help_text' => '',
         ],
         'diy_regTips' => [
             'label' => '注册通知模板',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 255,
-            'placeholder' => '欢迎新商户 [userName]',
+            'placeholder' => '',
             'help_text' => '支持 [userName] 变量，用于商户注册成功提示。',
         ],
         'diy_vipTemp' => [
@@ -444,71 +497,71 @@ qqpay",
             'value_type' => 'text',
             'max_length' => 255,
             'placeholder' => '[sitename] VIP 将于 [day] 天后到期',
-            'help_text' => '支持 [sitename]、[day] 变量，用于 VIP 到期提醒。',
+            'help_text' => '',
         ],
         'domain_notice' => [
             'label' => '域名提示',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 500,
-            'placeholder' => '请输入域名相关提示',
-            'help_text' => '显示在域名绑定、审核和联调场景附近的说明文字。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'domainNum' => [
-            'label' => '每日可添加域名数',
+            'label' => '域名每日新增上限',
             'editor' => 'input',
             'value_type' => 'non_negative_integer',
             'max_length' => 6,
-            'placeholder' => '0 表示不限',
-            'help_text' => '限制单个商户每天可新增的域名数量，0 表示不限制。',
+            'placeholder' => '0 表示不限制',
+            'help_text' => '',
         ],
         'domain_black' => [
             'label' => '域名黑名单',
             'editor' => 'textarea',
             'value_type' => 'list',
             'max_length' => 5000,
-            'placeholder' => "blocked.你的域名.com
-spam.你的域名.com",
-            'help_text' => '每行一个域名，命中后将禁止绑定或访问相关业务功能。',
+            'placeholder' => "blocked.example.com
+spam.example.com",
+            'help_text' => '',
         ],
         'domain_white' => [
             'label' => '域名白名单',
             'editor' => 'textarea',
             'value_type' => 'list',
             'max_length' => 5000,
-            'placeholder' => "pay.你的域名.com
-api.你的域名.com",
-            'help_text' => '每行一个域名，命中后优先视为可信域名。',
+            'placeholder' => "pay.example.com
+api.example.com",
+            'help_text' => '',
         ],
         'email_switch' => [
             'label' => '邮件通知开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后可使用邮箱通知、验证码和邮件提醒能力。',
+            'help_text' => '',
         ],
         'epayid_demo' => [
-            'label' => '易支付测试商户号',
+            'label' => '支付测试商户号',
             'editor' => 'input',
             'value_type' => 'text',
             'max_length' => 120,
-            'placeholder' => '请输入测试商户号',
-            'help_text' => '用于协议联调、支付测试和测试下单。',
+            'placeholder' => '请输入支付测试商户号',
+            'help_text' => '',
         ],
         'epaykey_demo' => [
-            'label' => '易支付测试密钥',
+            'label' => '支付测试密钥',
             'editor' => 'password',
             'value_type' => 'text',
             'max_length' => 255,
-            'placeholder' => '请输入测试密钥',
-            'help_text' => '用于支付测试与接口验证。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'epayurl_demo' => [
-            'label' => '测试网关地址',
+            'label' => '支付测试网关地址',
             'editor' => 'input',
             'value_type' => 'url',
             'max_length' => 255,
-            'placeholder' => 'https://pay.你的域名.com/submit.php',
-            'help_text' => '填写易支付协议网关地址，用于支付测试。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'favicon' => [
             'label' => '网站图标',
@@ -516,29 +569,29 @@ api.你的域名.com",
             'value_type' => 'path',
             'max_length' => 255,
             'placeholder' => '/upload/images/favicon.ico',
-            'help_text' => '填写站点图标文件路径或完整 URL。',
+            'help_text' => '',
         ],
         'forceRealName' => [
             'label' => '强制实名认证',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后，商户需先完成实名认证才能使用需要实名的相关功能。',
+            'help_text' => '',
         ],
         'home_popup' => [
-            'label' => '首页弹窗',
+            'label' => '首页弹窗内容',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 2000,
-            'placeholder' => '请输入首页弹窗内容',
-            'help_text' => '支持 HTML 富文本内容。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'icp' => [
-            'label' => 'ICP 备案',
+            'label' => 'ICP 备案号',
             'editor' => 'input',
             'value_type' => 'text',
             'max_length' => 80,
-            'placeholder' => 'ICP 备案号',
-            'help_text' => '显示在首页底部和公共页面页脚。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'index_popup' => [
             'label' => '入口页弹窗',
@@ -546,111 +599,111 @@ api.你的域名.com",
             'value_type' => 'text',
             'max_length' => 2000,
             'placeholder' => '请输入入口页弹窗内容',
-            'help_text' => '支持 HTML 富文本内容。',
+            'help_text' => '',
         ],
         'is_aff' => [
-            'label' => '分销功能开关',
+            'label' => '推广返佣开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后支持推广返佣、分销统计和相关通知能力。',
+            'help_text' => '',
         ],
         'is_channelPay' => [
             'label' => '通道测试支付',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后，商户可在通道管理中发起测试订单。',
+            'help_text' => '',
         ],
         'isCdkPay' => [
             'label' => '卡密充值开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后商户中心可使用卡密充值与兑换能力。',
+            'help_text' => '',
         ],
         'is_domain' => [
-            'label' => '域名功能开关',
+            'label' => '域名管理开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后商户可绑定、审核和管理自有域名。',
+            'help_text' => '',
         ],
         'is_examine' => [
             'label' => '审核开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后新增商户、域名等业务需要后台审核。',
+            'help_text' => '',
         ],
         'is_notice' => [
-            'label' => '公告开关',
+            'label' => '公告中心开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后显示公告中心与前台公告内容。',
+            'help_text' => '',
         ],
         'is_logOff' => [
-            'label' => '注销开关',
+            'label' => '账户注销开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后商户可在前台申请账号注销。',
+            'help_text' => '',
         ],
         'is_pay_api' => [
-            'label' => 'DIY 对接 API',
+            'label' => '自定义接口模板',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后，对外网关地址将改为这里维护的自定义 API 线路。',
+            'help_text' => '',
         ],
         'is_reg_give_price' => [
-            'label' => '注册赠金额开关',
+            'label' => '注册赠送余额开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后，新注册商户将自动获得赠送余额。',
+            'help_text' => '',
         ],
         'is_reg_give_vip' => [
-            'label' => '注册赠套餐开关',
+            'label' => '注册赠送套餐开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后，新注册商户将自动获得指定会员套餐。',
+            'help_text' => '',
         ],
         'is_reg' => [
             'label' => '注册开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '控制商户自助注册入口是否开放。',
+            'help_text' => '',
         ],
         'isRealName' => [
-            'label' => '实名开关',
+            'label' => '实名认证开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后显示实名认证相关配置和业务能力。',
+            'help_text' => '',
         ],
         'is_smOrder' => [
-            'label' => '补单按钮开关',
+            'label' => '手动补单按钮开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后商户端显示手动补单按钮。',
+            'help_text' => '',
         ],
         'is_sponsor' => [
             'label' => '赞助位开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '控制首页或公共页的赞助位内容展示。',
+            'help_text' => '',
         ],
         'isTicket' => [
-            'label' => '工单开关',
+            'label' => '工单中心开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后商户可提交和查看工单。',
+            'help_text' => '',
         ],
         'is_vip_expire' => [
             'label' => 'VIP 到期提醒',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后按提醒天数向商户发送 VIP 到期通知。',
+            'help_text' => '',
         ],
         'logo' => [
-            'label' => 'Logo 地址',
+            'label' => '网站标志',
             'editor' => 'input',
             'value_type' => 'path',
             'max_length' => 255,
             'placeholder' => '/upload/images/logo.png',
-            'help_text' => '填写网站 Logo 文件路径或完整 URL。',
+            'help_text' => '',
         ],
         'max_orderprice' => [
             'label' => '最大订单金额',
@@ -658,23 +711,23 @@ api.你的域名.com",
             'value_type' => 'non_negative_decimal',
             'max_length' => 12,
             'placeholder' => '1000',
-            'help_text' => '单笔支付订单允许提交的最大金额。',
+            'help_text' => '',
         ],
         'max_recharge' => [
-            'label' => '最大充值金额',
+            'label' => '商户充值最大金额',
             'editor' => 'input',
             'value_type' => 'non_negative_decimal',
             'max_length' => 12,
             'placeholder' => '1000',
-            'help_text' => '单笔余额充值允许提交的最大金额。',
+            'help_text' => '',
         ],
         'min_recharge' => [
-            'label' => '最小充值金额',
+            'label' => '商户充值最小金额',
             'editor' => 'input',
             'value_type' => 'non_negative_decimal',
             'max_length' => 12,
             'placeholder' => '0',
-            'help_text' => '单笔余额充值允许提交的最小金额。',
+            'help_text' => '',
         ],
         'min_orderprice' => [
             'label' => '最小订单金额',
@@ -682,7 +735,7 @@ api.你的域名.com",
             'value_type' => 'non_negative_decimal',
             'max_length' => 12,
             'placeholder' => '0.01',
-            'help_text' => '单笔支付订单允许提交的最小金额。',
+            'help_text' => '',
         ],
         'orderDisplay' => [
             'label' => '订单显示条数',
@@ -690,62 +743,62 @@ api.你的域名.com",
             'value_type' => 'non_negative_integer',
             'max_length' => 6,
             'placeholder' => '10',
-            'help_text' => '订单列表默认显示的条数，用于后台和商户端表格分页。',
+            'help_text' => '',
         ],
         'paid_reg' => [
             'label' => '付费注册',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后，新商户注册需先完成付费开通。',
+            'help_text' => '',
         ],
         'pay_api' => [
-            'label' => 'API 地址',
+            'label' => '对接接口地址',
             'editor' => 'textarea',
             'value_type' => 'list',
             'max_length' => 2000,
-            'placeholder' => "https://api.你的域名.com/
-https://api2.你的域名.com/",
-            'help_text' => '每行一个地址，用于对外展示或分发给商户的接口入口地址。',
+            'placeholder' => "https://api.example.com/
+https://api2.example.com/",
+            'help_text' => '',
         ],
         'paid_reg_price' => [
-            'label' => '注册费用',
+            'label' => '付费注册金额',
             'editor' => 'input',
             'value_type' => 'non_negative_decimal',
             'max_length' => 12,
             'placeholder' => '0.01',
-            'help_text' => '开启付费注册后，商户注册时需要支付的金额。',
+            'help_text' => '',
         ],
         'qq_login' => [
             'label' => 'QQ 快捷登录',
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 12,
-            'placeholder' => '请选择 QQ 快捷登录',
-            'help_text' => '关闭或选择一个已配置的 QQ 登录渠道。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'privacy' => [
             'label' => '隐私政策',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 5000,
-            'placeholder' => '请输入隐私政策',
-            'help_text' => '支持 HTML 富文本内容。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'reg_give_price' => [
-            'label' => '赠送金额',
+            'label' => '注册赠送余额',
             'editor' => 'input',
             'value_type' => 'non_negative_decimal',
             'max_length' => 12,
             'placeholder' => '0.00',
-            'help_text' => '注册成功后自动发放到商户账户余额中的金额。',
+            'help_text' => '',
         ],
         'reg_give_vip' => [
-            'label' => '赠送套餐',
+            'label' => '注册赠送套餐',
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 12,
-            'placeholder' => '请选择赠送套餐',
-            'help_text' => '注册成功后自动发放给商户的会员套餐。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'reg_popup' => [
             'label' => '注册页弹窗',
@@ -753,15 +806,15 @@ https://api2.你的域名.com/",
             'value_type' => 'text',
             'max_length' => 2000,
             'placeholder' => '请输入注册页弹窗内容',
-            'help_text' => '支持 HTML 富文本内容。',
+            'help_text' => '',
         ],
         'sh_notice' => [
-            'label' => '审核提示',
+            'label' => '商户审核提示',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 1000,
             'placeholder' => '商户审核提示',
-            'help_text' => '显示在商户或域名审核场景附近。',
+            'help_text' => '',
         ],
         'sitename' => [
             'label' => '站点名称',
@@ -769,7 +822,7 @@ https://api2.你的域名.com/",
             'value_type' => 'text',
             'max_length' => 80,
             'placeholder' => 'AiPay 支付平台',
-            'help_text' => '显示在首页、商户端和公共页面中的站点名称。',
+            'help_text' => '',
         ],
         'software_name' => [
             'label' => '软件名称',
@@ -777,17 +830,16 @@ https://api2.你的域名.com/",
             'value_type' => 'text',
             'max_length' => 80,
             'placeholder' => 'AiPay',
-            'help_text' => '用于软件监控上报、客户端展示和系统对外标识。',
+            'help_text' => '',
         ],
         'SmtpSecure' => [
-            'label' => 'SMTP 加密方式',
+            'label' => '邮件加密方式',
             'editor' => 'select',
             'value_type' => 'text',
             'max_length' => 16,
-            'placeholder' => '请选择 SMTP 加密方式',
-            'help_text' => '选择发送邮件时所使用的加密模式，例如 SSL/TLS 或 STARTTLS。',
-            'options' => [
-                ['label' => '无加密', 'value' => ''],
+            'placeholder' => '',
+            'help_text' => '',            'options' => [
+                ['label' => '默认', 'value' => ''],
                 ['label' => 'SSL/TLS', 'value' => 'ssl'],
                 ['label' => 'STARTTLS', 'value' => 'tls'],
             ],
@@ -797,8 +849,8 @@ https://api2.你的域名.com/",
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
-            'placeholder' => '请选择分销模式',
-            'help_text' => '决定返佣按充值金额结算，还是按会员购买金额结算。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '充值返佣', 'value' => '0'],
                 ['label' => '会员购买返佣', 'value' => '1'],
@@ -810,15 +862,15 @@ https://api2.你的域名.com/",
             'value_type' => 'non_negative_decimal',
             'max_length' => 12,
             'placeholder' => '0.00',
-            'help_text' => '当实名费用由商户承担时，将按这里的金额从商户余额扣除。',
+            'help_text' => '',
         ],
         'apiTemp' => [
             'label' => '接口模板',
             'editor' => 'select',
             'value_type' => 'text',
             'max_length' => 24,
-            'placeholder' => '请选择接口模板',
-            'help_text' => '用于接口对接页或接口展示页的模板方案。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '标准模板', 'value' => 'default'],
                 ['label' => '自定义模板', 'value' => 'diyApiTemp'],
@@ -829,11 +881,11 @@ https://api2.你的域名.com/",
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
-            'placeholder' => '请选择背景类型',
-            'help_text' => '选择登录页、首页等背景资源的获取方式。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '本地资源', 'value' => '0'],
-                ['label' => '自定义 API', 'value' => '1'],
+                ['label' => '自定义接口', 'value' => '1'],
             ],
         ],
         'captcha-type' => [
@@ -841,8 +893,8 @@ https://api2.你的域名.com/",
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
-            'placeholder' => '请选择验证码类型',
-            'help_text' => '用于登录、注册或测试支付等场景的验证码能力。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '关闭', 'value' => '0'],
                 ['label' => '普通验证码', 'value' => '1'],
@@ -855,8 +907,8 @@ https://api2.你的域名.com/",
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
-            'placeholder' => '请选择二维码生成方式',
-            'help_text' => '选择系统生成二维码图片时所使用的服务。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '本地生成', 'value' => '1'],
                 ['label' => '国际接口', 'value' => '2'],
@@ -868,8 +920,8 @@ https://api2.你的域名.com/",
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
-            'placeholder' => '请选择文件存储方式',
-            'help_text' => '上传素材、二维码和凭证图片时所使用的文件存储方案，OSS 需先完成配置。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '本地', 'value' => '1'],
                 ['label' => '阿里云 OSS', 'value' => '2'],
@@ -881,8 +933,8 @@ https://api2.你的域名.com/",
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
-            'placeholder' => '请选择登录验证方式',
-            'help_text' => '用于前台登录方式选择，电报验证需先配置电报通知能力。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '账号密码', 'value' => '0'],
                 ['label' => '短信验证', 'value' => '1'],
@@ -896,8 +948,8 @@ https://api2.你的域名.com/",
             'editor' => 'select',
             'value_type' => 'text',
             'max_length' => 24,
-            'placeholder' => '请选择维护页模板',
-            'help_text' => '系统进入维护模式后，前台展示的维护页面模板方案。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '标准模板', 'value' => 'default'],
                 ['label' => '自定义模板', 'value' => 'diyMtceHtml'],
@@ -908,20 +960,20 @@ https://api2.你的域名.com/",
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
-            'placeholder' => '请选择二维码解码方式',
-            'help_text' => '支付插件需要解析二维码内容时，使用 API 或本地方式完成解码。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => 'API 解码', 'value' => '1'],
                 ['label' => '本地解码', 'value' => '2'],
             ],
         ],
         'realNameBear' => [
-            'label' => '实名费用承担',
+            'label' => '实名费用承担方',
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
-            'placeholder' => '请选择承担方式',
-            'help_text' => '决定实名认证费用由平台承担还是由商户承担。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '平台承担', 'value' => '0'],
                 ['label' => '商户承担', 'value' => '1'],
@@ -932,8 +984,8 @@ https://api2.你的域名.com/",
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
-            'placeholder' => '请选择实名通道类型',
-            'help_text' => '选择商户实名认证时使用的实名通道类型。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '微信/支付宝人脸核验', 'value' => '1'],
                 ['label' => '支付宝身份授权', 'value' => '2'],
@@ -944,8 +996,8 @@ https://api2.你的域名.com/",
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
-            'placeholder' => '请选择注册验证方式',
-            'help_text' => '用于商户注册验证码发送方式选择，电报验证需先配置电报通知能力。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '关闭验证', 'value' => '0'],
                 ['label' => '短信验证', 'value' => '1'],
@@ -954,26 +1006,26 @@ https://api2.你的域名.com/",
             ],
         ],
         'reportPos' => [
-            'label' => '举报弹窗位置',
+            'label' => '举报说明位置',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后举报说明以弹窗位置展示，关闭则按页面内联方式展示。',
+            'help_text' => '',
         ],
         'reportTips' => [
             'label' => '举报说明',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 5000,
-            'placeholder' => '请输入举报说明',
-            'help_text' => '支持 HTML，用于举报页面或举报弹窗中的说明内容。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'retrieve-type' => [
             'label' => '找回方式',
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 1,
-            'placeholder' => '请选择找回方式',
-            'help_text' => '用于密码找回验证码发送方式选择，电报验证需先配置电报通知能力。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '关闭', 'value' => '0'],
                 ['label' => '短信验证', 'value' => '1'],
@@ -981,13 +1033,31 @@ https://api2.你的域名.com/",
                 ['label' => '电报验证', 'value' => '3'],
             ],
         ],
+        'merchant_login_drag_verify' => [
+            'label' => '商户登录滑动验证',
+            'editor' => 'switch',
+            'value_type' => 'boolean',
+            'help_text' => '',
+        ],
+        'merchant_register_drag_verify' => [
+            'label' => '商户注册滑动验证',
+            'editor' => 'switch',
+            'value_type' => 'boolean',
+            'help_text' => '',
+        ],
+        'merchant_retrieve_drag_verify' => [
+            'label' => '找回密码滑动验证',
+            'editor' => 'switch',
+            'value_type' => 'boolean',
+            'help_text' => '',
+        ],
         'smstype' => [
             'label' => '短信服务商',
             'editor' => 'select',
             'value_type' => 'text',
             'max_length' => 16,
-            'placeholder' => '请选择短信服务商',
-            'help_text' => '发送短信验证码时所使用的服务商，需同时完成对应密钥配置。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '阿里云', 'value' => 'aliyun'],
                 ['label' => '腾讯云', 'value' => 'qcloud'],
@@ -999,11 +1069,11 @@ https://api2.你的域名.com/",
             'editor' => 'select',
             'value_type' => 'text',
             'max_length' => 16,
-            'placeholder' => '请选择签名模式',
-            'help_text' => '基础校验仅校验必要参数；安全签名会同时校验签名与时间窗口。',
+            'placeholder' => '',
+            'help_text' => '',
             'options' => [
                 ['label' => '基础校验', 'value' => 'compat'],
-                ['label' => '安全签名', 'value' => 'strict'],
+                ['label' => '强签模式', 'value' => 'strict'],
             ],
         ],
         'software_callback_sign_window' => [
@@ -1012,87 +1082,82 @@ https://api2.你的域名.com/",
             'value_type' => 'non_negative_integer',
             'max_length' => 6,
             'placeholder' => '300',
-            'help_text' => '安全签名模式下允许的时间窗口，默认 300 秒。',
-        ],
+            'help_text' => '',        ],
         'shield_key' => [
             'label' => '风控关键词',
             'editor' => 'textarea',
             'value_type' => 'list',
             'max_length' => 5000,
-            'placeholder' => "博彩
-色情
-套现",
-            'help_text' => '每行一个关键词，命中后将触发风控拦截或风险提示。',
+            'placeholder' => "博彩 色情 套现",
+            'help_text' => '',
         ],
         'td_notice' => [
             'label' => '支付说明',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 1000,
-            'placeholder' => '请输入支付说明',
-            'help_text' => '显示在支付页、测试支付和下单场景附近的说明内容。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'vip_expire' => [
-            'label' => '提醒天数',
+            'label' => '提前提醒天数',
             'editor' => 'input',
             'value_type' => 'non_negative_integer',
             'max_length' => 6,
             'placeholder' => '3',
-            'help_text' => '会员到期前多少天开始提醒，建议填写 1 到 7 天。',
-        ],
+            'help_text' => '',        ],
         'wechat_login' => [
             'label' => '微信快捷登录',
             'editor' => 'select',
             'value_type' => 'non_negative_integer',
             'max_length' => 12,
-            'placeholder' => '请选择微信快捷登录',
-            'help_text' => '关闭或选择一个已配置的微信登录渠道。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'tg_bind_tips' => [
             'label' => '电报绑定提示',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 255,
-            'placeholder' => '请输入电报绑定提示',
-            'help_text' => '显示在商户绑定电报账号时的说明内容。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'aff_percentage' => [
-            'label' => '返佣比例',
+            'label' => '推广返佣比例',
             'editor' => 'input',
             'value_type' => 'non_negative_decimal',
             'max_length' => 8,
             'placeholder' => '0.10',
-            'help_text' => '填写 0 到 1 之间的小数，例如 0.10 表示 10%。',
-        ],
+            'help_text' => '',        ],
         'tg_notice_recharge' => [
             'label' => '电报充值通知',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后通过电报发送充值相关通知。',
+            'help_text' => '',
         ],
         'tg_notice_register' => [
             'label' => '电报注册通知',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后通过电报发送商户注册通知。',
+            'help_text' => '',
         ],
         'tg_notice_ticket' => [
             'label' => '电报工单通知',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后通过电报发送工单消息通知。',
+            'help_text' => '',
         ],
         'tg_notice_vip' => [
             'label' => '电报会员通知',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后通过电报发送会员相关提醒。',
+            'help_text' => '',
         ],
         'tg_switch' => [
             'label' => '电报通知开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后显示并启用电报相关能力。',
+            'help_text' => '',
         ],
         'timeout' => [
             'label' => '订单超时时间',
@@ -1100,61 +1165,60 @@ https://api2.你的域名.com/",
             'value_type' => 'non_negative_integer',
             'max_length' => 6,
             'placeholder' => '180',
-            'help_text' => '支付订单超过该时长未完成将按超时处理。',
+            'help_text' => '',
         ],
         'cdkPayUrl' => [
             'label' => '卡密充值地址',
             'editor' => 'input',
             'value_type' => 'url',
             'max_length' => 255,
-            'placeholder' => 'https://card.你的域名.com/',
-            'help_text' => '用于商户中心跳转至卡密充值页面或外部卡密系统。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'daily_limit' => [
-            'label' => '验证码每日请求上限',
+            'label' => '验证码每日限制',
             'editor' => 'input',
             'value_type' => 'non_negative_integer',
             'max_length' => 6,
             'placeholder' => '10',
-            'help_text' => '限制单个目标每日可发送的验证码次数，超出后拒绝继续发送。',
+            'help_text' => '',
         ],
         'disconnect_minute' => [
-            'label' => '掉线检测时间',
+            'label' => '掉线判定分钟',
             'editor' => 'input',
             'value_type' => 'non_negative_integer',
             'max_length' => 6,
             'placeholder' => '1',
-            'help_text' => '超过该分钟数未收到软件心跳或上报时判定掉线，最小 1 分钟。',
-        ],
+            'help_text' => '',        ],
         'diy_userId' => [
             'label' => '商户起始 ID',
             'editor' => 'input',
             'value_type' => 'non_negative_integer',
             'max_length' => 12,
             'placeholder' => '10000',
-            'help_text' => '开启自定义商户编号后，新商户编号将从这里的数值开始递增分配。',
+            'help_text' => '',
         ],
         'title' => [
             'label' => '页面标题',
             'editor' => 'input',
             'value_type' => 'text',
             'max_length' => 120,
-            'placeholder' => '请输入页面标题',
-            'help_text' => '显示在浏览器标题栏和搜索引擎标题中。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'user_agreement' => [
             'label' => '用户协议',
             'editor' => 'textarea',
             'value_type' => 'text',
             'max_length' => 5000,
-            'placeholder' => '请输入用户协议',
-            'help_text' => '支持 HTML 富文本内容。',
+            'placeholder' => '',
+            'help_text' => '',
         ],
         'wxpusher_switch' => [
             'label' => '微信推送开关',
             'editor' => 'switch',
             'value_type' => 'boolean',
-            'help_text' => '开启后可使用微信推送消息能力。',
+            'help_text' => '',
         ],
     ];
 
@@ -1360,6 +1424,9 @@ https://api2.你的域名.com/",
                 'captcha-type',
                 'code_switch',
                 'isAdminSecurity',
+                'merchant_login_drag_verify',
+                'merchant_register_drag_verify',
+                'merchant_retrieve_drag_verify',
                 'isSecurity',
                 'isSecurityForce',
                 'isSecurityLogin',
@@ -1852,6 +1919,97 @@ https://api2.你的域名.com/",
         return in_array($key, self::FORM_EXCLUDED_KEYS, true);
     }
 
+    private static function autoEditor(string $key): string
+    {
+        if (in_array($key, self::BOOLEAN_KEYS, true)) {
+            return 'switch';
+        }
+
+        if (self::dynamicOptionsForConfigKey($key) !== []) {
+            return 'select';
+        }
+
+        if (in_array($key, self::AUTO_PASSWORD_KEYS, true)) {
+            return 'password';
+        }
+
+        if (
+            in_array($key, self::AUTO_TEXTAREA_KEYS, true)
+            || in_array($key, self::LIST_KEYS, true)
+            || in_array($key, self::HTML_KEYS, true)
+        ) {
+            return 'textarea';
+        }
+
+        return 'input';
+    }
+
+    private static function autoValueType(string $key): string
+    {
+        if (in_array($key, self::BOOLEAN_KEYS, true)) {
+            return 'boolean';
+        }
+
+        if ($key === 'adminMail') {
+            return 'email';
+        }
+
+        if (in_array($key, self::LIST_KEYS, true)) {
+            return 'list';
+        }
+
+        if (in_array($key, self::AUTO_INTEGER_KEYS, true)) {
+            return 'non_negative_integer';
+        }
+
+        if (in_array($key, self::AUTO_DECIMAL_KEYS, true)) {
+            return 'non_negative_decimal';
+        }
+
+        if (in_array($key, self::AUTO_URL_KEYS, true)) {
+            return 'url';
+        }
+
+        if (in_array($key, self::AUTO_PATH_KEYS, true)) {
+            return 'path';
+        }
+
+        return 'text';
+    }
+
+    private static function autoMaxLength(string $editor, string $valueType): int
+    {
+        if ($editor === 'switch') {
+            return 1;
+        }
+
+        if ($editor === 'select') {
+            return 64;
+        }
+
+        if ($editor === 'password') {
+            return 1024;
+        }
+
+        if ($editor === 'textarea' || $valueType === 'list' || $valueType === 'text') {
+            return 5000;
+        }
+
+        if ($valueType === 'url' || $valueType === 'path') {
+            return 2048;
+        }
+
+        if ($valueType === 'non_negative_integer' || $valueType === 'non_negative_decimal') {
+            return 32;
+        }
+
+        if ($valueType === 'email') {
+            return 255;
+        }
+
+        return 255;
+    }
+
     private static function autoEditableDefinition(string $key): ?array
     {
         if (self::resolveGroup($key) === 'other') {
@@ -1871,6 +2029,28 @@ https://api2.你的域名.com/",
         ];
     }
 
+    private static function dynamicOptionsForConfigKey(string $key): array
+    {
+        return match ($key) {
+            'qq_login' => self::quickLoginOptions('qq', '未配置 QQ 登录渠道'),
+            'wechat_login' => self::quickLoginOptions('wechat', '未配置微信登录渠道'),
+            'reg_give_vip' => self::vipPackageOptions(),
+            'home_temp' => [
+                [
+                    'label' => 'Index99 首页模板',
+                    'value' => 'index99',
+                ],
+            ],
+            'demo_theme', 'doc_theme', 'news_theme', 'user_theme' => [
+                [
+                    'label' => '标准主题',
+                    'value' => 'default',
+                ],
+            ],
+            default => [],
+        };
+    }
+
     private static function enrichEditableDefinition(string $key, array $definition): array
     {
         $dynamicOptions = self::dynamicOptionsForConfigKey($key);
@@ -1886,7 +2066,10 @@ https://api2.你的域名.com/",
     {
         $editor = (string)($definition['editor'] ?? 'input');
         $valueType = (string)($definition['value_type'] ?? 'text');
-        $label = self::normalizeUiText((string)($definition['label'] ?? ''), self::displayLabel($key));
+        $rawLabel = (string)($definition['label'] ?? '');
+        $label = trim($rawLabel) === '' || self::looksLikeMojibake($rawLabel)
+            ? self::displayLabel($key)
+            : self::normalizeUiText($rawLabel, self::displayLabel($key));
 
         $definition['label'] = $label;
         $definition['placeholder'] = self::sanitizeDefinitionPlaceholder(
@@ -1930,6 +2113,11 @@ https://api2.你的域名.com/",
         string $valueType
     ): string {
         if (trim($placeholder) === '' || self::looksLikeMojibake($placeholder)) {
+            $override = self::placeholderOverride($key);
+            if ($override !== '') {
+                return $override;
+            }
+
             return self::autoPlaceholder($label, $editor, $valueType);
         }
 
@@ -1943,6 +2131,11 @@ https://api2.你的域名.com/",
         string $valueType
     ): string {
         if (trim($helpText) === '' || self::looksLikeMojibake($helpText)) {
+            $override = self::helpTextOverride($key);
+            if ($override !== '') {
+                return $override;
+            }
+
             return self::autoHelpText($key, $editor, $valueType);
         }
 
@@ -1965,7 +2158,7 @@ https://api2.你的域名.com/",
     {
         return match ($key) {
             'SmtpSecure' => match ($value) {
-                '' => '无',
+                '' => '无加密',
                 'ssl' => 'SSL/TLS',
                 'tls' => 'STARTTLS',
                 default => strtoupper($value),
@@ -1982,7 +2175,7 @@ https://api2.你的域名.com/",
             },
             'bgtype' => match ($value) {
                 '0' => '本地资源',
-                '1' => '自定义 API',
+                '1' => '自定义API',
                 default => $value,
             },
             'captcha-type' => match ($value) {
@@ -2000,7 +2193,7 @@ https://api2.你的域名.com/",
             },
             'file-type' => match ($value) {
                 '1' => '本地',
-                '2' => '阿里云 OSS',
+                '2' => '阿里云OSS',
                 '3' => '七牛云',
                 default => $value,
             },
@@ -2012,22 +2205,22 @@ https://api2.你的域名.com/",
                 '4' => '电报验证',
                 default => $value,
             },
-            'regcode-type' => match ($value) {
+            'regcode-type', 'retrieve-type' => match ($value) {
                 '0' => '关闭验证',
                 '1' => '短信验证',
                 '2' => '邮箱验证',
                 '3' => '电报验证',
                 default => $value,
             },
-            'retrieve-type' => match ($value) {
+            'merchant_login_drag_verify',
+            'merchant_register_drag_verify',
+            'merchant_retrieve_drag_verify' => match ($value) {
+                '1' => '开启',
                 '0' => '关闭',
-                '1' => '短信验证',
-                '2' => '邮箱验证',
-                '3' => '电报验证',
                 default => $value,
             },
             'qr_codeType' => match ($value) {
-                '1' => 'API 解码',
+                '1' => 'API解码',
                 '2' => '本地解码',
                 default => $value,
             },
@@ -2036,95 +2229,167 @@ https://api2.你的域名.com/",
                 '1' => '商户承担',
                 default => $value,
             },
-            'realNameType' => match ($value) {
-                '1' => '微信/支付宝人脸核验',
-                '2' => '支付宝身份授权',
-                default => $value,
-            },
             'smstype' => match ($value) {
-                'aliyun' => '阿里云',
-                'qcloud' => '腾讯云',
+                'aliyun' => '阿里云短信',
+                'qcloud' => '腾讯云短信',
                 'smsbao' => '短信宝',
                 default => $value,
             },
             'software_callback_sign_mode' => match ($value) {
                 'compat' => '基础校验',
-                'strict' => '安全签名',
+                'strict' => '强签模式',
                 default => $value,
             },
             default => '',
         };
     }
 
-    private static function dynamicOptionsForConfigKey(string $key): array
+    private static function placeholderOverride(string $key): string
     {
         return match ($key) {
-            'qq_login' => self::quickLoginOptions('qq', '关闭 - 请先在快捷登录管理中配置 QQ'),
-            'wechat_login' => self::quickLoginOptions('wx', '关闭 - 请先在快捷登录管理中配置微信'),
-            'reg_give_vip' => self::vipPackageOptions(),
-            default => [],
+            'adminMail' => 'support@aipay.cn',
+            'demopay_money' => '0.01',
+            'demopay_name' => '支付测试收款商户',
+            'diy_codeTemp' => '您的验证码是 [code]',
+            'diy_loginTips' => '账号 [login_uid] 于 [login_time] 在 [login_ip] 登录',
+            'diy_demoPay' => 'wxpay alipay qqpay',
+            'diy_loseTips' => '收款账号 [account_code] 已于 [lose_time] 掉线',
+            'diy_moneyTips' => '当前余额低于 [money] 元',
+            'diy_orderTips' => '您有新的订单 [out_trade_no]',
+            'diy_regTips' => '欢迎新商户 [userName]',
+            'diy_vipTemp' => '[sitename] VIP 将于 [day] 天后到期',
+            'domainNum' => '0',
+            'domain_black' => "blocked.example.com
+spam.example.com",
+            'domain_white' => "pay.example.com
+api.example.com",
+            'epayid_demo' => '请输入支付测试商户号',
+            'epaykey_demo' => '请输入支付测试密钥',
+            'epayurl_demo' => 'https://pay.example.com/submit.php',
+            'favicon' => '/upload/images/favicon.ico',
+            'logo' => '/upload/images/logo.png',
+            'max_orderprice' => '1000',
+            'max_recharge' => '1000',
+            'min_orderprice' => '0.01',
+            'min_recharge' => '0',
+            'orderDisplay' => '10',
+            'paid_reg_price' => '0.01',
+            'pay_api' => "https://api.example.com/
+https://api2.example.com/",
+            'reg_give_price' => '0.00',
+            'shield_key' => "博彩
+色情
+套现",
+            'timeout' => '180',
+            'cdkPayUrl' => 'https://card.example.com/',
+            'daily_limit' => '10',
+            'disconnect_minute' => '1',
+            'diy_userId' => '10000',
+            default => '',
         };
     }
 
-    private static function autoEditor(string $key): string
+    private static function helpTextOverride(string $key): string
     {
-        if (in_array($key, self::BOOLEAN_KEYS, true)) {
-            return 'switch';
-        }
-
-        if (in_array($key, self::AUTO_TEXTAREA_KEYS, true) || in_array($key, self::HTML_KEYS, true) || in_array($key, self::LIST_KEYS, true)) {
-            return 'textarea';
-        }
-
-        if (in_array($key, self::AUTO_PASSWORD_KEYS, true) || (self::isSensitive($key) && !str_contains(strtolower($key), 'privatekey'))) {
-            return 'password';
-        }
-
-        return 'input';
-    }
-
-    private static function autoValueType(string $key): string
-    {
-        if (in_array($key, self::BOOLEAN_KEYS, true)) {
-            return 'boolean';
-        }
-
-        if (in_array($key, self::LIST_KEYS, true)) {
-            return 'list';
-        }
-
-        if (in_array($key, self::AUTO_INTEGER_KEYS, true)) {
-            return 'non_negative_integer';
-        }
-
-        if (in_array($key, self::AUTO_DECIMAL_KEYS, true)) {
-            return 'non_negative_decimal';
-        }
-
-        if (in_array($key, self::AUTO_URL_KEYS, true)) {
-            return 'url';
-        }
-
-        if (in_array($key, self::AUTO_PATH_KEYS, true)) {
-            return 'path';
-        }
-
-        return 'text';
-    }
-
-    private static function autoMaxLength(string $editor, string $valueType): ?int
-    {
-        return match ($valueType) {
-            'non_negative_integer' => 12,
-            'non_negative_decimal' => 18,
-            'url', 'path' => 255,
-            'list' => 1000,
-            default => match ($editor) {
-                'textarea' => 5000,
-                'password' => 2000,
-                'switch' => null,
-                default => 255,
-            },
+        return match ($key) {
+            'adminMail' => '接收系统告警、业务通知和关键操作提醒的管理员邮箱地址。',
+            'desc' => '用于首页展示、搜索描述和系统简介。',
+            'demopay_money' => '用于支付测试页面默认金额展示。',
+            'demopay_name' => '用于支付测试页和收银台展示的收款人名称。',
+            'diy_codeTemp' => '支持 [code] 变量。',
+            'diyApiTemp' => '启用自定义接口模板后，接口展示页将按这里维护的内容渲染。',
+            'diy_loginTips' => '支持 [login_uid]、[login_ip]、[login_time] 变量。',
+            'diy_demoPay' => '每行一个支付方式编码，用于支付测试页展示。',
+            'diy_loseTips' => '支持 [account_id]、[account_type]、[account_code]、[lose_time] 变量。',
+            'diy_moneyTips' => '支持 [money] 变量，用于余额不足提醒。',
+            'diy_orderTips' => '用于新订单通知和订单到账提示内容。',
+            'diy_regTips' => '支持 [userName] 变量，用于商户注册成功提示。',
+            'diy_vipTemp' => '支持 [sitename]、[day] 变量，用于 VIP 到期提醒。',
+            'domain_notice' => '显示在域名绑定、审核和调用场景附近的说明文字。',
+            'domainNum' => '限制单个商户每日可新增的域名数量，0 表示不限制。',
+            'domain_black' => '每行一个域名，命中后将禁止绑定或访问相关业务功能。',
+            'domain_white' => '每行一个域名，命中后优先视为可信域名。',
+            'email_switch' => '开启后可使用邮箱通知、验证码和邮件提醒能力。',
+            'epayid_demo' => '用于协议调用、支付测试和测试下单。',
+            'epaykey_demo' => '用于支付测试和接口验签。',
+            'epayurl_demo' => '填写易支付协议网关地址，用于支付测试。',
+            'favicon' => '填写站点图标文件路径或完整 URL。',
+            'forceRealName' => '开启后，商户需先完成实名认证才可使用相关功能。',
+            'home_popup', 'index_popup', 'privacy', 'reg_popup', 'user_agreement' => '支持富文本内容。',
+            'icp' => '显示在首页底部和公共页面页脚。',
+            'is_aff' => '开启后支持推广返佣、分销统计和相关通知。',
+            'is_channelPay' => '开启后商户可在通道管理中发起测试订单。',
+            'isCdkPay' => '开启后商户中心可使用卡密充值与兑换能力。',
+            'is_domain' => '开启后商户可绑定、审核和管理自有域名。',
+            'is_examine' => '开启后新增商户、域名等业务需要后台审核。',
+            'is_notice' => '开启后显示公告中心与前台公告内容。',
+            'is_logOff' => '开启后商户可在前台申请账号注销。',
+            'is_pay_api' => '开启后，对外网关地址可改为这里维护的自定义接口线路。',
+            'is_reg' => '控制商户自主注册入口是否开放。',
+            'is_reg_give_price' => '开启后新注册商户将自动获得赠送余额。',
+            'is_reg_give_vip' => '开启后新注册商户将自动获得指定会员套餐。',
+            'isRealName' => '开启后显示实名认证相关配置与业务能力。',
+            'is_smOrder' => '开启后商户端显示手动补单按钮。',
+            'is_sponsor' => '控制首页或公共页赞助位内容展示。',
+            'isTicket' => '开启后商户可提交和查看工单。',
+            'is_vip_expire' => '开启后按提醒天数向商户发送 VIP 到期通知。',
+            'logo' => '填写网站标志文件路径或完整地址。',
+            'max_orderprice' => '单笔支付订单允许提交的最大金额。',
+            'max_recharge' => '单笔余额充值允许提交的最大金额。',
+            'min_recharge' => '单笔余额充值允许提交的最小金额。',
+            'min_orderprice' => '单笔支付订单允许提交的最小金额。',
+            'orderDisplay' => '后台和商户端表格默认每页显示条数。',
+            'paid_reg' => '开启后新商户注册需先完成付费开通。',
+            'pay_api' => '每行一个地址，用于对外展示或分发给商户的接口入口地址。',
+            'paid_reg_price' => '开启付费注册后，商户注册时需要支付的金额。',
+            'qq_login' => '关闭或选择一个已配置的 QQ 登录渠道。',
+            'reg_give_price' => '注册成功后自动发放到商户余额中的金额。',
+            'reg_give_vip' => '注册成功后自动赠送给商户的会员套餐。',
+            'sh_notice' => '显示在商户或域名审核场景附近。',
+            'sitename' => '显示在首页、商户端和公共页面中的站点名称。',
+            'software_name' => '用于软件监控上报、客户端显示和系统对外标识。',
+            'SmtpSecure' => '选择发送邮件时使用的加密方式。',
+            'aff_type' => '决定返佣按充值金额结算，还是按会员购买金额结算。',
+            'bearMoney' => '当实名认证费用由商户承担时，将按这里的金额从商户余额扣除。',
+            'apiTemp' => '用于接口展示页的模板方案。',
+            'bgtype' => '选择登录页、首页等背景资源的获取方式。',
+            'captcha-type' => '用于登录、注册或支付测试等场景的验证码能力。',
+            'merchant_login_drag_verify' => '开启后，商户登录页提交前需要先完成滑动验证。',
+            'merchant_register_drag_verify' => '开启后，商户注册页发送验证码和提交注册前都需要先完成滑动验证。',
+            'merchant_retrieve_drag_verify' => '开启后，找回密码页发送验证码和重置密码前都需要先完成滑动验证。',
+            'create_qrCode' => '选择系统生成二维码图片时所使用的服务。',
+            'file-type' => '上传素材、二维码和凭证图片时所使用的文件存储方案。',
+            'logincode-type' => '用于前台登录方式选择。',
+            'mtceType' => '系统进入维护模式后前台展示的模板方案。',
+            'qr_codeType' => '支付插件需要解析二维码内容时所使用的解析方式。',
+            'realNameBear' => '决定实名认证费用由平台承担还是由商户承担。',
+            'realNameType' => '选择商户实名认证时使用的通道类型。',
+            'regcode-type' => '用于商户注册验证码发送方式选择。',
+            'reportPos' => '开启后，举报说明可在弹窗或页面内嵌位置展示。',
+            'reportTips' => '支持富文本，用于举报页或举报弹窗中的说明内容。',
+            'retrieve-type' => '用于密码找回验证码发送方式选择。',
+            'smstype' => '选择短信服务商，并同步完成对应密钥配置。',
+            'software_callback_sign_mode' => '基础校验仅检查必要参数；强签模式会同时校验签名与时间窗口。',
+            'software_callback_sign_window' => '强签模式下允许的时间窗口，默认 300 秒。',
+            'shield_key' => '每行一个关键词，命中后会触发风控拦截或风险提示。',
+            'td_notice' => '显示在支付页、测试支付和下单场景附近的说明内容。',
+            'vip_expire' => '会员到期前多少天开始提醒，建议填写 1 到 7 天。',
+            'wechat_login' => '关闭或选择一个已配置的微信登录渠道。',
+            'tg_bind_tips' => '显示在商户绑定电报账号时的说明内容。',
+            'aff_percentage' => '填写 0 到 1 之间的小数，例如 0.10 表示 10%。',
+            'tg_notice_recharge' => '开启后通过电报发送充值相关通知。',
+            'tg_notice_register' => '开启后通过电报发送商户注册通知。',
+            'tg_notice_ticket' => '开启后通过电报发送工单消息通知。',
+            'tg_notice_vip' => '开启后通过电报发送会员相关提醒。',
+            'tg_switch' => '开启后显示并启用电报相关能力。',
+            'timeout' => '支付订单超过该时长未完成将按超时处理。',
+            'cdkPayUrl' => '用于商户中心跳转至卡密充值页面或外部卡密系统。',
+            'daily_limit' => '限制单个目标每日可发送的验证码次数，超出后拒绝继续发送。',
+            'disconnect_minute' => '超过该分钟数未收到软件心跳或上报时判定掉线，最小 1 分钟。',
+            'diy_userId' => '开启自定义商户编号后，新商户编号将从这里的数值开始递增分配。',
+            'title' => '显示在浏览器标题栏和搜索引擎标题中。',
+            'wxpusher_switch' => '开启后可使用微信推送消息能力。',
+            default => '',
         };
     }
 
@@ -2134,8 +2399,12 @@ https://api2.你的域名.com/",
             return '';
         }
 
+        if ($editor === 'select') {
+            return '请选择';
+        }
+
         if ($valueType === 'list') {
-            return '每行一项，或使用英文逗号分隔';
+            return '每行一项，也可使用英文逗号分隔';
         }
 
         if ($valueType === 'non_negative_integer') {
@@ -2143,7 +2412,7 @@ https://api2.你的域名.com/",
         }
 
         if ($valueType === 'non_negative_decimal') {
-            return '请输入非负金额或比例';
+            return '请输入非负数值';
         }
 
         if ($valueType === 'url') {
@@ -2160,11 +2429,11 @@ https://api2.你的域名.com/",
     private static function autoHelpText(string $key, string $editor, string $valueType): string
     {
         if ($editor === 'password') {
-            return '默认隐藏显示，展开后可编辑当前敏感配置。';
+            return '默认以脱敏方式展示，保存后会覆盖当前已配置的值。';
         }
 
         if ($valueType === 'list') {
-            return '支持英文逗号、中文逗号或换行分隔，多项内容会统一整理后保存。';
+            return '支持英文逗号、中文逗号或换行分隔；保存时会自动清理空项并去重。';
         }
 
         if (in_array($key, self::AUTO_PATH_KEYS, true)) {
@@ -2172,7 +2441,7 @@ https://api2.你的域名.com/",
         }
 
         if ($valueType === 'url') {
-            return '请填写完整可访问地址。';
+            return '请填写可直接访问的完整地址。';
         }
 
         if ($valueType === 'non_negative_integer' || $valueType === 'non_negative_decimal') {
@@ -2188,7 +2457,7 @@ https://api2.你的域名.com/",
             return '';
         }
 
-        $segments = preg_split('/[\r\n,，]+/u', $value) ?: [];
+        $segments = preg_split('/[\\r\\n,，]+/u', $value) ?: [];
         $segments = array_values(array_filter(array_map(static fn (string $item): string => trim($item), $segments), static fn (string $item): bool => $item !== ''));
 
         return implode(',', array_unique($segments));
@@ -2433,7 +2702,7 @@ https://api2.你的域名.com/",
 
             $vipDays = max(0, (int)($item['viptime'] ?? 0));
             if ($vipDays > 0) {
-                $label .= sprintf(' / %d天', $vipDays);
+                $label .= sprintf('/ %d天', $vipDays);
             }
 
             if ((int)($item['status'] ?? 0) !== 1) {
@@ -2502,8 +2771,8 @@ https://api2.你的域名.com/",
 
     private static function preview(string $value): string
     {
-        $normalized = preg_replace('/\s+/u', ' ', trim($value));
-        $normalized = $normalized === null ? trim($value) : $normalized;
+        $normalized = trim($value);
+        $normalized = preg_replace('/\\?+(?=$|[\\s，。；：、）】》\\]])/u', '', $normalized) ?? $normalized;
 
         if (self::length($normalized) <= 88) {
             return $normalized;
@@ -2535,16 +2804,12 @@ https://api2.你的域名.com/",
             return self::normalizeBoolean($normalized) ? '已开启' : '已关闭';
         }
 
-        $replaced = str_replace(
-            ['AiPay Smoke', 'Puple'],
-            ['AiPay 官方站', '标准主题'],
-            $normalized
-        );
+        $replaced = $normalized;
 
         if ($key === 'smstype') {
             $replaced = str_replace(
                 ['qcloud', 'tensms', 'smsbao', 'alisms'],
-                ['腾讯云', '腾讯云', '短信宝', '阿里云'],
+                ['腾讯云', '腾讯云短信', '短信宝', '阿里云短信'],
                 $replaced
             );
         }
@@ -2749,19 +3014,19 @@ https://api2.你的域名.com/",
         }
 
         if (str_starts_with($key, 'tencent_')) {
-            return self::normalizeUiText('腾讯云' . self::providerSuffixLabel(substr($key, 8)), self::humanize($key));
+            return self::normalizeUiText('腾讯云 ' . self::providerSuffixLabel(substr($key, 8)), self::humanize($key));
         }
 
         if (str_starts_with($key, 'alisms-')) {
-            return self::normalizeUiText('阿里云短信' . self::providerSuffixLabel(substr($key, 7)), self::humanize($key));
+            return self::normalizeUiText('阿里云短信 ' . self::providerSuffixLabel(substr($key, 7)), self::humanize($key));
         }
 
         if (str_starts_with($key, 'smsbao-')) {
-            return self::normalizeUiText('短信宝' . self::providerSuffixLabel(substr($key, 7)), self::humanize($key));
+            return self::normalizeUiText('短信宝 ' . self::providerSuffixLabel(substr($key, 7)), self::humanize($key));
         }
 
         if (str_starts_with($key, 'tensms-')) {
-            return self::normalizeUiText('腾讯云短信' . self::providerSuffixLabel(substr($key, 7)), self::humanize($key));
+            return self::normalizeUiText('腾讯云短信 ' . self::providerSuffixLabel(substr($key, 7)), self::humanize($key));
         }
 
         if (str_starts_with($key, 'file-')) {
@@ -2769,11 +3034,11 @@ https://api2.你的域名.com/",
         }
 
         if (str_starts_with($key, 'qiniu-')) {
-            return self::normalizeUiText('七牛云' . self::storageSuffixLabel(substr($key, 6)), self::humanize($key));
+            return self::normalizeUiText('七牛云 ' . self::storageSuffixLabel(substr($key, 6)), self::humanize($key));
         }
 
         if (str_starts_with($key, 'smtp-')) {
-            return self::normalizeUiText('SMTP ' . self::providerSuffixLabel(substr($key, 5)), self::humanize($key));
+            return self::normalizeUiText('邮件 ' . self::providerSuffixLabel(substr($key, 5)), self::humanize($key));
         }
 
         return self::normalizeUiText(self::DISPLAY_LABELS[$key] ?? '', self::humanize($key));
@@ -2782,18 +3047,18 @@ https://api2.你的域名.com/",
     private static function providerSuffixLabel(string $suffix): string
     {
         return self::normalizeUiText(match ($suffix) {
-            'CaptchaAppId' => '验证码应用 ID',
+            'CaptchaAppId' => '验证码应用编号',
             'CaptchaKey' => '验证码密钥',
-            'LoginCodeId' => '登录模板 ID',
-            'RegCodeId' => '注册模板 ID',
+            'LoginCodeId' => '登录模板编号',
+            'RegCodeId' => '注册模板编号',
             'SignName' => '短信签名',
-            'Secret' => '访问密钥密文',
-            'accessKeyId' => '访问密钥 ID',
-            'host' => '主机',
-            'port' => '端口',
-            'user' => '账号',
-            'pass' => '密码',
-            'AppId' => '应用 ID',
+            'Secret' => '访问密钥',
+            'accessKeyId' => '访问密钥编号',
+            'host' => '服务器地址',
+            'port' => '服务端口',
+            'user' => '发信账号',
+            'pass' => '发信密码',
+            'AppId' => '应用编号',
             'ApiTemp' => '接口模板',
             default => self::humanize($suffix),
         }, self::humanize($suffix));
@@ -2803,13 +3068,13 @@ https://api2.你的域名.com/",
     {
         return self::normalizeUiText(match ($suffix) {
             'type' => '文件类型',
-            'OssName' => '存储空间名称',
-            'accessKeyId' => '访问密钥 ID',
-            'accessKeySecret' => '访问密钥密文',
-            'endpoint' => '访问节点',
-            'AK' => '访问密钥',
-            'SK' => '访问密钥密文',
-            'Bucket' => '存储空间',
+            'OssName' => '存储桶名称',
+            'accessKeyId' => '访问密钥编号',
+            'accessKeySecret' => '访问密钥',
+            'endpoint' => '服务地址',
+            'AK' => '访问密钥编号',
+            'SK' => '访问密钥',
+            'Bucket' => '存储桶',
             'Domain' => '绑定域名',
             default => self::humanize($suffix),
         }, self::humanize($suffix));
@@ -2843,13 +3108,12 @@ https://api2.你的域名.com/",
             return 0;
         }
 
-        preg_match_all(
-            '/(?:�|€|鏀|鍟|璇|鍏|寰|鐧|瀹|鎴|璐|缁|闈|绯|绾|缃|閫|鐢|鍒|鍙|闂|褰|璋|鍥|鏃|锛|銆|鍩|妯|閰|鎻|鍚|璁|鑵|闃|鐭|閭|璧|缂|鎺|绔|绠|鍛|橀|偖|鏈|嶅|悊|堝)/u',
-            $text,
-            $matches
-        );
+        $score = 0;
+        foreach (self::MOJIBAKE_FRAGMENTS as $fragment) {
+            $score += substr_count($text, $fragment);
+        }
 
-        return count($matches[0]);
+        return $score;
     }
 
     private static function normalizeUiText(string $text, string $fallback = ''): string
@@ -2867,7 +3131,7 @@ https://api2.你的域名.com/",
             }
         }
 
-        $normalized = str_replace('�', '', $normalized);
+        $normalized = str_replace("\u{FFFD}", '', $normalized);
         $normalized = preg_replace('/\?+(?=$|[\s，。；：、）】》\]])/u', '', $normalized) ?? $normalized;
         $normalized = preg_replace('/\s+/u', ' ', trim($normalized)) ?? trim($normalized);
 

@@ -134,7 +134,7 @@
   const heroEyebrow = computed(() => (isCategoryMode.value ? '分类内容' : '公告中心'))
   const pageTitle = computed(() => (isCategoryMode.value ? currentTypeTitle.value : '公告中心'))
   const pageDescription = computed(() =>
-    isCategoryMode.value ? `查看${currentTypeTitle.value}内容。` : '查看平台公告与帮助内容。'
+    isCategoryMode.value ? `${currentTypeTitle.value}列表。` : '查看平台公告与常见问题。'
   )
   const listTitle = computed(() => (isCategoryMode.value ? currentTypeTitle.value : '最新内容'))
 
@@ -205,7 +205,6 @@
     font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 
   .news-hero,
@@ -330,7 +329,6 @@
     font-size: 0.84rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 
   .news-row__meta strong {

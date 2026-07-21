@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace app\service;
 
 use app\support\BusinessTable;
+use app\support\FrontendUrlBuilder;
 use app\support\LegacyPaymentSdkAutoloader;
 use app\support\RequestPayload;
 use app\support\SystemConfig;
@@ -170,7 +171,7 @@ class MerchantRechargeService
                 'message' => '充值订单已支付',
                 'status_key' => 'order_paid',
                 'status_text' => '充值订单已支付',
-                'url' => '/Deal/Recharge',
+                'url' => FrontendUrlBuilder::merchantUrl($request, '/merchant/recharges'),
             ];
         }
 
@@ -221,7 +222,7 @@ class MerchantRechargeService
             if ($outTradeNo === '') {
                 return $mode === 'notify'
                     ? ['kind' => 'text', 'body' => 'fail']
-                    : ['kind' => 'redirect', 'location' => '/Deal/Recharge'];
+                    : ['kind' => 'redirect', 'location' => FrontendUrlBuilder::merchantUrl($request, '/merchant/recharges')];
             }
 
             $this->settleRecharge($outTradeNo, $config);
@@ -242,13 +243,13 @@ class MerchantRechargeService
 
             return [
                 'kind' => 'redirect',
-                'location' => '/Deal/Recharge',
+                'location' => FrontendUrlBuilder::merchantUrl($request, '/merchant/recharges'),
             ];
         }
 
         return $mode === 'notify'
             ? ['kind' => 'text', 'body' => $this->callbackFailureBody($payload), 'content_type' => $this->callbackFailureContentType($payload)]
-            : ['kind' => 'redirect', 'location' => '/Deal/Recharge'];
+            : ['kind' => 'redirect', 'location' => FrontendUrlBuilder::merchantUrl($request, '/merchant/recharges')];
     }
 
     public function cashierPayload(int $merchantId, string $outTradeNo, string $type, string $rawQrCode, string $launchUrl = ''): array
@@ -274,7 +275,7 @@ class MerchantRechargeService
             ],
             'console' => [
                 'timeout_seconds' => $timeoutSeconds,
-                'timeout_url' => trim((string)($basic['timeout_url'] ?? '/Deal/Recharge')) ?: '/Deal/Recharge',
+                'timeout_url' => trim((string)($basic['timeout_url'] ?? '/merchant/recharges')) ?: '/merchant/recharges',
                 'console_notice' => trim((string)($basic['console_notity'] ?? '')),
                 'is_pay_popup' => (int)($basic['is_payPopUp'] ?? 0) === 1,
             ],
@@ -398,7 +399,7 @@ class MerchantRechargeService
         return $row ? (array)$row : [
             'user_id' => $merchantId,
             'timeout_time' => 180,
-            'timeout_url' => '/Deal/Recharge',
+            'timeout_url' => '/merchant/recharges',
             'console_notity' => '',
             'is_payPopUp' => 0,
         ];
@@ -636,7 +637,7 @@ class MerchantRechargeService
             }
         }
 
-        return $this->requestOrigin($request) . '/qrcode.php?text=' . rawurlencode($content) . '&size=' . $size;
+        return \app\support\FrontendUrlBuilder::publicQrCodeUrl($request, $content, $size);
     }
 
     private function callbackPayload(Request $request): array

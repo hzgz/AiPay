@@ -1,35 +1,35 @@
-/**
- * useTableColumns - 表格列配置管理
+﻿/**
+ * useTableColumns - 琛ㄦ牸鍒楅厤缃鐞?
  *
- * 提供动态的表格列配置管理能力，支持运行时灵活控制列的显示、隐藏、排序等操作。
- * 通常与 useTable 配合使用，为表格提供完整的列管理功能。
+ * 鎻愪緵鍔ㄦ€佺殑琛ㄦ牸鍒楅厤缃鐞嗚兘鍔涳紝鏀寔杩愯鏃剁伒娲绘帶鍒跺垪鐨勬樉绀恒€侀殣钘忋€佹帓搴忕瓑鎿嶄綔銆?
+ * 閫氬父涓?useTable 閰嶅悎浣跨敤锛屼负琛ㄦ牸鎻愪緵瀹屾暣鐨勫垪绠＄悊鍔熻兘銆?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * 1. 列显示控制 - 动态显示/隐藏列，支持批量操作
- * 2. 列排序 - 拖拽或编程方式重新排列列顺序
- * 3. 列配置管理 - 新增、删除、更新列配置
- * 4. 特殊列支持 - 自动处理 selection、expand、index 等特殊列
- * 5. 状态持久化 - 保持列的显示状态，支持重置到初始状态
+ * 1. 鍒楁樉绀烘帶鍒?- 鍔ㄦ€佹樉绀?闅愯棌鍒楋紝鏀寔鎵归噺鎿嶄綔
+ * 2. 鍒楁帓搴?- 鎷栨嫿鎴栫紪绋嬫柟寮忛噸鏂版帓鍒楀垪椤哄簭
+ * 3. 鍒楅厤缃鐞?- 鏂板銆佸垹闄ゃ€佹洿鏂板垪閰嶇疆
+ * 4. 鐗规畩鍒楁敮鎸?- 鑷姩澶勭悊 selection銆乪xpand銆乮ndex 绛夌壒娈婂垪
+ * 5. 鐘舵€佹寔涔呭寲 - 淇濇寔鍒楃殑鏄剧ず鐘舵€侊紝鏀寔閲嶇疆鍒板垵濮嬬姸鎬?
  *
- * ## 使用示例
+ * ## 浣跨敤绀轰緥
  *
  * ```typescript
  * const { columns, columnChecks, toggleColumn, reorderColumns } = useTableColumns(() => [
- *   { prop: 'name', label: '姓名', visible: true },
- *   { prop: 'email', label: '邮箱', visible: true },
- *   { prop: 'status', label: '状态', visible: false }
+ *   { prop: 'name', label: '濮撳悕', visible: true },
+ *   { prop: 'email', label: '閭', visible: true },
+ *   { prop: 'status', label: '鐘舵€?, visible: false }
  * ])
  *
- * // 切换列显示
+ * // 鍒囨崲鍒楁樉绀?
  * toggleColumn('email', false)
  *
- * // 重新排序
+ * // 閲嶆柊鎺掑簭
  * reorderColumns(0, 2)
  * ```
  *
  * @module useTableColumns
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { ref, computed, watch } from 'vue'
@@ -37,7 +37,7 @@ import { $t } from '@/locales'
 import type { ColumnOption } from '@/types/component'
 
 /**
- * 特殊列类型
+ * 鐗规畩鍒楃被鍨?
  */
 const SPECIAL_COLUMNS: Record<string, { prop: string; label: string }> = {
   selection: { prop: '__selection__', label: $t('table.column.selection') },
@@ -46,26 +46,26 @@ const SPECIAL_COLUMNS: Record<string, { prop: string; label: string }> = {
 }
 
 /**
- * 获取列的唯一标识
+ * 鑾峰彇鍒楃殑鍞竴鏍囪瘑
  */
 export const getColumnKey = <T>(col: ColumnOption<T>) =>
   SPECIAL_COLUMNS[col.type as keyof typeof SPECIAL_COLUMNS]?.prop ?? (col.prop as string)
 
 /**
- * 获取列的显示状态
- * 优先使用 visible 字段，如果不存在则使用 checked 字段
+ * 鑾峰彇鍒楃殑鏄剧ず鐘舵€?
+ * 浼樺厛浣跨敤 visible 瀛楁锛屽鏋滀笉瀛樺湪鍒欎娇鐢?checked 瀛楁
  */
 export const getColumnVisibility = <T>(col: ColumnOption<T>): boolean => {
-  // visible 优先级高于 checked
+  // visible 浼樺厛绾ч珮浜?checked
   if (col.visible !== undefined) {
     return col.visible
   }
-  // 如果 visible 未定义，使用 checked，默认为 true
+  // 濡傛灉 visible 鏈畾涔夛紝浣跨敤 checked锛岄粯璁や负 true
   return col.checked ?? true
 }
 
 /**
- * 获取列的检查状态
+ * 鑾峰彇鍒楃殑妫€鏌ョ姸鎬?
  */
 export const getColumnChecks = <T>(columns: ColumnOption<T>[]) =>
   columns.map((col) => {
@@ -79,61 +79,61 @@ export const getColumnChecks = <T>(columns: ColumnOption<T>[]) =>
   })
 
 /**
- * 动态列配置接口
+ * 鍔ㄦ€佸垪閰嶇疆鎺ュ彛
  */
 export interface DynamicColumnConfig<T = any> {
   /**
-   * 新增列（支持单个或批量）
-   * @param column 列配置或列配置数组
-   * @param index 可选的插入位置，默认末尾（批量时为第一个列的位置）
+   * 鏂板鍒楋紙鏀寔鍗曚釜鎴栨壒閲忥級
+   * @param column 鍒楅厤缃垨鍒楅厤缃暟缁?
+   * @param index 鍙€夌殑鎻掑叆浣嶇疆锛岄粯璁ゆ湯灏撅紙鎵归噺鏃朵负绗竴涓垪鐨勪綅缃級
    */
   addColumn: (column: ColumnOption<T> | ColumnOption<T>[], index?: number) => void
   /**
-   * 删除列（支持单个或批量）
-   * @param prop 列的唯一标识或标识数组
+   * 鍒犻櫎鍒楋紙鏀寔鍗曚釜鎴栨壒閲忥級
+   * @param prop 鍒楃殑鍞竴鏍囪瘑鎴栨爣璇嗘暟缁?
    */
   removeColumn: (prop: string | string[]) => void
   /**
-   * 切换列显示状态（支持单个或批量）
-   * @param prop 列的唯一标识或标识数组
-   * @param visible 可选的显示状态，默认取反
+   * 鍒囨崲鍒楁樉绀虹姸鎬侊紙鏀寔鍗曚釜鎴栨壒閲忥級
+   * @param prop 鍒楃殑鍞竴鏍囪瘑鎴栨爣璇嗘暟缁?
+   * @param visible 鍙€夌殑鏄剧ず鐘舵€侊紝榛樿鍙栧弽
    */
   toggleColumn: (prop: string | string[], visible?: boolean) => void
 
   /**
-   * 更新列（支持单个或批量）
-   * @param prop 列的唯一标识或更新配置数组
-   * @param updates 列配置更新（当 prop 为字符串时使用）
+   * 鏇存柊鍒楋紙鏀寔鍗曚釜鎴栨壒閲忥級
+   * @param prop 鍒楃殑鍞竴鏍囪瘑鎴栨洿鏂伴厤缃暟缁?
+   * @param updates 鍒楅厤缃洿鏂帮紙褰?prop 涓哄瓧绗︿覆鏃朵娇鐢級
    */
   updateColumn: (
     prop: string | Array<{ prop: string; updates: Partial<ColumnOption<T>> }>,
     updates?: Partial<ColumnOption<T>>
   ) => void
   /**
-   * 批量更新列（兼容旧版本，推荐使用 updateColumn 的数组模式）
-   * @param updates 列更新配置
-   * @deprecated 推荐使用 updateColumn 的数组模式
+   * 鎵归噺鏇存柊鍒楋紙鍏煎鏃х増鏈紝鎺ㄨ崘浣跨敤 updateColumn 鐨勬暟缁勬ā寮忥級
+   * @param updates 鍒楁洿鏂伴厤缃?
+   * @deprecated 鎺ㄨ崘浣跨敤 updateColumn 鐨勬暟缁勬ā寮?
    */
   batchUpdateColumns: (updates: Array<{ prop: string; updates: Partial<ColumnOption<T>> }>) => void
   /**
-   * 重新排序列
-   * @param fromIndex 源索引
-   * @param toIndex 目标索引
+   * 閲嶆柊鎺掑簭鍒?
+   * @param fromIndex 婧愮储寮?
+   * @param toIndex 鐩爣绱㈠紩
    */
   reorderColumns: (fromIndex: number, toIndex: number) => void
   /**
-   * 获取列配置
-   * @param prop 列的唯一标识
-   * @returns 列配置
+   * 鑾峰彇鍒楅厤缃?
+   * @param prop 鍒楃殑鍞竴鏍囪瘑
+   * @returns 鍒楅厤缃?
    */
   getColumnConfig: (prop: string) => ColumnOption<T> | undefined
   /**
-   * 获取所有列配置
-   * @returns 所有列配置
+   * 鑾峰彇鎵€鏈夊垪閰嶇疆
+   * @returns 鎵€鏈夊垪閰嶇疆
    */
   getAllColumns: () => ColumnOption<T>[]
   /**
-   * 重置所有列
+   * 閲嶇疆鎵€鏈夊垪
    */
   resetColumns: () => void
 }
@@ -147,7 +147,7 @@ export function useTableColumns<T = any>(
   const dynamicColumns = ref<ColumnOption<T>[]>(columnsFactory())
   const columnChecks = ref<ColumnOption<T>[]>(getColumnChecks(dynamicColumns.value))
 
-  // 当 dynamicColumns 变动时，重新生成 columnChecks 且保留已存在的显示状态
+  // 褰?dynamicColumns 鍙樺姩鏃讹紝閲嶆柊鐢熸垚 columnChecks 涓斾繚鐣欏凡瀛樺湪鐨勬樉绀虹姸鎬?
   watch(
     dynamicColumns,
     (newCols) => {
@@ -168,7 +168,7 @@ export function useTableColumns<T = any>(
     { deep: true }
   )
 
-  // 当前显示列（基于 columnChecks 的 checked 或 visible）
+  // 褰撳墠鏄剧ず鍒楋紙鍩轰簬 columnChecks 鐨?checked 鎴?visible锛?
   const columns = computed(() => {
     const colMap = new Map(dynamicColumns.value.map((c) => [getColumnKey(c), c]))
     return columnChecks.value
@@ -177,7 +177,7 @@ export function useTableColumns<T = any>(
       .filter(Boolean) as ColumnOption<T>[]
   })
 
-  // 支持 updater 返回新数组或直接在传入数组上 mutate
+  // 鏀寔 updater 杩斿洖鏂版暟缁勬垨鐩存帴鍦ㄤ紶鍏ユ暟缁勪笂 mutate
   const setDynamicColumns = (updater: (cols: ColumnOption<T>[]) => void | ColumnOption<T>[]) => {
     const copy = [...dynamicColumns.value]
     const result = updater(copy)
@@ -189,7 +189,7 @@ export function useTableColumns<T = any>(
     columnChecks,
 
     /**
-     * 新增列（支持单个或批量）
+     * 鏂板鍒楋紙鏀寔鍗曚釜鎴栨壒閲忥級
      */
     addColumn: (column: ColumnOption<T> | ColumnOption<T>[], index?: number) =>
       setDynamicColumns((cols) => {
@@ -198,13 +198,13 @@ export function useTableColumns<T = any>(
         const insertIndex =
           typeof index === 'number' && index >= 0 && index <= next.length ? index : next.length
 
-        // 批量插入
+        // 鎵归噺鎻掑叆
         next.splice(insertIndex, 0, ...columnsToAdd)
         return next
       }),
 
     /**
-     * 删除列（支持单个或批量）
+     * 鍒犻櫎鍒楋紙鏀寔鍗曚釜鎴栨壒閲忥級
      */
     removeColumn: (prop: string | string[]) =>
       setDynamicColumns((cols) => {
@@ -213,13 +213,13 @@ export function useTableColumns<T = any>(
       }),
 
     /**
-     * 更新列（支持单个或批量）
+     * 鏇存柊鍒楋紙鏀寔鍗曚釜鎴栨壒閲忥級
      */
     updateColumn: (
       prop: string | Array<{ prop: string; updates: Partial<ColumnOption<T>> }>,
       updates?: Partial<ColumnOption<T>>
     ) => {
-      // 批量模式：prop 是数组
+      // 鎵归噺妯″紡锛歱rop 鏄暟缁?
       if (Array.isArray(prop)) {
         setDynamicColumns((cols) => {
           const map = new Map(prop.map((u) => [u.prop, u.updates]))
@@ -230,7 +230,7 @@ export function useTableColumns<T = any>(
           })
         })
       }
-      // 单个模式：prop 是字符串
+      // 鍗曚釜妯″紡锛歱rop 鏄瓧绗︿覆
       else if (updates) {
         setDynamicColumns((cols) =>
           cols.map((c) => (getColumnKey(c) === prop ? { ...c, ...updates } : c))
@@ -239,7 +239,7 @@ export function useTableColumns<T = any>(
     },
 
     /**
-     * 切换列显示状态（支持单个或批量）
+     * 鍒囨崲鍒楁樉绀虹姸鎬侊紙鏀寔鍗曚釜鎴栨壒閲忥級
      */
     toggleColumn: (prop: string | string[], visible?: boolean) => {
       const propsToToggle = Array.isArray(prop) ? prop : [prop]
@@ -250,7 +250,7 @@ export function useTableColumns<T = any>(
         if (i > -1) {
           const currentVisibility = getColumnVisibility(next[i])
           const newVisibility = visible ?? !currentVisibility
-          // 同时更新 checked 和 visible 以保持兼容性
+          // 鍚屾椂鏇存柊 checked 鍜?visible 浠ヤ繚鎸佸吋瀹规€?
           next[i] = { ...next[i], checked: newVisibility, visible: newVisibility }
         }
       })
@@ -259,15 +259,15 @@ export function useTableColumns<T = any>(
     },
 
     /**
-     * 重置所有列
+     * 閲嶇疆鎵€鏈夊垪
      */
     resetColumns: () => {
       dynamicColumns.value = columnsFactory()
     },
 
     /**
-     * 批量更新列（兼容旧版本）
-     * @deprecated 推荐使用 updateColumn 的数组模式
+     * 鎵归噺鏇存柊鍒楋紙鍏煎鏃х増鏈級
+     * @deprecated 鎺ㄨ崘浣跨敤 updateColumn 鐨勬暟缁勬ā寮?
      */
     batchUpdateColumns: (updates) =>
       setDynamicColumns((cols) => {
@@ -280,7 +280,7 @@ export function useTableColumns<T = any>(
       }),
 
     /**
-     * 重新排序列
+     * 閲嶆柊鎺掑簭鍒?
      */
     reorderColumns: (fromIndex: number, toIndex: number) =>
       setDynamicColumns((cols) => {
@@ -300,13 +300,14 @@ export function useTableColumns<T = any>(
       }),
 
     /**
-     * 获取列配置
+     * 鑾峰彇鍒楅厤缃?
      */
     getColumnConfig: (prop: string) => dynamicColumns.value.find((c) => getColumnKey(c) === prop),
 
     /**
-     * 获取所有列配置
+     * 鑾峰彇鎵€鏈夊垪閰嶇疆
      */
     getAllColumns: () => [...dynamicColumns.value]
   }
 }
+

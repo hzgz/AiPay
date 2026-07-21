@@ -1,57 +1,57 @@
-/**
- * 存储键名管理器模块
+﻿/**
+ * 瀛樺偍閿悕绠＄悊鍣ㄦā鍧?
  *
- * 提供智能的版本化存储键管理和数据迁移功能
+ * 鎻愪緵鏅鸿兘鐨勭増鏈寲瀛樺偍閿鐞嗗拰鏁版嵁杩佺Щ鍔熻兘
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 自动生成当前版本的存储键名
- * - 检测当前版本数据是否存在
- * - 查找其他版本的同名存储数据
- * - 自动将旧版本数据迁移到当前版本
- * - 数据迁移日志记录
- * - 迁移失败的错误处理
+ * - 鑷姩鐢熸垚褰撳墠鐗堟湰鐨勫瓨鍌ㄩ敭鍚?
+ * - 妫€娴嬪綋鍓嶇増鏈暟鎹槸鍚﹀瓨鍦?
+ * - 鏌ユ壘鍏朵粬鐗堟湰鐨勫悓鍚嶅瓨鍌ㄦ暟鎹?
+ * - 鑷姩灏嗘棫鐗堟湰鏁版嵁杩佺Щ鍒板綋鍓嶇増鏈?
+ * - 鏁版嵁杩佺Щ鏃ュ織璁板綍
+ * - 杩佺Щ澶辫触鐨勯敊璇鐞?
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - Pinia Store 持久化插件中获取存储键
- * - 应用版本升级时自动迁移用户数据
- * - 避免版本升级导致的数据丢失
- * - 实现平滑的版本过渡
+ * - Pinia Store 鎸佷箙鍖栨彃浠朵腑鑾峰彇瀛樺偍閿?
+ * - 搴旂敤鐗堟湰鍗囩骇鏃惰嚜鍔ㄨ縼绉荤敤鎴锋暟鎹?
+ * - 閬垮厤鐗堟湰鍗囩骇瀵艰嚧鐨勬暟鎹涪澶?
+ * - 瀹炵幇骞虫粦鐨勭増鏈繃娓?
  *
- * ## 工作流程
+ * ## 宸ヤ綔娴佺▼
  *
- * 1. 优先使用当前版本的存储键
- * 2. 如果当前版本无数据，查找其他版本的同名数据
- * 3. 找到旧版本数据后自动迁移到当前版本
- * 4. 返回当前版本的存储键供使用
+ * 1. 浼樺厛浣跨敤褰撳墠鐗堟湰鐨勫瓨鍌ㄩ敭
+ * 2. 濡傛灉褰撳墠鐗堟湰鏃犳暟鎹紝鏌ユ壘鍏朵粬鐗堟湰鐨勫悓鍚嶆暟鎹?
+ * 3. 鎵惧埌鏃х増鏈暟鎹悗鑷姩杩佺Щ鍒板綋鍓嶇増鏈?
+ * 4. 杩斿洖褰撳墠鐗堟湰鐨勫瓨鍌ㄩ敭渚涗娇鐢?
  *
  * @module utils/storage/storage-key-manager
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import { StorageConfig } from '@/utils/storage'
 
 /**
- * 存储键名管理器
- * 负责处理版本化的存储键名生成和数据迁移
+ * 瀛樺偍閿悕绠＄悊鍣?
+ * 璐熻矗澶勭悊鐗堟湰鍖栫殑瀛樺偍閿悕鐢熸垚鍜屾暟鎹縼绉?
  */
 export class StorageKeyManager {
   /**
-   * 获取当前版本的存储键名
+   * 鑾峰彇褰撳墠鐗堟湰鐨勫瓨鍌ㄩ敭鍚?
    */
   private getCurrentVersionKey(storeId: string): string {
     return StorageConfig.generateStorageKey(storeId)
   }
 
   /**
-   * 检查当前版本的数据是否存在
+   * 妫€鏌ュ綋鍓嶇増鏈殑鏁版嵁鏄惁瀛樺湪
    */
   private hasCurrentVersionData(key: string): boolean {
     return localStorage.getItem(key) !== null
   }
 
   /**
-   * 查找其他版本的同名存储键
+   * 鏌ユ壘鍏朵粬鐗堟湰鐨勫悓鍚嶅瓨鍌ㄩ敭
    */
   private findExistingKey(storeId: string): string | null {
     const storageKeys = Object.keys(localStorage)
@@ -61,32 +61,32 @@ export class StorageKeyManager {
   }
 
   /**
-   * 将数据从旧版本迁移到当前版本
+   * 灏嗘暟鎹粠鏃х増鏈縼绉诲埌褰撳墠鐗堟湰
    */
   private migrateData(fromKey: string, toKey: string): void {
     try {
       const existingData = localStorage.getItem(fromKey)
       if (existingData) {
         localStorage.setItem(toKey, existingData)
-        console.info(`[Storage] 已迁移数据: ${fromKey} → ${toKey}`)
+        console.info(`[Storage] 宸茶縼绉绘暟鎹? ${fromKey} 鈫?${toKey}`)
       }
     } catch (error) {
-      console.warn(`[Storage] 数据迁移失败: ${fromKey}`, error)
+      console.warn(`[Storage] 鏁版嵁杩佺Щ澶辫触: ${fromKey}`, error)
     }
   }
 
   /**
-   * 获取持久化存储的键名（支持自动数据迁移）
+   * 鑾峰彇鎸佷箙鍖栧瓨鍌ㄧ殑閿悕锛堟敮鎸佽嚜鍔ㄦ暟鎹縼绉伙級
    */
   getStorageKey(storeId: string): string {
     const currentKey = this.getCurrentVersionKey(storeId)
 
-    // 优先使用当前版本的数据
+    // 浼樺厛浣跨敤褰撳墠鐗堟湰鐨勬暟鎹?
     if (this.hasCurrentVersionData(currentKey)) {
       return currentKey
     }
 
-    // 查找并迁移其他版本的数据
+    // 鏌ユ壘骞惰縼绉诲叾浠栫増鏈殑鏁版嵁
     const existingKey = this.findExistingKey(storeId)
     if (existingKey) {
       this.migrateData(existingKey, currentKey)
@@ -95,3 +95,4 @@ export class StorageKeyManager {
     return currentKey
   }
 }
+

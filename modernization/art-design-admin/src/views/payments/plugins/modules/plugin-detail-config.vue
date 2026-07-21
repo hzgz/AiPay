@@ -53,9 +53,7 @@
           </div>
           <div class="audit-tags">
             <ElTag effect="plain">字段 {{ detail.config_summary.total_fields }}</ElTag>
-            <ElTag type="success" effect="plain">
-              已配置 {{ detail.config_summary.configured_fields }}
-            </ElTag>
+            <ElTag type="success" effect="plain">已配置 {{ detail.config_summary.configured_fields }}</ElTag>
             <ElTag
               :type="detail.config_summary.missing_required_fields > 0 ? 'danger' : 'info'"
               effect="plain"
@@ -68,7 +66,7 @@
         <div v-if="!detail.state.installed" class="plugin-config-notice">
           <div class="plugin-config-notice__copy">
             <strong>插件未安装</strong>
-            <p>安装后即可在这里填写接入字段。</p>
+            <p>安装完成后，就可以在这里填写当前插件的接入字段。</p>
           </div>
           <ElTag effect="plain" type="info">未安装</ElTag>
         </div>
@@ -80,7 +78,7 @@
           >
             <div class="plugin-config-notice__copy">
               <strong>配置表缺失</strong>
-              <p>请先修复插件，再回到这里填写接入字段。</p>
+              <p>请先修复插件，然后再回来填写接入字段。</p>
             </div>
             <ElTag effect="plain" type="danger">需修复</ElTag>
           </div>
@@ -132,9 +130,7 @@
             >
               保存配置
             </ElButton>
-            <ElTag effect="plain" type="info"
-              >必填 {{ detail.config_summary.required_fields }} 项</ElTag
-            >
+            <ElTag effect="plain" type="info">必填 {{ detail.config_summary.required_fields }} 项</ElTag>
           </div>
         </template>
       </div>

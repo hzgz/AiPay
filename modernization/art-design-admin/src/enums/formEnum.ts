@@ -1,24 +1,25 @@
-/**
- * 表单相关枚举定义模块
+﻿/**
+ * 琛ㄥ崟鐩稿叧鏋氫妇瀹氫箟妯″潡
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 页面模式枚举（新增、编辑）
- * - 表格尺寸枚举（默认、紧凑、宽松）
+ * - 椤甸潰妯″紡鏋氫妇锛堟柊澧炪€佺紪杈戯級
+ * - 琛ㄦ牸灏哄鏋氫妇锛堥粯璁ゃ€佺揣鍑戙€佸鏉撅級
  *
  * @module enums/formEnum
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
-// 页面类型
+// 椤甸潰绫诲瀷
 export enum PageModeEnum {
-  Add, // 新增
-  Edit // 编辑
+  Add, // 鏂板
+  Edit // 缂栬緫
 }
 
-// 表格大小
+// 琛ㄦ牸澶у皬
 export enum TableSizeEnum {
   DEFAULT = 'default',
   SMALL = 'small',
   LARGE = 'large'
 }
+

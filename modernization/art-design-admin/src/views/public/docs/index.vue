@@ -148,19 +148,19 @@
     const metaMap: Record<SectionKey, { title: string; description: string }> = {
       overview: {
         title: '网页支付',
-        description: '查看公开入口、提交地址和基础参数。'
+        description: '查看提交地址与基础参数。'
       },
       api: {
         title: '接口支付',
-        description: '查看接口下单、聚合入口和商户入口。'
+        description: '查看接口下单与接入参数。'
       },
       result: {
         title: '回调通知',
-        description: '查看回调地址、返回字段和验签规则。'
+        description: '查看回调地址与验签规则。'
       },
       findorder: {
         title: '订单查询',
-        description: '查看查单入口、查询参数和返回字段。'
+        description: '查看订单查询入口。'
       }
     }
 
@@ -260,13 +260,12 @@
           id: 'api-endpoints',
           eyebrow: '接口地址',
           title: '下单入口',
-          description: '提供网页支付、MAPI 和聚合下单入口。',
+          description: '提供网页提交、接口提交和查单地址。',
           collapseAfter: 2,
           items: [
-            urlItem('MAPI 下单', '/mapi.php', backendUrl('/mapi.php')),
-            urlItem('聚合下单', '/Api/mapi', backendUrl('/Api/mapi')),
-            urlItem('支付创建', '/Api/payment', backendUrl('/Api/payment')),
-            urlItem('订单查询', '/Api/findorder', backendUrl('/Api/findorder'))
+            urlItem('接口下单', '/mapi.php', backendUrl('/mapi.php')),
+            urlItem('网页提交', '/submit.php', backendUrl('/submit.php')),
+            urlItem('订单查询', '/api/findorder', backendUrl('/api/findorder'))
           ]
         },
         {
@@ -281,7 +280,7 @@
           id: 'api-helper',
           eyebrow: '商户入口',
           title: '商户入口',
-          description: '登录、控制台和接口设置入口。',
+          description: '登录、控制台和接口配置地址。',
           collapseAfter: 2,
           items: [
             urlItem('商户登录', '/#/merchant/login', frontendHash('/merchant/login')),
@@ -353,7 +352,7 @@
           title: '订单查询地址',
           description: '用于查询平台订单或商户订单当前状态。',
           items: [
-            urlItem('查单接口', '/Api/findorder', backendUrl('/Api/findorder')),
+            urlItem('查单接口', '/api/findorder', backendUrl('/api/findorder')),
             { label: 'order_no', value: '平台订单号或商户订单号', copyable: false },
             { label: 'type', value: '1 优先 trade_no，其它值优先 out_trade_no', copyable: false }
           ]
@@ -376,9 +375,9 @@
         },
         {
           id: 'findorder-console',
-          eyebrow: '后台入口',
+          eyebrow: '商户后台',
           title: '商户订单中心',
-          description: '也可以直接在商户后台查看订单。',
+          description: '也可以直接在商户后台查看订单状态。',
           collapseAfter: 2,
           items: [
             urlItem('商户订单列表', '/#/merchant/orders', frontendHash('/merchant/orders')),
@@ -392,9 +391,9 @@
     return [
       {
         id: 'overview-entry',
-        eyebrow: '基础入口',
-        title: '常用入口',
-        description: '前台和商户常用入口。',
+        eyebrow: '常用地址',
+        title: '常用地址',
+        description: '前台和商户常用地址。',
         collapseAfter: 2,
         items: [
           urlItem('前台首页', '/', frontend || '/'),
@@ -405,13 +404,13 @@
       },
       {
         id: 'overview-submit',
-        eyebrow: '跳转支付',
+        eyebrow: '提交',
         title: '提交与回调',
-        description: '网页下单和结果回调使用的地址。',
+        description: '下单与回调地址。',
         collapseAfter: 2,
         items: [
           urlItem('网页提交地址', '/submit.php', backendUrl('/submit.php')),
-          urlItem('网关提交地址', '/Pay/submit', backendUrl('/Pay/submit')),
+          urlItem('接口提交地址', '/mapi.php', backendUrl('/mapi.php')),
           urlItem('异步通知地址', '/Notify/epay_notifyzj', backendUrl('/Notify/epay_notifyzj')),
           urlItem('同步返回地址', '/Notify/epay_returnzj', backendUrl('/Notify/epay_returnzj'))
         ]
@@ -419,8 +418,8 @@
       {
         id: 'overview-params',
         eyebrow: '请求参数',
-        title: '常用下单参数',
-        description: '网页支付和接口支付共用字段。',
+        title: '下单参数',
+        description: '下单共用字段。',
         collapseAfter: 4,
         items: commonParams
       }
@@ -462,7 +461,6 @@
     font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 
   .docs-hero,

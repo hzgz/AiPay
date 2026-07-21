@@ -1,18 +1,18 @@
-/**
- * useFastEnter - 快速入口管理
+﻿/**
+ * useFastEnter - 蹇€熷叆鍙ｇ鐞?
  *
- * 管理顶部栏的快速入口功能，提供应用列表和快速链接的配置和过滤。
- * 支持动态启用/禁用、自定义排序、响应式宽度控制等功能。
+ * 绠＄悊椤堕儴鏍忕殑蹇€熷叆鍙ｅ姛鑳斤紝鎻愪緵搴旂敤鍒楄〃鍜屽揩閫熼摼鎺ョ殑閰嶇疆鍜岃繃婊ゃ€?
+ * 鏀寔鍔ㄦ€佸惎鐢?绂佺敤銆佽嚜瀹氫箟鎺掑簭銆佸搷搴斿紡瀹藉害鎺у埗绛夊姛鑳姐€?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * 1. 应用列表管理 - 获取启用的应用列表，自动按排序权重排序
- * 2. 快速链接管理 - 获取启用的快速链接，支持自定义排序
- * 3. 响应式配置 - 所有配置自动响应变化，无需手动更新
- * 4. 宽度控制 - 提供最小显示宽度配置，支持响应式布局
+ * 1. 搴旂敤鍒楄〃绠＄悊 - 鑾峰彇鍚敤鐨勫簲鐢ㄥ垪琛紝鑷姩鎸夋帓搴忔潈閲嶆帓搴?
+ * 2. 蹇€熼摼鎺ョ鐞?- 鑾峰彇鍚敤鐨勫揩閫熼摼鎺ワ紝鏀寔鑷畾涔夋帓搴?
+ * 3. 鍝嶅簲寮忛厤缃?- 鎵€鏈夐厤缃嚜鍔ㄥ搷搴斿彉鍖栵紝鏃犻渶鎵嬪姩鏇存柊
+ * 4. 瀹藉害鎺у埗 - 鎻愪緵鏈€灏忔樉绀哄搴﹂厤缃紝鏀寔鍝嶅簲寮忓竷灞€
  *
  * @module useFastEnter
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { computed } from 'vue'
@@ -20,10 +20,10 @@ import appConfig from '@/config'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 
 export function useFastEnter() {
-  // 获取快速入口配置
+  // 鑾峰彇蹇€熷叆鍙ｉ厤缃?
   const fastEnterConfig = computed(() => appConfig.fastEnter)
 
-  // 获取启用的应用列表（按排序权重排序）
+  // 鑾峰彇鍚敤鐨勫簲鐢ㄥ垪琛紙鎸夋帓搴忔潈閲嶆帓搴忥級
   const enabledApplications = computed<FastEnterApplication[]>(() => {
     if (!fastEnterConfig.value?.applications) return []
 
@@ -32,7 +32,7 @@ export function useFastEnter() {
       .sort((a, b) => (a.order || 0) - (b.order || 0))
   })
 
-  // 获取启用的快速链接（按排序权重排序）
+  // 鑾峰彇鍚敤鐨勫揩閫熼摼鎺ワ紙鎸夋帓搴忔潈閲嶆帓搴忥級
   const enabledQuickLinks = computed<FastEnterQuickLink[]>(() => {
     if (!fastEnterConfig.value?.quickLinks) return []
 
@@ -41,7 +41,7 @@ export function useFastEnter() {
       .sort((a, b) => (a.order || 0) - (b.order || 0))
   })
 
-  // 获取最小显示宽度
+  // 鑾峰彇鏈€灏忔樉绀哄搴?
   const minWidth = computed(() => {
     return fastEnterConfig.value?.minWidth || 1200
   })
@@ -53,3 +53,4 @@ export function useFastEnter() {
     minWidth
   }
 }
+

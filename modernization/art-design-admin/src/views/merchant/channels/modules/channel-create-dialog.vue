@@ -237,7 +237,7 @@
                     </ElButton>
                   </ElUpload>
                   <ElButton v-if="createForm.qr_url" link type="danger" @click="clearCreateQrUrl">
-                    娓呯┖
+                    清空
                   </ElButton>
                 </div>
                 <div v-if="createForm.qr_url" class="credential-image-preview">

@@ -501,7 +501,7 @@
       return '请先停用并卸载插件，再继续。'
     }
     if (detail.purge_plan.snapshot_guard && !detail.purge_plan.snapshot_guard.has_snapshot) {
-      return '当前没有恢复快照，建议先创建后再继续。'
+      return '当前没有可用回滚快照，建议先创建后再继续。'
     }
 
     return '当前没有可清理项。'
@@ -1059,12 +1059,12 @@
 
     const { value } = await ElMessageBox.prompt(
       [
-        '建议在彻底清理、替换插件包或高风险修复前先创建恢复快照。',
+        '建议在彻底清理、替换插件包或高风险修复前先创建回滚快照。',
         '快照会归档插件目录、运行目录、运行记录、插件专属数据表以及托管通道记录。',
         `当前彻底清理范围：${detail.purge_plan.summary.existing_file_count} 个文件根目录、${detail.purge_plan.summary.existing_table_count} 张数据表、${detail.purge_plan.summary.existing_managed_channel_count} 条托管通道、${detail.purge_plan.summary.table_row_count} 行数据。`,
-        '可选：输入一个简短标签，方便后续识别该恢复点。'
+        '可选：输入一个简短标签，方便后续识别该回滚点。'
       ].join('\n'),
-      '创建恢复快照',
+      '创建回滚快照',
       {
         confirmButtonText: '创建快照',
         cancelButtonText: '取消',
@@ -1078,7 +1078,7 @@
         label: String(value || '').trim() || null
       })
 
-      ElMessage.success(`恢复快照已创建：${response.snapshot.snapshot_id}`)
+      ElMessage.success(`回滚快照已创建：${response.snapshot.snapshot_id}`)
       await reloadAfterAction(code, response.detail)
     } finally {
       snapshotCreating.value = false
@@ -1086,7 +1086,7 @@
   }
 
   const restorePluginSnapshot = async (snapshot: PaymentPluginSnapshotItem) => {
-    if (!ensurePluginWriteAuth(hasPluginRestoreSnapshotAuth.value, '恢复快照')) {
+    if (!ensurePluginWriteAuth(hasPluginRestoreSnapshotAuth.value, '回滚快照')) {
       return
     }
 
@@ -1099,13 +1099,13 @@
     const label = snapshot.label || snapshot.snapshot_id
     const { value } = await ElMessageBox.prompt(
       [
-        '恢复快照会用归档内容覆盖当前插件专属文件和数据表。',
+        '回滚快照会用归档内容覆盖当前插件专属文件和数据表。',
         `快照：${label}`,
         `创建时间：${snapshot.created_at || '--'}`,
         `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，记录 ${snapshot.summary.row_count}`,
         `请输入 ${phrase} 后继续。`
       ].join('\n'),
-      '恢复快照',
+      '回滚快照',
       {
         confirmButtonText: '确认恢复',
         cancelButtonText: '取消',
@@ -1124,7 +1124,7 @@
         confirm_phrase: String(value || '')
       })
 
-      ElMessage.success(`恢复快照已恢复：${label}`)
+      ElMessage.success(`回滚快照已恢复：${label}`)
       await reloadAfterAction(detail.manifest.code, response.detail)
     } finally {
       snapshotRestoringId.value = ''
@@ -1145,14 +1145,14 @@
     const label = snapshot.label || snapshot.snapshot_id
     const { value } = await ElMessageBox.prompt(
       [
-        '删除恢复快照会永久移除该归档回滚包。',
+        '删除回滚快照会永久移除该归档回滚包。',
         '如果这是该插件最后一个快照，空快照目录也会一并清除。',
         `快照：${label}`,
         `创建时间：${snapshot.created_at || '--'}`,
         `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，记录 ${snapshot.summary.row_count}`,
         `请输入 ${phrase} 后继续。`
       ].join('\n'),
-      '删除恢复快照',
+      '删除回滚快照',
       {
         confirmButtonText: '确认删除',
         cancelButtonText: '取消',
@@ -1171,7 +1171,7 @@
         confirm_phrase: String(value || '')
       })
 
-      ElMessage.success(`恢复快照已删除：${label}`)
+      ElMessage.success(`回滚快照已删除：${label}`)
       await applySnapshotDeleteState(detail.manifest.code, response)
     } finally {
       snapshotDeletingId.value = ''
@@ -1179,12 +1179,12 @@
   }
 
   const restoreVaultSnapshot = async (snapshot: PaymentPluginRecoveryVaultItem) => {
-    if (!ensurePluginWriteAuth(hasPluginRestoreSnapshotAuth.value, '恢复快照')) {
+    if (!ensurePluginWriteAuth(hasPluginRestoreSnapshotAuth.value, '回滚快照')) {
       return
     }
 
     if (!snapshot.restorable) {
-      ElMessage.warning(snapshot.restore_blocked_reason || '请先停用插件后再恢复快照')
+      ElMessage.warning(snapshot.restore_blocked_reason || '请先停用插件后再回滚快照')
       return
     }
 
@@ -1192,13 +1192,13 @@
     const label = snapshot.label || snapshot.snapshot_id
     const { value } = await ElMessageBox.prompt(
       [
-        '本次恢复来自恢复中心，可重建已从本地目录彻底移除的插件。',
+        '本次回滚来自回滚中心，可重建已从本地目录彻底移除的插件。',
         `插件：${snapshot.plugin_name}（${snapshot.plugin_code}）`,
         `快照：${label}`,
         `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，记录 ${snapshot.summary.row_count}`,
         `请输入 ${phrase} 后继续。`
       ].join('\n'),
-      '从恢复中心恢复',
+      '从回滚中心恢复',
       {
         confirmButtonText: '确认恢复',
         cancelButtonText: '取消',
@@ -1217,7 +1217,7 @@
         confirm_phrase: String(value || '')
       })
 
-      ElMessage.success(`恢复中心快照已恢复：${label}`)
+      ElMessage.success(`回滚中心快照已恢复：${label}`)
       await loadPlugins()
       const snapshots = await fetchGetPaymentPluginSnapshots(snapshot.plugin_code)
       applyDetailState(response.detail, snapshots)
@@ -1235,14 +1235,14 @@
     const label = snapshot.label || snapshot.snapshot_id
     const { value } = await ElMessageBox.prompt(
       [
-        '删除该恢复中心条目会永久移除归档回滚包。',
-        '仅在确认该恢复点已失效、后续不再需要时使用。',
+        '删除该回滚中心条目会永久移除归档回滚包。',
+        '仅在确认该回滚点已失效、后续不再需要时使用。',
         `插件：${snapshot.plugin_name}（${snapshot.plugin_code}）`,
         `快照：${label}`,
         `归档内容：文件 ${snapshot.summary.archived_file_count}，数据表 ${snapshot.summary.table_count}，托管通道 ${snapshot.summary.existing_managed_channel_count}/${snapshot.summary.managed_channel_count}，记录 ${snapshot.summary.row_count}`,
         `请输入 ${phrase} 后继续。`
       ].join('\n'),
-      '删除恢复中心条目',
+      '删除回滚中心条目',
       {
         confirmButtonText: '确认删除',
         cancelButtonText: '取消',
@@ -1261,7 +1261,7 @@
         confirm_phrase: String(value || '')
       })
 
-      ElMessage.success(`恢复中心快照已删除：${label}`)
+      ElMessage.success(`回滚中心快照已删除：${label}`)
       await applySnapshotDeleteState(snapshot.plugin_code, response)
     } finally {
       snapshotDeletingId.value = ''
@@ -1269,7 +1269,7 @@
   }
 
   const cleanupRegistryResidueItem = async (item: PaymentPluginRegistryResidueItem) => {
-    if (!ensurePluginWriteAuth(hasPluginCleanupResidueAuth.value, '清理残留')) {
+    if (!ensurePluginWriteAuth(hasPluginCleanupResidueAuth.value, '清理孤立项')) {
       return
     }
 
@@ -1284,15 +1284,15 @@
       [
         '本次清理针对已经不在当前插件目录中的孤立插件项。',
         missingSnapshot
-          ? '当前没有可用恢复快照。继续清理将移除最后一份运行目录、运行记录和数据表，后台将无法直接恢复。'
-          : `当前保留恢复快照：${item.snapshot_guard.snapshot_total} 个。清理后这些恢复点仍会保留在恢复中心中。`,
+          ? '当前没有可用回滚快照。继续清理将移除最后一份运行目录、运行记录和数据表，后台将无法直接恢复。'
+          : `当前保留回滚快照：${item.snapshot_guard.snapshot_total} 个。清理后这些回滚点仍会保留在回滚中心中。`,
         `插件编码：${item.plugin_code}`,
         `运行目录：${item.runtime_audit.exists ? '有' : '无'}，运行记录：${item.history_audit.exists ? '有' : '无'}，插件目录：${item.plugin_directory_audit.exists ? '有' : '无'}`,
         `命名空间数据表：${item.summary.existing_table_count}，记录：${item.summary.table_row_count}`,
         `托管通道：${item.summary.existing_managed_channel_count}（可清理 ${item.summary.deletable_managed_channel_count}，阻塞 ${item.summary.blocked_managed_channel_count}）`,
         `请输入 ${phrase} 后继续。`
       ].join('\n'),
-      '清理孤立插件项',
+      '清理孤立项',
       {
         confirmButtonText: missingSnapshot ? '无快照清理' : '确认清理',
         cancelButtonText: '取消',

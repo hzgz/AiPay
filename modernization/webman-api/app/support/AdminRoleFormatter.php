@@ -38,6 +38,7 @@ class AdminRoleFormatter
     public static function isSuperRole(int $roleId, string $name): bool
     {
         $normalized = strtolower(trim($name));
+
         return $roleId === 1
             || str_contains($normalized, 'super')
             || str_contains($name, '超级管理员');
@@ -58,14 +59,14 @@ class AdminRoleFormatter
         $normalized = strtolower($trimmed);
         if (str_contains($normalized, 'smoke')) {
             if (str_contains($normalized, 'menu')) {
-                return '菜单示例角色 #' . $roleId;
+                return '菜单权限角色 #' . $roleId;
             }
 
             if (str_contains($normalized, 'admin')) {
-                return '后台示例角色 #' . $roleId;
+                return '后台运营角色 #' . $roleId;
             }
 
-            return '示例角色 #' . $roleId;
+            return '系统角色 #' . $roleId;
         }
 
         return $trimmed;
@@ -82,14 +83,14 @@ class AdminRoleFormatter
         $normalized = strtolower($description);
         if (str_contains($normalized, 'smoke')) {
             if (str_contains($normalized, 'menu')) {
-                return '用于菜单与权限功能示例。';
+                return '用于菜单与权限能力校验。';
             }
 
             if (str_contains($normalized, 'admin')) {
-                return '用于管理员账号功能示例。';
+                return '用于后台账号与权限联动校验。';
             }
 
-            return '用于功能示例验证。';
+            return '用于系统能力校验。';
         }
 
         return $description;
@@ -122,6 +123,7 @@ class AdminRoleFormatter
     private static function nullableString(mixed $value): ?string
     {
         $string = trim((string)$value);
+
         return $string === '' ? null : $string;
     }
 }

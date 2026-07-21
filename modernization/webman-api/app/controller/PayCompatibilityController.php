@@ -59,7 +59,8 @@ class PayCompatibilityController
         }
 
         if ((int)($order['merchant_is_frozen'] ?? 0) === 1) {
-            $message = trim((string)($order['merchant_frozen_reason'] ?? '商户账户已冻结')) ?: '商户账户已冻结';
+            $message = trim(ApiResponse::normalizeText((string)($order['merchant_frozen_reason'] ?? '')));
+            $message = $message !== '' ? $message : '商户账户已冻结';
             if ($this->wantsJson($request)) {
                 return $this->forbiddenJson($message);
             }
@@ -75,6 +76,10 @@ class PayCompatibilityController
         }
 
         return response($this->consolePage($payload), 200, ['Content-Type' => 'text/html; charset=utf-8']);
+    }
+    public function poll(Request $request): Response
+    {
+        return $this->consolePoll($request);
     }
 
     private function consolePoll(Request $request): Response
@@ -244,10 +249,10 @@ class PayCompatibilityController
                 'merchant_return_url' => $returnUrl,
             ],
             'legacy_urls' => [
-                'poll' => '/Pay/ConSole',
-                'submit' => '/Pay/submit',
-                'api_submit' => '/Pay/apisubmit',
-                'legacy_console' => $this->legacyConsoleUrl(trim((string)($order['trade_no'] ?? ''))),
+                'poll' => '/api/public/cashier/poll',
+                'submit' => '/submit.php',
+                'api_submit' => '/api/payment',
+                'legacy_console' => $this->cashierConsoleUrl($request, trim((string)($order['trade_no'] ?? ''))),
             ],
             'route_policy' => $this->routePolicy(),
             'migration_guard' => [
@@ -284,133 +289,104 @@ class PayCompatibilityController
         $order = (array)($payload['order'] ?? []);
         $console = (array)($payload['console'] ?? []);
         $status = (array)($payload['status'] ?? []);
-        $legacyUrls = (array)($payload['legacy_urls'] ?? []);
-
-        $title = $this->escape((string)($order['name'] ?? '支付订单'));
-        $amount = $this->escape((string)($order['truemoney'] ?? '0.00'));
-        $tradeNo = $this->escape((string)($order['trade_no'] ?? ''));
-        $outTradeNo = $this->escape((string)($order['out_trade_no'] ?? ''));
-        $payType = $this->escape(strtoupper((string)($order['type'] ?? '')));
-        $qrUrl = $this->escape((string)($order['qr_url'] ?? ''));
-        $displayH5Url = $this->escape((string)($order['display_h5_qrurl'] ?? ''));
-        $timeoutUrl = $this->escape((string)($console['timeout_url'] ?? '/'));
-        $consoleNotice = $this->escape((string)($console['console_notice'] ?? ''));
-        $legacyConsoleUrl = $this->escape((string)($legacyUrls['legacy_console'] ?? ''));
-        $returnUrl = $this->escape((string)($status['merchant_return_url'] ?? ''));
+        $siteNameRaw = trim((string)($order['sitename'] ?? 'AiPay')) ?: 'AiPay';
+        $titleRaw = trim((string)($order['name'] ?? '')) ?: '订单支付';
+        $amountRaw = number_format((float)($order['truemoney'] ?? $order['money'] ?? 0), 2, '.', '');
+        $payTypeRaw = $this->paymentMethodLabel((string)($order['type'] ?? ''));
+        $tradeNoRaw = trim((string)($order['trade_no'] ?? ''));
+        $outTradeNoRaw = trim((string)($order['out_trade_no'] ?? ''));
+        $qrUrlRaw = (string)($order['qr_url'] ?? '');
+        $launchUrlRaw = (string)($order['display_h5_qrurl'] ?? '');
+        $timeoutUrlRaw = (string)($console['timeout_url'] ?? '/');
+        $returnUrlRaw = (string)($status['merchant_return_url'] ?? '');
+        $noticeRaw = trim((string)($console['console_notice'] ?? ''));
+        $noticeRaw = $noticeRaw !== '' ? $noticeRaw : '请在有效期内完成支付，页面会自动同步支付状态，无需手动刷新。';
         $state = (string)($status['state'] ?? 'pending');
+        $countdown = (int)($console['timeout_seconds'] ?? 0);
+        $siteName = $this->escape($siteNameRaw);
+        $title = $this->escape($titleRaw);
+        $amount = $this->escape($amountRaw);
+        $payType = $this->escape($payTypeRaw);
+        $tradeNo = $this->escape($tradeNoRaw);
+        $outTradeNo = $this->escape($outTradeNoRaw);
+        $timeoutUrl = $this->escape($timeoutUrlRaw);
+        $returnUrl = $this->escape($returnUrlRaw);
+        $notice = $this->escape($noticeRaw);
         $stateLabel = $this->escape($this->stateLabel($state));
         $stateDescription = $this->escape($this->stateDescription($state));
-        $countdown = (int)($console['timeout_seconds'] ?? 0);
         $countdownLabel = $this->escape($this->formatCountdown($countdown));
-        $canLaunch = $displayH5Url !== '';
-        $showQr = $qrUrl !== '';
-
-        $pageState = json_encode($state, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $pageOutTradeNo = json_encode((string)($order['out_trade_no'] ?? ''), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $pagePollUrl = json_encode('/Pay/ConSole', JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $pageTimeoutUrl = json_encode((string)($console['timeout_url'] ?? '/'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $pageLaunchUrl = json_encode((string)($order['display_h5_qrurl'] ?? ''), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $pageCountdown = json_encode($countdown);
-        $pageAutoJump = json_encode(!empty($console['is_jump']));
-
-        $qrMarkup = $showQr
-            ? '<img id="qrImage" src="' . $qrUrl . '" alt="支付二维码" />'
-            : '<div id="qrPlaceholder" class="placeholder">正在等待二维码生成</div>';
-        $launchButton = $canLaunch
-            ? '<a id="launchLink" class="btn primary" href="' . $displayH5Url . '">打开支付应用</a>'
-            : '<a id="launchLink" class="btn primary hidden" href="#">打开支付应用</a>';
-        $noticeMarkup = $consoleNotice !== ''
-            ? '<p class="notice">' . $consoleNotice . '</p>'
-            : '<p class="notice">系统会持续轮询支付状态；如支付已完成，请等待当前页面自动刷新结果。</p>';
-        $paidButton = $returnUrl !== ''
+        $placeholderText = $this->escape($this->placeholderText($state));
+        $qrMarkup = $qrUrlRaw !== ''
+            ? '<img id="qrImage" src="' . $this->escape($qrUrlRaw) . '" alt="支付二维码">'
+            : '<div class="placeholder" id="qrPlaceholder">' . $placeholderText . '</div>';
+        $paidButton = $returnUrlRaw !== ''
             ? '<a class="btn success" href="' . $returnUrl . '">返回商户页面</a>'
             : '<a class="btn secondary" href="' . $timeoutUrl . '">返回上一页</a>';
-        $paidActionsDisplay = $state === 'paid' ? 'flex' : 'none';
-
+        $pageState = json_encode($state, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $pageOutTradeNo = json_encode($outTradeNoRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $pagePollUrl = json_encode('/api/public/cashier/poll', JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $pageTimeoutUrl = json_encode($timeoutUrlRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $pageLaunchUrl = json_encode($launchUrlRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $pageAutoJump = json_encode(!empty($console['is_jump']));
+        $pageCountdown = json_encode($countdown);
+        $pageTradeNo = json_encode($tradeNoRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $pagePayType = json_encode($payTypeRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $pageNotice = json_encode($noticeRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $pageReturnUrl = json_encode($returnUrlRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         return <<<HTML
 <!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>支付收银台</title>
+  <title>AiPay 收银台</title>
   <style>
-    :root{color-scheme:light;background:#f5f7fb;color:#0f172a}
-    *{box-sizing:border-box}
-    body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:
-      radial-gradient(circle at top left,rgba(251,191,36,.18),transparent 36%),
-      radial-gradient(circle at top right,rgba(59,130,246,.16),transparent 34%),
-      linear-gradient(180deg,#f8fafc,#eef2ff 52%,#f8fafc)}
-    .wrap{max-width:1120px;margin:0 auto;padding:28px 18px 42px}
-    .shell{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
-    .card{background:rgba(255,255,255,.94);border:1px solid rgba(148,163,184,.22);border-radius:28px;box-shadow:0 28px 90px rgba(15,23,42,.08)}
-    .hero{padding:28px}
-    .eyebrow{display:inline-flex;padding:6px 10px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-    h1{margin:16px 0 10px;font-size:34px;line-height:1.15}
-    p{margin:0;color:#475569;line-height:1.8}
-    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}
-    .stat{padding:16px;border-radius:20px;background:#fff;border:1px solid #e2e8f0}
-    .label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;font-weight:700}
-    .value{margin-top:8px;font-size:18px;font-weight:700;color:#0f172a;word-break:break-word}
-    .muted{font-size:13px;color:#64748b}
-    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
-    .btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border-radius:14px;text-decoration:none;font-weight:700;border:1px solid transparent}
-    .btn.primary{background:#111827;color:#fff}
-    .btn.secondary{background:#fff;color:#0f172a;border-color:#cbd5e1}
-    .btn.success{background:#14532d;color:#fff}
-    .hidden{display:none}
-    .panel{padding:24px}
-    .qr-wrap{display:grid;place-items:center;min-height:320px;border-radius:24px;background:linear-gradient(180deg,#ffffff,#f8fafc);border:1px dashed #cbd5e1}
-    .qr-wrap img{width:min(320px,100%);height:auto;border-radius:18px;background:#fff;padding:10px;box-shadow:0 18px 36px rgba(15,23,42,.08)}
-    .placeholder{width:min(320px,100%);aspect-ratio:1;border-radius:18px;display:grid;place-items:center;background:repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0 12px,#f8fafc 12px,#f8fafc 24px);color:#475569;font-weight:700;text-align:center;padding:24px}
-    .status{margin-top:18px;padding:18px;border-radius:20px;background:#eff6ff;border:1px solid #bfdbfe}
-    .status h2{margin:0 0 8px;font-size:22px}
-    .status p{color:#1e3a8a}
-    .list{display:grid;gap:12px;margin-top:18px}
-    .row{display:flex;justify-content:space-between;gap:16px;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid #e2e8f0}
-    .row span:first-child{color:#64748b}
-    .row code{font-size:12px;word-break:break-all}
-    .notice{margin-top:18px;padding:14px 16px;border-radius:18px;background:#fffbeb;border:1px solid #fde68a;color:#92400e}
-    .footer{margin-top:16px;font-size:13px;color:#64748b}
-    @media (max-width:980px){.shell{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media (max-width:640px){.wrap{padding:16px 12px 28px}.hero,.panel{padding:18px}.stats{grid-template-columns:1fr}h1{font-size:28px}.row{display:grid;gap:6px}}
+    :root{--bg:#07111f;--bg2:#10203b;--surface:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--brand:#111827;--brandSoft:#dbeafe;--brandText:#1d4ed8;--success:#15803d;--warn:#b45309;--warnSoft:#fffbeb;--shadow:0 24px 70px rgba(15,23,42,.12)}
+    *{box-sizing:border-box}body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--text);background:radial-gradient(circle at top left,rgba(14,165,233,.16),transparent 28%),radial-gradient(circle at top right,rgba(129,140,248,.18),transparent 22%),linear-gradient(180deg,#f8fbff 0%,#eef4fb 48%,#f8fafc 100%)}
+    .page{max-width:1180px;margin:0 auto;padding:24px 18px 36px}.shell{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:18px}.panel{background:rgba(255,255,255,.96);border:1px solid rgba(148,163,184,.2);border-radius:28px;box-shadow:var(--shadow)}
+    .summary{padding:28px}.brand{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}.pill{display:inline-flex;padding:7px 12px;border-radius:999px;background:var(--brandSoft);color:var(--brandText);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.site{font-size:13px;color:var(--muted);font-weight:600}
+    h1{margin:16px 0 8px;font-size:34px;line-height:1.12}.sub{margin:0;color:var(--muted);line-height:1.75}.amount{display:flex;align-items:flex-end;gap:10px;margin-top:22px}.amount span{font-size:26px;font-weight:700;color:#334155}.amount strong{font-size:52px;line-height:.95;font-weight:800;letter-spacing:-.04em}
+    .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px}.metric{padding:16px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg,#fff,#f8fafc)}.metric em{display:block;font-style:normal;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;font-weight:700}.metric strong{display:block;margin-top:8px;font-size:18px;line-height:1.4;word-break:break-word}
+    .rows{display:grid;gap:12px;margin-top:22px}.row{display:flex;justify-content:space-between;gap:16px;padding:14px 16px;border:1px solid var(--line);border-radius:18px;background:#fff}.row span{color:var(--muted);font-size:14px}.row code{margin:0;font-size:13px;word-break:break-all;white-space:pre-wrap;text-align:right}
+    .notice{margin-top:18px;padding:16px;border-radius:18px;background:var(--warnSoft);border:1px solid #fde68a;color:var(--warn);line-height:1.75}.actions,.checkoutActions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 18px;border-radius:14px;border:1px solid transparent;text-decoration:none;cursor:pointer;font-size:14px;font-weight:700}.btn.primary{background:var(--brand);color:#fff}.btn.secondary{background:#fff;color:#0f172a;border-color:#cbd5e1}.btn.ghost{background:#f8fafc;color:#0f172a;border-color:#e2e8f0}.btn.success{background:var(--success);color:#fff}.hidden{display:none !important}
+    .checkout{padding:24px;color:#e2e8f0;background:radial-gradient(circle at top left,rgba(56,189,248,.22),transparent 34%),radial-gradient(circle at bottom right,rgba(129,140,248,.18),transparent 28%),linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);position:relative;overflow:hidden}.checkout:before{content:"";position:absolute;inset:18px;border-radius:22px;border:1px solid rgba(255,255,255,.08);pointer-events:none}
+    .head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#93c5fd;font-weight:700}.head h2{margin:10px 0 0;font-size:28px;line-height:1.15;color:#fff}.stateTag{padding:8px 12px;border-radius:999px;background:rgba(148,163,184,.16);border:1px solid rgba(255,255,255,.12);font-size:12px;font-weight:700}.stateText{margin:12px 0 0;color:#cbd5e1;line-height:1.75}
+    .qrbox{margin-top:22px;min-height:340px;display:grid;place-items:center;padding:18px;border-radius:28px;background:linear-gradient(180deg,#fff,#f8fafc);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(226,232,240,.6)}.qrbox img{display:block;width:min(100%,310px);height:auto;padding:12px;border-radius:20px;background:#fff;box-shadow:0 20px 44px rgba(15,23,42,.12)}.placeholder{width:min(100%,310px);aspect-ratio:1;display:grid;place-items:center;padding:24px;border-radius:20px;border:1px dashed #cbd5e1;background:repeating-linear-gradient(45deg,#eff6ff,#eff6ff 14px,#fff 14px,#fff 28px);color:#334155;font-weight:700;line-height:1.7;text-align:center}
+    .scanMeta{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}.scanMeta p{margin:0;color:#cbd5e1;line-height:1.7}.timer{padding:10px 14px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);text-align:right}.timer em{display:block;font-style:normal;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd}.timer strong{display:block;margin-top:4px;font-size:22px;color:#fff}
+    .successBox{display:none;margin-top:22px;padding:22px;border-radius:24px;background:rgba(220,252,231,.96);border:1px solid rgba(34,197,94,.18);color:#14532d}.successBox h3{margin:0 0 8px;font-size:24px}.successBox p{margin:0;color:#166534;line-height:1.75}.successGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}.successGrid div{padding:14px 12px;border-radius:16px;background:rgba(255,255,255,.84);border:1px solid rgba(21,128,61,.12)}.successGrid em{display:block;font-style:normal;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#166534}.successGrid strong{display:block;margin-top:8px;font-size:15px;line-height:1.5;word-break:break-word}
+    #cashierStage[data-state="paid"] .qrbox,#cashierStage[data-state="paid"] .scanMeta,#cashierStage[data-state="paid"] .checkoutActions{display:none}#cashierStage[data-state="paid"] .successBox{display:block}#cashierStage[data-state="timeout"] .stateTag{background:rgba(251,113,133,.14);border-color:rgba(251,113,133,.22);color:#fecdd3}#cashierStage[data-state="qrcode_loading"] .stateTag,#cashierStage[data-state="qrcode_missing"] .stateTag{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.22);color:#fde68a}
+    @media (max-width:980px){.shell{grid-template-columns:1fr}}@media (max-width:720px){.page{padding:14px 12px 24px}.summary,.checkout{padding:18px}h1{font-size:28px}.amount strong{font-size:42px}.metrics,.successGrid{grid-template-columns:1fr}.row{display:grid;gap:8px}.row code{text-align:left}.head h2{font-size:24px}.qrbox{min-height:300px}}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="shell">
-      <section class="card hero">
-        <span class="eyebrow">支付收银台</span>
+  <div class="page">
+    <div class="shell" id="cashierStage" data-state="{$state}">
+      <section class="panel summary">
+        <div class="brand"><span class="pill">AiPay Checkout</span><span class="site">{$siteName}</span></div>
         <h1>{$title}</h1>
-        <p>当前页面继续承接原 <code>/Pay/console</code> 收银入口，统一展示支付状态与回跳结果。</p>
-        <div class="stats">
-          <div class="stat"><div class="label">支付金额</div><div class="value">{$amount}</div></div>
-          <div class="stat"><div class="label">当前状态</div><div class="value" id="statusBadge">{$stateLabel}</div></div>
-          <div class="stat"><div class="label">支付方式</div><div class="value">{$payType}</div></div>
-          <div class="stat"><div class="label">剩余时间</div><div class="value" id="countdown">{$countdownLabel}</div></div>
+        <p class="sub">请核对订单信息后完成付款，页面会持续轮询支付结果并自动更新。</p>
+        <div class="amount"><span>￥</span><strong>{$amount}</strong></div>
+        <div class="metrics">
+          <div class="metric"><em>支付方式</em><strong>{$payType}</strong></div>
+          <div class="metric"><em>当前状态</em><strong id="statusBadge">{$stateLabel}</strong></div>
+          <div class="metric"><em>订单有效期</em><strong id="countdown">{$countdownLabel}</strong></div>
         </div>
-        <div class="list">
-          <div class="row"><span>系统单号</span><span><code>{$tradeNo}</code></span></div>
-          <div class="row"><span>商户单号</span><span><code>{$outTradeNo}</code></span></div>
-          <div class="row"><span>超时返回地址</span><span><code>{$timeoutUrl}</code></span></div>
-          <div class="row"><span>收银台入口</span><span><a href="{$legacyConsoleUrl}">打开收银台</a></span></div>
+        <div class="rows">
+          <div class="row"><span>系统订单号</span><code>{$tradeNo}</code></div>
+          <div class="row"><span>商户订单号</span><code>{$outTradeNo}</code></div>
+          <div class="row"><span>支付完成后跳转</span><code>{$returnUrl}</code></div>
+          <div class="row"><span>订单超时后跳转</span><code>{$timeoutUrl}</code></div>
         </div>
-        {$noticeMarkup}
-        <div class="actions" id="primaryActions">
-          {$launchButton}
-          <a class="btn secondary" href="{$timeoutUrl}">取消支付</a>
-        </div>
-        <p class="footer">当前页面会继续承接已有下单与轮询链接，避免书签或已接入地址直接失效。</p>
+        <div class="notice" id="noticeBand">{$notice}</div>
+        <div class="actions"><button type="button" class="btn secondary" id="copyTradeNoButton">复制订单号</button><a class="btn ghost" href="{$timeoutUrl}">取消支付</a></div>
       </section>
-      <aside class="card panel">
-        <div class="qr-wrap" id="qrWrap">{$qrMarkup}</div>
-        <div class="status">
-          <h2 id="statusTitle">{$stateLabel}</h2>
-          <p id="statusText">{$stateDescription}</p>
-        </div>
-        <div class="actions" id="paidActions" style="margin-top:18px;display:{$paidActionsDisplay};">
-          {$paidButton}
-        </div>
+      <aside class="panel checkout">
+        <div class="head"><div><div class="label">{$payType}</div><h2 id="statusTitle">{$stateLabel}</h2></div><span class="stateTag" id="statusTag">{$stateLabel}</span></div>
+        <p class="stateText" id="statusText">{$stateDescription}</p>
+        <div class="qrbox" id="qrWrap">{$qrMarkup}</div>
+        <div class="scanMeta"><p id="scanTip">请使用{$payType}扫描二维码完成支付。</p><div class="timer"><em>剩余时间</em><strong id="countdownPanel">{$countdownLabel}</strong></div></div>
+        <div class="checkoutActions" id="checkoutActions"><a id="launchLink" class="btn primary hidden" href="#" rel="nofollow">立即支付</a><button type="button" class="btn secondary hidden" id="copyLaunchButton">复制支付链接</button></div>
+        <div class="successBox" id="successBox"><h3>支付成功</h3><p>订单状态已同步，如商户设置了回跳地址，页面会自动返回。</p><div class="successGrid"><div><em>支付金额</em><strong>{$amount}</strong></div><div><em>支付方式</em><strong>{$payType}</strong></div><div><em>系统订单号</em><strong>{$tradeNo}</strong></div></div><div class="checkoutActions">{$paidButton}</div></div>
       </aside>
     </div>
   </div>
@@ -423,158 +399,49 @@ class PayCompatibilityController
   var launchUrl = {$pageLaunchUrl};
   var autoJump = {$pageAutoJump};
   var remaining = {$pageCountdown};
+  var tradeNo = {$pageTradeNo};
+  var payType = {$pagePayType};
+  var noticeText = {$pageNotice};
+  var returnUrl = {$pageReturnUrl};
+  var stage = document.getElementById('cashierStage');
   var statusBadge = document.getElementById('statusBadge');
+  var statusTag = document.getElementById('statusTag');
   var statusTitle = document.getElementById('statusTitle');
   var statusText = document.getElementById('statusText');
   var countdownEl = document.getElementById('countdown');
+  var countdownPanelEl = document.getElementById('countdownPanel');
   var qrWrap = document.getElementById('qrWrap');
   var launchLink = document.getElementById('launchLink');
-  var paidActions = document.getElementById('paidActions');
-
-  function labelFor(nextState) {
-    if (nextState === 'paid') return '已支付';
-    if (nextState === 'timeout') return '已超时';
-    if (nextState === 'qrcode_loading') return '生成二维码中';
-    if (nextState === 'qrcode_missing') return '二维码待生成';
-    return '等待支付';
-  }
-
-  function textFor(nextState, message) {
-    if (nextState === 'paid') return '支付成功，正在返回商户页面...';
-    if (nextState === 'timeout') return '该订单已超时，未能在规定时间内完成支付。';
-    if (nextState === 'qrcode_loading') return '上游通道正在生成二维码，请稍候。';
-    if (nextState === 'qrcode_missing') return '二维码暂未就绪，请等待系统继续轮询。';
-    return message || '正在等待下一次支付状态结果。';
-  }
-
-  function setState(nextState, message) {
-    state = nextState;
-    var label = labelFor(nextState);
-    statusBadge.textContent = label;
-    statusTitle.textContent = label;
-    statusText.textContent = textFor(nextState, message);
-  }
-
-  function setQr(url) {
-    if (!url) {
-      return;
-    }
-    qrWrap.innerHTML = '<img id="qrImage" src="' + url.replace(/"/g, '&quot;') + '" alt="支付二维码" />';
-  }
-
-  function showLaunch(url) {
-    if (!url || !launchLink) {
-      return;
-    }
-    launchLink.href = url;
-    launchLink.classList.remove('hidden');
-  }
-
-  function formatSeconds(seconds) {
-    if (seconds <= 0) {
-      return '00:00';
-    }
-    var mins = Math.floor(seconds / 60);
-    var secs = seconds % 60;
-    return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
-  }
-
-  function beginCountdown() {
-    if (!countdownEl) {
-      return;
-    }
-    countdownEl.textContent = formatSeconds(remaining);
-    window.setInterval(function () {
-      if (remaining <= 0 || state === 'paid') {
-        return;
-      }
-      remaining -= 1;
-      countdownEl.textContent = formatSeconds(remaining);
-      if (remaining <= 0 && timeoutUrl) {
-        setState('timeout');
-        window.setTimeout(function () {
-          window.location.href = timeoutUrl;
-        }, 900);
-      }
-    }, 1000);
-  }
-
-  function maybeAutoJump() {
-    var ua = navigator.userAgent || '';
-    var isMobile = /(phone|pad|pod|iphone|ipod|ios|ipad|android|mobile|blackberry|iemobile|windows phone)/i.test(ua);
-    if (isMobile && autoJump && launchUrl) {
-      window.setTimeout(function () {
-        window.location.href = launchUrl;
-      }, 900);
-    }
-  }
-
-  function poll() {
-    if (!outTradeNo || state === 'paid') {
-      return;
-    }
-    fetch(pollUrl + '?TradeNo=' + encodeURIComponent(outTradeNo) + '&_t=' + Date.now(), {
-      headers: {
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    }).then(function (response) {
-      return response.json();
-    }).then(function (data) {
-      if (!data || typeof data !== 'object') {
-        return;
-      }
-      if (data.code === 100) {
-        setState('pending', '二维码已生成，系统会持续轮询直到支付完成。');
-        setQr(data.qr_url || '');
-        showLaunch(data.h5_qrurl || launchUrl);
-        return;
-      }
-      if (data.code === 404) {
-        setState('qrcode_loading');
-        return;
-      }
-      if (data.code === 200) {
-        setState('paid');
-        if (paidActions) {
-          paidActions.style.display = 'flex';
-        }
-        if (data.url) {
-          window.setTimeout(function () {
-            window.location.href = data.url;
-          }, 800);
-        }
-        return;
-      }
-      if (data.msg === 'order_timeout') {
-        setState('timeout');
-        return;
-      }
-      if (data.msg === 'qrcode_missing') {
-        setState('qrcode_missing');
-        return;
-      }
-      if (typeof data.msg === 'string' && data.msg) {
-        statusText.textContent = data.msg;
-      }
-    }).catch(function () {
-      statusText.textContent = '状态轮询暂时失败，系统正在自动重试...';
-    });
-  }
-
-  beginCountdown();
-  maybeAutoJump();
-  if (state !== 'paid' && state !== 'timeout') {
-    window.setTimeout(poll, 600);
-    window.setInterval(poll, 3000);
-  }
+  var copyLaunchButton = document.getElementById('copyLaunchButton');
+  var copyTradeNoButton = document.getElementById('copyTradeNoButton');
+  var scanTip = document.getElementById('scanTip');
+  var noticeBand = document.getElementById('noticeBand');
+  function labelFor(nextState){if(nextState==='paid')return'支付成功';if(nextState==='timeout')return'订单超时';if(nextState==='qrcode_loading')return'二维码生成中';if(nextState==='qrcode_missing')return'等待二维码';return'等待支付'}
+  function textFor(nextState,message){if(nextState==='paid')return'支付结果已确认，页面将为你同步后续跳转。';if(nextState==='timeout')return'订单已超时，请返回上一步重新发起支付。';if(nextState==='qrcode_loading')return'上游通道正在生成二维码，请稍候，系统会自动刷新。';if(nextState==='qrcode_missing')return'二维码暂未返回，请等待系统继续轮询。';return message||'请使用二维码完成支付，系统会自动轮询并更新结果。'}
+  function placeholderFor(nextState){if(nextState==='paid')return'支付成功，订单状态已完成同步。';if(nextState==='timeout')return'当前订单已超时，请重新发起支付。';if(nextState==='qrcode_loading')return'正在生成支付二维码，请稍候。';if(nextState==='qrcode_missing')return'支付二维码暂未就绪，请等待系统刷新。';return'二维码加载中，请稍候。'}
+  function escapeHtml(value){return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+  function isMobile(){return /(phone|pad|pod|iphone|ipod|ios|ipad|android|mobile|blackberry|iemobile|windows phone)/i.test(navigator.userAgent||'')}
+  function isScheme(url){return /^[a-z][a-z0-9+.-]*:\/\//i.test(url||'')&&!/^https?:\/\//i.test(url||'')}
+  function bindQrError(){var image=document.getElementById('qrImage');if(!image)return;image.onerror=function(){qrWrap.innerHTML='<div class="placeholder">二维码加载失败，请刷新页面后重试。</div>';setState('qrcode_missing','二维码图片暂时无法显示，请等待系统重试或刷新页面。')}}
+  function scanTipText(url){if(state==='paid')return returnUrl?'支付成功后将自动跳转，也可手动返回商户页面。':'支付成功后可在下方直接返回。';if(state==='timeout')return'订单已超时，请返回后重新创建支付订单。';if(!url)return'请使用'+payType+'扫描二维码完成支付。';if(isScheme(url))return isMobile()?'如未自动拉起支付应用，可点击下方按钮继续支付。':'当前设备无法直接拉起支付应用，请使用手机扫码完成支付。';return isMobile()?'如需直接前往支付页，可点击下方按钮继续。':'可直接扫码完成支付，也可以打开支付页面继续。'}
+  function setState(nextState,message){state=nextState;var label=labelFor(nextState);if(stage)stage.setAttribute('data-state',nextState);statusBadge.textContent=label;statusTag.textContent=label;statusTitle.textContent=label;statusText.textContent=textFor(nextState,message);if(noticeBand)noticeBand.textContent=nextState==='paid'?'订单已支付完成，当前页面会自动同步商户回跳。':nextState==='timeout'?'订单超时后请重新发起支付，避免继续使用失效二维码。':noticeText;if(scanTip)scanTip.textContent=scanTipText(launchUrl)}
+  function setQr(url){if(!url){qrWrap.innerHTML='<div class="placeholder">'+escapeHtml(placeholderFor(state))+'</div>';return}qrWrap.innerHTML='<img id="qrImage" src="'+escapeHtml(url)+'" alt="支付二维码">';bindQrError()}
+  function showLaunch(url){launchUrl=(url||'').trim();if(!launchLink)return;if(launchUrl===''){launchLink.classList.add('hidden');if(copyLaunchButton)copyLaunchButton.classList.add('hidden');if(scanTip)scanTip.textContent=scanTipText('');return}var scheme=isScheme(launchUrl);launchLink.href=launchUrl;launchLink.textContent=scheme?'打开支付应用':'立即支付';launchLink.classList.toggle('hidden',scheme&&!isMobile());if(copyLaunchButton)copyLaunchButton.classList.toggle('hidden',!(scheme||/^https?:\/\//i.test(launchUrl)));if(scanTip)scanTip.textContent=scanTipText(launchUrl)}
+  function formatSeconds(seconds){if(seconds<=0)return'00:00';var mins=Math.floor(seconds/60);var secs=seconds%60;return String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0')}
+  function beginCountdown(){if(!countdownEl||!countdownPanelEl)return;countdownEl.textContent=formatSeconds(remaining);countdownPanelEl.textContent=formatSeconds(remaining);window.setInterval(function(){if(remaining<=0||state==='paid')return;remaining-=1;countdownEl.textContent=formatSeconds(remaining);countdownPanelEl.textContent=formatSeconds(remaining);if(remaining<=0&&timeoutUrl){setState('timeout');setQr('');window.setTimeout(function(){window.location.href=timeoutUrl},1200)}},1000)}
+  function maybeAutoJump(){if(isMobile()&&autoJump&&launchUrl){window.setTimeout(function(){window.location.href=launchUrl},900)}}
+  function flash(button,text){if(!button)return;var original=button.textContent;button.textContent=text;window.setTimeout(function(){button.textContent=original},1400)}
+  function copyText(value,button){if(!value||!navigator.clipboard||!navigator.clipboard.writeText){flash(button,'复制失败');return}navigator.clipboard.writeText(value).then(function(){flash(button,'已复制')}).catch(function(){flash(button,'复制失败')})}
+  function poll(){if(!outTradeNo||state==='paid')return;fetch(pollUrl+'?TradeNo='+encodeURIComponent(outTradeNo)+'&_t='+Date.now(),{headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}}).then(function(response){return response.json()}).then(function(data){if(!data||typeof data!=='object')return;if(data.code===100){setState('pending','支付二维码已就绪，请尽快完成付款。');setQr(data.qr_url||'');showLaunch(data.h5_qrurl||launchUrl);return}if(data.code===404){setState('qrcode_loading');setQr('');return}if(data.code===200){setState('paid','支付成功，正在同步订单结果。');if(data.url){window.setTimeout(function(){window.location.href=data.url},1500)}return}if(data.msg==='order_timeout'){setState('timeout');setQr('');return}if(data.msg==='qrcode_missing'){setState('qrcode_missing');setQr('');return}if(typeof data.message==='string'&&data.message){statusText.textContent=data.message;return}if(typeof data.msg==='string'&&data.msg)statusText.textContent=data.msg}).catch(function(){statusText.textContent='状态轮询暂时失败，系统正在自动重试。'})}
+  if(copyTradeNoButton)copyTradeNoButton.addEventListener('click',function(){copyText(tradeNo,copyTradeNoButton)});
+  if(copyLaunchButton)copyLaunchButton.addEventListener('click',function(){copyText(launchUrl,copyLaunchButton)});
+  bindQrError();beginCountdown();showLaunch(launchUrl);maybeAutoJump();if(state!=='paid'&&state!=='timeout'){window.setTimeout(poll,600);window.setInterval(poll,3000)}
 })();
 </script>
 </body>
 </html>
 HTML;
     }
-
     private function errorPage(string $message, string $returnUrl): string
     {
         $safeMessage = $this->escape($message);
@@ -586,20 +453,22 @@ HTML;
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>支付收银台异常</title>
+  <title>AiPay 收银台异常</title>
   <style>
-    body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f8fafc;color:#0f172a}
+    body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(180deg,#f8fbff,#eef4fb);color:#0f172a}
     .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .card{width:min(520px,100%);background:#fff;border:1px solid #e2e8f0;border-radius:24px;box-shadow:0 20px 60px rgba(15,23,42,.08);padding:30px}
-    h1{margin:0 0 12px;font-size:24px}
-    p{margin:0 0 20px;line-height:1.8;color:#475569}
-    a{display:inline-flex;padding:11px 16px;border-radius:12px;background:#111827;color:#fff;text-decoration:none}
+    .card{width:min(520px,100%);background:#fff;border:1px solid #e2e8f0;border-radius:28px;box-shadow:0 24px 60px rgba(15,23,42,.08);padding:32px}
+    .pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#fee2e2;color:#be123c;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:28px}
+    p{margin:0 0 22px;line-height:1.8;color:#475569}
+    a{display:inline-flex;min-height:44px;padding:0 16px;align-items:center;justify-content:center;border-radius:14px;background:#111827;color:#fff;text-decoration:none;font-weight:700}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>支付收银台异常</h1>
+      <span class="pill">Checkout Error</span>
+      <h1>收银台暂时不可用</h1>
       <p>{$safeMessage}</p>
       <a href="{$safeUrl}">返回上一页</a>
     </div>
@@ -608,14 +477,27 @@ HTML;
 </html>
 HTML;
     }
-
     private function legacyPollResponse(int $code, string $message, array $data = []): Response
     {
         return json(array_merge([
             'code' => $code,
             'msg' => $message,
-            'message' => $message,
+            'message' => $this->legacyPollMessage($message),
         ], $data), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    private function legacyPollMessage(string $message): string
+    {
+        return match ($message) {
+            'order_no_required' => '缺少订单号',
+            'order_not_found' => '未找到对应订单',
+            'order_paid' => '订单已支付',
+            'order_timeout' => '订单已超时',
+            'qrcode_loading' => '二维码生成中',
+            'qrcode_missing' => '二维码暂未返回',
+            'qrcode_ready' => '支付二维码已就绪',
+            default => ApiResponse::normalizeText($message),
+        };
     }
 
     private function monitorResponse(int $code, string $message, array $data = [], array $extra = []): Response
@@ -750,28 +632,43 @@ HTML;
             return $content;
         }
 
-        if (preg_match('#^https?://#i', $content) === 1) {
-            $path = (string)(parse_url($content, PHP_URL_PATH) ?: '');
-            $isImageUrl = preg_match('/\.(png|jpe?g|gif|bmp|webp|svg)$/i', $path) === 1;
-            if ($isImageUrl || strtolower(trim($accountCode)) !== 'alipay_bill') {
-                return $content;
-            }
-        }
-
         if (str_starts_with($content, '//')) {
-            return $this->requestScheme($request) . ':' . $content;
+            $content = $this->requestScheme($request) . ':' . $content;
         }
 
         if (str_starts_with($content, '/')) {
-            $path = (string)(parse_url($content, PHP_URL_PATH) ?: '');
-            if ($path !== '' && preg_match('/\.(png|jpe?g|gif|bmp|webp|svg)$/i', $path) === 1) {
-                return $this->requestOrigin($request) . $content;
-            }
+            $content = $this->requestOrigin($request) . $content;
         }
 
-        return $this->requestOrigin($request) . '/qrcode.php?text=' . rawurlencode($content) . '&size=' . $size;
+        if (preg_match('#^https?://#i', $content) === 1 && $this->looksLikeImageUrl($content, $accountCode)) {
+            return $content;
+        }
+
+        if (preg_match('#^[a-z][a-z0-9+.-]*://#i', $content) === 1) {
+            return FrontendUrlBuilder::publicQrCodeUrl($request, $content, $size);
+        }
+
+        return FrontendUrlBuilder::publicQrCodeUrl($request, $content, $size);
     }
 
+    private function looksLikeImageUrl(string $content, string $accountCode = ''): bool
+    {
+        $path = strtolower((string)(parse_url($content, PHP_URL_PATH) ?: ''));
+        if ($path !== '' && preg_match('/\.(png|jpe?g|gif|bmp|webp|svg)$/i', $path) === 1) {
+            return true;
+        }
+
+        if (str_contains($path, '/qrcode') || str_contains($path, 'qrimage') || str_contains($path, 'barcode')) {
+            return true;
+        }
+
+        $query = strtolower((string)(parse_url($content, PHP_URL_QUERY) ?: ''));
+        if ($query !== '' && preg_match('/(?:image|img|qrimage|qrcode)=/i', $query) === 1) {
+            return true;
+        }
+
+        return strtolower(trim($accountCode)) === 'alipay_bill';
+    }
     private function displayH5QrUrl(string $accountCode, string $h5Url): string
     {
         $h5Url = trim($h5Url);
@@ -830,10 +727,10 @@ HTML;
     private function stateLabel(string $state): string
     {
         return match ($state) {
-            'paid' => '已支付',
-            'timeout' => '已超时',
-            'qrcode_loading' => '生成二维码中',
-            'qrcode_missing' => '二维码待生成',
+            'paid' => '支付成功',
+            'timeout' => '订单超时',
+            'qrcode_loading' => '二维码生成中',
+            'qrcode_missing' => '等待二维码',
             default => '等待支付',
         };
     }
@@ -841,14 +738,35 @@ HTML;
     private function stateDescription(string $state): string
     {
         return match ($state) {
-            'paid' => '订单已支付，系统将使用签名后的商户回跳地址完成返回，不会额外变更 return_num。',
-            'timeout' => '订单已超时，请通过超时返回地址离开当前页面。',
-            'qrcode_loading' => '上游通道仍在生成二维码，系统会自动继续轮询。',
-            'qrcode_missing' => '二维码尚未写入完成，系统会继续等待上游通道返回结果。',
-            default => '请扫码支付或拉起支付应用。当前页面会持续轮询 `/Pay/ConSole`，直到订单支付成功或超时。',
+            'paid' => '订单已支付完成，系统将自动处理商户回调与页面跳转。',
+            'timeout' => '当前订单已超时，请返回后重新发起支付。',
+            'qrcode_loading' => '上游通道正在生成二维码，系统会自动轮询刷新。',
+            'qrcode_missing' => '支付二维码暂未返回，请稍候等待系统继续刷新。',
+            default => '请扫码完成支付，系统会自动更新当前订单状态。',
         };
     }
 
+    private function placeholderText(string $state): string
+    {
+        return match ($state) {
+            'paid' => '支付已完成，订单状态正在同步。',
+            'timeout' => '当前订单已超时。',
+            'qrcode_loading' => '正在生成支付二维码，请稍候。',
+            'qrcode_missing' => '支付二维码暂未就绪，请等待系统刷新。',
+            default => '二维码加载中，请稍候。',
+        };
+    }
+
+    private function paymentMethodLabel(string $type): string
+    {
+        return match (strtolower(trim($type))) {
+            'alipay' => '支付宝',
+            'wxpay' => '微信支付',
+            'qqpay' => 'QQ支付',
+            'usdt' => 'USDT',
+            default => strtoupper(trim($type)) !== '' ? strtoupper(trim($type)) : '在线支付',
+        };
+    }
     private function formatCountdown(int $seconds): string
     {
         if ($seconds <= 0) {
@@ -866,26 +784,18 @@ HTML;
         return [
             'strategy' => 'legacy_cashier_kept_online',
             'status' => 'active',
-            'primary_entry' => '/Pay/console',
-            'poll_entry' => '/Pay/ConSole',
-            'alias_entries' => ['/pay/console', '/pay/ConSole'],
+            'primary_entry' => '/api/public/cashier/console',
+            'poll_entry' => '/api/public/cashier/poll',
+            'alias_entries' => ['/Pay/console', '/Pay/ConSole', '/pay/console', '/pay/ConSole'],
             'allowed_methods' => ['GET', 'POST'],
             'write_policy' => 'no_callback_replay_or_status_mutation',
             'blocked_actions' => ['callback_replay', 'return_num_increment', 'status_reset'],
         ];
     }
 
-    private function legacyConsoleUrl(string $tradeNo): string
+    private function cashierConsoleUrl(Request $request, string $tradeNo): string
     {
-        $configured = FrontendUrlBuilder::configuredBaseUrl([
-            'AIPAY_LEGACY_FRONTEND_URL',
-            'AIPAY_PUBLIC_FRONTEND_URL',
-            'AIPAY_MERCHANT_FRONTEND_URL',
-            'AIPAY_ADMIN_FRONTEND_URL',
-        ]);
-        $base = $configured !== null ? rtrim($configured, '/') : 'http://127.0.0.1:8132';
-
-        return $base . '/Pay/console?trade_no=' . rawurlencode($tradeNo);
+        return rtrim($this->requestOrigin($request), '/') . '/api/public/cashier/console?trade_no=' . rawurlencode($tradeNo);
     }
 
     private function escape(string $value): string

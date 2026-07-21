@@ -1,18 +1,18 @@
-/**
- * useHeaderBar - 顶部栏功能管理
+﻿/**
+ * useHeaderBar - 椤堕儴鏍忓姛鑳界鐞?
  *
- * 统一管理顶部栏各个功能模块的显示状态和配置信息。
- * 提供灵活的功能开关控制，支持动态显示/隐藏顶部栏的各个功能按钮。
+ * 缁熶竴绠＄悊椤堕儴鏍忓悇涓姛鑳芥ā鍧楃殑鏄剧ず鐘舵€佸拰閰嶇疆淇℃伅銆?
+ * 鎻愪緵鐏垫椿鐨勫姛鑳藉紑鍏虫帶鍒讹紝鏀寔鍔ㄦ€佹樉绀?闅愯棌椤堕儴鏍忕殑鍚勪釜鍔熻兘鎸夐挳銆?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * 1. 功能开关控制 - 统一管理菜单按钮、刷新按钮、快速入口等功能的显示状态
- * 2. 配置信息获取 - 获取各个功能模块的详细配置信息
- * 3. 功能列表查询 - 快速获取所有启用或禁用的功能列表
- * 4. 响应式状态 - 所有状态自动响应配置和 store 变化
+ * 1. 鍔熻兘寮€鍏虫帶鍒?- 缁熶竴绠＄悊鑿滃崟鎸夐挳銆佸埛鏂版寜閽€佸揩閫熷叆鍙ｇ瓑鍔熻兘鐨勬樉绀虹姸鎬?
+ * 2. 閰嶇疆淇℃伅鑾峰彇 - 鑾峰彇鍚勪釜鍔熻兘妯″潡鐨勮缁嗛厤缃俊鎭?
+ * 3. 鍔熻兘鍒楄〃鏌ヨ - 蹇€熻幏鍙栨墍鏈夊惎鐢ㄦ垨绂佺敤鐨勫姛鑳藉垪琛?
+ * 4. 鍝嶅簲寮忕姸鎬?- 鎵€鏈夌姸鎬佽嚜鍔ㄥ搷搴旈厤缃拰 store 鍙樺寲
  *
  * @module useHeaderBar
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { computed } from 'vue'
@@ -22,119 +22,119 @@ import { headerBarConfig } from '@/config/modules/headerBar'
 import { HeaderBarFeatureConfig } from '@/types'
 
 /**
- * 顶部栏功能管理
- * @returns 顶部栏功能相关的状态和方法
+ * 椤堕儴鏍忓姛鑳界鐞?
+ * @returns 椤堕儴鏍忓姛鑳界浉鍏崇殑鐘舵€佸拰鏂规硶
  */
 export function useHeaderBar() {
   const settingStore = useSettingStore()
 
-  // 获取顶部栏配置
+  // 鑾峰彇椤堕儴鏍忛厤缃?
   const headerBarConfigRef = computed<HeaderBarFeatureConfig>(() => headerBarConfig)
 
-  // 从store中获取相关状态
+  // 浠巗tore涓幏鍙栫浉鍏崇姸鎬?
   const { showMenuButton, showFastEnter, showRefreshButton, showCrumbs, showLanguage } =
     storeToRefs(settingStore)
 
   /**
-   * 检查特定功能是否启用
-   * @param feature 功能名称
-   * @returns 是否启用
+   * 妫€鏌ョ壒瀹氬姛鑳芥槸鍚﹀惎鐢?
+   * @param feature 鍔熻兘鍚嶇О
+   * @returns 鏄惁鍚敤
    */
   const isFeatureEnabled = (feature: keyof HeaderBarFeatureConfig): boolean => {
     return headerBarConfigRef.value[feature]?.enabled ?? false
   }
 
   /**
-   * 获取功能配置信息
-   * @param feature 功能名称
-   * @returns 功能配置信息
+   * 鑾峰彇鍔熻兘閰嶇疆淇℃伅
+   * @param feature 鍔熻兘鍚嶇О
+   * @returns 鍔熻兘閰嶇疆淇℃伅
    */
   const getFeatureConfig = (feature: keyof HeaderBarFeatureConfig) => {
     return headerBarConfigRef.value[feature]
   }
 
-  // 检查菜单按钮是否显示
+  // 妫€鏌ヨ彍鍗曟寜閽槸鍚︽樉绀?
   const shouldShowMenuButton = computed(() => {
     return isFeatureEnabled('menuButton') && showMenuButton.value
   })
 
-  // 检查刷新按钮是否显示
+  // 妫€鏌ュ埛鏂版寜閽槸鍚︽樉绀?
   const shouldShowRefreshButton = computed(() => {
     return isFeatureEnabled('refreshButton') && showRefreshButton.value
   })
 
-  // 检查快速入口是否显示
+  // 妫€鏌ュ揩閫熷叆鍙ｆ槸鍚︽樉绀?
   const shouldShowFastEnter = computed(() => {
     return isFeatureEnabled('fastEnter') && showFastEnter.value
   })
 
-  // 检查面包屑是否显示
+  // 妫€鏌ラ潰鍖呭睉鏄惁鏄剧ず
   const shouldShowBreadcrumb = computed(() => {
     return isFeatureEnabled('breadcrumb') && showCrumbs.value
   })
 
-  // 检查全局搜索是否显示
+  // 妫€鏌ュ叏灞€鎼滅储鏄惁鏄剧ず
   const shouldShowGlobalSearch = computed(() => {
     return isFeatureEnabled('globalSearch')
   })
 
-  // 检查全屏按钮是否显示
+  // 妫€鏌ュ叏灞忔寜閽槸鍚︽樉绀?
   const shouldShowFullscreen = computed(() => {
     return isFeatureEnabled('fullscreen')
   })
 
-  // 检查通知中心是否显示
+  // 妫€鏌ラ€氱煡涓績鏄惁鏄剧ず
   const shouldShowNotification = computed(() => {
     return isFeatureEnabled('notification')
   })
 
-  // 检查聊天功能是否显示
+  // 妫€鏌ヨ亰澶╁姛鑳芥槸鍚︽樉绀?
   const shouldShowChat = computed(() => {
     return isFeatureEnabled('chat')
   })
 
-  // 检查语言切换是否显示
+  // 妫€鏌ヨ瑷€鍒囨崲鏄惁鏄剧ず
   const shouldShowLanguage = computed(() => {
     return isFeatureEnabled('language') && showLanguage.value
   })
 
-  // 检查设置面板是否显示
+  // 妫€鏌ヨ缃潰鏉挎槸鍚︽樉绀?
   const shouldShowSettings = computed(() => {
     return isFeatureEnabled('settings')
   })
 
-  // 检查主题切换是否显示
+  // 妫€鏌ヤ富棰樺垏鎹㈡槸鍚︽樉绀?
   const shouldShowThemeToggle = computed(() => {
     return isFeatureEnabled('themeToggle')
   })
 
-  // 获取快速入口的最小宽度
+  // 鑾峰彇蹇€熷叆鍙ｇ殑鏈€灏忓搴?
   const fastEnterMinWidth = computed(() => {
     const config = getFeatureConfig('fastEnter')
     return (config as any)?.minWidth || 1200
   })
 
   /**
-   * 检查功能是否启用（别名）
-   * @param feature 功能名称
-   * @returns 是否启用
+   * 妫€鏌ュ姛鑳芥槸鍚﹀惎鐢紙鍒悕锛?
+   * @param feature 鍔熻兘鍚嶇О
+   * @returns 鏄惁鍚敤
    */
   const isFeatureActive = (feature: keyof HeaderBarFeatureConfig): boolean => {
     return isFeatureEnabled(feature)
   }
 
   /**
-   * 获取功能配置（别名）
-   * @param feature 功能名称
-   * @returns 功能配置
+   * 鑾峰彇鍔熻兘閰嶇疆锛堝埆鍚嶏級
+   * @param feature 鍔熻兘鍚嶇О
+   * @returns 鍔熻兘閰嶇疆
    */
   const getFeatureInfo = (feature: keyof HeaderBarFeatureConfig) => {
     return getFeatureConfig(feature)
   }
 
   /**
-   * 获取所有启用的功能列表
-   * @returns 启用的功能名称数组
+   * 鑾峰彇鎵€鏈夊惎鐢ㄧ殑鍔熻兘鍒楄〃
+   * @returns 鍚敤鐨勫姛鑳藉悕绉版暟缁?
    */
   const getEnabledFeatures = (): (keyof HeaderBarFeatureConfig)[] => {
     return Object.keys(headerBarConfigRef.value).filter(
@@ -143,8 +143,8 @@ export function useHeaderBar() {
   }
 
   /**
-   * 获取所有禁用的功能列表
-   * @returns 禁用的功能名称数组
+   * 鑾峰彇鎵€鏈夌鐢ㄧ殑鍔熻兘鍒楄〃
+   * @returns 绂佺敤鐨勫姛鑳藉悕绉版暟缁?
    */
   const getDisabledFeatures = (): (keyof HeaderBarFeatureConfig)[] => {
     return Object.keys(headerBarConfigRef.value).filter(
@@ -153,49 +153,50 @@ export function useHeaderBar() {
   }
 
   /**
-   * 获取所有启用的功能（别名）
-   * @returns 启用的功能列表
+   * 鑾峰彇鎵€鏈夊惎鐢ㄧ殑鍔熻兘锛堝埆鍚嶏級
+   * @returns 鍚敤鐨勫姛鑳藉垪琛?
    */
   const getActiveFeatures = () => {
     return getEnabledFeatures()
   }
 
   /**
-   * 获取所有禁用的功能（别名）
-   * @returns 禁用的功能列表
+   * 鑾峰彇鎵€鏈夌鐢ㄧ殑鍔熻兘锛堝埆鍚嶏級
+   * @returns 绂佺敤鐨勫姛鑳藉垪琛?
    */
   const getInactiveFeatures = () => {
     return getDisabledFeatures()
   }
 
   return {
-    // 配置
+    // 閰嶇疆
     headerBarConfig: headerBarConfigRef,
 
-    // 显示状态计算属性
-    shouldShowMenuButton, // 是否显示菜单按钮
-    shouldShowRefreshButton, // 是否显示刷新按钮
-    shouldShowFastEnter, // 是否显示快速入口
-    shouldShowBreadcrumb, // 是否显示面包屑
-    shouldShowGlobalSearch, // 是否显示全局搜索
-    shouldShowFullscreen, // 是否显示全屏按钮
-    shouldShowNotification, // 是否显示通知中心
-    shouldShowChat, // 是否显示聊天功能
-    shouldShowLanguage, // 是否显示语言切换
-    shouldShowSettings, // 是否显示设置面板
-    shouldShowThemeToggle, // 是否显示主题切换
+    // 鏄剧ず鐘舵€佽绠楀睘鎬?
+    shouldShowMenuButton, // 鏄惁鏄剧ず鑿滃崟鎸夐挳
+    shouldShowRefreshButton, // 鏄惁鏄剧ず鍒锋柊鎸夐挳
+    shouldShowFastEnter, // 鏄惁鏄剧ず蹇€熷叆鍙?
+    shouldShowBreadcrumb, // 鏄惁鏄剧ず闈㈠寘灞?
+    shouldShowGlobalSearch, // 鏄惁鏄剧ず鍏ㄥ眬鎼滅储
+    shouldShowFullscreen, // 鏄惁鏄剧ず鍏ㄥ睆鎸夐挳
+    shouldShowNotification, // 鏄惁鏄剧ず閫氱煡涓績
+    shouldShowChat, // 鏄惁鏄剧ず鑱婂ぉ鍔熻兘
+    shouldShowLanguage, // 鏄惁鏄剧ず璇█鍒囨崲
+    shouldShowSettings, // 鏄惁鏄剧ず璁剧疆闈㈡澘
+    shouldShowThemeToggle, // 鏄惁鏄剧ず涓婚鍒囨崲
 
-    // 配置相关
-    fastEnterMinWidth, // 快速入口最小宽度
+    // 閰嶇疆鐩稿叧
+    fastEnterMinWidth, // 蹇€熷叆鍙ｆ渶灏忓搴?
 
-    // 方法
-    isFeatureEnabled, // 检查功能是否启用
-    isFeatureActive, // 检查功能是否启用（别名）
-    getFeatureConfig, // 获取功能配置
-    getFeatureInfo, // 获取功能配置（别名）
-    getEnabledFeatures, // 获取所有启用的功能
-    getDisabledFeatures, // 获取所有禁用的功能
-    getActiveFeatures, // 获取所有启用的功能（别名）
-    getInactiveFeatures // 获取所有禁用的功能（别名）
+    // 鏂规硶
+    isFeatureEnabled, // 妫€鏌ュ姛鑳芥槸鍚﹀惎鐢?
+    isFeatureActive, // 妫€鏌ュ姛鑳芥槸鍚﹀惎鐢紙鍒悕锛?
+    getFeatureConfig, // 鑾峰彇鍔熻兘閰嶇疆
+    getFeatureInfo, // 鑾峰彇鍔熻兘閰嶇疆锛堝埆鍚嶏級
+    getEnabledFeatures, // 鑾峰彇鎵€鏈夊惎鐢ㄧ殑鍔熻兘
+    getDisabledFeatures, // 鑾峰彇鎵€鏈夌鐢ㄧ殑鍔熻兘
+    getActiveFeatures, // 鑾峰彇鎵€鏈夊惎鐢ㄧ殑鍔熻兘锛堝埆鍚嶏級
+    getInactiveFeatures // 鑾峰彇鎵€鏈夌鐢ㄧ殑鍔熻兘锛堝埆鍚嶏級
   }
 }
+

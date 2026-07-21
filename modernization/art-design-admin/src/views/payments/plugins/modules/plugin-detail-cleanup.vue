@@ -251,7 +251,7 @@
       <div class="purge-guard-card">
         <div class="purge-guard-copy">
           <strong>{{
-            detail.purge_plan.snapshot_guard.has_snapshot ? '恢复快照可用' : '还没有恢复快照'
+            detail.purge_plan.snapshot_guard.has_snapshot ? '回滚快照可用' : '还没有可用回滚快照'
           }}</strong>
           <p v-if="detail.purge_plan.snapshot_guard.has_snapshot">
             最近快照：
@@ -267,7 +267,7 @@
             </span>
           </p>
           <p v-else>
-            建议在彻底清理前先创建恢复快照；如果仍需继续，则需要使用更严格的确认口令：
+            建议在彻底清理前先创建回滚快照；如果仍需继续，则需要使用更严格的确认口令：
             {{ detail.purge_plan.snapshot_guard.missing_snapshot_confirmation_phrase }}.
           </p>
         </div>

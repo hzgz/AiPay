@@ -6,6 +6,7 @@ namespace app\controller;
 
 use app\service\MerchantRechargeService;
 use app\support\ApiResponse;
+use app\support\FrontendUrlBuilder;
 use app\support\MerchantFrontSession;
 use Webman\Http\Request;
 use Webman\Http\Response;
@@ -15,12 +16,12 @@ class MerchantRechargeController
     public function doPay(Request $request): Response
     {
         if (strtoupper($request->method()) === 'GET') {
-            return redirect('/Deal/Recharge');
+            return redirect($this->resolveMerchantFrontendUrl($request, '/merchant/recharges'));
         }
 
         $merchant = MerchantFrontSession::current($request);
         if ($merchant === null) {
-            return $this->jsonOrRedirect($request, '请先登录商户账号', '/User/Login');
+            return $this->jsonOrRedirect($request, '请先登录商户账号', '/merchant/login');
         }
 
         if ((int)($merchant['is_frozen'] ?? 0) === 1) {
@@ -35,7 +36,7 @@ class MerchantRechargeController
                 ], JSON_UNESCAPED_UNICODE)->withStatus(403);
             }
 
-            return response($this->errorPage($message, '/Deal/Recharge'), 403, [
+            return response($this->errorPage($message, $this->resolveMerchantFrontendUrl($request, '/merchant/recharges')), 403, [
                 'Content-Type' => 'text/html; charset=utf-8',
             ]);
         }
@@ -55,7 +56,7 @@ class MerchantRechargeController
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)->withStatus($httpStatus);
             }
 
-            return response($this->errorPage($message, '/Deal/Recharge'), $httpStatus, [
+            return response($this->errorPage($message, $this->resolveMerchantFrontendUrl($request, '/merchant/recharges')), $httpStatus, [
                 'Content-Type' => 'text/html; charset=utf-8',
             ]);
         }
@@ -127,7 +128,7 @@ class MerchantRechargeController
             ], JSON_UNESCAPED_UNICODE)->withStatus(401);
         }
 
-        return redirect($location);
+        return redirect($this->resolveMerchantFrontendUrl($request, $location));
     }
 
     private function buildQrCodeUrl(string $content, Request $request, int $size): string
@@ -152,12 +153,44 @@ class MerchantRechargeController
             }
         }
 
-        return $this->requestOrigin($request) . '/qrcode.php?text=' . rawurlencode($content) . '&size=' . $size;
+        return \app\support\FrontendUrlBuilder::publicQrCodeUrl($request, $content, $size);
     }
 
     private function requestOrigin(Request $request): string
     {
         return \app\support\FrontendUrlBuilder::requestOrigin($request);
+    }
+
+    private function resolveMerchantFrontendUrl(Request $request, string $location): string
+    {
+        $location = trim($location);
+        if ($location === '') {
+            return FrontendUrlBuilder::merchantUrl($request, '/merchant/recharges');
+        }
+
+        if (preg_match('#^(https?:)?//#i', $location) === 1) {
+            return $location;
+        }
+
+        $path = (string)(parse_url($location, PHP_URL_PATH) ?: $location);
+        $path = '/' . ltrim($path, '/');
+
+        $query = [];
+        $queryString = (string)(parse_url($location, PHP_URL_QUERY) ?: '');
+        if ($queryString !== '') {
+            parse_str($queryString, $query);
+        }
+
+        return match (strtolower(rtrim($path, '/'))) {
+            '/user/login', '/merchant/login' => FrontendUrlBuilder::merchantLoginUrl(
+                $request,
+                (string)($query['redirect'] ?? '/merchant/recharges')
+            ),
+            '/deal/recharge', '/my/recharges' => FrontendUrlBuilder::merchantUrl($request, '/merchant/recharges', $query),
+            '/deal/moneylog' => FrontendUrlBuilder::merchantUrl($request, '/merchant/money-logs', $query),
+            '/user/index' => FrontendUrlBuilder::merchantUrl($request, '/merchant/dashboard', $query),
+            default => FrontendUrlBuilder::merchantUrl($request, '/merchant/recharges'),
+        };
     }
 
     private function requestScheme(Request $request): string
@@ -233,8 +266,14 @@ class MerchantRechargeController
         $timeoutSeconds = max(0, (int)($console['timeout_seconds'] ?? 0));
         $showPayPopup = !empty($console['is_pay_popup']);
         $pageTradeNo = json_encode((string)($order['out_trade_no'] ?? ''), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $pagePollUrl = json_encode('/Pay/ConSole_DoPay', JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $pageTimeoutUrl = json_encode((string)($console['timeout_url'] ?? '/Deal/Recharge'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $rechargeListUrl = $this->resolveMerchantFrontendUrl($request, '/merchant/recharges');
+        $moneyLogsUrl = $this->resolveMerchantFrontendUrl($request, '/merchant/money-logs');
+        $pagePollUrl = json_encode($this->requestOrigin($request) . '/api/merchant/recharges/poll', JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $pageTimeoutUrl = json_encode(
+            $this->resolveMerchantFrontendUrl($request, (string)($console['timeout_url'] ?? '/merchant/recharges')),
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        );
+        $pageRechargeUrl = json_encode($rechargeListUrl, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $pageTimeoutSeconds = json_encode($timeoutSeconds);
 
         $popupMarkup = '';
@@ -316,8 +355,8 @@ HTML;
         {$noticeHtml}
         {$launchButton}
         <div class="footer">
-          <a class="btn secondary" href="/Deal/Recharge">返回充值记录</a>
-          <a class="btn secondary" href="/Deal/MoneyLog">查看资金日志</a>
+          <a class="btn secondary" href="{$this->escape($rechargeListUrl)}">返回充值记录</a>
+          <a class="btn secondary" href="{$this->escape($moneyLogsUrl)}">查看资金日志</a>
         </div>
       </article>
       <article class="card">
@@ -334,6 +373,7 @@ HTML;
     const outTradeNo = {$pageTradeNo};
     const pollUrl = {$pagePollUrl};
     const timeoutUrl = {$pageTimeoutUrl};
+    const rechargeListUrl = {$pageRechargeUrl};
     let remainingSeconds = {$pageTimeoutSeconds};
     let pollTimer = null;
     let countdownTimer = null;
@@ -364,7 +404,7 @@ HTML;
           pollTimer = null;
         }
         window.setTimeout(function () {
-          window.location.href = timeoutUrl || '/Deal/Recharge';
+          window.location.href = timeoutUrl || rechargeListUrl;
         }, 1800);
         return;
       }
@@ -389,7 +429,7 @@ HTML;
             clearInterval(countdownTimer);
             countdownTimer = null;
           }
-          window.location.href = result.url || '/Deal/Recharge';
+          window.location.href = result.url || rechargeListUrl;
           return;
         }
 

@@ -2727,7 +2727,7 @@ class PaymentAccountController
         return match ($normalized) {
             '', '0', 'submit', 'page', 'web' => '0',
             '1', 'mapi', 'api' => '1',
-            default => throw new \InvalidArgumentException('接口模式仅支持普通接口或 MAPI 接口'),
+            default => throw new \InvalidArgumentException('接口模式仅支持普通接口或接口直连'),
         };
     }
 

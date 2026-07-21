@@ -1,9 +1,14 @@
 <template>
   <div class="flex h-screen w-full">
-    <LoginLeftView />
+    <LoginLeftView
+      class="merchant-auth__left"
+      brand-title="AiPay"
+      hero-title="AiPay 商户登录"
+      hero-subtitle="登录后即可进入商户中心，管理通道、订单、接口与账户配置"
+    />
 
     <div class="relative flex-1 merchant-auth">
-      <AuthTopBar />
+      <AuthTopBar brand-title="AiPay" :show-brand="false" />
 
       <div class="merchant-auth__wrap">
         <div class="merchant-auth__card">
@@ -30,6 +35,13 @@
               />
             </ElFormItem>
 
+            <MerchantAuthSlider
+              ref="sliderRef"
+              v-model="sliderPassed"
+              :enabled="requiresSliderVerify"
+              :invalid="sliderInvalid"
+            />
+
             <ElButton
               class="merchant-auth__submit"
               type="primary"
@@ -41,7 +53,12 @@
 
             <div class="merchant-auth__links">
               <ElButton text @click="openFrontHome">返回首页</ElButton>
-              <RouterLink class="merchant-auth__link" to="/merchant/register">注册商家</RouterLink>
+              <div class="merchant-auth__link-group">
+                <RouterLink class="merchant-auth__link" to="/merchant/forgot-password"
+                  >找回密码</RouterLink
+                >
+                <RouterLink class="merchant-auth__link" to="/merchant/register">注册商户</RouterLink>
+              </div>
             </div>
           </ElForm>
         </div>
@@ -54,11 +71,17 @@
   import type { FormInstance, FormRules } from 'element-plus'
   import { ElMessage } from 'element-plus'
   import { merchantLogin, MerchantApiError } from '@/api/merchant'
+  import {
+    createDefaultPublicSoftwareConfig,
+    fetchPublicSoftwareConfig,
+    type PublicSoftwareConfigPayload
+  } from '@/api/public-auth'
   import { useMerchantStore } from '@/store/modules/merchant'
   import { setMerchantFrontToken } from '@/utils/merchant-session'
   import { translateMerchantText } from '../shared/text'
   import LoginLeftView from '@/components/core/views/login/LoginLeftView.vue'
   import AuthTopBar from '@/components/core/views/login/AuthTopBar.vue'
+  import MerchantAuthSlider from '../shared/merchant-auth-slider.vue'
   import { RouterLink } from 'vue-router'
 
   defineOptions({ name: 'MerchantLogin' })
@@ -67,12 +90,18 @@
   const route = useRoute()
   const merchantStore = useMerchantStore()
   const formRef = ref<FormInstance>()
+  const sliderRef = ref<InstanceType<typeof MerchantAuthSlider> | null>(null)
+  const config = ref<PublicSoftwareConfigPayload>(createDefaultPublicSoftwareConfig())
   const loading = ref(false)
+  const sliderPassed = ref(false)
+  const sliderInvalid = ref(false)
 
   const formData = reactive({
     username: '',
     password: ''
   })
+
+  const requiresSliderVerify = computed(() => config.value.merchant_login_drag_verify === 1)
 
   const rules: FormRules = {
     username: [{ required: true, message: '请输入商户账号', trigger: 'blur' }],
@@ -86,6 +115,11 @@
 
     const valid = await formRef.value.validate().catch(() => false)
     if (!valid) {
+      return
+    }
+
+    if (requiresSliderVerify.value && !sliderPassed.value) {
+      sliderInvalid.value = true
       return
     }
 
@@ -107,6 +141,11 @@
       ElMessage.error(message)
     } finally {
       loading.value = false
+      sliderInvalid.value = false
+      if (requiresSliderVerify.value) {
+        sliderPassed.value = false
+        sliderRef.value?.reset()
+      }
     }
   }
 
@@ -116,6 +155,13 @@
 
   onMounted(async () => {
     try {
+      const response = await fetchPublicSoftwareConfig().catch(() => null)
+      if (response?.data) {
+        config.value = {
+          ...createDefaultPublicSoftwareConfig(),
+          ...response.data
+        }
+      }
       await merchantStore.hydrate()
       if (merchantStore.authenticated) {
         const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
@@ -123,6 +169,12 @@
       }
     } catch {
       merchantStore.clearSession()
+    }
+  })
+
+  watch(sliderPassed, (value) => {
+    if (value) {
+      sliderInvalid.value = false
     }
   })
 </script>
@@ -148,6 +200,11 @@
     justify-content: center;
     min-height: calc(100vh - 60px);
     padding: 24px;
+  }
+
+  .merchant-auth__left {
+    flex: 0 0 40%;
+    min-width: 420px;
   }
 
   .merchant-auth__card {
@@ -194,6 +251,14 @@
     margin-top: 12px;
   }
 
+  .merchant-auth__link-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
   .merchant-auth__link {
     color: var(--el-color-primary);
     text-decoration: none;
@@ -201,9 +266,13 @@
   }
 
   @media (width <= 1180px) {
+    .merchant-auth__left {
+      display: none;
+    }
+
     .merchant-auth__wrap {
       min-height: 100vh;
-      padding-top: 64px;
+      padding: 80px 16px 24px;
     }
   }
 
@@ -221,6 +290,10 @@
       gap: 10px;
       flex-direction: column;
       align-items: stretch;
+    }
+
+    .merchant-auth__link-group {
+      justify-content: space-between;
     }
   }
 </style>

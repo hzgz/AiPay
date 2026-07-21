@@ -1,63 +1,64 @@
-/**
- * 全局事件总线模块
+﻿/**
+ * 鍏ㄥ眬浜嬩欢鎬荤嚎妯″潡
  *
- * 基于 mitt 库实现的类型安全的事件总线
+ * 鍩轰簬 mitt 搴撳疄鐜扮殑绫诲瀷瀹夊叏鐨勪簨浠舵€荤嚎
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 跨组件通信（发布/订阅模式）
- * - 类型安全的事件定义和调用
- * - 全局事件管理（烟花效果、设置面板、搜索对话框等）
- * - 解耦组件间的直接依赖
+ * - 璺ㄧ粍浠堕€氫俊锛堝彂甯?璁㈤槄妯″紡锛?
+ * - 绫诲瀷瀹夊叏鐨勪簨浠跺畾涔夊拰璋冪敤
+ * - 鍏ㄥ眬浜嬩欢绠＄悊锛堢儫鑺辨晥鏋溿€佽缃潰鏉裤€佹悳绱㈠璇濇绛夛級
+ * - 瑙ｈ€︾粍浠堕棿鐨勭洿鎺ヤ緷璧?
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 跨层级组件通信
- * - 全局功能触发（设置、搜索、聊天、锁屏等）
- * - 特效触发（烟花效果）
- * - 避免 props 层层传递
+ * - 璺ㄥ眰绾х粍浠堕€氫俊
+ * - 鍏ㄥ眬鍔熻兘瑙﹀彂锛堣缃€佹悳绱€佽亰澶┿€侀攣灞忕瓑锛?
+ * - 鐗规晥瑙﹀彂锛堢儫鑺辨晥鏋滐級
+ * - 閬垮厤 props 灞傚眰浼犻€?
  *
- * ## 用法示例
+ * ## 鐢ㄦ硶绀轰緥
  *
  * ```typescript
- * // 订阅事件
+ * // 璁㈤槄浜嬩欢
  * mittBus.on('openSetting', () => { ... })
  *
- * // 发布事件
+ * // 鍙戝竷浜嬩欢
  * mittBus.emit('openSetting')
  *
- * // 带参数的事件
+ * // 甯﹀弬鏁扮殑浜嬩欢
  * mittBus.emit('triggerFireworks', 'image-url')
  * ```
  *
- * ## 已定义的事件
+ * ## 宸插畾涔夌殑浜嬩欢
  *
- * - triggerFireworks: 触发烟花效果（可选图片URL）
- * - openSetting: 打开设置面板
- * - openSearchDialog: 打开搜索对话框
- * - openChat: 打开聊天窗口
- * - openLockScreen: 打开锁屏
+ * - triggerFireworks: 瑙﹀彂鐑熻姳鏁堟灉锛堝彲閫夊浘鐗嘦RL锛?
+ * - openSetting: 鎵撳紑璁剧疆闈㈡澘
+ * - openSearchDialog: 鎵撳紑鎼滅储瀵硅瘽妗?
+ * - openChat: 鎵撳紑鑱婂ぉ绐楀彛
+ * - openLockScreen: 鎵撳紑閿佸睆
  *
  * @module utils/sys/mittBus
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import mitt, { type Emitter } from 'mitt'
 
-// 定义事件类型映射
+// 瀹氫箟浜嬩欢绫诲瀷鏄犲皠
 type Events = {
-  // 烟花效果事件 - 可选的图片URL参数
+  // 鐑熻姳鏁堟灉浜嬩欢 - 鍙€夌殑鍥剧墖URL鍙傛暟
   triggerFireworks: string | undefined
-  // 打开设置面板事件 - 无参数
+  // 鎵撳紑璁剧疆闈㈡澘浜嬩欢 - 鏃犲弬鏁?
   openSetting: void
-  // 打开搜索对话框事件 - 无参数
+  // 鎵撳紑鎼滅储瀵硅瘽妗嗕簨浠?- 鏃犲弬鏁?
   openSearchDialog: void
-  // 打开聊天窗口事件 - 无参数
+  // 鎵撳紑鑱婂ぉ绐楀彛浜嬩欢 - 鏃犲弬鏁?
   openChat: void
-  // 打开锁屏事件 - 无参数
+  // 鎵撳紑閿佸睆浜嬩欢 - 鏃犲弬鏁?
   openLockScreen: void
 }
 
-// 创建类型安全的事件总线实例
+// 鍒涘缓绫诲瀷瀹夊叏鐨勪簨浠舵€荤嚎瀹炰緥
 const mittBus: Emitter<Events> = mitt<Events>()
 
 export default mittBus
+

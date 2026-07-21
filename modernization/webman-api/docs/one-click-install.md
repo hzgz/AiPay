@@ -1,12 +1,12 @@
 # AiPay Linux 一键安装
 
-这套流程面向纯 Linux 服务器，目标是让小白也能完成正式安装。
+这套流程面向纯 Linux 服务器，目标是让全新环境也能快速完成正式安装。
 
 ## 适用场景
 
 - Debian / Ubuntu 服务器
 - 已经解压好 AiPay 发布包
-- 希望一次完成数据库、管理员账号、Webman、Nginx 和 HTTPS
+- 希望一次完成数据库、管理员账号、Webman、Nginx 与 HTTPS
 
 ## 使用方式
 
@@ -33,8 +33,8 @@ sudo bash deploy/linux/install-oneclick.sh
 ```bash
 sudo bash deploy/linux/install-oneclick.sh \
   --domain=pay.example.com \
-  --db-name=pay \
-  --db-user=pay \
+  --db-name=aipay \
+  --db-user=aipay \
   --db-password='ReplaceMe123!' \
   --admin-user=adminroot \
   --admin-password='ReplaceMe123!' \

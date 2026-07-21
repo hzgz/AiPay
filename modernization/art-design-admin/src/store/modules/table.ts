@@ -1,77 +1,77 @@
-/**
- * 表格状态管理模块
+﻿/**
+ * 琛ㄦ牸鐘舵€佺鐞嗘ā鍧?
  *
- * 提供表格显示配置的状态管理
+ * 鎻愪緵琛ㄦ牸鏄剧ず閰嶇疆鐨勭姸鎬佺鐞?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 表格尺寸配置（紧凑、默认、宽松）
- * - 斑马纹显示开关
- * - 边框显示开关
- * - 表头背景显示开关
- * - 全屏模式开关
+ * - 琛ㄦ牸灏哄閰嶇疆锛堢揣鍑戙€侀粯璁ゃ€佸鏉撅級
+ * - 鏂戦┈绾规樉绀哄紑鍏?
+ * - 杈规鏄剧ず寮€鍏?
+ * - 琛ㄥご鑳屾櫙鏄剧ず寮€鍏?
+ * - 鍏ㄥ睆妯″紡寮€鍏?
  *
- * ## 使用场景
- * - 表格组件样式配置
- * - 用户表格偏好设置
- * - 表格工具栏功能控制
+ * ## 浣跨敤鍦烘櫙
+ * - 琛ㄦ牸缁勪欢鏍峰紡閰嶇疆
+ * - 鐢ㄦ埛琛ㄦ牸鍋忓ソ璁剧疆
+ * - 琛ㄦ牸宸ュ叿鏍忓姛鑳芥帶鍒?
  *
- * ## 持久化
+ * ## 鎸佷箙鍖?
  *
- * - 使用 localStorage 存储
- * - 存储键：sys-v{version}-table
- * - 用户配置跨页面保持
+ * - 浣跨敤 localStorage 瀛樺偍
+ * - 瀛樺偍閿細sys-v{version}-table
+ * - 鐢ㄦ埛閰嶇疆璺ㄩ〉闈繚鎸?
  *
  * @module store/modules/table
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { TableSizeEnum } from '@/enums/formEnum'
 
-// 表格
+// 琛ㄦ牸
 export const useTableStore = defineStore(
   'tableStore',
   () => {
-    // 表格大小
+    // 琛ㄦ牸澶у皬
     const tableSize = ref(TableSizeEnum.DEFAULT)
-    // 斑马纹
+    // 鏂戦┈绾?
     const isZebra = ref(false)
-    // 边框
+    // 杈规
     const isBorder = ref(false)
-    // 表头背景
+    // 琛ㄥご鑳屾櫙
     const isHeaderBackground = ref(false)
 
-    // 是否全屏
+    // 鏄惁鍏ㄥ睆
     const isFullScreen = ref(false)
 
     /**
-     * 设置表格大小
-     * @param size 表格大小枚举值
+     * 璁剧疆琛ㄦ牸澶у皬
+     * @param size 琛ㄦ牸澶у皬鏋氫妇鍊?
      */
     const setTableSize = (size: TableSizeEnum) => (tableSize.value = size)
 
     /**
-     * 设置斑马纹显示状态
-     * @param value 是否显示斑马纹
+     * 璁剧疆鏂戦┈绾规樉绀虹姸鎬?
+     * @param value 鏄惁鏄剧ず鏂戦┈绾?
      */
     const setIsZebra = (value: boolean) => (isZebra.value = value)
 
     /**
-     * 设置表格边框显示状态
-     * @param value 是否显示边框
+     * 璁剧疆琛ㄦ牸杈规鏄剧ず鐘舵€?
+     * @param value 鏄惁鏄剧ず杈规
      */
     const setIsBorder = (value: boolean) => (isBorder.value = value)
 
     /**
-     * 设置表头背景显示状态
-     * @param value 是否显示表头背景
+     * 璁剧疆琛ㄥご鑳屾櫙鏄剧ず鐘舵€?
+     * @param value 鏄惁鏄剧ず琛ㄥご鑳屾櫙
      */
     const setIsHeaderBackground = (value: boolean) => (isHeaderBackground.value = value)
 
     /**
-     * 设置是否全屏
-     * @param value 是否全屏
+     * 璁剧疆鏄惁鍏ㄥ睆
+     * @param value 鏄惁鍏ㄥ睆
      */
     const setIsFullScreen = (value: boolean) => (isFullScreen.value = value)
 
@@ -95,3 +95,4 @@ export const useTableStore = defineStore(
     }
   }
 )
+

@@ -224,7 +224,7 @@
           type="info"
           :closable="false"
           show-icon
-          title="应用编号和应用密钥会按密文保存，创建后列表和详情页仅展示脱敏值。"
+          title="应用编号和应用密钥会按密文保存，创建后列表和详情页会显示脱敏值。"
         />
       </ElForm>
 

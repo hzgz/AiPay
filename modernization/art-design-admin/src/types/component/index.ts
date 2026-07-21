@@ -1,27 +1,27 @@
-/**
- * 组件类型定义模块
+﻿/**
+ * 缁勪欢绫诲瀷瀹氫箟妯″潡
  *
- * 提供项目组件的类型定义
+ * 鎻愪緵椤圭洰缁勪欢鐨勭被鍨嬪畾涔?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 搜索组件类型定义
- * - 表格列配置类型
- * - 分页配置类型
- * - 表单规则类型
- * - 对话框配置类型
+ * - 鎼滅储缁勪欢绫诲瀷瀹氫箟
+ * - 琛ㄦ牸鍒楅厤缃被鍨?
+ * - 鍒嗛〉閰嶇疆绫诲瀷
+ * - 琛ㄥ崟瑙勫垯绫诲瀷
+ * - 瀵硅瘽妗嗛厤缃被鍨?
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 组件 Props 类型约束
- * - 组件配置类型定义
- * - 组件事件参数类型
+ * - 缁勪欢 Props 绫诲瀷绾︽潫
+ * - 缁勪欢閰嶇疆绫诲瀷瀹氫箟
+ * - 缁勪欢浜嬩欢鍙傛暟绫诲瀷
  *
  * @module types/component/index
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
-// 搜索组件类型
+// 鎼滅储缁勪欢绫诲瀷
 export type SearchComponentType =
   | 'input'
   | 'select'
@@ -39,107 +39,108 @@ export type SearchComponentType =
   | 'time'
   | 'timerange'
 
-// 搜索框值变化参数
+// 鎼滅储妗嗗€煎彉鍖栧弬鏁?
 export interface SearchChangeParams {
   prop: string
   val: unknown
 }
 
-// 表格列配置接口
+// 琛ㄦ牸鍒楅厤缃帴鍙?
 export interface ColumnOption<T = any> {
-  // 列类型
+  // 鍒楃被鍨?
   type?: 'selection' | 'expand' | 'index' | 'globalIndex'
-  // 列属性名
+  // 鍒楀睘鎬у悕
   prop?: string
-  // 列标题
+  // 鍒楁爣棰?
   label?: string
-  // 列宽度
+  // 鍒楀搴?
   width?: string | number
-  // 最小列宽度
+  // 鏈€灏忓垪瀹藉害
   minWidth?: string | number
-  // 固定列
+  // 鍥哄畾鍒?
   fixed?: boolean | 'left' | 'right'
-  // 是否可排序
+  // 鏄惁鍙帓搴?
   sortable?: boolean | 'custom'
-  // 过滤器选项
+  // 杩囨护鍣ㄩ€夐」
   filters?: any[]
-  // 过滤方法
+  // 杩囨护鏂规硶
   filterMethod?: (value: any, row: any) => boolean
-  // 过滤器位置
+  // 杩囨护鍣ㄤ綅缃?
   filterPlacement?: string
-  // 是否禁用
+  // 鏄惁绂佺敤
   disabled?: boolean
-  // 是否显示列
+  // 鏄惁鏄剧ず鍒?
   visible?: boolean
-  // 是否选中显示
+  // 鏄惁閫変腑鏄剧ず
   checked?: boolean
-  // 自定义渲染函数
+  // 鑷畾涔夋覆鏌撳嚱鏁?
   formatter?: (row: T) => any
-  // 插槽相关配置
-  // 是否使用插槽渲染内容
+  // 鎻掓Ы鐩稿叧閰嶇疆
+  // 鏄惁浣跨敤鎻掓Ы娓叉煋鍐呭
   useSlot?: boolean
-  // 插槽名称（默认为 prop 值）
+  // 鎻掓Ы鍚嶇О锛堥粯璁や负 prop 鍊硷級
   slotName?: string
-  // 是否使用表头插槽
+  // 鏄惁浣跨敤琛ㄥご鎻掓Ы
   useHeaderSlot?: boolean
-  // 表头插槽名称（默认为 `${prop}-header`）
+  // 琛ㄥご鎻掓Ы鍚嶇О锛堥粯璁や负 `${prop}-header`锛?
   headerSlotName?: string
-  // 其他属性
+  // 鍏朵粬灞炴€?
   [key: string]: any
 }
 
-// 分页配置
+// 鍒嗛〉閰嶇疆
 export interface PaginationConfig {
-  // 当前页
+  // 褰撳墠椤?
   currentPage: number
-  // 每页条数
+  // 姣忛〉鏉℃暟
   pageSize: number
-  // 总条数
+  // 鎬绘潯鏁?
   total: number
-  // 每页显示个数选择器的选项
+  // 姣忛〉鏄剧ず涓暟閫夋嫨鍣ㄧ殑閫夐」
   pageSizes?: number[]
-  // 组件布局
+  // 缁勪欢甯冨眬
   layout?: string
-  // 是否为小型分页
+  // 鏄惁涓哄皬鍨嬪垎椤?
   small?: boolean
 }
 
-// 表单规则
+// 琛ㄥ崟瑙勫垯
 export interface FormRule {
-  // 是否必填
+  // 鏄惁蹇呭～
   required?: boolean
-  // 错误提示信息
+  // 閿欒鎻愮ず淇℃伅
   message?: string
-  // 触发方式
+  // 瑙﹀彂鏂瑰紡
   trigger?: string | string[]
-  // 最小长度
+  // 鏈€灏忛暱搴?
   min?: number
-  // 最大长度
+  // 鏈€澶ч暱搴?
   max?: number
-  // 正则表达式
+  // 姝ｅ垯琛ㄨ揪寮?
   pattern?: RegExp
-  // 自定义验证函数
+  // 鑷畾涔夐獙璇佸嚱鏁?
   validator?: (rule: any, value: any, callback: any) => void
 }
 
-// 对话框配置
+// 瀵硅瘽妗嗛厤缃?
 export interface DialogConfig {
-  // 标题
+  // 鏍囬
   title: string
-  // 是否显示
+  // 鏄惁鏄剧ず
   visible: boolean
-  // 宽度
+  // 瀹藉害
   width?: string | number
-  // 是否可以通过点击 modal 关闭
+  // 鏄惁鍙互閫氳繃鐐瑰嚮 modal 鍏抽棴
   closeOnClickModal?: boolean
-  // 是否可以通过按下 ESC 关闭
+  // 鏄惁鍙互閫氳繃鎸変笅 ESC 鍏抽棴
   closeOnPressEscape?: boolean
-  // 是否显示关闭按钮
+  // 鏄惁鏄剧ず鍏抽棴鎸夐挳
   showClose?: boolean
-  // 是否在 Dialog 出现时将 body 滚动锁定
+  // 鏄惁鍦?Dialog 鍑虹幇鏃跺皢 body 婊氬姩閿佸畾
   lockScroll?: boolean
-  // 是否显示遮罩层
+  // 鏄惁鏄剧ず閬僵灞?
   modal?: boolean
-  // 自定义类名
+  // 鑷畾涔夌被鍚?
   customClass?: string
 }
+

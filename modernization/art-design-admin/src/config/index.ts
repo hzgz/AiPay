@@ -1,32 +1,32 @@
-/**
- * 系统全局配置
+﻿/**
+ * 绯荤粺鍏ㄥ眬閰嶇疆
  *
- * 这是系统的核心配置文件，集中管理所有全局配置项。
- * 包含系统信息、主题样式、菜单布局、颜色方案等所有可配置项。
+ * 杩欐槸绯荤粺鐨勬牳蹇冮厤缃枃浠讹紝闆嗕腑绠＄悊鎵€鏈夊叏灞€閰嶇疆椤广€?
+ * 鍖呭惈绯荤粺淇℃伅銆佷富棰樻牱寮忋€佽彍鍗曞竷灞€銆侀鑹叉柟妗堢瓑鎵€鏈夊彲閰嶇疆椤广€?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 系统信息 - 系统名称等基础信息
- * - 主题配置 - 亮色/暗色/自动主题的样式配置
- * - 菜单配置 - 菜单布局、主题、宽度等配置
- * - 颜色方案 - 系统主色和预设颜色列表
- * - 快速入口 - 快速入口应用和链接配置
- * - 顶部栏配置 - 顶部栏功能模块配置
+ * - 绯荤粺淇℃伅 - 绯荤粺鍚嶇О绛夊熀纭€淇℃伅
+ * - 涓婚閰嶇疆 - 浜壊/鏆楄壊/鑷姩涓婚鐨勬牱寮忛厤缃?
+ * - 鑿滃崟閰嶇疆 - 鑿滃崟甯冨眬銆佷富棰樸€佸搴︾瓑閰嶇疆
+ * - 棰滆壊鏂规 - 绯荤粺涓昏壊鍜岄璁鹃鑹插垪琛?
+ * - 蹇€熷叆鍙?- 蹇€熷叆鍙ｅ簲鐢ㄥ拰閾炬帴閰嶇疆
+ * - 椤堕儴鏍忛厤缃?- 椤堕儴鏍忓姛鑳芥ā鍧楅厤缃?
  *
- * ## 配置项说明
+ * ## 閰嶇疆椤硅鏄?
  *
- * - systemInfo: 系统基础信息（名称等）
- * - systemThemeStyles: 系统主题样式映射
- * - settingThemeList: 可选的系统主题列表
- * - menuLayoutList: 可选的菜单布局列表
- * - themeList: 菜单主题样式列表
- * - darkMenuStyles: 暗黑模式下的菜单样式
- * - systemMainColor: 预设的系统主色列表
- * - fastEnter: 快速入口配置
- * - headerBar: 顶部栏功能配置
+ * - systemInfo: 绯荤粺鍩虹淇℃伅锛堝悕绉扮瓑锛?
+ * - systemThemeStyles: 绯荤粺涓婚鏍峰紡鏄犲皠
+ * - settingThemeList: 鍙€夌殑绯荤粺涓婚鍒楄〃
+ * - menuLayoutList: 鍙€夌殑鑿滃崟甯冨眬鍒楄〃
+ * - themeList: 鑿滃崟涓婚鏍峰紡鍒楄〃
+ * - darkMenuStyles: 鏆楅粦妯″紡涓嬬殑鑿滃崟鏍峰紡
+ * - systemMainColor: 棰勮鐨勭郴缁熶富鑹插垪琛?
+ * - fastEnter: 蹇€熷叆鍙ｉ厤缃?
+ * - headerBar: 椤堕儴鏍忓姛鑳介厤缃?
  *
  * @module config
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { MenuThemeEnum, MenuTypeEnum, SystemThemeEnum } from '@/enums/appEnum'
@@ -36,16 +36,16 @@ import fastEnterConfig from './modules/fastEnter'
 import { headerBarConfig } from './modules/headerBar'
 
 const appConfig: SystemConfig = {
-  // 系统信息
+  // 绯荤粺淇℃伅
   systemInfo: {
-    name: 'AiPay 管理后台' // 系统名称
+    name: 'AiPay 管理后台' // 绯荤粺鍚嶇О
   },
-  // 系统主题
+  // 绯荤粺涓婚
   systemThemeStyles: {
     [SystemThemeEnum.LIGHT]: { className: '' },
     [SystemThemeEnum.DARK]: { className: SystemThemeEnum.DARK }
   },
-  // 系统主题列表
+  // 绯荤粺涓婚鍒楄〃
   settingThemeList: [
     {
       name: '浅色模式',
@@ -72,14 +72,14 @@ const appConfig: SystemConfig = {
       img: configImages.themeStyles.system
     }
   ],
-  // 菜单布局列表
+  // 鑿滃崟甯冨眬鍒楄〃
   menuLayoutList: [
     { name: '左侧菜单', value: MenuTypeEnum.LEFT, img: configImages.menuLayouts.vertical },
     { name: '顶部菜单', value: MenuTypeEnum.TOP, img: configImages.menuLayouts.horizontal },
     { name: '混合布局', value: MenuTypeEnum.TOP_LEFT, img: configImages.menuLayouts.mixed },
     { name: '双栏布局', value: MenuTypeEnum.DUAL_MENU, img: configImages.menuLayouts.dualColumn }
   ],
-  // 菜单主题列表
+  // 鑿滃崟涓婚鍒楄〃
   themeList: [
     {
       theme: MenuThemeEnum.DESIGN,
@@ -106,7 +106,7 @@ const appConfig: SystemConfig = {
       img: configImages.menuStyles.light
     }
   ],
-  // 暗黑模式菜单样式
+  // 鏆楅粦妯″紡鑿滃崟鏍峰紡
   darkMenuStyles: [
     {
       theme: MenuThemeEnum.DARK,
@@ -116,7 +116,7 @@ const appConfig: SystemConfig = {
       textColor: 'rgba(#FFFFFF, 0.7)'
     }
   ],
-  // 系统主色
+  // 绯荤粺涓昏壊
   systemMainColor: [
     '#5D87FF',
     '#B48DF3',
@@ -126,10 +126,11 @@ const appConfig: SystemConfig = {
     '#F9901F',
     '#FF80C8'
   ] as const,
-  // 快速入口配置
+  // 蹇€熷叆鍙ｉ厤缃?
   fastEnter: fastEnterConfig,
-  // 顶部栏功能配置
+  // 椤堕儴鏍忓姛鑳介厤缃?
   headerBar: headerBarConfig
 }
 
 export default Object.freeze(appConfig)
+

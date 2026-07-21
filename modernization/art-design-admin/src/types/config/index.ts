@@ -1,211 +1,212 @@
-/**
- * 配置类型定义模块
+﻿/**
+ * 閰嶇疆绫诲瀷瀹氫箟妯″潡
  *
- * 提供系统配置相关的类型定义
+ * 鎻愪緵绯荤粺閰嶇疆鐩稿叧鐨勭被鍨嬪畾涔?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 主题设置类型
- * - 菜单布局类型
- * - 节日配置类型
- * - 系统基础配置类型
- * - 快速入口配置类型
- * - 顶部栏功能配置类型
- * - 环境配置类型
- * - 应用配置类型
+ * - 涓婚璁剧疆绫诲瀷
+ * - 鑿滃崟甯冨眬绫诲瀷
+ * - 鑺傛棩閰嶇疆绫诲瀷
+ * - 绯荤粺鍩虹閰嶇疆绫诲瀷
+ * - 蹇€熷叆鍙ｉ厤缃被鍨?
+ * - 椤堕儴鏍忓姛鑳介厤缃被鍨?
+ * - 鐜閰嶇疆绫诲瀷
+ * - 搴旂敤閰嶇疆绫诲瀷
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 系统配置文件类型约束
- * - 配置项类型定义
- * - 配置数据验证
+ * - 绯荤粺閰嶇疆鏂囦欢绫诲瀷绾︽潫
+ * - 閰嶇疆椤圭被鍨嬪畾涔?
+ * - 閰嶇疆鏁版嵁楠岃瘉
  *
  * @module types/config/index
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { MenuTypeEnum, SystemThemeEnum } from '@/enums/appEnum'
 import { MenuThemeType, SystemThemeTypes } from '@/types/store'
 
-// 主题设置
+// 涓婚璁剧疆
 export interface ThemeSetting {
-  /** 主题名称 */
+  /** 涓婚鍚嶇О */
   name: string
-  /** 系统主题类型 */
+  /** 绯荤粺涓婚绫诲瀷 */
   theme: SystemThemeEnum
-  /** 主题颜色数组 */
+  /** 涓婚棰滆壊鏁扮粍 */
   color: string[]
-  /** 左侧线条颜色 */
+  /** 宸︿晶绾挎潯棰滆壊 */
   leftLineColor: string
-  /** 右侧线条颜色 */
+  /** 鍙充晶绾挎潯棰滆壊 */
   rightLineColor: string
-  /** 主题图片 */
+  /** 涓婚鍥剧墖 */
   img: string
 }
 
-// 菜单布局
+// 鑿滃崟甯冨眬
 export interface MenuLayout {
-  /** 布局名称 */
+  /** 甯冨眬鍚嶇О */
   name: string
-  /** 菜单类型值 */
+  /** 鑿滃崟绫诲瀷鍊?*/
   value: MenuTypeEnum
-  /** 布局预览图 */
+  /** 甯冨眬棰勮鍥?*/
   img: string
-  /** 布局描述 */
+  /** 甯冨眬鎻忚堪 */
   description?: string
 }
 
-// 节日配置
+// 鑺傛棩閰嶇疆
 export interface FestivalConfig {
-  /** 节日日期（单日）或开始日期（日期范围） */
+  /** 鑺傛棩鏃ユ湡锛堝崟鏃ワ級鎴栧紑濮嬫棩鏈燂紙鏃ユ湡鑼冨洿锛?*/
   date: string
-  /** 节日结束日期（可选，用于跨日期节日） */
+  /** 鑺傛棩缁撴潫鏃ユ湡锛堝彲閫夛紝鐢ㄤ簬璺ㄦ棩鏈熻妭鏃ワ級 */
   endDate?: string
-  /** 节日名称 */
+  /** 鑺傛棩鍚嶇О */
   name: string
-  /** 烟花图片 */
+  /** 鐑熻姳鍥剧墖 */
   image: string
-  /** 滚动文本 */
+  /** 婊氬姩鏂囨湰 */
   scrollText: string
-  /** 是否激活 */
+  /** 鏄惁婵€娲?*/
   isActive?: boolean
-  /** 烟花播放次数（可选，默认为 3 次） */
+  /** 鐑熻姳鎾斁娆℃暟锛堝彲閫夛紝榛樿涓?3 娆★級 */
   count?: number
 }
 
-// 系统基础配置
+// 绯荤粺鍩虹閰嶇疆
 export interface SystemBasicConfig {
-  // 系统名称
+  // 绯荤粺鍚嶇О
   name: string
-  // 系统描述
+  // 绯荤粺鎻忚堪
   description?: string
-  // 系统logo
+  // 绯荤粺logo
   logo?: string
-  // 系统favicon
+  // 绯荤粺favicon
   favicon?: string
-  // 版权信息
+  // 鐗堟潈淇℃伅
   copyright?: string
 }
 
-// 快速入口基础项
+// 蹇€熷叆鍙ｅ熀纭€椤?
 export interface FastEnterBaseItem {
-  /** 名称 */
+  /** 鍚嶇О */
   name: string
-  /** 是否启用 */
+  /** 鏄惁鍚敤 */
   enabled?: boolean
-  /** 排序权重 */
+  /** 鎺掑簭鏉冮噸 */
   order?: number
-  /** 路由名称 */
+  /** 璺敱鍚嶇О */
   routeName?: string
-  /** 外部链接 */
+  /** 澶栭儴閾炬帴 */
   link?: string
 }
 
-// 快速入口应用项
+// 蹇€熷叆鍙ｅ簲鐢ㄩ」
 export interface FastEnterApplication extends FastEnterBaseItem {
-  /** 应用描述 */
+  /** 搴旂敤鎻忚堪 */
   description: string
-  /** 图标代码 */
+  /** 鍥炬爣浠ｇ爜 */
   icon: string
-  /** 图标颜色 */
+  /** 鍥炬爣棰滆壊 */
   iconColor: string
 }
 
-// 快速链接项
+// 蹇€熼摼鎺ラ」
 export type FastEnterQuickLink = FastEnterBaseItem
 
-// 快速入口配置
+// 蹇€熷叆鍙ｉ厤缃?
 export interface FastEnterConfig {
-  /** 应用列表 */
+  /** 搴旂敤鍒楄〃 */
   applications: FastEnterApplication[]
-  /** 快速链接 */
+  /** 蹇€熼摼鎺?*/
   quickLinks: FastEnterQuickLink[]
-  /** 显示条件（屏幕宽度） */
+  /** 鏄剧ず鏉′欢锛堝睆骞曞搴︼級 */
   minWidth?: number
 }
 
-// 系统配置
+// 绯荤粺閰嶇疆
 export interface SystemConfig {
-  // 系统基础信息
+  // 绯荤粺鍩虹淇℃伅
   systemInfo: SystemBasicConfig
-  // 系统主题样式
+  // 绯荤粺涓婚鏍峰紡
   systemThemeStyles: SystemThemeTypes
-  // 设置主题列表
+  // 璁剧疆涓婚鍒楄〃
   settingThemeList: ThemeSetting[]
-  // 菜单布局列表
+  // 鑿滃崟甯冨眬鍒楄〃
   menuLayoutList: MenuLayout[]
-  // 主题列表
+  // 涓婚鍒楄〃
   themeList: MenuThemeType[]
-  // 暗色菜单样式
+  // 鏆楄壊鑿滃崟鏍峰紡
   darkMenuStyles: MenuThemeType[]
-  // 系统主色调
+  // 绯荤粺涓昏壊璋?
   systemMainColor: readonly string[]
-  // 快速入口配置
+  // 蹇€熷叆鍙ｉ厤缃?
   fastEnter?: FastEnterConfig
-  // 顶部栏功能配置
+  // 椤堕儴鏍忓姛鑳介厤缃?
   headerBar?: HeaderBarFeatureConfig
 }
 
-// 环境配置
+// 鐜閰嶇疆
 export interface EnvConfig {
-  // 环境名称
+  // 鐜鍚嶇О
   NODE_ENV: string
-  // 应用版本
+  // 搴旂敤鐗堟湰
   VITE_VERSION: string
-  // 应用端口
+  // 搴旂敤绔彛
   VITE_PORT: string
-  // 应用基础路径
+  // 搴旂敤鍩虹璺緞
   VITE_BASE_URL: string
-  // API 地址
+  // API 鍦板潃
   VITE_API_URL: string
-  // 是否开启 Mock
+  // 鏄惁寮€鍚?Mock
   VITE_USE_MOCK?: string
-  // 是否开启压缩
+  // 鏄惁寮€鍚帇缂?
   VITE_USE_GZIP?: string
-  // 是否开启 CDN
+  // 鏄惁寮€鍚?CDN
   VITE_USE_CDN?: string
 }
 
-// 应用配置
+// 搴旂敤閰嶇疆
 export interface AppConfig extends SystemConfig {
-  // 环境配置
+  // 鐜閰嶇疆
   env: EnvConfig
-  // 开发模式
+  // 寮€鍙戞ā寮?
   isDev: boolean
-  // 生产模式
+  // 鐢熶骇妯″紡
   isProd: boolean
-  // 测试模式
+  // 娴嬭瘯妯″紡
   isTest: boolean
 }
 
-// 功能配置项基础接口
+// 鍔熻兘閰嶇疆椤瑰熀纭€鎺ュ彛
 export interface FeatureConfigItem {
   enabled: boolean
   description: string
 }
 
-// 顶部栏功能配置接口
+// 椤堕儴鏍忓姛鑳介厤缃帴鍙?
 export interface HeaderBarFeatureConfig {
-  /** 菜单按钮 */
+  /** 鑿滃崟鎸夐挳 */
   menuButton: FeatureConfigItem
-  /** 刷新按钮 */
+  /** 鍒锋柊鎸夐挳 */
   refreshButton: FeatureConfigItem
-  /** 快速入口 */
+  /** 蹇€熷叆鍙?*/
   fastEnter: FeatureConfigItem
-  /** 面包屑导航 */
+  /** 闈㈠寘灞戝鑸?*/
   breadcrumb: FeatureConfigItem
-  /** 全局搜索 */
+  /** 鍏ㄥ眬鎼滅储 */
   globalSearch: FeatureConfigItem
-  /** 全屏功能 */
+  /** 鍏ㄥ睆鍔熻兘 */
   fullscreen: FeatureConfigItem
-  /** 通知功能 */
+  /** 閫氱煡鍔熻兘 */
   notification: FeatureConfigItem
-  /** 聊天功能 */
+  /** 鑱婂ぉ鍔熻兘 */
   chat: FeatureConfigItem
-  /** 多语言切换 */
+  /** 澶氳瑷€鍒囨崲 */
   language: FeatureConfigItem
-  /** 设置面板 */
+  /** 璁剧疆闈㈡澘 */
   settings: FeatureConfigItem
-  /** 主题切换 */
+  /** 涓婚鍒囨崲 */
   themeToggle: FeatureConfigItem
 }
+

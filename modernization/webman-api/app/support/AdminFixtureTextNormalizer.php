@@ -9,10 +9,10 @@ class AdminFixtureTextNormalizer
     private const EXACT_MAP = [
         'aipay modernization' => 'AiPay 官方',
         'aipay official' => 'AiPay 官方',
-        '通用易支付插件' => '通用易支付V1插件',
+        'aipay smoke' => 'AiPay 官方',
         'universal_epay' => '通用易支付V1插件',
-        'wxpay_v3' => '微信官方 V3 插件',
-        'alipay_official' => '支付宝官方版 V3 插件',
+        'wxpay_v3' => '微信支付 V3 插件',
+        'alipay_official' => '支付宝官方版V3插件',
         'alipay_bill' => '支付宝二维码账单插件',
         'alipay_mck' => '支付宝免CK插件',
         'qqpay_software' => 'QQ 软件插件',
@@ -34,12 +34,12 @@ class AdminFixtureTextNormalizer
         'available' => '可用',
         'enabled' => '已启用',
         'disabled' => '已停用',
-        'recycled' => '回收站',
+        'recycled' => '已回收',
         'metadata ready' => '元数据完整',
-        'metadata incomplete' => '元数据不完整',
-        'config ready' => '配置已完成',
+        'metadata incomplete' => '元数据待补充',
+        'config ready' => '配置已就绪',
         'config missing' => '缺少配置',
-        'using default value' => '使用默认配置',
+        'using default value' => '当前使用默认值',
         'no config mapping' => '未接入系统配置',
         'index99' => 'Index99 首页模板',
         '/doc' => '开发文档',
@@ -54,8 +54,13 @@ class AdminFixtureTextNormalizer
         '/aipay.demo_theme/index' => '支付测试主题',
         '/aipay.doc_theme/index' => '开发文档主题',
         '/aipay.news_theme/index' => '公告中心主题',
-        'managed universal epay account plugin for webman.' => '用于统一管理易支付上游账号的托管插件。',
-        'managed universal epay account plugin for webman' => '用于统一管理易支付上游账号的托管插件。',
+        'managed universal epay account plugin for webman.' => '用于统一管理通用易支付上游账户的托管插件。',
+        'managed universal epay account plugin for webman' => '用于统一管理通用易支付上游账户的托管插件。',
+        'wxpay' => '微信支付',
+        'alipay' => '支付宝',
+        'qqpay' => 'QQ 支付',
+        'wechat' => '微信支付',
+        'qq' => 'QQ 支付',
     ];
 
     private const PAYLOAD_KEY_MAP = [
@@ -63,10 +68,10 @@ class AdminFixtureTextNormalizer
         'account_code' => '收款账号插件',
         'access_key' => '访问密钥',
         'access_key_id' => '访问密钥ID',
-        'access_key_secret' => '访问密钥密文',
+        'access_key_secret' => '访问密钥内容',
         'accesskey' => '访问密钥',
         'accesskeyid' => '访问密钥ID',
-        'accesskeysecret' => '访问密钥密文',
+        'accesskeysecret' => '访问密钥内容',
         'admin_count' => '管理员数量',
         'admin_id' => '管理员ID',
         'amount' => '金额',
@@ -93,7 +98,7 @@ class AdminFixtureTextNormalizer
         'log_id' => '日志ID',
         'memo' => '备注',
         'merchant_count' => '商户数量',
-        'merchant_display' => '商户显示名',
+        'merchant_display' => '商户显示名称',
         'merchant_id' => '商户ID',
         'merchant_name' => '商户名称',
         'merchant_username' => '商户账号',
@@ -130,7 +135,7 @@ class AdminFixtureTextNormalizer
         'role_id' => '角色ID',
         'role_ids' => '角色ID',
         'selected_via' => '选择来源',
-        'shield_key' => '风控关键词',
+        'shield_key' => '风控关键字',
         'sign_type' => '签名方式',
         'siteurl' => '站点地址',
         'source' => '来源',
@@ -148,51 +153,17 @@ class AdminFixtureTextNormalizer
         'vip_id' => '套餐ID',
     ];
 
-    private const COMMON_REPLACEMENTS = [
-        'AiPay Smoke' => 'AiPay',
+    private const TEXT_REPLACEMENTS = [
+        'AiPay Smoke' => 'AiPay 官方',
         'Purple' => '标准主题',
         'Puple' => '标准主题',
-        '账�' => '账号',
-        '角�' => '角色',
-        '权�' => '权限',
-        '回收�' => '回收站',
-        '状��切�' => '状态切换',
-        '日�' => '日志',
-        '发��' => '发送',
-        '充��' => '充值',
-        '记�' => '记录',
-        '朢�大' => '最大',
-        '朢�小' => '最小',
-        '地坢�' => '地址',
-        '密�' => '密钥',
-        '编�' => '编号',
-        '开�' => '开关',
-        '模�' => '模板',
-        '内�' => '内容',
-        '背�' => '背景',
-        '方�' => '方式',
-        '套�' => '套餐',
-        '推��' => '推送',
-        '服务�' => '服务商',
-        '名�' => '名单',
-        '测时�' => '检测时间',
-        '收款�' => '收款人',
-        '自定�?API' => '自定义 API',
-        '管理员邮�' => '管理员邮箱',
-        '测试收款�' => '测试收款人',
-        '支付宝公�' => '支付宝公钥',
-        'smtp-host' => 'SMTP 服务器',
+        'smtp-host' => 'SMTP 服务地址',
         'smsbao-api' => '短信宝 API 地址',
-        'tg_admin_id' => '电报管理员编号',
-        'tg_bot_token' => '电报机器人令牌',
-        'wxpusher_appToken' => '微信推送应用令牌',
+        'tg_admin_id' => 'Telegram 管理员编号',
+        'tg_bot_token' => 'Telegram 机器人令牌',
+        'wxpusher_appToken' => 'WxPusher 应用令牌',
         'thinkCode' => '验证码密钥',
-        'key' => '站点关键词',
-    ];
-
-    private const SUSPICIOUS_FRAGMENTS = [
-        '鍟', '绯', '鏀', '閫', '鍒', '绔', '鐢', '娴', '鏉', '璁', '妯', '鍏',
-        '闃', '缁', '閰', '鍥', '鑿', '宸', '浠', '銆', '锛', '鈥', '�',
+        'siteurl' => '站点地址',
     ];
 
     public static function normalizeNullable(?string $value): ?string
@@ -213,8 +184,8 @@ class AdminFixtureTextNormalizer
             return '';
         }
 
-        $normalized = self::repairMojibake($normalized);
-        $normalized = self::applyCommonReplacements($normalized);
+        $normalized = self::repairKnownMojibake($normalized);
+        $normalized = self::applyTextReplacements($normalized);
 
         if (self::looksLikeJson($normalized)) {
             $decoded = json_decode($normalized, true);
@@ -233,12 +204,12 @@ class AdminFixtureTextNormalizer
             return self::EXACT_MAP[$lookup];
         }
 
-        if (preg_match('/^[0-9a-f]{10,}@example\.test$/i', $normalized) === 1) {
+        if (preg_match('/^[0-9a-f]{10,}@example\.(test|com)$/i', $normalized) === 1) {
             return '脱敏邮箱';
         }
 
         if (preg_match('/^risk-[a-z0-9]+\.example\.com$/i', $normalized) === 1) {
-            return '风控测试域名';
+            return '风控域名已脱敏';
         }
 
         if (preg_match('/^news-editor-upload(?:-\d+)?\.(png|jpg|jpeg|webp|gif)$/i', $normalized) === 1) {
@@ -298,11 +269,11 @@ class AdminFixtureTextNormalizer
             return '';
         }
 
-        $normalized = self::repairMojibake($normalized);
+        $normalized = self::repairKnownMojibake($normalized);
         $lower = mb_strtolower($normalized, 'UTF-8');
 
         if (preg_match('/risk-[a-z0-9]+\.example\.com/i', $normalized) === 1) {
-            return '风控测试地址';
+            return '风控地址已脱敏';
         }
 
         if (str_contains($lower, 'example.test') || str_contains($lower, 'example.com')) {
@@ -310,10 +281,10 @@ class AdminFixtureTextNormalizer
         }
 
         if (str_contains($lower, '127.0.0.1') || str_contains($lower, 'localhost')) {
-            return '本地调试地址';
+            return '本地测试地址';
         }
 
-        return self::translateStructuredText(self::applyCommonReplacements($normalized));
+        return self::translateStructuredText(self::applyTextReplacements($normalized));
     }
 
     private static function normalizeWhitespace(string $value): string
@@ -335,7 +306,7 @@ class AdminFixtureTextNormalizer
     {
         $result = preg_replace_callback(
             '/\b([a-z][a-z0-9_-]*)=/iu',
-            static fn (array $matches): string => self::normalizePayloadKey((string) $matches[1]) . '=',
+            static fn (array $matches): string => self::normalizePayloadKey((string)$matches[1]) . '=',
             $value
         );
 
@@ -345,20 +316,16 @@ class AdminFixtureTextNormalizer
 
         $result = preg_replace_callback(
             '/"([a-z][a-z0-9_-]*)":/iu',
-            static fn (array $matches): string => '"' . self::normalizePayloadKey((string) $matches[1]) . '":',
+            static fn (array $matches): string => '"' . self::normalizePayloadKey((string)$matches[1]) . '":',
             $result
         );
 
         return is_string($result) ? $result : $value;
     }
 
-    private static function applyCommonReplacements(string $value): string
+    private static function applyTextReplacements(string $value): string
     {
-        return str_replace(
-            array_keys(self::COMMON_REPLACEMENTS),
-            array_values(self::COMMON_REPLACEMENTS),
-            $value
-        );
+        return strtr($value, self::TEXT_REPLACEMENTS);
     }
 
     private static function looksLikeJson(string $value): bool
@@ -378,27 +345,23 @@ class AdminFixtureTextNormalizer
         $lower = mb_strtolower($value, 'UTF-8');
 
         return match (true) {
-            str_contains($lower, 'merchant') => '测试商户数据',
-            str_contains($lower, 'channel') => '测试通道数据',
-            str_contains($lower, 'payment method') => '测试支付方式',
-            str_contains($lower, 'account') => '测试收款账号',
-            str_contains($lower, 'pool') => '测试轮询池',
-            str_contains($lower, 'ticket') => '测试工单数据',
-            str_contains($lower, 'domain') => '测试域名数据',
-            str_contains($lower, 'recharge') => '测试充值记录',
-            str_contains($lower, 'risk') => '测试风控记录',
-            str_contains($lower, 'news') => '测试公告数据',
-            str_contains($lower, 'nav') => '测试导航数据',
-            default => '测试数据',
+            str_contains($lower, 'merchant') => '商户数据记录',
+            str_contains($lower, 'channel') => '通道数据记录',
+            str_contains($lower, 'payment method') => '支付方式记录',
+            str_contains($lower, 'account') => '收款账号记录',
+            str_contains($lower, 'pool') => '轮询池记录',
+            str_contains($lower, 'ticket') => '工单记录',
+            str_contains($lower, 'domain') => '域名记录',
+            str_contains($lower, 'recharge') => '充值记录',
+            str_contains($lower, 'risk') => '风控记录',
+            str_contains($lower, 'news') => '公告记录',
+            str_contains($lower, 'nav') => '导航记录',
+            default => '系统记录',
         };
     }
 
-    private static function repairMojibake(string $value): string
+    private static function repairKnownMojibake(string $value): string
     {
-        if (!self::looksLikeMojibake($value)) {
-            return $value;
-        }
-
         $converted = @iconv('UTF-8', 'GB18030//IGNORE', $value);
         if (!is_string($converted) || $converted === '') {
             return $value;
@@ -408,20 +371,41 @@ class AdminFixtureTextNormalizer
             return $value;
         }
 
-        return self::mojibakeScore($converted) < self::mojibakeScore($value)
+        if ($converted === $value || !self::containsChinese($converted)) {
+            return $value;
+        }
+
+        return self::meaningfulChineseScore($converted) > self::meaningfulChineseScore($value)
             ? $converted
             : $value;
     }
 
-    private static function looksLikeMojibake(string $value): bool
+    private static function containsChinese(string $value): bool
     {
-        return self::mojibakeScore($value) >= 2;
+        return preg_match('/[\x{4E00}-\x{9FFF}]/u', $value) === 1;
     }
 
-    private static function mojibakeScore(string $value): int
+    private static function meaningfulChineseScore(string $value): int
     {
         $score = 0;
-        foreach (self::SUSPICIOUS_FRAGMENTS as $fragment) {
+        foreach ([
+            '支付',
+            '商户',
+            '插件',
+            '模板',
+            '配置',
+            '系统',
+            '公告',
+            '订单',
+            '官方',
+            '账号',
+            '通道',
+            '管理',
+            '中心',
+            '地址',
+            '日志',
+            '安全',
+        ] as $fragment) {
             $score += substr_count($value, $fragment);
         }
 

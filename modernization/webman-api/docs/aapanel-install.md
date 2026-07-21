@@ -1,8 +1,8 @@
 # AiPay aaPanel 安装说明
 
-这套流程专门给 aaPanel 使用，重点是：
+这套流程专门给 aaPanel 使用，核心原则是：
 
-- 前台、商户端、管理员端共用一个前端壳
+- 游客前台、商户端、管理员端共用一个前端壳
 - Webman 后端只监听 `127.0.0.1:8787`
 - aaPanel 的 Nginx 负责公网入口与 HTTPS
 
@@ -47,8 +47,8 @@ sudo bash deploy/linux/install-aapanel.sh \
   --domain=pay.example.com \
   --public-root=/www/wwwroot/pay.example.com \
   --nginx-conf=/www/server/panel/vhost/nginx/pay.example.com.conf \
-  --db-name=pay \
-  --db-user=pay \
+  --db-name=aipay \
+  --db-user=aipay \
   --db-password='ReplaceMe123!' \
   --admin-user=adminroot \
   --admin-password='ReplaceMe123!' \
@@ -61,5 +61,5 @@ sudo bash deploy/linux/install-aapanel.sh \
 
 - 站点类型建议使用静态站点
 - 站点根目录指向 `console/`
-- 不要再让 aaPanel 的 PHP 规则接管 `/submit.php`、`/mapi.php` 这些入口
-- 这些入口应该统一反代到 `127.0.0.1:8787`
+- 不要再让 aaPanel 的 PHP 规则接管 `/submit.php`、`/mapi.php` 这类入口
+- 这些入口应统一反代到 `127.0.0.1:8787`

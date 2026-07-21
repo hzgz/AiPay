@@ -5,12 +5,12 @@ namespace app\support;
 class AdminPermissionMigrationMapper
 {
     private const STATUS_META = [
-        'write_enabled' => ['label' => '已开放', 'type' => 'success'],
-        'read_only' => ['label' => '只读', 'type' => 'info'],
-        'pending_write' => ['label' => '待完善', 'type' => 'warning'],
-        'group_split' => ['label' => '已拆分', 'type' => 'primary'],
-        'legacy_only' => ['label' => '已停用', 'type' => 'danger'],
-        'unmapped' => ['label' => '待整理', 'type' => 'warning'],
+        'write_enabled' => ['label' => '可维护', 'type' => 'success'],
+        'read_only' => ['label' => '查看', 'type' => 'info'],
+        'pending_write' => ['label' => '待开放', 'type' => 'warning'],
+        'group_split' => ['label' => '已分组', 'type' => 'primary'],
+        'legacy_only' => ['label' => '已归档', 'type' => 'info'],
+        'unmapped' => ['label' => '未启用', 'type' => 'warning'],
     ];
 
     private const ROOT_GROUPS = [
@@ -133,7 +133,7 @@ class AdminPermissionMigrationMapper
                 null,
                 null,
                 'legacy_only',
-                '在线更新入口已下线，请通过部署脚本或发布包更新系统。'
+                '系统更新请通过部署脚本或发布包完成。'
             ),
             self::permissionNode('domain/index') => self::page(
                 '系统管理',
@@ -377,7 +377,7 @@ class AdminPermissionMigrationMapper
     private static function groupSplitMapping(string $title): array
     {
         if (!isset(self::ROOT_GROUPS[$title])) {
-            return self::page(null, null, null, null, null, 'unmapped', '该权限节点尚未整理到新后台。');
+            return self::page(null, null, null, null, null, 'unmapped', '该权限节点当前未在控制台开放。');
         }
 
         return self::page(
@@ -387,7 +387,7 @@ class AdminPermissionMigrationMapper
             null,
             null,
             'group_split',
-            $title . ' 已拆分到多个业务中心，请在对应模块中继续管理。'
+            '请在对应业务中心中管理“' . $title . '”相关能力。'
         );
     }
 
@@ -400,7 +400,7 @@ class AdminPermissionMigrationMapper
             null,
             null,
             'legacy_only',
-            $scopeTitle . ' 对应的原模板入口已下线，当前系统不再保留该入口。'
+            $scopeTitle . ' 已统一纳入当前主题模板页面。'
         );
     }
 
@@ -408,7 +408,7 @@ class AdminPermissionMigrationMapper
     {
         $definition = self::moduleDefinitions()[$legacyModule] ?? null;
         if ($definition === null) {
-            return self::page(null, null, null, null, null, 'unmapped', '该权限节点尚未归类到当前后台页面。');
+            return self::page(null, null, null, null, null, 'unmapped', '该权限节点当前未分配可见后台页面。');
         }
 
         return self::moduleMapping(
@@ -467,9 +467,9 @@ class AdminPermissionMigrationMapper
     {
         if ($action === '' || $action === 'index') {
             return match ($status) {
-                'write_enabled' => $menuTitle . ' 已接入当前系统并支持日常维护。',
-                'read_only' => $menuTitle . ' 当前以查看为主。',
-            'pending_write' => $menuTitle . ' 已建立页面入口，完整写入能力仍在完善。',
+                'write_enabled' => $menuTitle . ' 已接入当前系统，可直接在后台维护。',
+                'read_only' => $menuTitle . ' 当前提供查看能力。',
+                'pending_write' => $menuTitle . ' 已建立页面入口，部分管理项将按业务开放。',
                 default => self::defaultNote($status),
             };
         }
@@ -477,10 +477,10 @@ class AdminPermissionMigrationMapper
         $actionLabel = self::actionLabel($action);
 
         return match ($status) {
-            'write_enabled' => $menuTitle . ' 的“' . $actionLabel . '”能力已接入完成。',
-            'read_only' => $menuTitle . ' 当前只读，“' . $actionLabel . '”暂未开放。',
-            'pending_write' => $menuTitle . ' 的“' . $actionLabel . '”能力仍在完善。',
-            'legacy_only' => $menuTitle . ' 的“' . $actionLabel . '”属于已停用功能。',
+            'write_enabled' => $menuTitle . ' 的“' . $actionLabel . '”能力已可用。',
+            'read_only' => $menuTitle . ' 当前仅展示结果，“' . $actionLabel . '”请在对应业务入口处理。',
+            'pending_write' => $menuTitle . ' 的“' . $actionLabel . '”暂未开放。',
+            'legacy_only' => $menuTitle . ' 已统一纳入当前后台，请在对应页面处理。',
             default => self::defaultNote($status),
         };
     }
@@ -561,12 +561,12 @@ class AdminPermissionMigrationMapper
     private static function defaultNote(string $status): string
     {
         return match ($status) {
-            'write_enabled' => '该权限节点已接入完成。',
-            'read_only' => '该权限节点当前以查看为主。',
-            'pending_write' => '该权限节点仍在持续完善中。',
-            'group_split' => '该根权限已拆分为多个业务中心。',
-            'legacy_only' => '该权限节点已停用，不再提供入口。',
-            default => '该权限节点尚未完成归类。',
+            'write_enabled' => '该权限节点已可正常使用。',
+            'read_only' => '该权限节点当前用于查看。',
+            'pending_write' => '该权限节点暂未开放。',
+            'group_split' => '该权限已纳入对应业务分组。',
+            'legacy_only' => '该权限节点已统一纳入当前后台。',
+            default => '该权限节点当前未开放。',
         };
     }
 }

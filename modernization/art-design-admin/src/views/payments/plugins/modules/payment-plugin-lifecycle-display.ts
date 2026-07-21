@@ -51,11 +51,11 @@ export function purgeConfirmationPhraseForDetail(detail: PaymentPluginDetail | n
 }
 
 function cleanupResidueConfirmationPhrase(code: string) {
-  return `确认清理残留 ${code}`
+  return `确认清理孤立项 ${code}`
 }
 
 function cleanupResidueWithoutSnapshotConfirmationPhrase(code: string) {
-  return `无快照确认清理 ${code}`
+  return `无回滚快照确认清理 ${code}`
 }
 
 export function cleanupResiduePhraseForItem(item: PaymentPluginRegistryResidueItem) {
@@ -177,10 +177,10 @@ export function buildPluginPurgeCleanupPrompt(detail: PaymentPluginDetail, phras
 
   return [
     '该操作具有破坏性，无法在后台界面中直接撤销。',
-    '它会移除已确认的插件专属配置表、日志表、运行目录、运行记录、托管通道记录以及插件目录。',
+    '它会移除已确认的插件专属配置、日志、运行目录、运行记录、托管通道记录以及插件目录。',
     missingSnapshot
-      ? '当前没有恢复快照。继续后，插件目录和插件专属数据表将无法通过后台直接恢复。'
-      : `可用恢复快照：${guard?.snapshot_total || 0}`,
+      ? '当前没有可用回滚快照。继续后，插件目录和插件专属数据将无法通过后台直接恢复。'
+      : `可用回滚快照：${guard?.snapshot_total || 0}`,
     `文件：${detail.purge_plan.summary.existing_file_count}`,
     `数据表：${detail.purge_plan.summary.existing_table_count}`,
     `托管通道：${detail.purge_plan.summary.existing_managed_channel_count}（可清理 ${detail.purge_plan.summary.deletable_managed_channel_count}，阻塞 ${detail.purge_plan.summary.blocked_managed_channel_count}）`,
@@ -206,7 +206,7 @@ export function buildRegistryResidueCleanupSuccessMessage(
 ) {
   return [
     `孤立插件项已清理：共移除 ${report.removed_file_count} 个文件目标、${report.removed_table_count} 张数据表、${Number(report.removed_managed_channel_count || 0)} 条托管通道`,
-    report.snapshot_retained ? `保留 ${report.retained_snapshot_count} 个恢复快照` : null
+    report.snapshot_retained ? `保留 ${report.retained_snapshot_count} 个回滚快照` : null
   ]
     .filter(Boolean)
     .join(', ')

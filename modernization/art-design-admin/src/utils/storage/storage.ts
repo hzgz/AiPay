@@ -1,55 +1,55 @@
-/**
- * 存储兼容性管理模块
+﻿/**
+ * 瀛樺偍鍏煎鎬х鐞嗘ā鍧?
  *
- * 提供完整的本地存储兼容性检查和数据验证功能
+ * 鎻愪緵瀹屾暣鐨勬湰鍦板瓨鍌ㄥ吋瀹规€ф鏌ュ拰鏁版嵁楠岃瘉鍔熻兘
  *
- * 主要功能
+ * 涓昏鍔熻兘
  *
- * - 多版本存储数据检测和验证
- * - 新旧存储格式兼容处理
- * - 存储数据完整性校验
- * - 存储异常自动恢复（清理+登出）
- * - 登录状态验证
- * - 存储为空检测
- * - 版本号管理
+ * - 澶氱増鏈瓨鍌ㄦ暟鎹娴嬪拰楠岃瘉
+ * - 鏂版棫瀛樺偍鏍煎紡鍏煎澶勭悊
+ * - 瀛樺偍鏁版嵁瀹屾暣鎬ф牎楠?
+ * - 瀛樺偍寮傚父鑷姩鎭㈠锛堟竻鐞?鐧诲嚭锛?
+ * - 鐧诲綍鐘舵€侀獙璇?
+ * - 瀛樺偍涓虹┖妫€娴?
+ * - 鐗堟湰鍙风鐞?
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 应用启动时检查存储数据有效性
- * - 路由守卫中验证登录状态
- * - 版本升级时的数据兼容性检查
- * - 存储异常时的自动恢复
- * - 防止因存储数据损坏导致的系统异常
+ * - 搴旂敤鍚姩鏃舵鏌ュ瓨鍌ㄦ暟鎹湁鏁堟€?
+ * - 璺敱瀹堝崼涓獙璇佺櫥褰曠姸鎬?
+ * - 鐗堟湰鍗囩骇鏃剁殑鏁版嵁鍏煎鎬ф鏌?
+ * - 瀛樺偍寮傚父鏃剁殑鑷姩鎭㈠
+ * - 闃叉鍥犲瓨鍌ㄦ暟鎹崯鍧忓鑷寸殑绯荤粺寮傚父
  *
- * ## 工作流程
+ * ## 宸ヤ綔娴佺▼
  *
- * 1. 优先检查当前版本的存储数据
- * 2. 检查其他版本的存储数据
- * 3. 兼容旧格式的存储数据
- * 4. 验证数据完整性
- * 5. 异常时提示用户并执行登出
+ * 1. 浼樺厛妫€鏌ュ綋鍓嶇増鏈殑瀛樺偍鏁版嵁
+ * 2. 妫€鏌ュ叾浠栫増鏈殑瀛樺偍鏁版嵁
+ * 3. 鍏煎鏃ф牸寮忕殑瀛樺偍鏁版嵁
+ * 4. 楠岃瘉鏁版嵁瀹屾暣鎬?
+ * 5. 寮傚父鏃舵彁绀虹敤鎴峰苟鎵ц鐧诲嚭
  *
  * @module utils/storage/storage
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import { router } from '@/router'
 import { useUserStore } from '@/store/modules/user'
 import { StorageConfig } from '@/utils/storage/storage-config'
 
 /**
- * 存储兼容性管理器
- * 负责处理不同版本间的存储兼容性检查和数据验证
+ * 瀛樺偍鍏煎鎬х鐞嗗櫒
+ * 璐熻矗澶勭悊涓嶅悓鐗堟湰闂寸殑瀛樺偍鍏煎鎬ф鏌ュ拰鏁版嵁楠岃瘉
  */
 class StorageCompatibilityManager {
   /**
-   * 获取系统版本号
+   * 鑾峰彇绯荤粺鐗堟湰鍙?
    */
   getSystemVersion(): string | null {
     return localStorage.getItem(StorageConfig.VERSION_KEY)
   }
 
   /**
-   * 获取系统存储数据（兼容旧格式）
+   * 鑾峰彇绯荤粺瀛樺偍鏁版嵁锛堝吋瀹规棫鏍煎紡锛?
    */
   getSystemStorage(): any {
     const version = this.getSystemVersion() || StorageConfig.CURRENT_VERSION
@@ -59,7 +59,7 @@ class StorageCompatibilityManager {
   }
 
   /**
-   * 检查当前版本是否有存储数据
+   * 妫€鏌ュ綋鍓嶇増鏈槸鍚︽湁瀛樺偍鏁版嵁
    */
   private hasCurrentVersionStorage(): boolean {
     const storageKeys = Object.keys(localStorage)
@@ -71,7 +71,7 @@ class StorageCompatibilityManager {
   }
 
   /**
-   * 检查是否存在任何版本的存储数据
+   * 妫€鏌ユ槸鍚﹀瓨鍦ㄤ换浣曠増鏈殑瀛樺偍鏁版嵁
    */
   private hasAnyVersionStorage(): boolean {
     const storageKeys = Object.keys(localStorage)
@@ -81,32 +81,32 @@ class StorageCompatibilityManager {
   }
 
   /**
-   * 获取旧格式的本地存储数据
+   * 鑾峰彇鏃ф牸寮忕殑鏈湴瀛樺偍鏁版嵁
    */
   private getLegacyStorageData(): Record<string, any> {
     try {
       const systemStorage = this.getSystemStorage()
       return systemStorage || {}
     } catch (error) {
-      console.warn('[Storage] 解析旧格式存储数据失败:', error)
+      console.warn('[Storage] 瑙ｆ瀽鏃ф牸寮忓瓨鍌ㄦ暟鎹け璐?', error)
       return {}
     }
   }
 
   /**
-   * 显示存储错误消息
+   * 鏄剧ず瀛樺偍閿欒娑堟伅
    */
   private showStorageError(): void {
     ElMessage({
       type: 'error',
       offset: 40,
       duration: 5000,
-      message: '系统检测到本地数据异常，请重新登录系统恢复使用！'
+      message: '系统检测到本地数据异常，请重新登录后继续使用'
     })
   }
 
   /**
-   * 执行系统登出
+   * 鎵ц绯荤粺鐧诲嚭
    */
   private performSystemLogout(): void {
     setTimeout(() => {
@@ -116,13 +116,13 @@ class StorageCompatibilityManager {
         router.push({ name: 'Login' })
         console.info('[Storage] 已执行系统登出')
       } catch (error) {
-        console.error('[Storage] 系统登出失败:', error)
+        console.error('[Storage] 绯荤粺鐧诲嚭澶辫触:', error)
       }
     }, StorageConfig.LOGOUT_DELAY)
   }
 
   /**
-   * 处理存储异常
+   * 澶勭悊瀛樺偍寮傚父
    */
   private handleStorageError(): void {
     this.showStorageError()
@@ -130,42 +130,42 @@ class StorageCompatibilityManager {
   }
 
   /**
-   * 验证存储数据完整性
-   * @param requireAuth 是否需要验证登录状态（默认 false）
+   * 楠岃瘉瀛樺偍鏁版嵁瀹屾暣鎬?
+   * @param requireAuth 鏄惁闇€瑕侀獙璇佺櫥褰曠姸鎬侊紙榛樿 false锛?
    */
   validateStorageData(requireAuth: boolean = false): boolean {
     try {
-      // 优先检查新版本存储结构
+      // 浼樺厛妫€鏌ユ柊鐗堟湰瀛樺偍缁撴瀯
       if (this.hasCurrentVersionStorage()) {
-        // console.debug('[Storage] 发现当前版本存储数据')
+        // console.debug('[Storage] 鍙戠幇褰撳墠鐗堟湰瀛樺偍鏁版嵁')
         return true
       }
 
-      // 检查是否有任何版本的存储数据
+      // 妫€鏌ユ槸鍚︽湁浠讳綍鐗堟湰鐨勫瓨鍌ㄦ暟鎹?
       if (this.hasAnyVersionStorage()) {
-        // console.debug('[Storage] 发现其他版本存储数据，可能需要迁移')
+        // console.debug('[Storage] 鍙戠幇鍏朵粬鐗堟湰瀛樺偍鏁版嵁锛屽彲鑳介渶瑕佽縼绉?)
         return true
       }
 
-      // 检查旧版本存储结构
+      // 妫€鏌ユ棫鐗堟湰瀛樺偍缁撴瀯
       const legacyData = this.getLegacyStorageData()
       if (Object.keys(legacyData).length === 0) {
-        // 只有在需要验证登录状态时才执行登出操作
+        // 鍙湁鍦ㄩ渶瑕侀獙璇佺櫥褰曠姸鎬佹椂鎵嶆墽琛岀櫥鍑烘搷浣?
         if (requireAuth) {
           console.warn('[Storage] 未发现任何存储数据，需要重新登录')
           this.performSystemLogout()
           return false
         }
-        // 首次访问或访问静态路由，不需要登出
-        // console.debug('[Storage] 未发现存储数据，首次访问或访问静态路由')
+        // 棣栨璁块棶鎴栬闂潤鎬佽矾鐢憋紝涓嶉渶瑕佺櫥鍑?
+        // console.debug('[Storage] 鏈彂鐜板瓨鍌ㄦ暟鎹紝棣栨璁块棶鎴栬闂潤鎬佽矾鐢?)
         return true
       }
 
-      console.debug('[Storage] 发现旧版本存储数据')
+      console.debug('[Storage] 发现旧版存储数据')
       return true
     } catch (error) {
-      console.error('[Storage] 存储数据验证失败:', error)
-      // 只有在需要验证登录状态时才处理错误
+      console.error('[Storage] 瀛樺偍鏁版嵁楠岃瘉澶辫触:', error)
+      // 鍙湁鍦ㄩ渶瑕侀獙璇佺櫥褰曠姸鎬佹椂鎵嶅鐞嗛敊璇?
       if (requireAuth) {
         this.handleStorageError()
         return false
@@ -175,27 +175,27 @@ class StorageCompatibilityManager {
   }
 
   /**
-   * 检查存储是否为空
+   * 妫€鏌ュ瓨鍌ㄦ槸鍚︿负绌?
    */
   isStorageEmpty(): boolean {
-    // 检查新版本存储结构
+    // 妫€鏌ユ柊鐗堟湰瀛樺偍缁撴瀯
     if (this.hasCurrentVersionStorage()) {
       return false
     }
 
-    // 检查是否有任何版本的存储数据
+    // 妫€鏌ユ槸鍚︽湁浠讳綍鐗堟湰鐨勫瓨鍌ㄦ暟鎹?
     if (this.hasAnyVersionStorage()) {
       return false
     }
 
-    // 检查旧版本存储结构
+    // 妫€鏌ユ棫鐗堟湰瀛樺偍缁撴瀯
     const legacyData = this.getLegacyStorageData()
     return Object.keys(legacyData).length === 0
   }
 
   /**
-   * 检查存储兼容性
-   * @param requireAuth 是否需要验证登录状态（默认 false）
+   * 妫€鏌ュ瓨鍌ㄥ吋瀹规€?
+   * @param requireAuth 鏄惁闇€瑕侀獙璇佺櫥褰曠姸鎬侊紙榛樿 false锛?
    */
   checkCompatibility(requireAuth: boolean = false): boolean {
     try {
@@ -203,48 +203,49 @@ class StorageCompatibilityManager {
       const isEmpty = this.isStorageEmpty()
 
       if (isValid || isEmpty) {
-        // console.debug('[Storage] 存储兼容性检查通过')
+        // console.debug('[Storage] 瀛樺偍鍏煎鎬ф鏌ラ€氳繃')
         return true
       }
 
       console.warn('[Storage] 存储兼容性检查失败')
       return false
     } catch (error) {
-      console.error('[Storage] 兼容性检查异常:', error)
+      console.error('[Storage] 鍏煎鎬ф鏌ュ紓甯?', error)
       return false
     }
   }
 }
 
-// 创建存储兼容性管理器实例
+// 鍒涘缓瀛樺偍鍏煎鎬х鐞嗗櫒瀹炰緥
 const storageManager = new StorageCompatibilityManager()
 
 /**
- * 获取系统存储数据
+ * 鑾峰彇绯荤粺瀛樺偍鏁版嵁
  */
 export function getSystemStorage(): any {
   return storageManager.getSystemStorage()
 }
 
 /**
- * 获取系统版本号
+ * 鑾峰彇绯荤粺鐗堟湰鍙?
  */
 export function getSysVersion(): string | null {
   return storageManager.getSystemVersion()
 }
 
 /**
- * 验证本地存储数据
- * @param requireAuth 是否需要验证登录状态（默认 false）
+ * 楠岃瘉鏈湴瀛樺偍鏁版嵁
+ * @param requireAuth 鏄惁闇€瑕侀獙璇佺櫥褰曠姸鎬侊紙榛樿 false锛?
  */
 export function validateStorageData(requireAuth: boolean = false): boolean {
   return storageManager.validateStorageData(requireAuth)
 }
 
 /**
- * 检查存储兼容性
- * @param requireAuth 是否需要验证登录状态（默认 false）
+ * 妫€鏌ュ瓨鍌ㄥ吋瀹规€?
+ * @param requireAuth 鏄惁闇€瑕侀獙璇佺櫥褰曠姸鎬侊紙榛樿 false锛?
  */
 export function checkStorageCompatibility(requireAuth: boolean = false): boolean {
   return storageManager.checkCompatibility(requireAuth)
 }
+

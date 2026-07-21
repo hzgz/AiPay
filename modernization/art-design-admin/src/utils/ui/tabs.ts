@@ -1,37 +1,37 @@
-/**
- * 标签页布局配置模块
+﻿/**
+ * 鏍囩椤靛竷灞€閰嶇疆妯″潡
  *
- * 提供不同标签页样式的高度和间距配置
+ * 鎻愪緵涓嶅悓鏍囩椤垫牱寮忕殑楂樺害鍜岄棿璺濋厤缃?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 多种标签页样式配置（默认、卡片、谷歌风格）
- * - 标签页打开/关闭状态的高度管理
- * - 顶部间距自动计算
- * - 配置获取和默认值处理
+ * - 澶氱鏍囩椤垫牱寮忛厤缃紙榛樿銆佸崱鐗囥€佽胺姝岄鏍硷級
+ * - 鏍囩椤垫墦寮€/鍏抽棴鐘舵€佺殑楂樺害绠＄悊
+ * - 椤堕儴闂磋窛鑷姩璁＄畻
+ * - 閰嶇疆鑾峰彇鍜岄粯璁ゅ€煎鐞?
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 工作标签页（Worktab）布局计算
- * - 页面内容区域高度调整
- * - 标签页显示/隐藏时的动画
- * - 响应式布局适配
+ * - 宸ヤ綔鏍囩椤碉紙Worktab锛夊竷灞€璁＄畻
+ * - 椤甸潰鍐呭鍖哄煙楂樺害璋冩暣
+ * - 鏍囩椤垫樉绀?闅愯棌鏃剁殑鍔ㄧ敾
+ * - 鍝嶅簲寮忓竷灞€閫傞厤
  *
- * ## 配置项说明
+ * ## 閰嶇疆椤硅鏄?
  *
- * - openTop: 标签页显示时，内容区域距离顶部的距离
- * - closeTop: 标签页隐藏时，内容区域距离顶部的距离
- * - openHeight: 标签页显示时的总高度（包含标签栏）
- * - closeHeight: 标签页隐藏时的总高度（仅头部）
+ * - openTop: 鏍囩椤垫樉绀烘椂锛屽唴瀹瑰尯鍩熻窛绂婚《閮ㄧ殑璺濈
+ * - closeTop: 鏍囩椤甸殣钘忔椂锛屽唴瀹瑰尯鍩熻窛绂婚《閮ㄧ殑璺濈
+ * - openHeight: 鏍囩椤垫樉绀烘椂鐨勬€婚珮搴︼紙鍖呭惈鏍囩鏍忥級
+ * - closeHeight: 鏍囩椤甸殣钘忔椂鐨勬€婚珮搴︼紙浠呭ご閮級
  *
- * ## 支持的样式
+ * ## 鏀寔鐨勬牱寮?
  *
- * - tab-default: 默认标签页样式
- * - tab-card: 卡片式标签页
- * - tab-google: 谷歌浏览器风格标签页
+ * - tab-default: 榛樿鏍囩椤垫牱寮?
+ * - tab-card: 鍗＄墖寮忔爣绛鹃〉
+ * - tab-google: 璋锋瓕娴忚鍣ㄩ鏍兼爣绛鹃〉
  *
  * @module utils/ui/tabs
- * @author Art Design Pro Team
+ * @author AiPay
  */
 export const TAB_CONFIG = {
   'tab-default': {
@@ -54,7 +54,8 @@ export const TAB_CONFIG = {
   }
 }
 
-// 获取当前 tab 样式配置，设置默认值
+// 鑾峰彇褰撳墠 tab 鏍峰紡閰嶇疆锛岃缃粯璁ゅ€?
 export const getTabConfig = (style: string) => {
-  return TAB_CONFIG[style as keyof typeof TAB_CONFIG] || TAB_CONFIG['tab-card'] // 默认使用 tab-card 配置
+  return TAB_CONFIG[style as keyof typeof TAB_CONFIG] || TAB_CONFIG['tab-card'] // 榛樿浣跨敤 tab-card 閰嶇疆
 }
+

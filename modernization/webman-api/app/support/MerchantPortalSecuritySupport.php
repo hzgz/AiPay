@@ -41,7 +41,7 @@ class MerchantPortalSecuritySupport
             'password' => [
                 'update_allowed' => true,
                 'minimum_length' => 6,
-                'legacy_route' => '/My/UpdatePwd',
+                'legacy_route' => '/api/merchant/security/password',
                 'write_message' => '商户密码修改后立即生效，保存后需要重新登录。',
             ],
             'google_auth' => self::googleAuthPayload(
@@ -109,7 +109,7 @@ class MerchantPortalSecuritySupport
             'status_label' => $googleKey !== '' ? '已绑定' : '未绑定',
             'status_type' => $googleKey !== '' ? 'success' : 'warning',
             'secret_masked' => $maskSecret($googleKey),
-            'verification_page' => '/My/GoogleAuth',
+            'verification_page' => '/merchant/security',
             'verification_required_at_login' => $securityEnabled && $securityLoginEnabled,
             'verification_allowed' => false,
             'bind_allowed' => $googleKey === '',

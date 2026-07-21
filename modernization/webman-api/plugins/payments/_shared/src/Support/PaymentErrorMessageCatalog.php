@@ -241,12 +241,12 @@ final class PaymentErrorMessageCatalog
 
     public static function orderCreatePersistedReason(): string
     {
-        return '订单会先落库到 Webman，再跳转到上游通道继续支付。';
+        return '订单会先写入平台，再跳转到上游通道继续支付。';
     }
 
     public static function notifyPersistedReason(): string
     {
-        return '回调结算在 Webman 内完成，商户通知通过队列异步派发。';
+        return '回调结算由平台完成，商户通知通过队列异步派发。';
     }
 
     private static function fieldLabel(string $field): string

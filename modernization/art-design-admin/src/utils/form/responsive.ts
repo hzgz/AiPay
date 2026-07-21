@@ -1,84 +1,84 @@
-/**
- * 表单响应式布局工具模块
+﻿/**
+ * 琛ㄥ崟鍝嶅簲寮忓竷灞€宸ュ叿妯″潡
  *
- * 提供表单项在不同屏幕尺寸下的智能布局计算
+ * 鎻愪緵琛ㄥ崟椤瑰湪涓嶅悓灞忓箷灏哄涓嬬殑鏅鸿兘甯冨眬璁＄畻
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 响应式断点管理（xs/sm/md/lg/xl）
- * - 表单列宽自动降级（避免小屏幕压缩）
- * - 基于阈值的智能 span 计算
- * - 响应式计算器工厂函数
- * - 可配置的断点规则
+ * - 鍝嶅簲寮忔柇鐐圭鐞嗭紙xs/sm/md/lg/xl锛?
+ * - 琛ㄥ崟鍒楀鑷姩闄嶇骇锛堥伩鍏嶅皬灞忓箷鍘嬬缉锛?
+ * - 鍩轰簬闃堝€肩殑鏅鸿兘 span 璁＄畻
+ * - 鍝嶅簲寮忚绠楀櫒宸ュ巶鍑芥暟
+ * - 鍙厤缃殑鏂偣瑙勫垯
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 表单组件响应式布局
- * - 搜索表单自适应
- * - 移动端表单优化
- * - 多列表单布局
+ * - 琛ㄥ崟缁勪欢鍝嶅簲寮忓竷灞€
+ * - 鎼滅储琛ㄥ崟鑷€傚簲
+ * - 绉诲姩绔〃鍗曚紭鍖?
+ * - 澶氬垪琛ㄥ崟甯冨眬
  *
- * ## 断点说明（基于 Element Plus Grid 24 栅格系统）：
- * - xs (手机): < 768px，小于 12 时降级为 24（满宽）
- * - sm (平板): ≥ 768px，小于 12 时降级为 12（半宽）
- * - md (中等屏幕): ≥ 992px，小于 8 时降级为 8（三分之一宽）
- * - lg (大屏幕): ≥ 1200px，直接使用设置的 span
- * - xl (超大屏幕): ≥ 1920px，直接使用设置的 span
+ * ## 鏂偣璇存槑锛堝熀浜?Element Plus Grid 24 鏍呮牸绯荤粺锛夛細
+ * - xs (鎵嬫満): < 768px锛屽皬浜?12 鏃堕檷绾т负 24锛堟弧瀹斤級
+ * - sm (骞虫澘): 鈮?768px锛屽皬浜?12 鏃堕檷绾т负 12锛堝崐瀹斤級
+ * - md (涓瓑灞忓箷): 鈮?992px锛屽皬浜?8 鏃堕檷绾т负 8锛堜笁鍒嗕箣涓€瀹斤級
+ * - lg (澶у睆骞?: 鈮?1200px锛岀洿鎺ヤ娇鐢ㄨ缃殑 span
+ * - xl (瓒呭ぇ灞忓箷): 鈮?1920px锛岀洿鎺ヤ娇鐢ㄨ缃殑 span
  *
- * ## 核心功能
+ * ## 鏍稿績鍔熻兘
  *
- * - calculateResponsiveSpan: 计算响应式列宽
- * - createResponsiveSpanCalculator: 创建 span 计算器（柯里化）
+ * - calculateResponsiveSpan: 璁＄畻鍝嶅簲寮忓垪瀹?
+ * - createResponsiveSpanCalculator: 鍒涘缓 span 璁＄畻鍣紙鏌噷鍖栵級
  *
  * @module utils/form/responsive
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 /**
- * 响应式断点类型
+ * 鍝嶅簲寮忔柇鐐圭被鍨?
  */
 export type ResponsiveBreakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
 /**
- * 断点配置映射
+ * 鏂偣閰嶇疆鏄犲皠
  */
 interface BreakpointConfig {
-  /** 最小 span 阈值 */
+  /** 鏈€灏?span 闃堝€?*/
   threshold: number
-  /** 降级后的 span 值 */
+  /** 闄嶇骇鍚庣殑 span 鍊?*/
   fallback: number
 }
 
 /**
- * 响应式断点配置
+ * 鍝嶅簲寮忔柇鐐归厤缃?
  */
 const BREAKPOINT_CONFIG: Record<ResponsiveBreakpoint, BreakpointConfig | null> = {
-  xs: { threshold: 12, fallback: 24 }, // 手机：小于 12 时使用满宽
-  sm: { threshold: 12, fallback: 12 }, // 平板：小于 12 时使用半宽
-  md: { threshold: 8, fallback: 8 }, // 中等屏幕：小于 8 时使用三分之一宽
-  lg: null, // 大屏幕：直接使用设置的 span
-  xl: null // 超大屏幕：直接使用设置的 span
+  xs: { threshold: 12, fallback: 24 }, // 鎵嬫満锛氬皬浜?12 鏃朵娇鐢ㄦ弧瀹?
+  sm: { threshold: 12, fallback: 12 }, // 骞虫澘锛氬皬浜?12 鏃朵娇鐢ㄥ崐瀹?
+  md: { threshold: 8, fallback: 8 }, // 涓瓑灞忓箷锛氬皬浜?8 鏃朵娇鐢ㄤ笁鍒嗕箣涓€瀹?
+  lg: null, // 澶у睆骞曪細鐩存帴浣跨敤璁剧疆鐨?span
+  xl: null // 瓒呭ぇ灞忓箷锛氱洿鎺ヤ娇鐢ㄨ缃殑 span
 }
 
 /**
- * 计算响应式列宽
+ * 璁＄畻鍝嶅簲寮忓垪瀹?
  *
- * 根据屏幕尺寸智能降级，避免小屏幕上表单项被压缩过小
+ * 鏍规嵁灞忓箷灏哄鏅鸿兘闄嶇骇锛岄伩鍏嶅皬灞忓箷涓婅〃鍗曢」琚帇缂╄繃灏?
  *
- * @param itemSpan 表单项自定义的 span 值
- * @param defaultSpan 默认的 span 值
- * @param breakpoint 当前断点
- * @returns 计算后的 span 值
+ * @param itemSpan 琛ㄥ崟椤硅嚜瀹氫箟鐨?span 鍊?
+ * @param defaultSpan 榛樿鐨?span 鍊?
+ * @param breakpoint 褰撳墠鏂偣
+ * @returns 璁＄畻鍚庣殑 span 鍊?
  *
  * @example
  * ```ts
- * // 在 xs 断点下，span 为 6 会降级为 24（满宽）
+ * // 鍦?xs 鏂偣涓嬶紝span 涓?6 浼氶檷绾т负 24锛堟弧瀹斤級
  * calculateResponsiveSpan(6, 6, 'xs') // 24
  *
- * // 在 md 断点下，span 为 6 会降级为 8（三分之一宽）
+ * // 鍦?md 鏂偣涓嬶紝span 涓?6 浼氶檷绾т负 8锛堜笁鍒嗕箣涓€瀹斤級
  * calculateResponsiveSpan(6, 6, 'md') // 8
  *
- * // 在 lg 断点下，直接使用原始 span
+ * // 鍦?lg 鏂偣涓嬶紝鐩存帴浣跨敤鍘熷 span
  * calculateResponsiveSpan(6, 6, 'lg') // 6
  * ```
  */
@@ -90,22 +90,22 @@ export function calculateResponsiveSpan(
   const finalSpan = itemSpan ?? defaultSpan
   const config = BREAKPOINT_CONFIG[breakpoint]
 
-  // 如果没有配置（lg/xl），直接返回原始 span
+  // 濡傛灉娌℃湁閰嶇疆锛坙g/xl锛夛紝鐩存帴杩斿洖鍘熷 span
   if (!config) {
     return finalSpan
   }
 
-  // 如果 span 小于阈值，使用降级值
+  // 濡傛灉 span 灏忎簬闃堝€硷紝浣跨敤闄嶇骇鍊?
   return finalSpan >= config.threshold ? finalSpan : config.fallback
 }
 
 /**
- * 创建响应式 span 计算器
+ * 鍒涘缓鍝嶅簲寮?span 璁＄畻鍣?
  *
- * 返回一个函数，用于计算指定断点下的 span 值
+ * 杩斿洖涓€涓嚱鏁帮紝鐢ㄤ簬璁＄畻鎸囧畾鏂偣涓嬬殑 span 鍊?
  *
- * @param defaultSpan 默认的 span 值
- * @returns span 计算函数
+ * @param defaultSpan 榛樿鐨?span 鍊?
+ * @returns span 璁＄畻鍑芥暟
  *
  * @example
  * ```ts
@@ -120,3 +120,4 @@ export function createResponsiveSpanCalculator(defaultSpan: number) {
     return calculateResponsiveSpan(itemSpan, defaultSpan, breakpoint)
   }
 }
+

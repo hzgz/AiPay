@@ -1,10 +1,10 @@
-/**
- * 路由转换器
+﻿/**
+ * 璺敱杞崲鍣?
  *
- * 负责将菜单数据转换为 Vue Router 路由配置
+ * 璐熻矗灏嗚彍鍗曟暟鎹浆鎹负 Vue Router 璺敱閰嶇疆
  *
  * @module router/core/RouteTransformer
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import type { RouteRecordRaw } from 'vue-router'
@@ -28,18 +28,18 @@ export class RouteTransformer {
   }
 
   /**
-   * 转换路由配置
+   * 杞崲璺敱閰嶇疆
    */
   transform(route: AppRouteRecord, depth = 0): ConvertedRoute {
     const { component, children, ...routeConfig } = route
 
-    // 基础路由配置
+    // 鍩虹璺敱閰嶇疆
     const converted: ConvertedRoute = {
       ...routeConfig,
       component: undefined
     }
 
-    // 处理不同类型的路由
+    // 澶勭悊涓嶅悓绫诲瀷鐨勮矾鐢?
     if (route.meta.isIframe) {
       this.handleIframeRoute(converted, route, depth)
     } else if (this.isFirstLevelRoute(route, depth)) {
@@ -48,7 +48,7 @@ export class RouteTransformer {
       this.handleNormalRoute(converted, component as string)
     }
 
-    // 递归处理子路由
+    // 閫掑綊澶勭悊瀛愯矾鐢?
     if (children?.length) {
       converted.children = children.map((child) => this.transform(child, depth + 1))
     }
@@ -57,14 +57,14 @@ export class RouteTransformer {
   }
 
   /**
-   * 判断是否为一级路由（需要 Layout 包裹）
+   * 鍒ゆ柇鏄惁涓轰竴绾ц矾鐢憋紙闇€瑕?Layout 鍖呰９锛?
    */
   private isFirstLevelRoute(route: AppRouteRecord, depth: number): boolean {
     return depth === 0 && (!route.children || route.children.length === 0)
   }
 
   /**
-   * 处理 iframe 类型路由
+   * 澶勭悊 iframe 绫诲瀷璺敱
    */
   private handleIframeRoute(
     targetRoute: ConvertedRoute,
@@ -72,7 +72,7 @@ export class RouteTransformer {
     depth: number
   ): void {
     if (depth === 0) {
-      // 顶级 iframe：用 Layout 包裹
+      // 椤剁骇 iframe锛氱敤 Layout 鍖呰９
       targetRoute.component = this.componentLoader.loadLayout()
       targetRoute.path = this.extractFirstSegment(sourceRoute.path || '')
       targetRoute.name = ''
@@ -84,16 +84,16 @@ export class RouteTransformer {
         } as ConvertedRoute
       ]
     } else {
-      // 非顶级（嵌套）iframe：直接使用 Iframe.vue
+      // 闈為《绾э紙宓屽锛塱frame锛氱洿鎺ヤ娇鐢?Iframe.vue
       targetRoute.component = this.componentLoader.loadIframe()
     }
 
-    // 记录 iframe 路由
+    // 璁板綍 iframe 璺敱
     this.iframeManager.add(sourceRoute)
   }
 
   /**
-   * 处理一级菜单路由
+   * 澶勭悊涓€绾ц彍鍗曡矾鐢?
    */
   private handleFirstLevelRoute(
     converted: ConvertedRoute,
@@ -114,7 +114,7 @@ export class RouteTransformer {
   }
 
   /**
-   * 处理普通路由
+   * 澶勭悊鏅€氳矾鐢?
    */
   private handleNormalRoute(converted: ConvertedRoute, component: string | undefined): void {
     if (component) {
@@ -123,10 +123,11 @@ export class RouteTransformer {
   }
 
   /**
-   * 提取路径的第一段
+   * 鎻愬彇璺緞鐨勭涓€娈?
    */
   private extractFirstSegment(path: string): string {
     const segments = path.split('/').filter(Boolean)
     return segments.length > 0 ? `/${segments[0]}` : '/'
   }
 }
+

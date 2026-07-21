@@ -1,10 +1,10 @@
-/**
- * 菜单处理器
+﻿/**
+ * 鑿滃崟澶勭悊鍣?
  *
- * 负责菜单数据的获取、过滤和处理
+ * 璐熻矗鑿滃崟鏁版嵁鐨勮幏鍙栥€佽繃婊ゅ拰澶勭悊
  *
  * @module router/core/MenuProcessor
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import type { AppRouteRecord } from '@/types/router'
@@ -31,7 +31,7 @@ const hiddenReleaseRouteNames = new Set([
 
 export class MenuProcessor {
   /**
-   * 获取菜单数据
+   * 鑾峰彇鑿滃崟鏁版嵁
    */
   async getMenuList(): Promise<AppRouteRecord[]> {
     const { isFrontendMode } = useAppMode()
@@ -47,15 +47,14 @@ export class MenuProcessor {
       menuList = this.filterReleaseMenus(menuList)
     }
 
-    // 在规范化路径之前，验证原始路径配置
-    this.validateMenuPaths(menuList)
+    // 鍦ㄨ鑼冨寲璺緞涔嬪墠锛岄獙璇佸師濮嬭矾寰勯厤缃?    this.validateMenuPaths(menuList)
 
-    // 规范化路径（将相对路径转换为完整路径）
+    // 瑙勮寖鍖栬矾寰勶紙灏嗙浉瀵硅矾寰勮浆鎹负瀹屾暣璺緞锛?
     return this.normalizeMenuPaths(menuList)
   }
 
   /**
-   * 处理前端控制模式的菜单
+   * 澶勭悊鍓嶇鎺у埗妯″紡鐨勮彍鍗?
    */
   private async processFrontendMenu(): Promise<AppRouteRecord[]> {
     const userStore = useUserStore()
@@ -63,7 +62,7 @@ export class MenuProcessor {
 
     let menuList = [...asyncRoutes]
 
-    // 根据角色过滤菜单
+    // 鏍规嵁瑙掕壊杩囨护鑿滃崟
     if (roles && roles.length > 0) {
       menuList = this.filterMenuByRoles(menuList, roles)
     }
@@ -72,7 +71,7 @@ export class MenuProcessor {
   }
 
   /**
-   * 处理后端控制模式的菜单
+   * 澶勭悊鍚庣鎺у埗妯″紡鐨勮彍鍗?
    */
   private async processBackendMenu(): Promise<AppRouteRecord[]> {
     const list = await fetchGetMenuList()
@@ -80,7 +79,7 @@ export class MenuProcessor {
   }
 
   /**
-   * 根据角色过滤菜单
+   * 鏍规嵁瑙掕壊杩囨护鑿滃崟
    */
   private filterMenuByRoles(menu: AppRouteRecord[], roles: string[]): AppRouteRecord[] {
     return menu.reduce((acc: AppRouteRecord[], item) => {
@@ -100,12 +99,12 @@ export class MenuProcessor {
   }
 
   /**
-   * 递归过滤空菜单项
+   * 閫掑綊杩囨护绌鸿彍鍗曢」
    */
   private filterEmptyMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
     return menuList
       .map((item) => {
-        // 如果有子菜单，先递归过滤子菜单
+        // 濡傛灉鏈夊瓙鑿滃崟锛屽厛閫掑綊杩囨护瀛愯彍鍗?
         if (item.children && item.children.length > 0) {
           const filteredChildren = this.filterEmptyMenus(item.children)
           return {
@@ -116,37 +115,36 @@ export class MenuProcessor {
         return item
       })
       .filter((item) => {
-        // 如果定义了 children 属性（即使是空数组），说明这是一个目录菜单，应该保留
+        // 濡傛灉瀹氫箟浜?children 灞炴€э紙鍗充娇鏄┖鏁扮粍锛夛紝璇存槑杩欐槸涓€涓洰褰曡彍鍗曪紝搴旇淇濈暀
         if ('children' in item) {
           return true
         }
 
-        // 如果有外链或 iframe，保留
+        // 濡傛灉鏈夊閾炬垨 iframe锛屼繚鐣?
         if (item.meta?.isIframe === true || item.meta?.link) {
           return true
         }
 
-        // 如果有有效的 component，保留
+        // 濡傛灉鏈夋湁鏁堢殑 component锛屼繚鐣?
         if (item.component && item.component !== '' && item.component !== RoutesAlias.Layout) {
           return true
         }
 
-        // 其他情况过滤掉
+        // 鍏朵粬鎯呭喌杩囨护鎺?
         return false
       })
   }
 
   /**
-   * 验证菜单列表是否有效
+   * 楠岃瘉鑿滃崟鍒楄〃鏄惁鏈夋晥
    */
   validateMenuList(menuList: AppRouteRecord[]): boolean {
     return Array.isArray(menuList) && menuList.length > 0
   }
 
   /**
-   * 正式环境菜单裁剪
-   * 移除演示、示例、变更日志等非业务入口，避免误暴露到生产后台。
-   */
+   * 姝ｅ紡鐜鑿滃崟瑁佸壀
+   * 绉婚櫎婕旂ず銆佺ず渚嬨€佸彉鏇存棩蹇楃瓑闈炰笟鍔″叆鍙ｏ紝閬垮厤璇毚闇插埌鐢熶骇鍚庡彴銆?   */
   private filterReleaseMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
     return menuList.reduce((acc: AppRouteRecord[], item) => {
       if (this.isReleaseHiddenRoute(item)) {
@@ -189,15 +187,14 @@ export class MenuProcessor {
   }
 
   /**
-   * 规范化菜单路径
-   * 将相对路径转换为完整路径，确保菜单跳转正确
+   * 瑙勮寖鍖栬彍鍗曡矾寰?   * 灏嗙浉瀵硅矾寰勮浆鎹负瀹屾暣璺緞锛岀‘淇濊彍鍗曡烦杞纭?
    */
   private normalizeMenuPaths(menuList: AppRouteRecord[], parentPath = ''): AppRouteRecord[] {
     return menuList.map((item) => {
-      // 构建完整路径
+      // 鏋勫缓瀹屾暣璺緞
       const fullPath = this.buildFullPath(item.path || '', parentPath)
 
-      // 递归处理子菜单
+      // 閫掑綊澶勭悊瀛愯彍鍗?
       const children = item.children?.length
         ? this.normalizeMenuPaths(item.children, fullPath)
         : item.children
@@ -214,7 +211,7 @@ export class MenuProcessor {
   }
 
   /**
-   * 为目录型菜单推导默认跳转地址
+   * 涓虹洰褰曞瀷鑿滃崟鎺ㄥ榛樿璺宠浆鍦板潃
    */
   private resolveDefaultRedirect(children?: AppRouteRecord[]): string | undefined {
     if (!children?.length) {
@@ -236,7 +233,7 @@ export class MenuProcessor {
   }
 
   /**
-   * 判断子路由是否可以作为默认落点
+   * 鍒ゆ柇瀛愯矾鐢辨槸鍚﹀彲浠ヤ綔涓洪粯璁よ惤鐐?
    */
   private isNavigableRoute(route: AppRouteRecord): boolean {
     return Boolean(
@@ -250,38 +247,38 @@ export class MenuProcessor {
   }
 
   /**
-   * 验证菜单路径配置
-   * 检测非一级菜单是否错误使用了 / 开头的路径
+   * 楠岃瘉鑿滃崟璺緞閰嶇疆
+   * 妫€娴嬮潪涓€绾ц彍鍗曟槸鍚﹂敊璇娇鐢ㄤ簡 / 寮€澶寸殑璺緞
    */
   /**
-   * 验证菜单路径配置
-   * 检测非一级菜单是否错误使用了 / 开头的路径
+   * 楠岃瘉鑿滃崟璺緞閰嶇疆
+   * 妫€娴嬮潪涓€绾ц彍鍗曟槸鍚﹂敊璇娇鐢ㄤ簡 / 寮€澶寸殑璺緞
    */
   private validateMenuPaths(menuList: AppRouteRecord[], level = 1): void {
     menuList.forEach((route) => {
       if (!route.children?.length) return
 
-      const parentName = String(route.name || route.path || '未知路由')
+      const parentName = String(route.name || route.path || '鏈煡璺敱')
 
       route.children.forEach((child) => {
         const childPath = child.path || ''
 
-        // 跳过合法的绝对路径：外部链接和 iframe 路由
+        // 璺宠繃鍚堟硶鐨勭粷瀵硅矾寰勶細澶栭儴閾炬帴鍜?iframe 璺敱
         if (this.isValidAbsolutePath(childPath)) return
 
-        // 检测非法的绝对路径
+        // 妫€娴嬮潪娉曠殑缁濆璺緞
         if (childPath.startsWith('/')) {
           this.logPathError(child, childPath, parentName, level)
         }
       })
 
-      // 递归检查更深层级的子路由
+      // 閫掑綊妫€鏌ユ洿娣卞眰绾х殑瀛愯矾鐢?
       this.validateMenuPaths(route.children, level + 1)
     })
   }
 
   /**
-   * 判断是否为合法的绝对路径
+   * 鍒ゆ柇鏄惁涓哄悎娉曠殑缁濆璺緞
    */
   private isValidAbsolutePath(path: string): boolean {
     return (
@@ -292,7 +289,7 @@ export class MenuProcessor {
   }
 
   /**
-   * 输出路径配置错误日志
+   * 杈撳嚭璺緞閰嶇疆閿欒鏃ュ織
    */
   private logPathError(
     route: AppRouteRecord,
@@ -300,44 +297,45 @@ export class MenuProcessor {
     parentName: string,
     level: number
   ): void {
-    const routeName = String(route.name || path || '未知路由')
+    const routeName = String(route.name || path || '鏈煡璺敱')
     const menuTitle = route.meta?.title || routeName
     const suggestedPath = path.split('/').pop() || path.slice(1)
 
     console.error(
-      `[路由配置错误] 菜单 "${formatMenuTitle(menuTitle)}" (name: ${routeName}, path: ${path}) 配置错误\n` +
-        `  位置: ${parentName} > ${routeName}\n` +
-        `  问题: ${level + 1}级菜单的 path 不能以 / 开头\n` +
-        `  当前配置: path: '${path}'\n` +
-        `  应该改为: path: '${suggestedPath}'`
+      `[璺敱閰嶇疆閿欒] 鑿滃崟 "${formatMenuTitle(menuTitle)}" (name: ${routeName}, path: ${path}) 閰嶇疆閿欒\n` +
+        `  浣嶇疆: ${parentName} > ${routeName}\n` +
+        `  闂: ${level + 1}绾ц彍鍗曠殑 path 涓嶈兘浠?/ 寮€澶碶n` +
+        `  褰撳墠閰嶇疆: path: '${path}'\n` +
+        `  搴旇鏀逛负: path: '${suggestedPath}'`
     )
   }
 
   /**
-   * 构建完整路径
+   * 鏋勫缓瀹屾暣璺緞
    */
   private buildFullPath(path: string, parentPath: string): string {
     if (!path) return ''
 
-    // 外部链接直接返回
+    // 澶栭儴閾炬帴鐩存帴杩斿洖
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path
     }
 
-    // 如果已经是绝对路径，直接返回
+    // 濡傛灉宸茬粡鏄粷瀵硅矾寰勶紝鐩存帴杩斿洖
     if (path.startsWith('/')) {
       return path
     }
 
-    // 拼接父路径和当前路径
+    // 鎷兼帴鐖惰矾寰勫拰褰撳墠璺緞
     if (parentPath) {
-      // 移除父路径末尾的斜杠，移除子路径开头的斜杠，然后拼接
+      // 绉婚櫎鐖惰矾寰勬湯灏剧殑鏂滄潬锛岀Щ闄ゅ瓙璺緞寮€澶寸殑鏂滄潬锛岀劧鍚庢嫾鎺?
       const cleanParent = parentPath.replace(/\/$/, '')
       const cleanChild = path.replace(/^\//, '')
       return `${cleanParent}/${cleanChild}`
     }
 
-    // 没有父路径，添加前导斜杠
+    // 娌℃湁鐖惰矾寰勶紝娣诲姞鍓嶅鏂滄潬
     return `/${path}`
   }
 }
+

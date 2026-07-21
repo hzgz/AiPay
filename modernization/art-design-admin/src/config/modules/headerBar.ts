@@ -1,42 +1,42 @@
-/**
- * 顶部栏功能配置
+﻿/**
+ * 椤堕儴鏍忓姛鑳介厤缃?
  *
- * 统一管理顶部栏各个功能模块的启用状态。
- * 通过修改此配置文件可以快速启用或禁用顶部栏的功能按钮。
+ * 缁熶竴绠＄悊椤堕儴鏍忓悇涓姛鑳芥ā鍧楃殑鍚敤鐘舵€併€?
+ * 閫氳繃淇敼姝ら厤缃枃浠跺彲浠ュ揩閫熷惎鐢ㄦ垨绂佺敤椤堕儴鏍忕殑鍔熻兘鎸夐挳銆?
  *
  * @module config/headerBar
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { HeaderBarFeatureConfig } from '@/types'
 
 /**
- * 顶部栏功能配置对象
+ * 椤堕儴鏍忓姛鑳介厤缃璞?
  */
 export const headerBarConfig: HeaderBarFeatureConfig = {
   menuButton: {
     enabled: true,
-    description: '控制左侧菜单的展开/收起按钮'
+    description: '鎺у埗宸︿晶鑿滃崟鐨勫睍寮€/鏀惰捣鎸夐挳'
   },
   refreshButton: {
     enabled: true,
-    description: '页面刷新按钮'
+    description: '椤甸潰鍒锋柊鎸夐挳'
   },
   fastEnter: {
     enabled: false,
-    description: '快速入口功能，提供常用应用和链接的快速访问'
+    description: '快捷入口功能，提供常用应用和链接的快速访问'
   },
   breadcrumb: {
     enabled: true,
-    description: '面包屑导航，显示当前页面路径'
+    description: '闈㈠寘灞戝鑸紝鏄剧ず褰撳墠椤甸潰璺緞'
   },
   globalSearch: {
     enabled: true,
-    description: '全局搜索功能，支持快捷键 Ctrl+K 或 Cmd+K'
+    description: '鍏ㄥ眬鎼滅储鍔熻兘锛屾敮鎸佸揩鎹烽敭 Ctrl+K 鎴?Cmd+K'
   },
   fullscreen: {
     enabled: true,
-    description: '全屏切换功能'
+    description: '鍏ㄥ睆鍒囨崲鍔熻兘'
   },
   notification: {
     enabled: false,
@@ -48,16 +48,17 @@ export const headerBarConfig: HeaderBarFeatureConfig = {
   },
   language: {
     enabled: false,
-    description: '多语言切换功能'
+    description: '澶氳瑷€鍒囨崲鍔熻兘'
   },
   settings: {
     enabled: false,
-    description: '系统设置面板'
+    description: '绯荤粺璁剧疆闈㈡澘'
   },
   themeToggle: {
     enabled: true,
-    description: '主题切换功能（明暗主题）'
+    description: '涓婚鍒囨崲鍔熻兘锛堟槑鏆椾富棰橈級'
   }
 }
 
 export default headerBarConfig
+

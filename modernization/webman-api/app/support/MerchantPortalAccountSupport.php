@@ -214,9 +214,9 @@ class MerchantPortalAccountSupport
                 'credential_ready' => trim((string)($record['appid'] ?? '')) !== ''
                     && trim((string)($record['appkey'] ?? '')) !== '',
                 'url' => $nullableString($record['url'] ?? null),
-                'callback_entry' => $definition['id'] === 'qq' ? '/User/qqlogin' : '/User/OAuthAccountLogin?type=wx',
+                'callback_entry' => null,
                 'unbind_allowed' => $bound,
-                'write_message' => '快捷登录解绑已生效；当前页面仅展示已接入状态，不再提供新的授权绑定入口。',
+                'write_message' => '快捷登录解绑已生效，新增授权暂未开放。',
             ];
         }
 

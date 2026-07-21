@@ -1,5 +1,5 @@
 <template>
-  <div class="public-shell">
+  <div class="public-shell" @click.capture="handleShellClick">
     <header class="public-header">
       <div class="public-header__inner">
         <a class="public-brand" href="/">
@@ -120,7 +120,7 @@
       <div class="public-footer__inner">
         <div class="public-footer__copy">
           <strong>{{ siteName }}</strong>
-          <p>{{ footerNote }}</p>
+          <p v-if="footerNote">{{ footerNote }}</p>
         </div>
 
         <div class="public-footer__links">
@@ -174,7 +174,7 @@
       navs: () => [],
       isLoggedIn: false,
       pageLabel: '首页',
-      footerNote: '商户接入平台。',
+      footerNote: '',
       merchantLoginUrl: '/#/merchant/login',
       merchantRegisterUrl: '/#/merchant/register',
       merchantCenterUrl: '/#/merchant/dashboard'
@@ -182,6 +182,7 @@
   )
 
   const route = useRoute()
+  const router = useRouter()
   const mobileMenuOpen = ref(false)
 
   const coreNavRules: CoreNavRule[] = [
@@ -298,6 +299,54 @@
     }
 
     return currentPath === navPath || currentPath.startsWith(`${navPath}/`)
+  }
+
+  function handleShellClick(event: MouseEvent) {
+    if (event.defaultPrevented || event.button !== 0) return
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+
+    const target = event.target as HTMLElement | null
+    const anchor = target?.closest('a[href]') as HTMLAnchorElement | null
+    if (!anchor) return
+    if (anchor.target === '_blank' || anchor.hasAttribute('download')) return
+
+    const routeLocation = resolveInternalRouteLocation(anchor.getAttribute('href') || '')
+    if (!routeLocation) return
+
+    event.preventDefault()
+    mobileMenuOpen.value = false
+    void router.push(routeLocation)
+  }
+
+  function resolveInternalRouteLocation(href: string): string | null {
+    const raw = String(href || '').trim()
+    if (!raw) return null
+    if (/^(mailto:|tel:|javascript:)/i.test(raw)) return null
+
+    try {
+      const parsed = /^https?:\/\//i.test(raw) ? new URL(raw) : new URL(raw, window.location.origin)
+      if (parsed.origin !== window.location.origin) return null
+
+      if (parsed.hash.startsWith('#/')) {
+        return normalizeRoutePath(parsed.hash.slice(1))
+      }
+
+      if (parsed.pathname === '/' && !parsed.hash) {
+        return '/'
+      }
+
+      if (/\.[a-z0-9]+$/i.test(parsed.pathname) || parsed.pathname.startsWith('/index99-assets/')) {
+        return null
+      }
+
+      return normalizeRoutePath(parsed.pathname)
+    } catch {
+      if (raw.startsWith('/#/')) return normalizeRoutePath(raw.slice(2))
+      if (raw.startsWith('#/')) return normalizeRoutePath(raw.slice(1))
+      if (raw === '/') return '/'
+      if (raw.startsWith('/')) return normalizeRoutePath(raw)
+      return null
+    }
   }
 </script>
 

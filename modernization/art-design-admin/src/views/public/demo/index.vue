@@ -9,8 +9,8 @@
       <section class="demo-hero">
         <div class="demo-hero__copy">
           <span class="demo-eyebrow">支付测试</span>
-          <h1>支付方式预览</h1>
-          <p>这里只展示当前开放的支付方式，可先快速预览。</p>
+          <h1>支付测试</h1>
+          <p>查看当前开放的支付方式。</p>
         </div>
 
         <div class="demo-hero__actions">
@@ -23,15 +23,15 @@
 
       <section class="demo-summary">
         <div class="demo-summary__item">
-          <small>默认金额</small>
+          <small>金额</small>
           <strong>￥{{ demoMoney }}</strong>
         </div>
         <div class="demo-summary__item">
-          <small>订单名称</small>
+          <small>名称</small>
           <strong>{{ demoName }}</strong>
         </div>
         <div class="demo-summary__item">
-          <small>开放方式</small>
+          <small>开放数量</small>
           <strong>{{ availableMethods.length }}</strong>
         </div>
         <div class="demo-summary__item">
@@ -57,19 +57,18 @@
           <div class="demo-focus__badge">{{ selectedMethod.badge }}</div>
 
           <div class="demo-focus__content">
-            <span class="demo-eyebrow">当前方式</span>
+            <span class="demo-eyebrow">选中方式</span>
             <h2>{{ selectedMethod.label }}</h2>
             <p>{{ selectedMethod.description }}</p>
 
             <div class="demo-focus__tips">
-              <span>测试订单号：{{ demoOrderNo }}</span>
-              <span>更多操作请进商户端</span>
+              <span>订单编号：{{ demoOrderNo }}</span>
             </div>
           </div>
         </article>
 
         <aside class="demo-order">
-          <span class="demo-eyebrow">展示信息</span>
+          <span class="demo-eyebrow">订单摘要</span>
 
           <div class="demo-order__rows">
             <div class="demo-order__row">
@@ -81,7 +80,7 @@
               <strong>{{ demoName }}</strong>
             </div>
             <div class="demo-order__row">
-              <small>订单号</small>
+              <small>订单编号</small>
               <strong>{{ demoOrderNo }}</strong>
             </div>
             <div class="demo-order__row">
@@ -94,7 +93,7 @@
 
       <section v-else class="demo-empty">
         <strong>当前没有对外展示的支付方式</strong>
-        <p>请先在后台启用支付方式。</p>
+        <p>当前暂无可展示的支付方式。</p>
       </section>
     </div>
   </PublicShell>
@@ -125,26 +124,26 @@
       id: 'wxpay',
       label: '微信支付',
       badge: 'WX',
-      description: '适合扫码、H5、公众号和小程序等微信支付场景。'
+      description: '适合微信扫码、H5 与公众号支付场景。'
     },
     alipay: {
       id: 'alipay',
       label: '支付宝',
       badge: 'AL',
-      description: '适合二维码、拉起支付和生活缴费等支付宝场景。'
+      description: '适合支付宝扫码、拉起支付和收款场景。'
     },
     qqpay: {
       id: 'qqpay',
       label: 'QQ 钱包',
       badge: 'QQ',
-      description: '适合 QQ 钱包相关的扫码和收款场景。'
+      description: '适合 QQ 钱包扫码和收款场景。'
     }
   }
 
   const siteName = computed(() => payload.value?.site_name || 'AiPay')
   const navs = computed(() => payload.value?.navs || [])
   const merchantLoginUrl = computed(() => payload.value?.merchant_login_url || '/#/merchant/login')
-  const demoName = computed(() => payload.value?.demo_name || '测试订单')
+  const demoName = computed(() => payload.value?.demo_name || '支付测试')
   const demoMoney = computed(() => payload.value?.demo_money || '0.01')
   const gatewayConfigured = computed(() => Boolean(payload.value?.gateway_configured))
   const gatewayStatusLabel = computed(() => (gatewayConfigured.value ? '已配置' : '未设置'))
@@ -159,7 +158,7 @@
         id: method.id,
         label: method.label,
         badge: method.label.slice(0, 2).toUpperCase(),
-        description: method.description || '该方式已开放，可进入商户端继续测试。'
+        description: method.description || '该方式当前可用。'
       }
     })
   })
@@ -199,7 +198,7 @@
   function createDemoOrderNo() {
     const now = new Date()
     const pad = (value: number) => String(value).padStart(2, '0')
-    return `T${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+    return `P${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
   }
 
   watch(
@@ -223,7 +222,6 @@
     font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 
   .demo-hero,

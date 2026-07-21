@@ -3,7 +3,7 @@
   "name": "微信软件版插件",
   "description": "用于维护微信软件版收款能力，统一管理账户、安装、启停与清理。",
   "version": "1.0.0",
-  "provider": "AiPay官方",
+  "provider": "AiPay 官方",
   "entry": "plugins/payments/wxpay_software/src/Plugin.php",
   "class": "Plugins\\Payments\\WxpaySoftware\\Plugin",
   "capabilities": [
@@ -17,7 +17,7 @@
       "code": "wxpay_software",
       "name": "微信软件版",
       "type": "wxpay",
-      "info": "旧 TP 微信软件版收款通道，现由支付插件目录独立托管。",
+      "info": "微信软件版收款通道，由支付插件目录独立托管。",
       "status": 1,
       "sort": 20,
       "maxcount": 999
@@ -34,7 +34,7 @@
         ],
         "notes": [
           "初始化微信软件版插件的配置表与日志表。",
-          "保留旧 TP 账户能力，只将插件生命周期与托管通道转为独立目录管理。"
+          "沿用微信软件版账户能力，并将插件生命周期与托管通道统一纳入独立目录管理。"
         ]
       }
     ]
@@ -45,7 +45,7 @@
     "requires_disable_after_upgrade": false,
     "notes": [
       "该插件主要管理后台账户能力与托管通道，不承接商户上游网关流量。",
-      "后续若扩展插件自有配置字段，可追加新的迁移版本而不是回改当前版本。"
+      "后续若扩展插件自有配置字段，可追加新版本而不是回改当前版本。"
     ],
     "checklist": [
       "升级前确认后台不存在未审核的插件清理计划。",
@@ -54,15 +54,15 @@
     "changelog": [
       {
         "version": "1.0.0",
-        "summary": "微信软件版插件首个独立目录版本。",
+        "summary": "微信软件版插件目录版本 1.0.0。",
         "breaking": false,
         "migration_files": [
           "001_create_config_table.sql",
           "002_create_plugin_log_table.sql"
         ],
         "notes": [
-          "旧 TP 的微信软件版账户字段与处理逻辑继续复用现有 PaymentAccountController 分支。",
-          "本次改造重点是把插件目录、托管通道、清理策略和审计落盘拆分独立。"
+          "沿用微信软件版账户字段与处理逻辑，并继续复用现有支付账户分支。",
+          "当前版本完成插件目录、托管通道、清理策略与审计落盘的独立管理。"
         ]
       }
     ],

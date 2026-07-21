@@ -31,7 +31,7 @@ class CommerceOverviewController
             'order_trend' => $this->orderTrend(),
             'collection_comparison' => $this->collectionComparison(),
             'recharge_comparison' => $this->rechargeComparison(),
-            'readonly_note' => '当前页面仅用于查看经营统计数据，不提供加款、清理、卡券或工单处理操作。',
+            'readonly_note' => '当前页面展示经营统计数据与关键指标，不处理加款、清理、卡券或工单操作。',
             'generated_at' => date('Y-m-d H:i:s'),
         ]);
     }

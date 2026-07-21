@@ -1,10 +1,14 @@
 <!-- 登录页面 -->
 <template>
   <div class="flex w-full h-screen">
-    <LoginLeftView />
+    <LoginLeftView
+      brand-title="AiPay"
+      hero-title="AiPay 管理后台"
+      hero-subtitle="管理员登录后即可进入平台控制台，统一管理商户、订单、支付、风控与系统配置"
+    />
 
     <div class="relative flex-1">
-      <AuthTopBar />
+      <AuthTopBar brand-title="AiPay 管理后台" />
 
       <div class="auth-right-wrap">
         <div class="form">
@@ -68,7 +72,7 @@
               v-else
               class="mt-6 rounded-lg border border-dashed border-[var(--el-color-success)] bg-[var(--el-color-success-light-9)] px-4 py-3 text-sm text-[var(--el-color-success)]"
             >
-              本地调试已启用，当前已跳过滑块验证。
+              当前环境已关闭滑块验证，可直接登录。
             </div>
 
             <div class="flex-cb mt-2 text-sm">
@@ -149,7 +153,7 @@
       isLocalAuditHost &&
       ['1', 'true'].includes(String(route.query.audit || ''))
   )
-  const adminHint = computed(() => '请输入管理员账号和密码登录后台。')
+  const adminHint = computed(() => '请输入管理员账号和密码进入管理后台。')
 
   const systemName = AppConfig.systemInfo.name
   const formRef = ref<FormInstance>()
@@ -238,7 +242,7 @@
         type: 'success',
         duration: 2500,
         zIndex: 10000,
-        message: `${t('login.success.message')}, ${systemName}!`
+        message: `${t('login.success.message')} ${systemName}`
       })
     }, 1000)
   }

@@ -64,7 +64,7 @@ export function createScaffoldForm(): PaymentPluginScaffoldForm {
   return {
     code: '',
     name: '',
-    provider: 'AiPay官方',
+    provider: 'AiPay 官方',
     description: '为支付通道生成独立插件目录与基础配置。',
     version: '0.1.0',
     capabilities: scaffoldCapabilityOptions.map((item) => item.value)

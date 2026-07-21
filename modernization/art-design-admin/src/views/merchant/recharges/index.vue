@@ -496,7 +496,7 @@
 
     try {
       const response = await fetch(
-        `${backendOrigin}/Pay/ConSole_DoPay?TradeNo=${encodeURIComponent(cashierTradeNo.value)}&_=${Date.now()}`,
+        `${backendOrigin}/api/merchant/recharges/poll?TradeNo=${encodeURIComponent(cashierTradeNo.value)}&_=${Date.now()}`,
         {
           headers: {
             Accept: 'application/json'

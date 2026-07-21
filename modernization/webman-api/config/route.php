@@ -31,8 +31,13 @@ Route::get('/api/public/news/detail/{id}', [app\controller\StorefrontCompatibili
 Route::get('/api/public/doc', [app\controller\StorefrontCompatibilityController::class, 'docData']);
 Route::get('/api/public/doc/{section}', [app\controller\StorefrontCompatibilityController::class, 'docData']);
 Route::get('/api/public/demo', [app\controller\DemoCompatibilityController::class, 'index']);
+Route::get('/api/public/qrcode', [app\controller\PublicEntryController::class, 'qrcode']);
+Route::get('/api/public/url', [app\controller\PublicEntryController::class, 'alipayUrl']);
+Route::get('/api/public/cashier/console', [app\controller\PayCompatibilityController::class, 'console']);
+Route::get('/api/public/cashier/poll', [app\controller\PayCompatibilityController::class, 'poll']);
 Route::group('/api/merchant', function () {
     Route::post('/login', [app\controller\MerchantPortalController::class, 'login']);
+    Route::get('/logout', [app\controller\MerchantPortalController::class, 'logout']);
     Route::post('/logout', [app\controller\MerchantPortalController::class, 'logout']);
     Route::get('/dashboard', [app\controller\MerchantPortalController::class, 'index']);
 
@@ -69,6 +74,7 @@ Route::group('/api/merchant', function () {
 
     Route::get('/recharges', [app\controller\MerchantPortalController::class, 'recharge']);
     Route::post('/recharges', [app\controller\MerchantRechargeController::class, 'doPay']);
+    Route::get('/recharges/poll', [app\controller\MerchantRechargeController::class, 'consolePoll']);
     Route::post('/recharges/cdk', [app\controller\MerchantPortalController::class, 'cdkPay']);
     Route::get('/vips', [app\controller\MerchantPortalController::class, 'vip']);
     Route::post('/vips', [app\controller\MerchantPortalController::class, 'vip']);
@@ -125,22 +131,6 @@ Route::post('/api/Software/PCNotify', [app\controller\SoftwareCompatibilityContr
 Route::post('/api/Software/pcnotify', [app\controller\SoftwareCompatibilityController::class, 'pcNotify']);
 Route::post('/api/report', [app\controller\SoftwareCompatibilityController::class, 'appReport']);
 Route::post('/api/report/{id}', [app\controller\SoftwareCompatibilityController::class, 'appReport']);
-Route::get('/Api/getSoftwareConfig', [app\controller\ApiCompatibilityController::class, 'getSoftwareConfig']);
-Route::post('/Api/getSoftwareConfig', [app\controller\ApiCompatibilityController::class, 'getSoftwareConfig']);
-Route::get('/Api/findorder', [app\controller\ApiCompatibilityController::class, 'findOrder']);
-Route::post('/Api/findorder', [app\controller\ApiCompatibilityController::class, 'findOrder']);
-Route::get('/Api/payment', [app\controller\PaymentGatewayController::class, 'apiPayment']);
-Route::post('/Api/payment', [app\controller\PaymentGatewayController::class, 'apiPayment']);
-Route::get('/Api/mapi', [app\controller\PaymentGatewayController::class, 'apiMapi']);
-Route::post('/Api/mapi', [app\controller\PaymentGatewayController::class, 'apiMapi']);
-Route::get('/Api/login', [app\controller\ApiCompatibilityController::class, 'login']);
-Route::post('/Api/login', [app\controller\ApiCompatibilityController::class, 'login']);
-Route::get('/Api/register', [app\controller\ApiCompatibilityController::class, 'register']);
-Route::post('/Api/register', [app\controller\ApiCompatibilityController::class, 'register']);
-Route::get('/Api/getCode', [app\controller\ApiCompatibilityController::class, 'getCode']);
-Route::post('/Api/getCode', [app\controller\ApiCompatibilityController::class, 'getCode']);
-Route::get('/Api/getCaptcha', [app\controller\ApiCompatibilityController::class, 'getCaptcha']);
-Route::post('/Api/getCaptcha', [app\controller\ApiCompatibilityController::class, 'getCaptcha']);
 Route::get('/api/getSoftwareConfig', [app\controller\ApiCompatibilityController::class, 'getSoftwareConfig']);
 Route::post('/api/getSoftwareConfig', [app\controller\ApiCompatibilityController::class, 'getSoftwareConfig']);
 Route::get('/api/findorder', [app\controller\ApiCompatibilityController::class, 'findOrder']);
@@ -153,18 +143,18 @@ Route::get('/api/login', [app\controller\ApiCompatibilityController::class, 'log
 Route::post('/api/login', [app\controller\ApiCompatibilityController::class, 'login']);
 Route::get('/api/register', [app\controller\ApiCompatibilityController::class, 'register']);
 Route::post('/api/register', [app\controller\ApiCompatibilityController::class, 'register']);
+Route::get('/api/retrievePassword', [app\controller\ApiCompatibilityController::class, 'retrievePassword']);
+Route::post('/api/retrievePassword', [app\controller\ApiCompatibilityController::class, 'retrievePassword']);
+Route::get('/api/forgetPassword', [app\controller\ApiCompatibilityController::class, 'retrievePassword']);
+Route::post('/api/forgetPassword', [app\controller\ApiCompatibilityController::class, 'retrievePassword']);
 Route::get('/api/getCode', [app\controller\ApiCompatibilityController::class, 'getCode']);
 Route::post('/api/getCode', [app\controller\ApiCompatibilityController::class, 'getCode']);
 Route::get('/api/getCaptcha', [app\controller\ApiCompatibilityController::class, 'getCaptcha']);
 Route::post('/api/getCaptcha', [app\controller\ApiCompatibilityController::class, 'getCaptcha']);
-Route::any('/Pay/submit', [app\controller\PaymentGatewayController::class, 'submit']);
-Route::any('/Pay/apisubmit', [app\controller\PaymentGatewayController::class, 'apiPayment']);
 Route::any('/Pay/console', [app\controller\PayCompatibilityController::class, 'console']);
 Route::any('/Pay/ConSole', [app\controller\PayCompatibilityController::class, 'console']);
 Route::get('/Pay/ConSole_DoPay', [app\controller\MerchantRechargeController::class, 'consolePoll']);
 Route::get('/Pay/console_dopay', [app\controller\MerchantRechargeController::class, 'consolePoll']);
-Route::any('/pay/submit', [app\controller\PaymentGatewayController::class, 'submit']);
-Route::any('/pay/apisubmit', [app\controller\PaymentGatewayController::class, 'apiPayment']);
 Route::any('/pay/console', [app\controller\PayCompatibilityController::class, 'console']);
 Route::any('/pay/ConSole', [app\controller\PayCompatibilityController::class, 'console']);
 Route::get('/pay/console_dopay', [app\controller\MerchantRechargeController::class, 'consolePoll']);

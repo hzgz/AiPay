@@ -196,7 +196,7 @@
           </div>
 
           <div v-if="emailDebugCode" class="merchant-debug-code">
-            调试验证码：{{ emailDebugCode }}
+            当前验证码：{{ emailDebugCode }}
           </div>
 
           <div class="merchant-form-actions merchant-form-actions--split">
@@ -257,7 +257,7 @@
           </div>
 
           <div v-if="mobileDebugCode" class="merchant-debug-code">
-            调试验证码：{{ mobileDebugCode }}
+            当前验证码：{{ mobileDebugCode }}
           </div>
 
           <div class="merchant-form-actions merchant-form-actions--split">
@@ -748,7 +748,7 @@
         emailCaptcha.value = emailDebugCode.value
       }
       ElMessage.success(
-        emailDebugCode.value ? `验证码已发送，调试码 ${emailDebugCode.value}` : '邮箱验证码已发送'
+        emailDebugCode.value ? `验证码已发送，当前验证码 ${emailDebugCode.value}` : '邮箱验证码已发送'
       )
     } catch (error) {
       ElMessage.error(resolveMerchantError(error, '邮箱验证码发送失败'))
@@ -805,7 +805,7 @@
         mobileCaptcha.value = mobileDebugCode.value
       }
       ElMessage.success(
-        mobileDebugCode.value ? `验证码已发送，调试码 ${mobileDebugCode.value}` : '手机验证码已发送'
+        mobileDebugCode.value ? `验证码已发送，当前验证码 ${mobileDebugCode.value}` : '手机验证码已发送'
       )
     } catch (error) {
       ElMessage.error(resolveMerchantError(error, '手机验证码发送失败'))

@@ -1,37 +1,37 @@
-/**
- * 表单验证工具模块
+﻿/**
+ * 琛ㄥ崟楠岃瘉宸ュ叿妯″潡
  *
- * 提供全面的表单字段验证功能
+ * 鎻愪緵鍏ㄩ潰鐨勮〃鍗曞瓧娈甸獙璇佸姛鑳?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 手机号码验证（中国大陆格式）
- * - 固定电话验证（支持区号格式）
- * - 用户账号验证（字母开头，支持数字和下划线）
- * - 密码强度验证（普通密码、强密码）
- * - 密码强度评估（弱、中、强）
- * - IPv4 地址验证
- * - 邮箱地址验证（RFC 5322 标准）
- * - URL 地址验证
- * - 身份证号码验证（18位，含校验码验证）
- * - 银行卡号验证（Luhn 算法）
- * - 字符串空格处理
+ * - 鎵嬫満鍙风爜楠岃瘉锛堜腑鍥藉ぇ闄嗘牸寮忥級
+ * - 鍥哄畾鐢佃瘽楠岃瘉锛堟敮鎸佸尯鍙锋牸寮忥級
+ * - 鐢ㄦ埛璐﹀彿楠岃瘉锛堝瓧姣嶅紑澶达紝鏀寔鏁板瓧鍜屼笅鍒掔嚎锛?
+ * - 瀵嗙爜寮哄害楠岃瘉锛堟櫘閫氬瘑鐮併€佸己瀵嗙爜锛?
+ * - 瀵嗙爜寮哄害璇勪及锛堝急銆佷腑銆佸己锛?
+ * - IPv4 鍦板潃楠岃瘉
+ * - 閭鍦板潃楠岃瘉锛圧FC 5322 鏍囧噯锛?
+ * - URL 鍦板潃楠岃瘉
+ * - 韬唤璇佸彿鐮侀獙璇侊紙18浣嶏紝鍚牎楠岀爜楠岃瘉锛?
+ * - 閾惰鍗″彿楠岃瘉锛圠uhn 绠楁硶锛?
+ * - 瀛楃涓茬┖鏍煎鐞?
  *
- * ## 验证规则
+ * ## 楠岃瘉瑙勫垯
  *
- * - 手机号：1开头，第二位3-9，共11位
- * - 账号：字母开头，5-20位，支持字母数字下划线
- * - 普通密码：6-20位，必须包含字母和数字
- * - 强密码：8-20位，必须包含大小写字母、数字和特殊字符
- * - 身份证：18位，含出生日期和校验码验证
- * - 银行卡：13-19位，通过 Luhn 算法验证
+ * - 鎵嬫満鍙凤細1寮€澶达紝绗簩浣?-9锛屽叡11浣?
+ * - 璐﹀彿锛氬瓧姣嶅紑澶达紝5-20浣嶏紝鏀寔瀛楁瘝鏁板瓧涓嬪垝绾?
+ * - 鏅€氬瘑鐮侊細6-20浣嶏紝蹇呴』鍖呭惈瀛楁瘝鍜屾暟瀛?
+ * - 寮哄瘑鐮侊細8-20浣嶏紝蹇呴』鍖呭惈澶у皬鍐欏瓧姣嶃€佹暟瀛楀拰鐗规畩瀛楃
+ * - 韬唤璇侊細18浣嶏紝鍚嚭鐢熸棩鏈熷拰鏍￠獙鐮侀獙璇?
+ * - 閾惰鍗★細13-19浣嶏紝閫氳繃 Luhn 绠楁硶楠岃瘉
  *
  * @module utils/validation/formValidator
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 /**
- * 密码强度级别枚举
+ * 瀵嗙爜寮哄害绾у埆鏋氫妇
  */
 export enum PasswordStrength {
   WEAK = '弱',
@@ -40,9 +40,9 @@ export enum PasswordStrength {
 }
 
 /**
- * 去除字符串首尾空格
- * @param value 待处理的字符串
- * @returns 返回去除首尾空格后的字符串
+ * 鍘婚櫎瀛楃涓查灏剧┖鏍?
+ * @param value 寰呭鐞嗙殑瀛楃涓?
+ * @returns 杩斿洖鍘婚櫎棣栧熬绌烘牸鍚庣殑瀛楃涓?
  */
 export function trimSpaces(value: string): string {
   if (typeof value !== 'string') {
@@ -52,56 +52,56 @@ export function trimSpaces(value: string): string {
 }
 
 /**
- * 验证手机号码（中国大陆）
- * @param value 手机号码字符串
- * @returns 返回验证结果，true表示格式正确
+ * 楠岃瘉鎵嬫満鍙风爜锛堜腑鍥藉ぇ闄嗭級
+ * @param value 鎵嬫満鍙风爜瀛楃涓?
+ * @returns 杩斿洖楠岃瘉缁撴灉锛宼rue琛ㄧず鏍煎紡姝ｇ‘
  */
 export function validatePhone(value: string): boolean {
   if (!value || typeof value !== 'string') {
     return false
   }
 
-  // 中国大陆手机号码：1开头，第二位为3-9，共11位数字
+  // 涓浗澶ч檰鎵嬫満鍙风爜锛?寮€澶达紝绗簩浣嶄负3-9锛屽叡11浣嶆暟瀛?
   const phoneRegex = /^1[3-9]\d{9}$/
   return phoneRegex.test(value.trim())
 }
 
 /**
- * 验证固定电话号码（中国大陆）
- * @param value 电话号码字符串
- * @returns 返回验证结果，true表示格式正确
+ * 楠岃瘉鍥哄畾鐢佃瘽鍙风爜锛堜腑鍥藉ぇ闄嗭級
+ * @param value 鐢佃瘽鍙风爜瀛楃涓?
+ * @returns 杩斿洖楠岃瘉缁撴灉锛宼rue琛ㄧず鏍煎紡姝ｇ‘
  */
 export function validateTelPhone(value: string): boolean {
   if (!value || typeof value !== 'string') {
     return false
   }
 
-  // 支持格式：区号-号码，如：010-12345678、0755-1234567
+  // 鏀寔鏍煎紡锛氬尯鍙?鍙风爜锛屽锛?10-12345678銆?755-1234567
   const telRegex = /^0\d{2,3}-?\d{7,8}$/
   return telRegex.test(value.trim().replace(/\s+/g, ''))
 }
 
 /**
- * 验证用户账号
- * @param value 账号字符串
- * @returns 返回验证结果，true表示格式正确
- * @description 规则：字母开头，5-20位，支持字母、数字、下划线
+ * 楠岃瘉鐢ㄦ埛璐﹀彿
+ * @param value 璐﹀彿瀛楃涓?
+ * @returns 杩斿洖楠岃瘉缁撴灉锛宼rue琛ㄧず鏍煎紡姝ｇ‘
+ * @description 瑙勫垯锛氬瓧姣嶅紑澶达紝5-20浣嶏紝鏀寔瀛楁瘝銆佹暟瀛椼€佷笅鍒掔嚎
  */
 export function validateAccount(value: string): boolean {
   if (!value || typeof value !== 'string') {
     return false
   }
 
-  // 字母开头，5-20位，支持字母、数字、下划线
+  // 瀛楁瘝寮€澶达紝5-20浣嶏紝鏀寔瀛楁瘝銆佹暟瀛椼€佷笅鍒掔嚎
   const accountRegex = /^[a-zA-Z][a-zA-Z0-9_]{4,19}$/
   return accountRegex.test(value.trim())
 }
 
 /**
- * 验证密码
- * @param value 密码字符串
- * @returns 返回验证结果，true表示格式正确
- * @description 规则：6-20位，必须包含字母和数字
+ * 楠岃瘉瀵嗙爜
+ * @param value 瀵嗙爜瀛楃涓?
+ * @returns 杩斿洖楠岃瘉缁撴灉锛宼rue琛ㄧず鏍煎紡姝ｇ‘
+ * @description 瑙勫垯锛?-20浣嶏紝蹇呴』鍖呭惈瀛楁瘝鍜屾暟瀛?
  */
 export function validatePassword(value: string): boolean {
   if (!value || typeof value !== 'string') {
@@ -110,12 +110,12 @@ export function validatePassword(value: string): boolean {
 
   const trimmedValue = value.trim()
 
-  // 长度检查
+  // 闀垮害妫€鏌?
   if (trimmedValue.length < 6 || trimmedValue.length > 20) {
     return false
   }
 
-  // 必须包含字母和数字
+  // 蹇呴』鍖呭惈瀛楁瘝鍜屾暟瀛?
   const hasLetter = /[a-zA-Z]/.test(trimmedValue)
   const hasNumber = /\d/.test(trimmedValue)
 
@@ -123,10 +123,10 @@ export function validatePassword(value: string): boolean {
 }
 
 /**
- * 验证强密码
- * @param value 密码字符串
- * @returns 返回验证结果，true表示格式正确
- * @description 规则：8-20位，必须包含大写字母、小写字母、数字和特殊字符
+ * 楠岃瘉寮哄瘑鐮?
+ * @param value 瀵嗙爜瀛楃涓?
+ * @returns 杩斿洖楠岃瘉缁撴灉锛宼rue琛ㄧず鏍煎紡姝ｇ‘
+ * @description 瑙勫垯锛?-20浣嶏紝蹇呴』鍖呭惈澶у啓瀛楁瘝銆佸皬鍐欏瓧姣嶃€佹暟瀛楀拰鐗规畩瀛楃
  */
 export function validateStrongPassword(value: string): boolean {
   if (!value || typeof value !== 'string') {
@@ -135,12 +135,12 @@ export function validateStrongPassword(value: string): boolean {
 
   const trimmedValue = value.trim()
 
-  // 长度检查
+  // 闀垮害妫€鏌?
   if (trimmedValue.length < 8 || trimmedValue.length > 20) {
     return false
   }
 
-  // 必须包含：大写字母、小写字母、数字、特殊字符
+  // 蹇呴』鍖呭惈锛氬ぇ鍐欏瓧姣嶃€佸皬鍐欏瓧姣嶃€佹暟瀛椼€佺壒娈婂瓧绗?
   const hasUpperCase = /[A-Z]/.test(trimmedValue)
   const hasLowerCase = /[a-z]/.test(trimmedValue)
   const hasNumber = /\d/.test(trimmedValue)
@@ -150,10 +150,10 @@ export function validateStrongPassword(value: string): boolean {
 }
 
 /**
- * 获取密码强度
- * @param value 密码字符串
- * @returns 返回密码强度：弱、中、强
- * @description 弱：纯数字/纯字母/纯特殊字符；中：两种组合；强：三种或以上组合
+ * 鑾峰彇瀵嗙爜寮哄害
+ * @param value 瀵嗙爜瀛楃涓?
+ * @returns 杩斿洖瀵嗙爜寮哄害锛氬急銆佷腑銆佸己
+ * @description 寮憋細绾暟瀛?绾瓧姣?绾壒娈婂瓧绗︼紱涓細涓ょ缁勫悎锛涘己锛氫笁绉嶆垨浠ヤ笂缁勫悎
  */
 export function getPasswordStrength(value: string): PasswordStrength {
   if (!value || typeof value !== 'string') {
@@ -183,9 +183,9 @@ export function getPasswordStrength(value: string): PasswordStrength {
 }
 
 /**
- * 验证IPv4地址
- * @param value IP地址字符串
- * @returns 返回验证结果，true表示格式正确
+ * 楠岃瘉IPv4鍦板潃
+ * @param value IP鍦板潃瀛楃涓?
+ * @returns 杩斿洖楠岃瘉缁撴灉锛宼rue琛ㄧず鏍煎紡姝ｇ‘
  */
 export function validateIPv4Address(value: string): boolean {
   if (!value || typeof value !== 'string') {
@@ -199,7 +199,7 @@ export function validateIPv4Address(value: string): boolean {
     return false
   }
 
-  // 额外检查每个段是否在有效范围内
+  // 棰濆妫€鏌ユ瘡涓鏄惁鍦ㄦ湁鏁堣寖鍥村唴
   const segments = trimmedValue.split('.')
   return segments.every((segment) => {
     const num = parseInt(segment, 10)
@@ -208,9 +208,9 @@ export function validateIPv4Address(value: string): boolean {
 }
 
 /**
- * 验证邮箱地址
- * @param value 邮箱地址字符串
- * @returns 返回验证结果，true表示格式正确
+ * 楠岃瘉閭鍦板潃
+ * @param value 閭鍦板潃瀛楃涓?
+ * @returns 杩斿洖楠岃瘉缁撴灉锛宼rue琛ㄧず鏍煎紡姝ｇ‘
  */
 export function validateEmail(value: string): boolean {
   if (!value || typeof value !== 'string') {
@@ -219,7 +219,7 @@ export function validateEmail(value: string): boolean {
 
   const trimmedValue = value.trim()
 
-  // RFC 5322 标准的简化版邮箱正则
+  // RFC 5322 鏍囧噯鐨勭畝鍖栫増閭姝ｅ垯
   const emailRegex =
     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
 
@@ -227,9 +227,9 @@ export function validateEmail(value: string): boolean {
 }
 
 /**
- * 验证URL地址
- * @param value URL字符串
- * @returns 返回验证结果，true表示格式正确
+ * 楠岃瘉URL鍦板潃
+ * @param value URL瀛楃涓?
+ * @returns 杩斿洖楠岃瘉缁撴灉锛宼rue琛ㄧず鏍煎紡姝ｇ‘
  */
 export function validateURL(value: string): boolean {
   if (!value || typeof value !== 'string') {
@@ -245,9 +245,9 @@ export function validateURL(value: string): boolean {
 }
 
 /**
- * 验证身份证号码（中国大陆）
- * @param value 身份证号码字符串
- * @returns 返回验证结果，true表示格式正确
+ * 楠岃瘉韬唤璇佸彿鐮侊紙涓浗澶ч檰锛?
+ * @param value 韬唤璇佸彿鐮佸瓧绗︿覆
+ * @returns 杩斿洖楠岃瘉缁撴灉锛宼rue琛ㄧず鏍煎紡姝ｇ‘
  */
 export function validateChineseIDCard(value: string): boolean {
   if (!value || typeof value !== 'string') {
@@ -256,7 +256,7 @@ export function validateChineseIDCard(value: string): boolean {
 
   const trimmedValue = value.trim()
 
-  // 18位身份证号码正则
+  // 18浣嶈韩浠借瘉鍙风爜姝ｅ垯
   const idCardRegex =
     /^[1-9]\d{5}(18|19|20)\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$/
 
@@ -264,7 +264,7 @@ export function validateChineseIDCard(value: string): boolean {
     return false
   }
 
-  // 验证校验码
+  // 楠岃瘉鏍￠獙鐮?
   const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]
   const checkCodes = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2']
 
@@ -278,9 +278,9 @@ export function validateChineseIDCard(value: string): boolean {
 }
 
 /**
- * 验证银行卡号
- * @param value 银行卡号字符串
- * @returns 返回验证结果，true表示格式正确
+ * 楠岃瘉閾惰鍗″彿
+ * @param value 閾惰鍗″彿瀛楃涓?
+ * @returns 杩斿洖楠岃瘉缁撴灉锛宼rue琛ㄧず鏍煎紡姝ｇ‘
  */
 export function validateBankCard(value: string): boolean {
   if (!value || typeof value !== 'string') {
@@ -289,12 +289,12 @@ export function validateBankCard(value: string): boolean {
 
   const trimmedValue = value.trim().replace(/\s+/g, '')
 
-  // 银行卡号通常为13-19位数字
+  // 閾惰鍗″彿閫氬父涓?3-19浣嶆暟瀛?
   if (!/^\d{13,19}$/.test(trimmedValue)) {
     return false
   }
 
-  // Luhn算法验证
+  // Luhn绠楁硶楠岃瘉
   let sum = 0
   let shouldDouble = false
 
@@ -314,3 +314,4 @@ export function validateBankCard(value: string): boolean {
 
   return sum % 10 === 0
 }
+

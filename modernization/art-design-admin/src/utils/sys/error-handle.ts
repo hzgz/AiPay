@@ -1,33 +1,33 @@
-/**
- * 全局错误处理模块
+﻿/**
+ * 鍏ㄥ眬閿欒澶勭悊妯″潡
  *
- * 提供统一的错误捕获和处理机制
+ * 鎻愪緵缁熶竴鐨勯敊璇崟鑾峰拰澶勭悊鏈哄埗
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - Vue 运行时错误捕获（组件错误、生命周期错误等）
- * - 全局脚本错误捕获（语法错误、运行时错误等）
- * - Promise 未捕获错误处理（unhandledrejection）
- * - 静态资源加载错误监控（图片、脚本、样式等）
- * - 错误日志记录和上报
- * - 统一的错误处理入口
+ * - Vue 杩愯鏃堕敊璇崟鑾凤紙缁勪欢閿欒銆佺敓鍛藉懆鏈熼敊璇瓑锛?
+ * - 鍏ㄥ眬鑴氭湰閿欒鎹曡幏锛堣娉曢敊璇€佽繍琛屾椂閿欒绛夛級
+ * - Promise 鏈崟鑾烽敊璇鐞嗭紙unhandledrejection锛?
+ * - 闈欐€佽祫婧愬姞杞介敊璇洃鎺э紙鍥剧墖銆佽剼鏈€佹牱寮忕瓑锛?
+ * - 閿欒鏃ュ織璁板綍鍜屼笂鎶?
+ * - 缁熶竴鐨勯敊璇鐞嗗叆鍙?
  *
- * ## 使用场景
- * - 应用启动时安装全局错误处理器
- * - 捕获和记录所有类型的错误
- * - 错误上报到监控平台
- * - 提升应用稳定性和可维护性
- * - 问题排查和调试
+ * ## 浣跨敤鍦烘櫙
+ * - 搴旂敤鍚姩鏃跺畨瑁呭叏灞€閿欒澶勭悊鍣?
+ * - 鎹曡幏鍜岃褰曟墍鏈夌被鍨嬬殑閿欒
+ * - 閿欒涓婃姤鍒扮洃鎺у钩鍙?
+ * - 鎻愬崌搴旂敤绋冲畾鎬у拰鍙淮鎶ゆ€?
+ * - 闂鎺掓煡鍜岃皟璇?
  *
- * ## 错误类型
+ * ## 閿欒绫诲瀷
  *
- * - VueError: Vue 组件相关错误
- * - ScriptError: JavaScript 脚本错误
- * - PromiseError: Promise 未捕获的 rejection
- * - ResourceError: 静态资源加载失败
+ * - VueError: Vue 缁勪欢鐩稿叧閿欒
+ * - ScriptError: JavaScript 鑴氭湰閿欒
+ * - PromiseError: Promise 鏈崟鑾风殑 rejection
+ * - ResourceError: 闈欐€佽祫婧愬姞杞藉け璐?
  *
  * @module utils/sys/error-handle
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import type { App } from 'vue'
 
@@ -56,11 +56,11 @@ function isIgnorableScriptError(message: Event | string, source?: string): boole
   }
 
   if (IGNORABLE_SCRIPT_ERRORS.some((item) => normalizedMessage.includes(item))) {
-    // 浏览器/扩展在布局抖动时常见的 ResizeObserver 噪声，不作为真实异常处理
+    // 娴忚鍣?鎵╁睍鍦ㄥ竷灞€鎶栧姩鏃跺父瑙佺殑 ResizeObserver 鍣０锛屼笉浣滀负鐪熷疄寮傚父澶勭悊
     return true
   }
 
-  // 浏览器扩展注入脚本偶发的跨域 Script error 也没有排查价值
+  // 娴忚鍣ㄦ墿灞曟敞鍏ヨ剼鏈伓鍙戠殑璺ㄥ煙 Script error 涔熸病鏈夋帓鏌ヤ环鍊?
   if (normalizedMessage === 'Script error.' && source === '') {
     return true
   }
@@ -69,16 +69,16 @@ function isIgnorableScriptError(message: Event | string, source?: string): boole
 }
 
 /**
- * Vue 运行时错误处理
+ * Vue 杩愯鏃堕敊璇鐞?
  */
 export function vueErrorHandler(err: unknown, instance: any, info: string) {
   console.error('[VueError]', err, info, instance)
-  // 这里可以上报到服务端，比如：
+  // 杩欓噷鍙互涓婃姤鍒版湇鍔＄锛屾瘮濡傦細
   // reportError({ type: 'vue', err, info })
 }
 
 /**
- * 全局脚本错误处理
+ * 鍏ㄥ眬鑴氭湰閿欒澶勭悊
  */
 export function scriptErrorHandler(
   message: Event | string,
@@ -93,11 +93,11 @@ export function scriptErrorHandler(
 
   console.error('[ScriptError]', { message, source, lineno, colno, error })
   // reportError({ type: 'script', message, source, lineno, colno, error })
-  return true // 阻止默认控制台报错，可根据需求改
+  return true // 闃绘榛樿鎺у埗鍙版姤閿欙紝鍙牴鎹渶姹傛敼
 }
 
 /**
- * Promise 未捕获错误处理
+ * Promise 鏈崟鑾烽敊璇鐞?
  */
 export function registerPromiseErrorHandler() {
   window.addEventListener('unhandledrejection', (event) => {
@@ -107,7 +107,7 @@ export function registerPromiseErrorHandler() {
 }
 
 /**
- * 资源加载错误处理 (img, script, css...)
+ * 璧勬簮鍔犺浇閿欒澶勭悊 (img, script, css...)
  */
 export function registerResourceErrorHandler() {
   window.addEventListener(
@@ -128,12 +128,12 @@ export function registerResourceErrorHandler() {
         // reportError({ type: 'resource', target })
       }
     },
-    true // 捕获阶段才能监听到资源错误
+    true // 鎹曡幏闃舵鎵嶈兘鐩戝惉鍒拌祫婧愰敊璇?
   )
 }
 
 /**
- * 安装统一错误处理
+ * 瀹夎缁熶竴閿欒澶勭悊
  */
 export function setupErrorHandle(app: App) {
   app.config.errorHandler = vueErrorHandler
@@ -141,3 +141,4 @@ export function setupErrorHandle(app: App) {
   registerPromiseErrorHandler()
   registerResourceErrorHandler()
 }
+

@@ -27,7 +27,11 @@ class ApiCompatibilityController
             'name' => $this->softwareName($config),
             'login_type' => $this->configInt($config, 'logincode-type', 0),
             'register_type' => $this->configInt($config, 'regcode-type', 0),
+            'retrieve_type' => $this->configInt($config, 'retrieve-type', 0),
             'captcha_type' => $this->configInt($config, 'captcha-type', 0),
+            'merchant_login_drag_verify' => $this->configInt($config, 'merchant_login_drag_verify', 1),
+            'merchant_register_drag_verify' => $this->configInt($config, 'merchant_register_drag_verify', 1),
+            'merchant_retrieve_drag_verify' => $this->configInt($config, 'merchant_retrieve_drag_verify', 1),
         ];
 
         return $this->monitorResponse(200, '软件配置获取成功', $data, [
@@ -440,6 +444,106 @@ class ApiCompatibilityController
         ]);
     }
 
+    public function retrievePassword(Request $request): Response
+    {
+        $payload = $this->payload($request);
+        $config = SystemConfig::all();
+        $retrieveType = $this->configInt($config, 'retrieve-type', 0);
+
+        if ($retrieveType === 0) {
+            return $this->monitorResponse(201, '找回密码功能未开启');
+        }
+
+        $captchaError = $this->validateImageCaptcha($payload, $config);
+        if ($captchaError instanceof Response) {
+            return $captchaError;
+        }
+
+        $username = trim((string)($payload['username'] ?? ''));
+        $password = trim((string)($payload['password'] ?? ''));
+        $password2 = trim((string)($payload['password2'] ?? ''));
+        $email = $this->nullableInput($payload['email'] ?? null);
+        $mobile = $this->nullableInput($payload['mobile'] ?? null);
+        $telegramId = $this->nullableInput($payload['tg_chat_id'] ?? null);
+        $code = trim((string)($payload['captcha'] ?? ''));
+
+        if ($username === '') {
+            return $this->monitorResponse(201, '商户账号不能为空');
+        }
+        if ($password === '') {
+            return $this->monitorResponse(201, '新密码不能为空');
+        }
+        if (mb_strlen($password) < 6) {
+            return $this->monitorResponse(201, '新密码至少 6 位');
+        }
+        if (mb_strlen($password) > 50) {
+            return $this->monitorResponse(201, '新密码长度不能超过50位');
+        }
+        if ($password !== $password2) {
+            return $this->monitorResponse(201, '两次输入的密码不一致');
+        }
+        if ($code === '') {
+            return $this->monitorResponse(201, '验证码不能为空');
+        }
+
+        if ($email !== null && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->monitorResponse(201, '邮箱格式错误');
+        }
+        if ($mobile !== null && !preg_match('/^1\d{10}$/', $mobile)) {
+            return $this->monitorResponse(201, '手机号格式错误');
+        }
+        if ($telegramId !== null && !preg_match('/^-?[0-9]{5,32}$/', $telegramId)) {
+            return $this->monitorResponse(201, 'Telegram Chat ID格式错误');
+        }
+
+        [$channel, $target, $targetError] = $this->resolveVerificationTargetForRetrieve(
+            $retrieveType,
+            $email,
+            $mobile,
+            $telegramId
+        );
+        if ($targetError instanceof Response) {
+            return $targetError;
+        }
+
+        if (!$this->validateVerificationCode('retrieve', $channel, $target, $code)) {
+            return $this->monitorResponse(201, '验证码错误');
+        }
+
+        $user = Db::table(BusinessTable::user())
+            ->where('username', $username)
+            ->where(match ($channel) {
+                'mobile' => 'mobile',
+                'tg' => 'tg_chat_id',
+                default => 'email',
+            }, $target)
+            ->first();
+
+        if (!$user) {
+            return $this->monitorResponse(201, '商户账号与找回信息不匹配');
+        }
+
+        $merchant = (array)$user;
+        $newToken = $this->generateSecret(48);
+
+        Db::table(BusinessTable::user())
+            ->where('id', (int)($merchant['id'] ?? 0))
+            ->update([
+                'password' => LegacyPassword::hash($password),
+                'token' => $newToken,
+            ]);
+
+        $this->recordFrontLog(
+            (int)($merchant['id'] ?? 0),
+            '/Api/retrievePassword',
+            2,
+            '商户找回密码成功',
+            $request
+        );
+
+        return $this->monitorResponse(200, '密码重置成功，请使用新密码登录');
+    }
+
     private function softwareName(array $config): string
     {
         $name = trim((string)($config['software_name'] ?? ''));
@@ -631,6 +735,25 @@ class ApiCompatibilityController
         ?string $telegramId
     ): array {
         return match ($registerType) {
+            1 => $mobile !== null
+                ? ['mobile', $mobile, null]
+                : [null, null, $this->monitorResponse(201, '手机号不能为空')],
+            3 => $telegramId !== null
+                ? ['tg', $telegramId, null]
+                : [null, null, $this->monitorResponse(201, 'Telegram Chat ID不能为空')],
+            default => $email !== null
+                ? ['email', $email, null]
+                : [null, null, $this->monitorResponse(201, '邮箱不能为空')],
+        };
+    }
+
+    private function resolveVerificationTargetForRetrieve(
+        int $retrieveType,
+        ?string $email,
+        ?string $mobile,
+        ?string $telegramId
+    ): array {
+        return match ($retrieveType) {
             1 => $mobile !== null
                 ? ['mobile', $mobile, null]
                 : [null, null, $this->monitorResponse(201, '手机号不能为空')],
@@ -908,7 +1031,7 @@ class ApiCompatibilityController
         return [
             'strategy' => 'legacy_findorder_kept_online_read_only',
             'status' => 'active',
-            'alias_entries' => ['/Api/findorder', '/api/findorder'],
+            'alias_entries' => ['/api/findorder'],
             'allowed_methods' => ['GET', 'POST'],
             'write_policy' => 'read_only_lookup_only',
             'blocked_actions' => ['order_update', 'callback_replay', 'status_reset'],
@@ -927,6 +1050,17 @@ class ApiCompatibilityController
             'redirect' => '',
         ], $extra);
 
+        $payload = $this->stripCompatibilityMeta($payload);
+
         return json($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    private function stripCompatibilityMeta(array $payload): array
+    {
+        foreach (['route_policy', 'migration_guard', 'legacy_url', 'legacy_routes', 'legacy_page', 'legacy_endpoint', 'legacy_action_label'] as $key) {
+            unset($payload[$key]);
+        }
+
+        return $payload;
     }
 }

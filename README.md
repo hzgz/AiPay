@@ -4,24 +4,21 @@ AiPay 是一款可商用的码支付系统，同时兼容易支付协议。
 
 ## 系统定位
 
-- `8132` 承载统一前端壳：游客首页、商户端、管理员端
-- `8787` 承载 Webman 后端：API、支付、回调、进程任务
-- 游客首页走 `/`
-- 商户端走 `/#/merchant/...`
-- 管理员端走 `/#/auth/...`
-- 管理员入口只保留直达地址，不在前台导航公开暴露
+- `8132`：统一前端壳，承载游客首页、商户端、管理员端
+- `8787`：Webman 后端，仅负责 API、支付、回调、订单落账、轮询与进程任务
+- 游客首页访问 `/`
+- 商户端访问 `/#/merchant/...`
+- 管理员端访问 `/#/auth/...`
+- 管理员入口只保留直达地址，不在游客前台公开暴露
 
-## 系统介绍
+## 系统特点
 
-AiPay 是一款可商用的码支付系统，同时兼容易支付协议：
-
-- 支持正式商用部署，适合独立运营与长期维护
-- 兼容易支付协议，便于商户接入、接口对接与系统迁移
-- 前后端分离，职责清晰
-- 支付能力插件化，每个插件一个目录
-- 管理员、商户、游客前台共用统一前端壳
-- Webman 后端只负责 API、生成支付、支付回调、订单落账、轮询与进程任务
-- 面向纯净发布包、全新安装、二次部署与运维交付
+- 前后端分离，职责清晰，部署结构更适合正式商用
+- 支付能力全部插件化，每个插件一个独立目录，便于启用、停用、维护与后续扩展
+- 游客前台、商户端、管理员端共用一个前端壳，统一品牌与交互风格
+- Webman 后端仅承担接口、下单、回调、落账、轮询、进程管理等服务端职责
+- 兼容易支付常见接入方式，便于第三方商户系统对接
+- 面向纯净安装包、全新安装与正式环境交付，不再以旧 TP 项目兼容为核心
 
 ## 系统架构
 
@@ -43,11 +40,11 @@ Browser
              '-- 8787 / Webman
                    |-- app/controller
                    |-- plugins/payments/*
-                   |-- order settle / callback / polling / process
+                   |-- services / callbacks / settle / polling / processes
                    '-- database / install / deploy
 ```
 
-## 系统目录说明
+## 目录说明
 
 ```text
 aipay/
@@ -55,34 +52,26 @@ aipay/
     art-design-admin/    前端工程，负责游客首页、商户端、管理员端
     webman-api/          Webman 后端，负责 API、支付、回调、插件、进程
     database/            纯净安装数据库结构与种子
-  tools/                 纯净化、打包、校验等工具
-  docs/                  根仓库交付文档
+  tools/                 清理、打包、校验等工具
+  docs/                  仓库级安装与交付文档
 ```
 
-关键子目录：
+关键目录：
 
 - `modernization/art-design-admin/src/views/public`
   - 游客首页、公告中心、开发文档、支付测试等公开页面
 - `modernization/art-design-admin/src/views/merchant`
   - 商户端页面
 - `modernization/art-design-admin/src/views/auth`
-  - 管理员登录与登录相关流程
+  - 管理员登录与认证流程
 - `modernization/art-design-admin/src/views/system`
-  - 管理员控制台、配置、插件管理
+  - 管理后台、配置总览、菜单、媒体、快捷入口等
 - `modernization/webman-api/plugins/payments`
   - 支付插件目录，每个插件独立管理
 - `modernization/webman-api/deploy`
-  - Linux / Windows / aaPanel 安装、部署、验收脚本
+  - Linux、Windows、aaPanel 安装与验收脚本
 - `modernization/database/install`
-  - 纯净安装库结构、后台权限种子
-
-## 系统优势
-
-- 支付插件化，便于启用、停用、卸载和后续扩展
-- 前台、商户端、管理员端共用一个前端壳，部署简单
-- Webman 后端更轻，适合 1C1G 到更高配置渐进式扩展
-- 内置 Linux 一键安装、aaPanel 安装、Windows 启动与部署验收脚本
-- 支持纯净发布包，不混入本地缓存、日志、测试数据与旧产物
+  - 纯净安装 SQL 与后台权限种子
 
 ## 本地开发
 
@@ -109,7 +98,7 @@ php windows.php
 - 管理员端：`http://127.0.0.1:8132/#/auth/login`
 - Webman 后端：`http://127.0.0.1:8787`
 
-## 文档索引
+## 部署文档
 
 - [完整安装教程](./docs/INSTALL.md)
 - [Linux 一键安装](./modernization/webman-api/docs/one-click-install.md)

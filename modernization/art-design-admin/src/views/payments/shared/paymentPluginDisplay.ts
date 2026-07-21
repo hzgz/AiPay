@@ -91,15 +91,126 @@ export const resourceKindLabel = (kind: string | null | undefined) => {
 
 const cleanupPluginVisibleWords = (value: string) =>
   value
-    .replace(/认证示例/g, '认证测试')
-    .replace(/AiPay官方示例/g, 'AiPay官方测试')
-    .replace(/注册残留示例/g, '注册残留检查')
-    .replace(/演示/g, '测试')
-    .replace(/示例/g, '测试')
-    .replace(/旧版/g, '原有')
-    .replace(/联调/g, '测试')
+    .replace(/认证示例/g, '认证记录')
+    .replace(/AiPay 官方示例/g, 'AiPay 官方')
+    .replace(/注册残留示例/g, '孤立项检查')
+    .replace(/演示/g, '展示')
+    .replace(/示例/g, '记录')
+    .replace(/旧版/g, '')
+    .replace(/联调/g, '对接')
     .replace(/\s{2,}/g, ' ')
     .trim()
+
+const COMMON_PLUGIN_COPY_LABELS: Record<string, string> = {
+  'Forbidden Probe': '禁测探针',
+  'Forbidden Probe Default': '禁测探针默认通道',
+  'Auth Smoke': '认证校验',
+  'Legacy Epay Compatibility': '已移除易支付插件',
+  'AiPay Official': 'AiPay 官方',
+  'AiPay official': 'AiPay 官方',
+  'AiPay modernization': 'AiPay 官方',
+  'AiPay modernization test': 'AiPay 官方',
+  'AiPay 现代化改造': 'AiPay 官方',
+  'AiPay 联调': 'AiPay 官方',
+  'AiPay 改造项目': 'AiPay 官方',
+  universal_epay: '通用易支付V1插件',
+  forbidden_probe_default: '禁测探针默认通道',
+  registry_residue_probe: '孤立项检查',
+  registry_residue_smoke: '孤立项回滚快照',
+  executed: '已执行',
+  install: '安装',
+  Installed: '已安装',
+  Repaired: '已修复',
+  Upgraded: '已升级',
+  Enabled: '已启用',
+  Disabled: '已停用',
+  Uninstalled: '已卸载',
+  'Safe Cleanup': '安全清理',
+  'Purge Cleanup': '彻底清理',
+  'Purge Requested': '申请彻底清理',
+  'Snapshot Restored': '回滚快照',
+  'Snapshot Captured': '创建快照',
+  'Snapshot Deleted': '删除快照',
+  'Config Updated': '更新配置',
+  'Registry Residue Cleanup': '孤立项清理',
+  'State Reconciled': '状态校准',
+  'Runtime Defaults': '运行默认项',
+  not_implemented: '待实现',
+  unsupported: '未接入',
+  create_order: '创建订单',
+  query: '订单查询',
+  refund: '退款',
+  notify: '异步通知',
+  alipay: '支付宝',
+  versioned_sql: '数据库脚本',
+  'createOrder()': '创建订单方法',
+  'query()': '订单查询方法',
+  'refund()': '退款方法',
+  'handleNotify()': '异步通知方法',
+  'Merchant ID': '商户号',
+  'Merchant Key': '商户密钥',
+  'Notify Secret': '回调密钥',
+  merchant_id: '商户号字段',
+  merchant_key: '商户密钥字段',
+  notify_secret: '回调密钥字段',
+  gateway_url: '接口地址字段',
+  text: '单行文本',
+  password: '密码框',
+  'Managed universal epay account plugin for Webman.': '用于统一管理易支付上游账号的托管插件。',
+  'Managed universal epay account plugin for Webman': '用于统一管理易支付上游账号的托管插件。',
+  'Compatibility wrapper for the payment flow during platform migration.': '用于接入易支付协议的插件。',
+  'Plugin-managed channel seeded from plugin.json.': '根据插件清单自动初始化的插件托管通道。',
+  'Enabled plugin routing after runtime, config, and migration checks passed.':
+    '已通过运行目录、配置和版本检查，插件路由已启用。',
+  'Disabled plugin routing and kept install assets intact.': '已停用插件路由，并保留安装资源。',
+  'Marked plugin uninstalled and captured a purge plan for operator review.':
+    '已将插件标记为卸载，并生成彻底清理方案供人工复核。',
+  'Plugin is already on manifest version [0.1.0]. The release policy below documents what the next upgrade window should follow.':
+    '插件已处于清单版本 [0.1.0]，下方发布策略用于说明下一次升级窗口应遵循的要求。',
+  'Generated scaffolds default to a cautious upgrade window so new SQL releases can be audited before traffic resumes.':
+    '默认采用谨慎升级窗口，便于在恢复流量前先核对新的数据库脚本版本。',
+  'Only plugin-owned runtime files and pay_plugin_forbidden_probe_* tables should be mutated by future releases.':
+    '后续版本只应变更插件专属运行文件和插件专属数据表。',
+  'Review plugin.json, configSchema(), and cleanup policy before the first production install.':
+    '首次正式安装前，请先检查插件清单、配置结构与清理策略。',
+  'Capture a Recovery Vault snapshot before introducing destructive schema changes in a later release.':
+    '后续如需引入破坏性结构变更，请先创建回滚快照。',
+  'Validate callback signature verification, settlement updates, and replay protection for notify.':
+    '请校验异步通知的签名校验、结算更新与重放保护逻辑。',
+  'After an upgrade, run the capability-specific smoke checks above and re-enable the plugin only after notify and refund checks pass.':
+    '升级后请先执行上方能力校验，待异步通知与退款校验通过后再重新启用插件。',
+  'Initial scaffold release with isolated config/log tables, lifecycle metadata, and cleanup-hook support.':
+    '初始版本已包含独立配置表、日志表与清理支持。',
+  'Payment request logic is still a stub and must be implemented inside src/Plugin.php before activation.':
+    '支付请求逻辑目前仍为占位实现，启用前必须先补齐核心处理逻辑。',
+  'Future SQL files should be appended as new releases instead of editing this initial release in place.':
+    '后续数据库脚本应以新版本追加，不要直接修改初始版本文件。',
+  'Rollback is expected to restore the plugin package, runtime workspace, and plugin-owned tables from backup or Recovery Vault.':
+    '回滚时应通过备份或回滚快照恢复插件包、运行目录与插件专属数据表。',
+  'Do not attempt a destructive downgrade without a verified restore point.':
+    '没有经过验证的回滚点时，不要尝试破坏性降级。',
+  'Creates plugin-owned config and log tables under the pay_plugin_forbidden_probe_* namespace.':
+    '会创建插件专属配置表和日志表。',
+  'Generated scaffolds start with isolated tables so install, purge, and Recovery Vault flows can stay residue-aware from day 1.':
+    '默认使用独立数据表，便于安装、彻底清理与恢复时核对残留。',
+  'Safe cleanup removes generated runtime artifacts and plugin-owned config rows only after uninstall audit.':
+    '安全清理会在卸载确认后移除生成的运行产物和插件专属配置记录。',
+  'Purge executes all audited safe-cleanup targets, then removes the plugin package and lifecycle audit artifacts.':
+    '彻底清理会先执行已确认的安全清理目标，再移除插件包和运行记录文件。',
+  'Purge removes the package directory and plugin-owned log table after explicit confirmation.':
+    '彻底清理会在明确确认后移除插件目录和插件专属日志表。',
+  'Managed channel row was removed during purge cleanup.': '托管通道记录已在彻底清理中移除。',
+  'Managed channel row is currently missing from admin_channel.': '托管通道主表中缺少该记录。',
+  'Managed channel row does not use create_type = 2.': '该托管通道记录的创建类型标记不正确。',
+  'channel recycle support requires the admin_channel.delete_time migration':
+    '当前环境尚未启用通道回收能力。',
+  'The plugin is marked installed, but both the runtime directory and config table need to be rebuilt.':
+    '插件已标记为已安装，但运行目录和配置表都需要重建。',
+  'The plugin runtime directory is missing and should be rebuilt.': '插件运行目录缺失，需要重新构建。',
+  'The plugin config table is missing and should be rebuilt.': '插件配置表缺失，需要重新构建。',
+  'The plugin was auto-reconciled after its install assets disappeared. Run repair to rebuild them.':
+    '插件安装资源已丢失，系统已自动校准，请执行修复以重建相关资源。'
+}
 
 export const normalizePluginCopy = (value: string | null | undefined) => {
   const text = String(value || '').trim()
@@ -107,236 +218,64 @@ export const normalizePluginCopy = (value: string | null | undefined) => {
     return value || '--'
   }
 
-  const exactLabels: Record<string, string> = {
-    'Forbidden Probe': '禁测探针',
-    'Forbidden Probe Default': '禁测探针默认通道',
-    'Auth Smoke': '认证测试',
-    'Legacy Epay Compatibility': '已移除旧易支付插件',
-    'AiPay Official': 'AiPay 官方',
-    'AiPay official': 'AiPay 官方',
-    'AiPay modernization': 'AiPay 官方',
-    'AiPay modernization smoke': 'AiPay官方测试',
-    'AiPay 现代化改造': 'AiPay 官方',
-    'AiPay 联调': 'AiPay官方测试',
-    'AiPay 改造项目': 'AiPay 官方',
-    '通用易支付插件': '通用易支付V1插件',
-    universal_epay: '通用易支付V1插件',
-    'Forbidden probe': '禁测探针插件',
-    forbidden_probe_default: '禁测探针默认通道',
-    registry_residue_probe: '注册残留检查',
-    registry_residue_smoke: '注册残留恢复快照',
-    executed: '已执行',
-    install: '安装',
-    Installed: '已安装',
-    Repaired: '已修复',
-    Upgraded: '已升级',
-    Enabled: '已启用',
-    Disabled: '已停用',
-    Uninstalled: '已卸载',
-    'Safe Cleanup': '安全清理',
-    'Purge Cleanup': '彻底清理',
-    'Purge Requested': '申请彻底清理',
-    'Snapshot Restored': '恢复快照',
-    'Snapshot Captured': '创建快照',
-    'Snapshot Deleted': '删除快照',
-    'Config Updated': '更新配置',
-    'Registry Residue Cleanup': '注册残留清理',
-    'State Reconciled': '状态对齐',
-    'Runtime Defaults': '运行时默认行为',
-    not_implemented: '待实现',
-    unsupported: '未接入',
-    create_order: '创建订单',
-    query: '订单查询',
-    refund: '退款',
-    notify: '异步通知',
-    alipay: '支付宝',
-    versioned_sql: '数据库脚本',
-    'createOrder()': '创建订单方法',
-    'query()': '订单查询方法',
-    'refund()': '退款方法',
-    'handleNotify()': '异步通知方法',
-    'Merchant ID': '商户号',
-    'Merchant Key': '商户密钥',
-    'Notify Secret': '回调密钥',
-    merchant_id: '商户号字段',
-    merchant_key: '商户密钥字段',
-    notify_secret: '回调密钥字段',
-    gateway_url: '接口地址字段',
-    text: '单行文本',
-    password: '密码框',
-    'Managed universal epay account plugin for Webman.': '用于统一管理易支付上游账号的托管插件。',
-    'Managed universal epay account plugin for Webman': '用于统一管理易支付上游账号的托管插件。',
-    ['Compatibility wrapper for the legacy payment flow during the legacy framework to Webman migration.']:
-      '用于接入易支付协议的插件。',
-    'Plugin-managed channel seeded from plugin.json.': '根据插件清单自动初始化的插件托管通道。',
-    'Enabled plugin routing after runtime, config, and migration checks passed.':
-      '已通过运行目录、配置和版本检查，并启用插件路由。',
-    'Disabled plugin routing and kept install assets intact.': '已停用插件路由，并保留安装资源。',
-    'Marked plugin uninstalled and captured a purge plan for operator review.':
-      '已将插件标记为卸载，并生成彻底清理方案供人工复核。',
-    'Plugin is already on manifest version [0.1.0]. The release policy below documents what the next upgrade window should follow.':
-      '插件已处于清单版本 [0.1.0]，下方发布策略用于说明下一次升级窗口应遵循的要求。',
-    'Generated scaffolds default to a cautious upgrade window so new SQL releases can be audited before traffic resumes.':
-      '默认采用谨慎升级窗口，便于在恢复流量前先核对新的数据库脚本版本。',
-    'Only plugin-owned runtime files and pay_plugin_forbidden_probe_* tables should be mutated by future releases.':
-      '后续版本只应变更插件专属运行文件和插件专属数据表。',
-    'Review plugin.json, configSchema(), and cleanup policy before the first production install.':
-      '首次正式安装前，请先检查插件清单、配置结构与清理策略。',
-    'Capture a Recovery Vault snapshot before introducing destructive schema changes in a later release.':
-      '后续如需引入破坏性结构变更，请先创建恢复快照。',
-    'Validate callback signature verification, settlement updates, and replay protection for notify.':
-      '请验证异步通知的签名校验、结算更新与重放保护逻辑。',
-    'After an upgrade, run the capability-specific smoke checks above and re-enable the plugin only after notify and refund checks pass.':
-      '升级后请先执行上述能力验证检查，待异步通知与退款校验通过后再重新启用插件。',
-    'Initial scaffold release with isolated config/log tables, lifecycle metadata, and cleanup-hook support.':
-      '初始版本已包含独立配置表、日志表与清理支持。',
-    'Payment request logic is still a stub and must be implemented inside src/Plugin.php before activation.':
-      '支付请求逻辑当前仍是占位实现，启用前必须先补齐核心处理逻辑。',
-    'Future SQL files should be appended as new releases instead of editing this initial release in place.':
-      '后续数据库脚本应以新版本追加，不要直接改写初始版本文件。',
-    'Rollback is expected to restore the plugin package, runtime workspace, and plugin-owned tables from backup or Recovery Vault.':
-      '回滚时应通过备份或恢复快照恢复插件包、运行目录与插件专属数据表。',
-    'Do not attempt a destructive downgrade without a verified restore point.':
-      '没有经过验证的恢复点时，不要尝试破坏性降级。',
-    'Creates plugin-owned config and log tables under the pay_plugin_forbidden_probe_* namespace.':
-      '会创建插件专属配置表和日志表。',
-    'Generated scaffolds start with isolated tables so install, purge, and Recovery Vault flows can stay residue-aware from day 1.':
-      '默认使用独立数据表，便于安装、彻底清理与恢复时核对残留。',
-    'Safe cleanup removes generated runtime artifacts and plugin-owned config rows only after uninstall audit.':
-      '安全清理会在卸载确认后移除生成的运行产物和插件专属配置记录。',
-    'Purge executes all audited safe-cleanup targets, then removes the plugin package and lifecycle audit artifacts.':
-      '彻底清理会先执行已确认的安全清理目标，再移除插件包和运行记录文件。',
-    'Purge removes the package directory and plugin-owned log table after explicit confirmation.':
-      '彻底清理会在明确确认后移除插件目录和插件专属日志表。',
-    'Managed channel row was removed during purge cleanup.': '托管通道记录已在彻底清理中移除。',
-    'Managed channel row is currently missing from admin_channel.': '托管通道主表中缺少该记录。',
-    'Managed channel row does not use create_type = 2.': '该托管通道记录的创建类型标记不正确。',
-    'channel recycle support requires the admin_channel.delete_time migration':
-      '当前环境尚未启用通道回收站能力。',
-    'The plugin is marked installed, but both the runtime directory and config table need to be rebuilt.':
-      '插件虽标记为已安装，但运行目录和配置表都需要重建。',
-    'The plugin runtime directory is missing and should be rebuilt.':
-      '插件运行目录缺失，需要重新构建。',
-    'The plugin config table is missing and should be rebuilt.': '插件配置表缺失，需要重新构建。',
-    'The plugin was auto-reconciled after its install assets disappeared. Run repair to rebuild them.':
-      '插件安装资源消失后已被自动校准，请执行修复以重建相关资源。'
-  }
-
-  if (exactLabels[text]) {
-    return cleanupPluginVisibleWords(exactLabels[text])
+  if (COMMON_PLUGIN_COPY_LABELS[text]) {
+    return cleanupPluginVisibleWords(COMMON_PLUGIN_COPY_LABELS[text])
   }
 
   let normalized = text
 
-  normalized = normalized.replace(/^managed_channel_smoke$/g, '托管通道恢复快照')
-  normalized = normalized.replace(/^smoke-restore-(\d{8})$/g, '恢复快照 $1')
-  normalized = normalized.replace(/^global-vault-smoke-(\d{8})$/g, '恢复中心快照 $1')
-  normalized = normalized.replace(/^(\d+)_create_config_table\.sql$/g, '配置表初始化脚本 $1')
-  normalized = normalized.replace(/^(\d+)_create_plugin_log_table\.sql$/g, '日志表初始化脚本 $1')
-  normalized = normalized.replace(
-    /Plugin is already on manifest version \[([^\]]+)\]\. The release policy below documents what the next upgrade window should follow\./g,
-    '插件已处于清单版本 [$1]，下方发布策略用于说明下一次升级窗口应遵循的要求。'
-  )
-  normalized = normalized.replace(
-    /Installed plugin version \[([^\]]+)\] is behind manifest version \[([^\]]+)\]\. Run upgrade to apply the latest plugin assets\./g,
-    '当前已安装版本 [$1] 落后于清单版本 [$2]，请执行升级以同步最新插件资源。'
-  )
-  normalized = normalized.replace(
-    /Installed plugin version \[([^\]]+)\] is behind manifest version \[([^\]]+)\]\. Run upgrade to apply (\d+) pending migration file\(s\)(?: across release\(s\) \[([^\]]+)\])?\./g,
-    (_match, installedVersion, manifestVersion, pendingCount, releaseVersions) =>
-      releaseVersions
-        ? `当前已安装版本 [${installedVersion}] 落后于清单版本 [${manifestVersion}]，请执行升级以应用 ${pendingCount} 个待执行脚本，涉及版本 [${releaseVersions}]。`
-        : `当前已安装版本 [${installedVersion}] 落后于清单版本 [${manifestVersion}]，请执行升级以应用 ${pendingCount} 个待执行脚本。`
-  )
-  normalized = normalized.replace(
-    /Cleaned orphan residue for \[([^\]]+)\], removed (\d+) file targets, (\d+) tables, and (\d+) managed channels, retained (\d+) recovery snapshot\(s\)\./g,
-    (_match, code, fileCount, tableCount, channelCount, snapshotCount) =>
-      `已清理 [${normalizePluginCopy(code)}] 的孤立残留，共移除 ${fileCount} 个文件目标、${tableCount} 张数据表、${channelCount} 条托管通道，并保留 ${snapshotCount} 个恢复快照。`
-  )
-  normalized = normalized.replace(
-    /Completed safe cleanup: removed (\d+) file target\(s\), (\d+) table\(s\), and (\d+) row\(s\) after the plugin cleanup hook reported (\d+) step\(s\)\./g,
-    '安全清理已完成：移除 $1 个文件目标、$2 张数据表、$3 行数据，清理流程共执行 $4 个步骤。'
-  )
-  normalized = normalized.replace(
-    /Installed plugin version ([0-9.]+) and left it disabled for validation\./g,
-    '已安装插件版本 $1，并保持停用以便后续验证。'
-  )
-  normalized = normalized.replace(
-    /Marked plugin uninstalled and deferred cleanup to the safe cleanup flow\./g,
-    '已将插件标记为卸载，并把清理动作延后到安全清理流程中。'
-  )
-  normalized = normalized.replace(
-    /Restored plugin assets from recovery snapshot ([a-f0-9_]+) \[([^\]]+)\]\./g,
-    (_match, _snapshotId, label) => `已从恢复快照 [${normalizePluginCopy(label)}] 恢复插件资源。`
-  )
-  normalized = normalized.replace(
-    /Captured a recovery snapshot \[([^\]]+)\]\./g,
-    (_match, label) => `已创建恢复快照 [${normalizePluginCopy(label)}]。`
-  )
-  normalized = normalized.replace(
-    /Channel is still referenced by (\d+) payment account\(s\)\./g,
-    '该通道仍被 $1 个支付账号引用。'
-  )
-  normalized = normalized.replace(
-    /Channel is still referenced by (\d+) pool item\(s\)\./g,
-    '该通道仍被 $1 个通道池项目引用。'
-  )
-  normalized = normalized.replace(
-    /Channel still has (\d+) historical order\(s\) linked through payment accounts\./g,
-    '该通道仍通过支付账号关联 $1 条订单记录。'
-  )
-  normalized = normalized.replace(
-    /Managed channel sync drift detected: (\d+) missing and (\d+) drifted channel row\(s\)\. Run repair to resync plugin-owned channel metadata\./g,
-    '检测到托管通道同步漂移：缺失 $1 条、漂移 $2 条。请执行修复以重新同步插件通道元数据。'
-  )
-  normalized = normalized.replace(
-    /The current manifest version still has (\d+) unapplied migration file\(s\)\. Run repair to reconcile plugin-owned database assets\./g,
-    '当前清单版本仍有 $1 个未执行脚本，请执行修复以校准插件所属数据库资源。'
-  )
-  normalized = normalized.replace(
-    /Installed plugin version \[([^\]]+)\] is behind manifest version \[([^\]]+)\]\. Run upgrade to apply the latest plugin assets\./g,
-    '已安装插件版本 [$1] 落后于清单版本 [$2]，请执行升级以应用最新插件资源。'
-  )
-  normalized = normalized.replace(
-    /Installed plugin version \[([^\]]+)\] is behind manifest version \[([^\]]+)\]\. Run upgrade to apply (\d+) pending migration file\(s\)( across release\(s\) \[([^\]]+)\])?\./g,
-    (_match, currentVersion, manifestVersion, fileCount, _segment, releases) => {
-      const releaseSuffix = releases ? `，涉及版本 [${releases}]` : ''
-      return `已安装插件版本 [${currentVersion}] 落后于清单版本 [${manifestVersion}]，请执行升级以应用 ${fileCount} 个待执行脚本${releaseSuffix}。`
-    }
-  )
-  normalized = normalized.replace(/认证联调/g, '认证测试')
-  normalized = normalized.replace(/平台改造联调/g, 'AiPay官方测试')
-  normalized = normalized.replace(/禁测探针联调插件/g, '禁测探针插件')
-  normalized = normalized.replace(/易支付兼容插件/g, '易支付协议插件')
-  normalized = normalized.replace(/易支付兼容/g, '易支付协议')
-  normalized = normalized.replace(
-    /用于旧版系统迁移期间承接历史支付流程的兼容插件。/g,
-    '用于接入易支付协议的插件。'
-  )
-  normalized = normalized.replace(
-    /已通过运行目录、配置与迁移检查，并启用插件路由。/g,
-    '已通过运行目录、配置和版本检查，并启用插件路由。'
-  )
-  normalized = normalized.replace(
-    /生成的脚手架默认采用谨慎升级窗口，以便在恢复流量前先审计新的数据库脚本版本。/g,
-    '默认采用谨慎升级窗口，便于在恢复流量前先核对新的数据库脚本版本。'
-  )
-  normalized = normalized.replace(
-    /安全清理会在卸载审计后移除生成的运行产物和插件专属配置记录。/g,
-    '安全清理会在卸载确认后移除生成的运行产物和插件专属配置记录。'
-  )
-  normalized = normalized.replace(
-    /彻底清理会先执行已审计的安全清理目标，再移除插件包和生命周期审计文件。/g,
-    '彻底清理会先执行已确认的安全清理目标，再移除插件包和运行记录文件。'
-  )
-  normalized = normalized.replace(
-    /通道回收依赖主通道表删除时间字段迁移。/g,
-    '当前环境尚未启用通道回收站能力。'
-  )
-  normalized = normalized.replace(/托管通道联调快照/g, '托管通道恢复快照')
-  normalized = normalized.replace(/联调恢复快照/g, '恢复快照')
-  normalized = normalized.replace(/注册残留联调快照/g, '注册残留恢复快照')
-  normalized = normalized.replace(/注册残留联调/g, '注册残留检查')
+  type PluginCopyReplacement = string | ((...args: any[]) => string)
+
+  const replacements: Array<[RegExp, PluginCopyReplacement]> = [
+    [/^managed_channel_smoke$/g, '托管通道回滚快照'],
+    [/^smoke-restore-(\d{8})$/g, '回滚快照 $1'],
+    [/^global-vault-smoke-(\d{8})$/g, '回滚中心快照 $1'],
+    [/^(\d+)_create_config_table\.sql$/g, '配置表初始化脚本 $1'],
+    [/^(\d+)_create_plugin_log_table\.sql$/g, '日志表初始化脚本 $1'],
+    [
+      /Plugin is already on manifest version \[([^\]]+)\]\. The release policy below documents what the next upgrade window should follow\./g,
+      '插件已处于清单版本 [$1]，下方发布策略用于说明下一次升级窗口应遵循的要求。'
+    ],
+    [
+      /Installed plugin version \[([^\]]+)\] is behind manifest version \[([^\]]+)\]\. Run upgrade to apply the latest plugin assets\./g,
+      '当前已安装版本 [$1] 落后于清单版本 [$2]，请执行升级以同步最新插件资源。'
+    ],
+    [
+      /Installed plugin version \[([^\]]+)\] is behind manifest version \[([^\]]+)\]\. Run upgrade to apply (\d+) pending migration file\(s\)(?: across release\(s\) \[([^\]]+)\])?\./g,
+      (_match, installedVersion, manifestVersion, pendingCount, releaseVersions) =>
+        releaseVersions
+          ? `当前已安装版本 [${installedVersion}] 落后于清单版本 [${manifestVersion}]，请执行升级以应用 ${pendingCount} 个待执行脚本，涉及版本 [${releaseVersions}]。`
+          : `当前已安装版本 [${installedVersion}] 落后于清单版本 [${manifestVersion}]，请执行升级以应用 ${pendingCount} 个待执行脚本。`
+    ],
+    [
+      /Cleaned orphan residue for \[([^\]]+)\], removed (\d+) file targets, (\d+) tables, and (\d+) managed channels, retained (\d+) recovery snapshot\(s\)\./g,
+      (_match, code, fileCount, tableCount, channelCount, snapshotCount) =>
+        `已清理 [${normalizePluginCopy(code)}] 的孤立项，共移除 ${fileCount} 个文件目标、${tableCount} 张数据表、${channelCount} 条托管通道，并保留 ${snapshotCount} 个回滚快照。`
+    ],
+    [
+      /Completed safe cleanup: removed (\d+) file target\(s\), (\d+) table\(s\), and (\d+) row\(s\) after the plugin cleanup hook reported (\d+) step\(s\)\./g,
+      '安全清理已完成：移除 $1 个文件目标、$2 张数据表、$3 行数据，清理流程共执行 $4 个步骤。'
+    ],
+    [/Installed plugin version ([0-9.]+) and left it disabled for validation\./g, '已安装插件版本 $1，并保持停用以便后续验证。'],
+    [/Marked plugin uninstalled and deferred cleanup to the safe cleanup flow\./g, '已将插件标记为卸载，并把清理动作延后到安全清理流程中。'],
+    [/Restored plugin assets from recovery snapshot ([a-f0-9_]+) \[([^\]]+)\]\./g, (_match, _snapshotId, label) => `已从回滚快照 [${normalizePluginCopy(label)}] 重新载入插件资源。`],
+    [/Captured a recovery snapshot \[([^\]]+)\]\./g, (_match, label) => `已创建回滚快照 [${normalizePluginCopy(label)}]。`],
+    [/Channel is still referenced by (\d+) payment account\(s\)\./g, '该通道仍被 $1 个收款账号引用。'],
+    [/Channel is still referenced by (\d+) pool item\(s\)\./g, '该通道仍被 $1 个通道池项目引用。'],
+    [/Channel still has (\d+) historical order\(s\) linked through payment accounts\./g, '该通道仍通过收款账号关联 $1 条历史订单记录。'],
+    [/Managed channel sync drift detected: (\d+) missing and (\d+) drifted channel row\(s\)\. Run repair to resync plugin-owned channel metadata\./g, '检测到托管通道同步偏移：缺少 $1 条、偏移 $2 条，请执行修复以重新同步插件通道元数据。'],
+    [/The current manifest version still has (\d+) unapplied migration file\(s\)\. Run repair to reconcile plugin-owned database assets\./g, '当前清单版本仍有 $1 个未执行脚本，请执行修复以校准插件数据库资源。'],
+    [/The plugin runtime directory is missing and should be rebuilt\./g, '插件运行目录缺失，需要重新构建。'],
+    [/The plugin config table is missing and should be rebuilt\./g, '插件配置表缺失，需要重新构建。'],
+    [/Created plugin-owned config and log tables under the pay_plugin_forbidden_probe_\* namespace\./g, '已创建插件专属配置表和日志表。'],
+    [/Safe cleanup removes generated runtime artifacts and plugin-owned config rows only after uninstall audit\./g, '安全清理会在卸载确认后移除生成的运行产物和插件专属配置记录。'],
+    [/Purge executes all audited safe-cleanup targets, then removes the plugin package and lifecycle audit artifacts\./g, '彻底清理会先执行已确认的安全清理目标，再移除插件包和运行记录文件。'],
+    [/Purge removes the package directory and plugin-owned log table after explicit confirmation\./g, '彻底清理会在明确确认后移除插件目录和插件专属日志表。']
+  ]
+
+  for (const [pattern, replacement] of replacements) {
+    normalized = normalized.replace(pattern, replacement as any)
+  }
 
   return cleanupPluginVisibleWords(normalized)
 }
@@ -364,9 +303,9 @@ export const formatBytes = (value: number | null) => {
     return `${value} 字节`
   }
   if (value < 1024 * 1024) {
-    return `${(value / 1024).toFixed(1)} 千字节`
+    return `${(value / 1024).toFixed(1)} KB`
   }
-  return `${(value / (1024 * 1024)).toFixed(1)} 兆字节`
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export const snapshotDisplayTitle = (
@@ -382,9 +321,9 @@ export const snapshotDisplayTitle = (
     return label
   }
   if (createdAt) {
-    return `恢复快照 ${createdAt}`
+    return `回滚快照 ${createdAt}`
   }
-  return snapshotId ? `恢复快照 ${snapshotId}` : '恢复快照'
+  return snapshotId ? `回滚快照 ${snapshotId}` : '回滚快照'
 }
 
 export const resourceTargetLabel = (target: string | null | undefined) => {
@@ -526,7 +465,7 @@ export const auditTagType = (
 
 export const auditLabel = (health: PaymentPluginStateAudit['health']) => {
   if (health === 'healthy') return '正常'
-  if (health === 'warning') return '待关注'
+  if (health === 'warning') return '注意'
   return '需处理'
 }
 
@@ -659,7 +598,7 @@ export const residueCleanupActionLabel = (item: PaymentPluginRegistryResidueItem
     return '清理受阻'
   }
 
-  return item.snapshot_guard.has_snapshot ? '清理残留' : '无快照清理'
+  return item.snapshot_guard.has_snapshot ? '清理孤立项' : '无快照清理'
 }
 
 export const residueManagedChannelBlockSummary = (item: PaymentPluginRegistryResidueItem) => {
@@ -689,7 +628,7 @@ export const capabilityDisplayLabel = (value: string | null | undefined) => {
     query: '订单查询',
     refund: '退款',
     notify: '异步通知',
-    admin_account: '后台账户',
+    admin_account: '后台账号',
     software_collection: '软件版收款',
     merchant_qrcode: '商户二维码',
     gateway_certificate: '证书密钥',
@@ -715,11 +654,11 @@ export const historyActionLabel = (
     disable: '停用',
     upgrade: '升级',
     uninstall: '卸载',
-    uninstall_purge_requested: '彻底清理申请',
-    snapshot_restored: '恢复快照',
+    uninstall_purge_requested: '申请彻底清理',
+    snapshot_restored: '回滚快照',
     snapshot_deleted: '删除快照',
-    state_reconciled: '状态对齐',
-    registry_residue_cleanup: '注册残留清理',
+    state_reconciled: '状态校准',
+    registry_residue_cleanup: '孤立项清理',
     snapshot_created: '创建快照',
     safe_cleanup: '安全清理',
     purge_cleanup: '彻底清理',
@@ -802,7 +741,7 @@ export const retainScopeLabel = (scope: string | null | undefined) => {
     audit_logs: '后台日志',
     admin_logs: '后台日志',
     managed_channels: '托管通道',
-    pool_items: '池项目',
+    pool_items: '通道池项目',
     merchants: '商户',
     accounts: '账号',
     tickets: '工单',
@@ -853,7 +792,7 @@ export const downtimeLabel = (downtime: PaymentPluginUpgradePreview['downtime'])
 
 export const rollbackPolicySummary = (policy: PaymentPluginRollbackPolicy) => {
   if (policy.automatic) {
-    return '当前插件支持自动回滚执行能力。'
+    return '当前插件支持自动回滚执行。'
   }
 
   if (policy.supported) {
@@ -882,7 +821,6 @@ export const placeholderForField = (field: PaymentPluginConfigField) => {
 
   return ''
 }
-
 const pluginConfigSectionCatalog = [
   {
     key: 'basic',
@@ -966,3 +904,5 @@ export const buildPluginConfigSections = (
 }
 
 export { type PaymentPluginLegacyProfile }
+
+

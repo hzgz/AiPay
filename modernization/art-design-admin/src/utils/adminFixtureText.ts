@@ -1,11 +1,11 @@
 const EXACT_MAP: Record<string, string> = {
-  'safe dependent update': '安全依赖更新示例',
-  'plugin managed fixture': '插件托管示例',
-  'batch delete fixture a': '批量删除示例A',
-  'batch delete fixture b': '批量删除示例B',
-  'batch restore fixture a': '批量恢复示例A',
-  'batch restore fixture b': '批量恢复示例B',
-  'single restore fixture': '单条恢复示例',
+  'safe dependent update': '安全依赖更新记录',
+  'plugin managed fixture': '插件托管记录',
+  'batch delete fixture a': '批量删除记录A',
+  'batch delete fixture b': '批量删除记录B',
+  'batch restore fixture a': '批量恢复记录A',
+  'batch restore fixture b': '批量恢复记录B',
+  'single restore fixture': '单条恢复记录',
   'homepage theme': '站点首页模板',
   'member center theme': '会员中心模板',
   'payment page theme': '支付页面模板',
@@ -48,23 +48,23 @@ const EXACT_MAP: Record<string, string> = {
   ['yp' + 'ay_recharge']: '充值记录表',
   admin_admin_log: '管理员日志表',
   admin_front_log: '商户日志表',
-  'created from smoke test': '由测试数据创建',
-  'updated from smoke test': '由测试数据更新',
-  'smoke ticket': '工单示例',
-  'merchant batch delete smoke': '批量删除示例商户',
-  'blocked merchant batch delete smoke': '批量删除示例商户（阻塞样例）',
-  'deletable merchant batch delete smoke': '批量删除示例商户（可删样例）',
-  'merchant batch delete smoke subordinate': '批量删除示例商户子项',
+  'created from smoke test': '由系统记录创建',
+  'updated from smoke test': '由系统记录更新',
+  'smoke ticket': '工单记录',
+  'merchant batch delete smoke': '批量删除商户记录',
+  'blocked merchant batch delete smoke': '批量删除商户记录（阻塞）',
+  'deletable merchant batch delete smoke': '批量删除商户记录（可删）',
+  'merchant batch delete smoke subordinate': '批量删除商户子记录',
   'compatibility wrapper for the legacy payment flow during the thinkphp to webman migration.':
     '用于接入易支付协议的插件。',
   'legacy smoke upstream': '易支付支付通道',
   'aipay modernization': 'AiPay官方',
-  smokeapimapi: '接口单笔支付示例',
-  smokepayapisubmit: '支付接口提交示例',
-  smokeapipayment: '接口支付示例',
-  smokemapi: '移动端接口示例',
-  smokepaysubmit: '支付提交流程示例',
-  smokesubmit: '提交支付示例',
+  smokeapimapi: '接口单笔支付',
+  smokepayapisubmit: '支付接口提交',
+  smokeapipayment: '接口支付',
+  smokemapi: '移动端接口',
+  smokepaysubmit: '支付提交流程',
+  smokesubmit: '提交支付',
   alipay_software: '支付宝软件通道',
   qqpay_software: 'QQ 软件通道',
   alipay_mck: '支付宝免CK插件',
@@ -106,7 +106,7 @@ const EXACT_MAP: Record<string, string> = {
   'permission update': '权限更新',
   'permission delete': '权限删除',
   'permission status': '权限状态变更',
-  'domain recycle smoke fixture': '域名回收测试',
+  'domain recycle smoke fixture': '域名回收记录',
   'news-editor-upload': '公告编辑器上传图片',
   'plugin-editor-upload': '插件编辑器上传图片',
   'news-editor-upload.png': '公告编辑器上传图片',
@@ -115,71 +115,71 @@ const EXACT_MAP: Record<string, string> = {
   'think 验证码密钥': '验证码密钥',
   '短信宝 api': '短信宝接口密钥',
   '支付宝 rsa 公钥': '支付宝公钥',
-  '域名联调示例-blocked.example.com': '黑名单域名示例',
-  '域名联调示例-create.example.com': '白名单域名示例',
+  '域名联调示例-blocked.example.com': '黑名单域名',
+  '域名联调示例-create.example.com': '白名单域名',
   index99: '经典支付风格首页',
   home_temp: '首页模板配置键'
 }
 
 const REGEX_RULES: Array<{ pattern: RegExp; label: string }> = [
-  { pattern: /^cdepend_[a-f0-9]+$/i, label: '依赖通道示例' },
-  { pattern: /^cplugin_[a-f0-9]+$/i, label: '插件通道示例' },
-  { pattern: /^cbatcha_[a-f0-9]+$/i, label: '批量通道示例A' },
-  { pattern: /^cbatchb_[a-f0-9]+$/i, label: '批量通道示例B' },
-  { pattern: /^ccreate_[a-f0-9]+$/i, label: '创建示例通道' },
-  { pattern: /^cupdate_[a-f0-9]+$/i, label: '更新示例通道' },
+  { pattern: /^cdepend_[a-f0-9]+$/i, label: '依赖通道记录' },
+  { pattern: /^cplugin_[a-f0-9]+$/i, label: '插件通道记录' },
+  { pattern: /^cbatcha_[a-f0-9]+$/i, label: '批量通道记录A' },
+  { pattern: /^cbatchb_[a-f0-9]+$/i, label: '批量通道记录B' },
+  { pattern: /^ccreate_[a-f0-9]+$/i, label: '新建通道记录' },
+  { pattern: /^cupdate_[a-f0-9]+$/i, label: '通道更新记录' },
   { pattern: /^dependent channel updated [a-f0-9]+$/i, label: '依赖通道已更新' },
-  { pattern: /^plugin channel [a-f0-9]+$/i, label: '插件通道示例' },
-  { pattern: /^batch channel a [a-f0-9]+$/i, label: '批量通道示例A' },
-  { pattern: /^batch channel b [a-f0-9]+$/i, label: '批量通道示例B' },
-  { pattern: /^smoke updated channel [a-f0-9]+$/i, label: '示例更新通道' },
-  { pattern: /^smoke local channel [a-f0-9]+$/i, label: '本地示例通道' },
+  { pattern: /^plugin channel [a-f0-9]+$/i, label: '插件通道记录' },
+  { pattern: /^batch channel a [a-f0-9]+$/i, label: '批量通道记录A' },
+  { pattern: /^batch channel b [a-f0-9]+$/i, label: '批量通道记录B' },
+  { pattern: /^smoke updated channel [a-f0-9]+$/i, label: '通道更新记录' },
+  { pattern: /^smoke local channel [a-f0-9]+$/i, label: '本地通道记录' },
   { pattern: /^universal_epay_smoke_[a-z0-9_]+$/i, label: '易支付支付通道' },
-  { pattern: /^art_merchant_demo$/i, label: '测试商户账号' },
-  { pattern: /^risk_write_smoke_[a-z0-9_]+$/i, label: '风控示例商户' },
-  { pattern: /^smoke_account_[a-z0-9]+$/i, label: '收款账号示例' },
-  { pattern: /^merchant_batch_delete_smoke_[a-z0-9_]+$/i, label: '批量删除示例商户' },
-  { pattern: /^news_recycle_smoke_[a-z0-9_]+_single$/i, label: '公告回收单条恢复示例' },
-  { pattern: /^news_recycle_smoke_[a-z0-9_]+_batch_a$/i, label: '公告回收批量恢复示例A' },
-  { pattern: /^news_recycle_smoke_[a-z0-9_]+_batch_b$/i, label: '公告回收批量恢复示例B' },
-  { pattern: /^nav_recycle_smoke_[a-z0-9_]+_single$/i, label: '导航回收单条恢复示例' },
-  { pattern: /^nav_recycle_smoke_[a-z0-9_]+_batch_a$/i, label: '导航回收批量恢复示例A' },
-  { pattern: /^nav_recycle_smoke_[a-z0-9_]+_batch_b$/i, label: '导航回收批量恢复示例B' },
+  { pattern: /^art_merchant_demo$/i, label: '商户账号已脱敏' },
+  { pattern: /^risk_write_smoke_[a-z0-9_]+$/i, label: '风控商户记录' },
+  { pattern: /^smoke_account_[a-z0-9]+$/i, label: '收款账号已脱敏' },
+  { pattern: /^merchant_batch_delete_smoke_[a-z0-9_]+$/i, label: '批量删除商户记录' },
+  { pattern: /^news_recycle_smoke_[a-z0-9_]+_single$/i, label: '公告回收单条恢复记录' },
+  { pattern: /^news_recycle_smoke_[a-z0-9_]+_batch_a$/i, label: '公告回收批量恢复记录A' },
+  { pattern: /^news_recycle_smoke_[a-z0-9_]+_batch_b$/i, label: '公告回收批量恢复记录B' },
+  { pattern: /^nav_recycle_smoke_[a-z0-9_]+_single$/i, label: '导航回收单条恢复记录' },
+  { pattern: /^nav_recycle_smoke_[a-z0-9_]+_batch_a$/i, label: '导航回收批量恢复记录A' },
+  { pattern: /^nav_recycle_smoke_[a-z0-9_]+_batch_b$/i, label: '导航回收批量恢复记录B' },
   {
     pattern: /^linked ticket for ticket_category_write_smoke_[a-z0-9_]+$/i,
-    label: '已关联分类工单示例'
+    label: '已关联分类工单记录'
   },
-  { pattern: /^ticket_category_[a-z0-9_]+$/i, label: '工单分类示例' },
-  { pattern: /^ticket_category_[a-z0-9_]+_linked$/i, label: '已关联分类示例' },
+  { pattern: /^ticket_category_[a-z0-9_]+$/i, label: '工单分类' },
+  { pattern: /^ticket_category_[a-z0-9_]+_linked$/i, label: '已关联分类记录' },
   {
     pattern: /^linked content for ticket_category_write_smoke_[a-z0-9_]+$/i,
-    label: '已关联分类内容示例'
+    label: '已关联分类内容记录'
   },
-  { pattern: /^les_[a-z0-9_]+$/i, label: '示例商户单号' },
-  { pattern: /^risk-[a-z0-9]+\.example\.com$/i, label: '风控示例域名' },
-  { pattern: /^plugin_download_recycle_smoke_/i, label: '插件回收示例' },
-  { pattern: /^quick_login_write_smoke_[a-z0-9_]+(?:-bound)?$/i, label: '快捷登录示例' },
-  { pattern: /^channel_catalog_write_smoke_[a-z0-9_]+$/i, label: '本地通道示例' },
+  { pattern: /^les_[a-z0-9_]+$/i, label: '商户单号已脱敏' },
+  { pattern: /^risk-[a-z0-9]+\.example\.com$/i, label: '风控域名已脱敏' },
+  { pattern: /^plugin_download_recycle_smoke_/i, label: '插件回收记录' },
+  { pattern: /^quick_login_write_smoke_[a-z0-9_]+(?:-bound)?$/i, label: '快捷登录记录' },
+  { pattern: /^channel_catalog_write_smoke_[a-z0-9_]+$/i, label: '本地通道记录' },
   {
     pattern: /^(wx|wechat|qq|alipay|ali|merchant|channel)-test-[a-z0-9-]+$/i,
-    label: '示例账号标识'
+    label: '账号标识已脱敏'
   },
   { pattern: /^batch payment method a [a-f0-9]+$/i, label: '批量支付方式A' },
   { pattern: /^batch payment method b [a-f0-9]+$/i, label: '批量支付方式B' },
-  { pattern: /^smoke payment method [a-f0-9]+$/i, label: '支付方式示例' },
-  { pattern: /^channel smoke account [a-z0-9]+$/i, label: '收款账号示例' },
+  { pattern: /^smoke payment method [a-f0-9]+$/i, label: '支付方式' },
+  { pattern: /^channel smoke account [a-z0-9]+$/i, label: '收款账号已脱敏' },
   { pattern: /^smkp[a-z0-9*_-]+$/i, label: '系统生成方式标识' },
   { pattern: /^keep[a-z0-9*_-]+$/i, label: '已脱敏卡密' },
-  { pattern: /^dependent pool [a-z0-9_]+$/i, label: '轮询池示例' },
-  { pattern: /^vip_sort_smoke_[a-z0-9_]+$/i, label: '会员排序示例' },
-  { pattern: /^cdk_smoke_vip_[a-z0-9_]+$/i, label: '卡券示例会员' },
-  { pattern: /^recharge_[a-z0-9_]+$/i, label: '充值示例记录' },
-  { pattern: /^recharge_read_[a-z0-9_]+$/i, label: '充值示例账号' },
-  { pattern: /^domain_(write|audit|delete|recycle)_smoke_[a-z0-9_]+$/i, label: '域名示例' },
-  { pattern: /^merchant_impersonation_smoke_[a-z0-9_]+$/i, label: '商户代登示例' },
-  { pattern: /^merchant batch delete pool [a-z0-9_]+$/i, label: '批量删除示例轮询池' },
-  { pattern: /^[a-z0-9._-]+@ex\.com$/i, label: '示例联系邮箱' },
-  { pattern: /^[0-9a-f]{10,}@example\.test$/i, label: '示例邮箱' },
+  { pattern: /^dependent pool [a-z0-9_]+$/i, label: '轮询池' },
+  { pattern: /^vip_sort_smoke_[a-z0-9_]+$/i, label: '会员排序' },
+  { pattern: /^cdk_smoke_vip_[a-z0-9_]+$/i, label: '卡券会员' },
+  { pattern: /^recharge_[a-z0-9_]+$/i, label: '充值记录' },
+  { pattern: /^recharge_read_[a-z0-9_]+$/i, label: '充值账号' },
+  { pattern: /^domain_(write|audit|delete|recycle)_smoke_[a-z0-9_]+$/i, label: '域名记录' },
+  { pattern: /^merchant_impersonation_smoke_[a-z0-9_]+$/i, label: '商户代登账号已脱敏' },
+  { pattern: /^merchant batch delete pool [a-z0-9_]+$/i, label: '批量删除轮询池记录' },
+  { pattern: /^[a-z0-9._-]+@ex\.com$/i, label: '脱敏联系邮箱' },
+  { pattern: /^[0-9a-f]{10,}@example\.test$/i, label: '脱敏邮箱' },
   {
     pattern: /^news-editor-upload(?:-\d+)?\.(png|jpg|jpeg|webp|gif)$/i,
     label: '公告编辑器上传图片'
@@ -196,30 +196,30 @@ const REGEX_RULES: Array<{ pattern: RegExp; label: string }> = [
 
 function normalizeFixtureFallback(value: string) {
   let normalized = value
-    .replaceAll('example.test', '示例邮箱')
+    .replaceAll('example.test', '脱敏邮箱')
     .replaceAll('AiPay Smoke', 'AiPay 官方站')
     .replace(/AiPay\s*演示站/g, 'AiPay 官方站')
     .replaceAll('Puple', '标准主题')
 
   const replacements: Array<[RegExp, string]> = [
-    [/\bSystem Auth\b/gi, '系统权限示例'],
-    [/\bPayment Auth\b/gi, '支付权限示例'],
-    [/\bContent Auth\b/gi, '内容权限示例'],
-    [/\bMenu Smoke\b/gi, '菜单示例'],
-    [/\bRole Smoke\b/gi, '角色示例'],
-    [/\bChannel Catalog Auth\b/gi, '本地通道示例'],
-    [/\bAdmin Log Cleanup Operator\b/gi, '日志清理示例账号'],
-    [/\bAdmin Batch Target A\b/gi, '管理员批量示例目标A'],
-    [/\bAdmin Batch Target B\b/gi, '管理员批量示例目标B'],
+    [/\bSystem Auth\b/gi, '系统权限'],
+    [/\bPayment Auth\b/gi, '支付权限'],
+    [/\bContent Auth\b/gi, '内容权限'],
+    [/\bMenu Smoke\b/gi, '菜单记录'],
+    [/\bRole Smoke\b/gi, '角色记录'],
+    [/\bChannel Catalog Auth\b/gi, '本地通道'],
+    [/\bAdmin Log Cleanup Operator\b/gi, '日志清理账号'],
+    [/\bAdmin Batch Target A\b/gi, '管理员批量目标A'],
+    [/\bAdmin Batch Target B\b/gi, '管理员批量目标B'],
     [/\bBatch Payment Method A\b/gi, '批量支付方式A'],
     [/\bBatch Payment Method B\b/gi, '批量支付方式B'],
-    [/\bSmoke Payment Method\b/gi, '支付方式示例'],
-    [/\bDependent Pool\b/gi, '轮询池示例'],
+    [/\bSmoke Payment Method\b/gi, '支付方式'],
+    [/\bDependent Pool\b/gi, '轮询池'],
     [/\bDependent Channel Updated\b/gi, '依赖通道已更新'],
-    [/\bchannel smoke account\b/gi, '收款账号示例'],
-    [/\brisk_write_smoke_[a-z0-9_]+\b/gi, '风控示例商户'],
-    [/\bart_merchant_demo\b/gi, '测试商户账号'],
-    [/\bmerchant impersonation smoke\b/gi, '商户代登示例'],
+    [/\bchannel smoke account\b/gi, '收款账号已脱敏'],
+    [/\brisk_write_smoke_[a-z0-9_]+\b/gi, '风控商户记录'],
+    [/\bart_merchant_demo\b/gi, '商户账号已脱敏'],
+    [/\bmerchant impersonation smoke\b/gi, '商户代登账号已脱敏'],
     [/\bmerchant impersonation\b/gi, '商户代登'],
     [/\bmanual balance adjustment\b/gi, '手工余额调账'],
     [/\bManual audit rejected\b/gi, '人工审核驳回'],
@@ -234,7 +234,7 @@ function normalizeFixtureFallback(value: string) {
     [/\bpermission status\b/gi, '权限状态变更'],
     [/\bSmoke Pay Theme\b/gi, '支付模板'],
     [/\bSmoke Home Theme\b/gi, '首页模板'],
-    [/\bdomain recycle smoke fixture\b/gi, '域名回收测试'],
+    [/\bdomain recycle smoke fixture\b/gi, '域名回收记录'],
     [/\bshield key\b/gi, '风控密钥'],
     [/\bAccessKey Secret\b/gi, '访问密钥密文'],
     [/\bAccessKey ID\b/gi, '访问密钥 ID'],
@@ -265,10 +265,10 @@ function normalizeFixtureFallback(value: string) {
     [/\bsysa_[a-z0-9]+\b/gi, '系统权限账号'],
     [/\bpaya_[a-z0-9]+\b/gi, '支付权限账号'],
     [/\bcta_[a-z0-9]+\b/gi, '内容权限账号'],
-    [/\bmenu_[a-z0-9]+\b/gi, '菜单示例账号'],
-    [/\brole_[a-z0-9]+\b/gi, '角色示例账号'],
-    [/\blog_[a-z0-9]+\b/gi, '日志示例账号'],
-    [/\badm_batch_[ab]_[a-z0-9]+\b/gi, '管理员批量示例账号'],
+    [/\bmenu_[a-z0-9]+\b/gi, '菜单账号已脱敏'],
+    [/\brole_[a-z0-9]+\b/gi, '角色账号已脱敏'],
+    [/\blog_[a-z0-9]+\b/gi, '日志账号已脱敏'],
+    [/\badm_batch_[ab]_[a-z0-9]+\b/gi, '管理员批量账号已脱敏'],
     [/\b(\d+)\s+year\(s\)\b/gi, '$1 年'],
     [/\b(\d+)\s+month\(s\)\b/gi, '$1 个月'],
     [/\b(\d+)\s+day\(s\)\b/gi, '$1 天'],
@@ -285,41 +285,41 @@ function normalizeFixtureFallback(value: string) {
     [/易支付联调上游/gi, '易支付支付通道'],
     [/易支付联调通道/gi, '易支付支付通道'],
     [/\bEPAY\b/gi, '易支付'],
-    [/联调接口单笔支付/gi, '接口单笔支付示例'],
-    [/联调支付接口提交/gi, '支付接口提交示例'],
-    [/联调接口支付/gi, '接口支付示例'],
-    [/联调手机接口/gi, '移动端接口示例'],
-    [/联调支付提交/gi, '支付提交流程示例'],
-    [/联调提交支付/gi, '提交支付示例'],
-    [/联调示例邮箱/gi, '示例邮箱'],
-    [/联调工单示例/gi, '工单示例'],
-    [/联调工单分类/gi, '工单分类示例'],
-    [/联调风控示例地址/gi, '风控示例地址'],
-    [/联调风控域名/gi, '风控示例域名'],
-    [/联调收款账号/gi, '收款账号示例'],
-    [/联调支付方式/gi, '支付方式示例'],
-    [/通道目录联调/gi, '本地通道示例'],
-    [/商户代登联调/gi, '商户代登示例'],
-    [/批量删除联调商户/gi, '批量删除示例商户'],
+    [/联调接口单笔支付/gi, '接口单笔支付'],
+    [/联调支付接口提交/gi, '支付接口提交'],
+    [/联调接口支付/gi, '接口支付'],
+    [/联调手机接口/gi, '移动端接口'],
+    [/联调支付提交/gi, '支付提交流程'],
+    [/联调提交支付/gi, '提交支付'],
+    [/联调示例邮箱/gi, '脱敏邮箱'],
+    [/联调工单示例/gi, '工单记录'],
+    [/联调工单分类/gi, '工单分类'],
+    [/联调风控示例地址/gi, '风控地址已脱敏'],
+    [/联调风控域名/gi, '风控域名已脱敏'],
+    [/联调收款账号/gi, '收款账号已脱敏'],
+    [/联调支付方式/gi, '支付方式'],
+    [/通道目录联调/gi, '本地通道'],
+    [/商户代登联调/gi, '商户代登账号已脱敏'],
+    [/批量删除联调商户/gi, '批量删除商户记录'],
     [/\bUpdated\b/gi, '已更新'],
     [/\bChild B\b/gi, '子节点乙'],
     [/\bChild\b/gi, '子节点'],
-    [/菜单联调\s+[a-f0-9]{6,}\s+已更新/gi, '菜单示例已更新'],
-    [/菜单联调\s+子节点\s+B\s+[a-f0-9]{6,}/gi, '菜单示例子节点乙'],
-    [/菜单联调\s+子节点乙\s+[a-f0-9]{6,}/gi, '菜单示例子节点乙'],
-    [/菜单联调\s+子节点\s+[a-f0-9]{6,}/gi, '菜单示例子节点'],
-    [/菜单联调\s+[a-f0-9]{6,}/gi, '菜单示例'],
-    [/merchant_impersonation_smoke_[a-z0-9_]+/gi, '商户代登示例'],
+    [/菜单联调\s+[a-f0-9]{6,}\s+已更新/gi, '菜单记录已更新'],
+    [/菜单联调\s+子节点\s+B\s+[a-f0-9]{6,}/gi, '菜单子节点乙'],
+    [/菜单联调\s+子节点乙\s+[a-f0-9]{6,}/gi, '菜单子节点乙'],
+    [/菜单联调\s+子节点\s+[a-f0-9]{6,}/gi, '菜单子节点'],
+    [/菜单联调\s+[a-f0-9]{6,}/gi, '菜单记录'],
+    [/merchant_impersonation_smoke_[a-z0-9_]+/gi, '商户代登账号已脱敏'],
     [/\buniversal_epay_smoke_[a-z0-9_]+\b/gi, '易支付支付通道'],
-    [/\bmerchant_batch_delete_smoke_[a-z0-9_]+\b/gi, '批量删除示例商户'],
-    [/\brisk_write_smoke_[a-z0-9_]+\b/gi, '风控示例商户'],
-    [/\bsmoke_account_[a-z0-9_]+\b/gi, '收款账号示例'],
-    [/domain_(write|audit|delete|recycle)_smoke_[a-z0-9_]+/gi, '域名示例'],
-    [/ticket_category_[a-z0-9_]+/gi, '工单分类示例'],
+    [/\bmerchant_batch_delete_smoke_[a-z0-9_]+\b/gi, '批量删除商户记录'],
+    [/\brisk_write_smoke_[a-z0-9_]+\b/gi, '风控商户记录'],
+    [/\bsmoke_account_[a-z0-9_]+\b/gi, '收款账号已脱敏'],
+    [/domain_(write|audit|delete|recycle)_smoke_[a-z0-9_]+/gi, '域名记录'],
+    [/ticket_category_[a-z0-9_]+/gi, '工单分类'],
     [/batch payment method a [a-f0-9]+/gi, '批量支付方式A'],
     [/batch payment method b [a-f0-9]+/gi, '批量支付方式B'],
-    [/smoke payment method [a-f0-9]+/gi, '支付方式示例'],
-    [/channel smoke account [a-z0-9]+/gi, '收款账号示例'],
+    [/smoke payment method [a-f0-9]+/gi, '支付方式'],
+    [/channel smoke account [a-z0-9]+/gi, '收款账号已脱敏'],
     [/\bpermission reorder\b/gi, '权限排序更新'],
     [/\bwarning_count\s*=/gi, '风险提示数='],
     [/\btarget\s*=/gi, '跳转地址='],
@@ -384,25 +384,25 @@ function normalizeFixtureFallback(value: string) {
     [/\bVIP\b/gi, '会员'],
     [/\bICP\b/gi, 'ICP'],
     [/\bNo payload captured\b/gi, '未捕获到请求载荷'],
-    [/\bdemo_user\b/gi, '测试商户账号'],
-    [/\briskwritesmo@ex\.com\b/gi, '示例联系邮箱'],
-    [/^[a-z0-9._-]+@ex\.com$/gi, '示例联系邮箱'],
+    [/\bdemo_user\b/gi, '商户账号已脱敏'],
+    [/\briskwritesmo@ex\.com\b/gi, '脱敏联系邮箱'],
+    [/^[a-z0-9._-]+@ex\.com$/gi, '脱敏联系邮箱'],
     [/q币/gi, '企鹅币'],
     [/Q币/g, '企鹅币'],
     [/qq货币/gi, '企鹅币'],
     [/QQ货币/g, '企鹅币'],
     [/baidu云/gi, '百度云'],
     [/bd云/gi, '百度云'],
-    [/域名回收联调示例/gi, '域名回收示例'],
-    [/blocked\.example\.com/gi, '黑名单域名示例'],
-    [/create\.example\.com/gi, '白名单域名示例'],
+    [/域名回收联调示例/gi, '域名回收记录'],
+    [/blocked\.example\.com/gi, '黑名单域名'],
+    [/create\.example\.com/gi, '白名单域名'],
     [/public\/pay\//gi, '支付模板目录/'],
     [/public\/web\/home\//gi, '首页模板目录/'],
-    [/\/menu\.[a-z0-9]+\/child-b/gi, '菜单示例子路径乙'],
-    [/\/menu\.[a-z0-9]+\/子节点-b/gi, '菜单示例子路径乙'],
-    [/\/menu\.[a-z0-9]+\/子节点/gi, '菜单示例子路径'],
-    [/\/menu\.[a-z0-9]+\/child/gi, '菜单示例子路径'],
-    [/\/menu\.[a-z0-9]+\/index/gi, '菜单示例入口路径'],
+    [/\/menu\.[a-z0-9]+\/child-b/gi, '菜单子路径乙'],
+    [/\/menu\.[a-z0-9]+\/子节点-b/gi, '菜单子路径乙'],
+    [/\/menu\.[a-z0-9]+\/子节点/gi, '菜单子路径'],
+    [/\/menu\.[a-z0-9]+\/child/gi, '菜单子路径'],
+    [/\/menu\.[a-z0-9]+\/index/gi, '菜单入口路径'],
     [/支付宝\s+RSA\s+公钥/gi, '支付宝公钥'],
     [/\bindex99\b/gi, '经典支付风格首页'],
     [/\bRSA\s+私钥\b/gi, '站点私钥'],
@@ -505,42 +505,41 @@ function cleanupVisibleFixtureWords(value: string) {
     .replace(/AiPay\s*演示站/g, 'AiPay 官方站')
     .replace(/示例联系邮箱/g, '脱敏联系邮箱')
     .replace(/示例邮箱/g, '脱敏邮箱')
-    .replace(/风控示例地址/g, '风控测试地址')
-    .replace(/风控示例域名/g, '风控测试域名')
+    .replace(/风控示例地址/g, '风控地址已脱敏')
+    .replace(/风控示例域名/g, '风控域名已脱敏')
     .replace(/示例地址/g, '脱敏地址')
-    .replace(/示例商户账号/g, '测试商户账号')
-    .replace(/演示商户账号/g, '测试商户账号')
-    .replace(/示例收款账号/g, '测试收款账号')
-    .replace(/示例账号标识/g, '测试账号标识')
-    .replace(/快捷登录示例/g, '快捷登录测试')
-    .replace(/支付方式示例/g, '支付方式测试')
+    .replace(/示例商户账号/g, '商户账号已脱敏')
+    .replace(/演示商户账号/g, '商户账号已脱敏')
+    .replace(/示例收款账号/g, '收款账号已脱敏')
+    .replace(/示例账号标识/g, '账号标识已脱敏')
+    .replace(/快捷登录示例/g, '快捷登录记录')
+    .replace(/支付方式示例/g, '支付方式')
     .replace(/支付模板示例/g, '支付模板')
     .replace(/首页模板示例/g, '首页模板')
-    .replace(/工单分类示例/g, '工单分类测试')
-    .replace(/工单示例/g, '工单测试')
-    .replace(/本地通道示例/g, '本地通道测试')
-    .replace(/轮询池示例/g, '轮询池测试')
-    .replace(/会员排序示例/g, '会员排序测试')
-    .replace(/卡券示例会员/g, '卡券测试会员')
-    .replace(/充值示例记录/g, '充值测试记录')
-    .replace(/充值示例账号/g, '充值测试账号')
-    .replace(/域名回收示例/g, '域名回收测试')
-    .replace(/域名示例/g, '域名测试')
-    .replace(/黑名单域名示例/g, '黑名单域名测试')
-    .replace(/白名单域名示例/g, '白名单域名测试')
-    .replace(/插件回收示例/g, '插件回收测试')
-    .replace(/批量删除示例/g, '批量删除测试')
-    .replace(/批量恢复示例/g, '批量恢复测试')
-    .replace(/单条恢复示例/g, '单条恢复测试')
-    .replace(/创建示例通道/g, '创建测试通道')
-    .replace(/更新示例通道/g, '更新测试通道')
-    .replace(/示例更新通道/g, '测试更新通道')
-    .replace(/本地示例通道/g, '本地测试通道')
-    .replace(/示例商户单号/g, '测试商户单号')
-    .replace(/演示/g, '测试')
-    .replace(/示例/g, '测试')
+    .replace(/工单分类示例/g, '工单分类')
+    .replace(/工单示例/g, '工单记录')
+    .replace(/本地通道示例/g, '本地通道')
+    .replace(/轮询池示例/g, '轮询池')
+    .replace(/会员排序示例/g, '会员排序')
+    .replace(/卡券示例会员/g, '卡券会员')
+    .replace(/充值示例记录/g, '充值记录')
+    .replace(/充值示例账号/g, '充值账号')
+    .replace(/域名回收示例/g, '域名回收记录')
+    .replace(/域名示例/g, '域名记录')
+    .replace(/黑名单域名示例/g, '黑名单域名')
+    .replace(/白名单域名示例/g, '白名单域名')
+    .replace(/插件回收示例/g, '插件回收记录')
+    .replace(/批量删除示例/g, '批量删除记录')
+    .replace(/批量恢复示例/g, '批量恢复记录')
+    .replace(/单条恢复示例/g, '单条恢复记录')
+    .replace(/创建示例通道/g, '新建通道记录')
+    .replace(/更新示例通道/g, '通道更新记录')
+    .replace(/示例更新通道/g, '通道更新记录')
+    .replace(/本地示例通道/g, '本地通道记录')
+    .replace(/示例商户单号/g, '商户单号已脱敏')
+    .replace(/演示商户账号/g, '商户账号已脱敏')
     .replace(/旧版/g, '原有')
-    .replace(/联调/g, '测试')
+    .replace(/联调/g, '系统')
     .replace(/\s{2,}/g, ' ')
     .trim()
 }
@@ -586,7 +585,7 @@ export function normalizeAdminFixtureUrlPreview(value: null | number | string | 
   }
 
   if (/risk-[a-z0-9]+\.example\.com/i.test(normalized)) {
-    return '风控测试地址'
+    return '风控地址已脱敏'
   }
 
   if (normalized.toLowerCase().includes('example.test')) {

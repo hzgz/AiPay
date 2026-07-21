@@ -29,60 +29,34 @@ export interface PublicNewsSection {
 }
 
 export interface PublicHomePayload {
-  mode: string
   site_name: string
-  home_url?: string | null
   is_logged_in: boolean
-  affiliate_id: string
   merchant_login_url: string
   merchant_register_url?: string
-  public_home_url: string
   news_index_url: string
   doc_url: string
   demo_url?: string
-  legacy_url?: string
   news_sections: PublicNewsSection[]
   navs: PublicNavItem[]
-  summary: {
-    nav_count: number
-    news_count: number
-    doc_routes: number
-  }
 }
 
 export interface PublicNewsListPayload {
   site_name: string
   is_logged_in: boolean
-  mode: 'index' | 'categories'
-  type: number
-  type_label: string
   current: number
   size: number
   total: number
   records: PublicNewsSummary[]
   navs: PublicNavItem[]
-  merchant_register_url?: string
-  public_home_url?: string
-  demo_url?: string
-  summary: {
-    total_count: number
-    type: number
-    type_label: string
-  }
 }
 
 export interface PublicNewsDetailPayload {
-  status_code: number
   site_name: string
   is_logged_in: boolean
   article: PublicNewsSummary & {
     content_html: string
   }
   navs: PublicNavItem[]
-  merchant_register_url?: string
-  public_home_url?: string
-  demo_url?: string
-  legacy_url?: string
 }
 
 export interface PublicDocItem {
@@ -100,14 +74,10 @@ export interface PublicDocGroup {
 export interface PublicDocPayload {
   site_name: string
   section: string
-  section_label: string
-  section_description: string
   is_logged_in: boolean
   navs: PublicNavItem[]
   merchant_login_url: string
   merchant_register_url?: string
-  public_home_url: string
-  demo_url?: string
   docs: PublicDocGroup[]
 }
 
@@ -160,29 +130,13 @@ export interface PublicDemoMethod {
 }
 
 export interface PublicDemoPayload {
-  mode: string
   site_name: string
   demo_name: string
   demo_money: string
-  demo_theme: string
   gateway_configured: boolean
-  gateway_host: string
   available_methods: PublicDemoMethod[]
   navs: PublicNavItem[]
-  public_home_url: string
   merchant_login_url: string
-  admin_url: string
-  supports_write: boolean
-  summary: {
-    available_method_count: number
-    gateway_configured: boolean
-    nav_count: number
-    read_only: boolean
-    production_enabled: boolean
-  }
-  route_policy?: Record<string, any>
-  write_actions?: Record<string, boolean>
-  migration_guard?: Record<string, any>
 }
 
 export function fetchPublicDemo() {

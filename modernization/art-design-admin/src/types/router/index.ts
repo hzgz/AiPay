@@ -1,76 +1,76 @@
-/**
- * 路由类型定义模块
+﻿/**
+ * 璺敱绫诲瀷瀹氫箟妯″潡
  *
- * 提供路由相关的类型定义
+ * 鎻愪緵璺敱鐩稿叧鐨勭被鍨嬪畾涔?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 路由元数据类型（标题、图标、权限等）
- * - 应用路由记录类型
- * - 路由配置扩展
+ * - 璺敱鍏冩暟鎹被鍨嬶紙鏍囬銆佸浘鏍囥€佹潈闄愮瓑锛?
+ * - 搴旂敤璺敱璁板綍绫诲瀷
+ * - 璺敱閰嶇疆鎵╁睍
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 路由配置类型约束
- * - 路由元数据定义
- * - 菜单生成
- * - 权限控制
+ * - 璺敱閰嶇疆绫诲瀷绾︽潫
+ * - 璺敱鍏冩暟鎹畾涔?
+ * - 鑿滃崟鐢熸垚
+ * - 鏉冮檺鎺у埗
  *
  * @module types/router/index
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { RouteRecordRaw } from 'vue-router'
 
 /**
- * 路由元数据接口
- * 定义路由的各种配置属性
+ * 璺敱鍏冩暟鎹帴鍙?
+ * 瀹氫箟璺敱鐨勫悇绉嶉厤缃睘鎬?
  */
 export interface RouteMeta extends Record<string | number | symbol, unknown> {
-  /** 路由标题 */
+  /** 璺敱鏍囬 */
   title: string
-  /** 路由图标 */
+  /** 璺敱鍥炬爣 */
   icon?: string
-  /** 是否显示徽章 */
+  /** 鏄惁鏄剧ず寰界珷 */
   showBadge?: boolean
-  /** 文本徽章 */
+  /** 鏂囨湰寰界珷 */
   showTextBadge?: string
-  /** 是否在菜单中隐藏 */
+  /** 鏄惁鍦ㄨ彍鍗曚腑闅愯棌 */
   isHide?: boolean
-  /** 是否在标签页中隐藏 */
+  /** 鏄惁鍦ㄦ爣绛鹃〉涓殣钘?*/
   isHideTab?: boolean
-  /** 外部链接 */
+  /** 澶栭儴閾炬帴 */
   link?: string
-  /** 是否为iframe */
+  /** 鏄惁涓篿frame */
   isIframe?: boolean
-  /** 是否缓存 */
+  /** 鏄惁缂撳瓨 */
   keepAlive?: boolean
-  /** 操作权限 */
+  /** 鎿嶄綔鏉冮檺 */
   authList?: Array<{
     title: string
     authMark: string
   }>
-  /** 是否为一级菜单 */
+  /** 鏄惁涓轰竴绾ц彍鍗?*/
   isFirstLevel?: boolean
-  /** 角色权限 */
+  /** 瑙掕壊鏉冮檺 */
   roles?: string[]
-  /** 是否固定标签页 */
+  /** 鏄惁鍥哄畾鏍囩椤?*/
   fixedTab?: boolean
-  /** 激活菜单路径 */
+  /** 婵€娲昏彍鍗曡矾寰?*/
   activePath?: string
-  /** 是否为全屏页面 */
+  /** 鏄惁涓哄叏灞忛〉闈?*/
   isFullPage?: boolean
-  /** 是否为权限按钮行 */
+  /** 鏄惁涓烘潈闄愭寜閽 */
   isAuthButton?: boolean
-  /** 权限标识 */
+  /** 鏉冮檺鏍囪瘑 */
   authMark?: string
-  /** 父级路径 */
+  /** 鐖剁骇璺緞 */
   parentPath?: string
 }
 
 /**
- * 应用路由记录接口
- * 扩展 Vue Router 的路由记录类型
+ * 搴旂敤璺敱璁板綍鎺ュ彛
+ * 鎵╁睍 Vue Router 鐨勮矾鐢辫褰曠被鍨?
  */
 export interface AppRouteRecord extends Omit<RouteRecordRaw, 'meta' | 'children' | 'component'> {
   id?: number
@@ -78,3 +78,4 @@ export interface AppRouteRecord extends Omit<RouteRecordRaw, 'meta' | 'children'
   children?: AppRouteRecord[]
   component?: string | (() => Promise<any>)
 }
+

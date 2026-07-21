@@ -1,43 +1,43 @@
-/**
- * useCeremony - 节日庆祝管理
+﻿/**
+ * useCeremony - 鑺傛棩搴嗙绠＄悊
  *
- * 提供节日烟花效果和祝福文本展示功能，为系统增添节日氛围。
- * 自动检测当前日期是否为节日，并在首次进入时播放烟花动画和显示祝福语。
+ * 鎻愪緵鑺傛棩鐑熻姳鏁堟灉鍜岀绂忔枃鏈睍绀哄姛鑳斤紝涓虹郴缁熷娣昏妭鏃ユ皼鍥淬€?
+ * 鑷姩妫€娴嬪綋鍓嶆棩鏈熸槸鍚︿负鑺傛棩锛屽苟鍦ㄩ娆¤繘鍏ユ椂鎾斁鐑熻姳鍔ㄧ敾鍜屾樉绀虹绂忚銆?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * 1. 节日检测 - 自动匹配当前日期与节日配置列表，支持单日和跨日期节日
- * 2. 烟花动画 - 播放节日烟花特效，支持自定义图片和触发次数
- * 3. 祝福文本 - 烟花结束后显示节日祝福文本
- * 4. 状态管理 - 记录烟花播放状态，避免重复播放
- * 5. 清理机制 - 提供清理方法，支持手动停止和重置
+ * 1. 鑺傛棩妫€娴?- 鑷姩鍖归厤褰撳墠鏃ユ湡涓庤妭鏃ラ厤缃垪琛紝鏀寔鍗曟棩鍜岃法鏃ユ湡鑺傛棩
+ * 2. 鐑熻姳鍔ㄧ敾 - 鎾斁鑺傛棩鐑熻姳鐗规晥锛屾敮鎸佽嚜瀹氫箟鍥剧墖鍜岃Е鍙戞鏁?
+ * 3. 绁濈鏂囨湰 - 鐑熻姳缁撴潫鍚庢樉绀鸿妭鏃ョ绂忔枃鏈?
+ * 4. 鐘舵€佺鐞?- 璁板綍鐑熻姳鎾斁鐘舵€侊紝閬垮厤閲嶅鎾斁
+ * 5. 娓呯悊鏈哄埗 - 鎻愪緵娓呯悊鏂规硶锛屾敮鎸佹墜鍔ㄥ仠姝㈠拰閲嶇疆
  *
- * ## 使用示例
+ * ## 浣跨敤绀轰緥
  *
  * ```typescript
- * // 在配置文件中定义节日
- * // 单日节日
+ * // 鍦ㄩ厤缃枃浠朵腑瀹氫箟鑺傛棩
+ * // 鍗曟棩鑺傛棩
  * {
  *   date: '2024-12-25',
- *   name: '圣诞节',
+ *   name: '鍦ｈ癁鑺?,
  *   image: christmasImage,
- *   count: 3 // 可选，不设置则使用默认值 3 次
+ *   count: 3 // 鍙€夛紝涓嶈缃垯浣跨敤榛樿鍊?3 娆?
  *   scrollText: 'Merry Christmas!',
  * }
  *
- * // 跨日期节日
+ * // 璺ㄦ棩鏈熻妭鏃?
  * {
  *   date: '2025-11-07',
  *   endDate: '2025-11-10',
- *   name: 'v3.0 测试阶段',
+ *   name: 'v3.0 娴嬭瘯闃舵',
  *   image: '',
- *   count: 5 // 自定义烟花播放次数
- *   scrollText: '系统 v3.0 测试阶段正式开启！',
+ *   count: 5 // 鑷畾涔夌儫鑺辨挱鏀炬鏁?
+ *   scrollText: '绯荤粺 v3.0 娴嬭瘯闃舵姝ｅ紡寮€鍚紒',
  * }
  * ```
  *
  * @module useCeremony
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { useTimeoutFn, useIntervalFn, useDateFormat } from '@vueuse/core'
@@ -48,22 +48,22 @@ import { mittBus } from '@/utils/sys'
 import { festivalConfigList } from '@/config/modules/festival'
 
 /**
- * 节日庆祝配置常量
+ * 鑺傛棩搴嗙閰嶇疆甯搁噺
  */
 const FESTIVAL_CONFIG = {
-  /** 初始延迟（毫秒） */
+  /** 鍒濆寤惰繜锛堟绉掞級 */
   INITIAL_DELAY: 300,
-  /** 烟花播放间隔（毫秒） */
+  /** 鐑熻姳鎾斁闂撮殧锛堟绉掞級 */
   FIREWORK_INTERVAL: 1000,
-  /** 文本显示延迟（毫秒） */
+  /** 鏂囨湰鏄剧ず寤惰繜锛堟绉掞級 */
   TEXT_DELAY: 2000,
-  /** 默认烟花播放次数 */
+  /** 榛樿鐑熻姳鎾斁娆℃暟 */
   DEFAULT_FIREWORKS_COUNT: 3
 } as const
 
 /**
- * 节日庆祝功能
- * 提供节日烟花效果和祝福文本展示
+ * 鑺傛棩搴嗙鍔熻兘
+ * 鎻愪緵鑺傛棩鐑熻姳鏁堟灉鍜岀绂忔枃鏈睍绀?
  */
 export function useCeremony() {
   const settingStore = useSettingStore()
@@ -72,10 +72,10 @@ export function useCeremony() {
   let fireworksInterval: { pause: () => void } | null = null
 
   /**
-   * 检查日期是否在节日范围内
-   * @param currentDate 当前日期
-   * @param festivalDate 节日开始日期
-   * @param festivalEndDate 节日结束日期（可选）
+   * 妫€鏌ユ棩鏈熸槸鍚﹀湪鑺傛棩鑼冨洿鍐?
+   * @param currentDate 褰撳墠鏃ユ湡
+   * @param festivalDate 鑺傛棩寮€濮嬫棩鏈?
+   * @param festivalEndDate 鑺傛棩缁撴潫鏃ユ湡锛堝彲閫夛級
    */
   const isDateInRange = (
     currentDate: string,
@@ -83,11 +83,11 @@ export function useCeremony() {
     festivalEndDate?: string
   ): boolean => {
     if (!festivalEndDate) {
-      // 单日节日
+      // 鍗曟棩鑺傛棩
       return currentDate === festivalDate
     }
 
-    // 跨日期节日
+    // 璺ㄦ棩鏈熻妭鏃?
     const current = new Date(currentDate)
     const start = new Date(festivalDate)
     const end = new Date(festivalEndDate)
@@ -96,7 +96,7 @@ export function useCeremony() {
   }
 
   /**
-   * 获取当前日期对应的节日数据
+   * 鑾峰彇褰撳墠鏃ユ湡瀵瑰簲鐨勮妭鏃ユ暟鎹?
    */
   const currentFestivalData = computed(() => {
     const currentDate = useDateFormat(new Date(), 'YYYY-MM-DD').value
@@ -104,21 +104,21 @@ export function useCeremony() {
   })
 
   /**
-   * 更新节日日期到 store
+   * 鏇存柊鑺傛棩鏃ユ湡鍒?store
    */
   const updateFestivalDate = () => {
     settingStore.setFestivalDate(currentFestivalData.value?.date || '')
   }
 
   /**
-   * 触发烟花效果
+   * 瑙﹀彂鐑熻姳鏁堟灉
    */
   const triggerFirework = () => {
     mittBus.emit('triggerFireworks', currentFestivalData.value?.image)
   }
 
   /**
-   * 完成烟花效果后显示文本
+   * 瀹屾垚鐑熻姳鏁堟灉鍚庢樉绀烘枃鏈?
    */
   const showFestivalText = () => {
     settingStore.setholidayFireworksLoaded(true)
@@ -130,11 +130,11 @@ export function useCeremony() {
   }
 
   /**
-   * 启动烟花循环
+   * 鍚姩鐑熻姳寰幆
    */
   const startFireworksLoop = () => {
     let playedCount = 0
-    // 使用节日配置的播放次数，如果没有则使用默认值
+    // 浣跨敤鑺傛棩閰嶇疆鐨勬挱鏀炬鏁帮紝濡傛灉娌℃湁鍒欎娇鐢ㄩ粯璁ゅ€?
     const count = currentFestivalData.value?.count ?? FESTIVAL_CONFIG.DEFAULT_FIREWORKS_COUNT
 
     const { pause } = useIntervalFn(() => {
@@ -151,7 +151,7 @@ export function useCeremony() {
   }
 
   /**
-   * 开启节日庆祝
+   * 寮€鍚妭鏃ュ簡绁?
    */
   const openFestival = () => {
     if (!currentFestivalData.value || !isShowFireworks.value) {
@@ -163,7 +163,7 @@ export function useCeremony() {
   }
 
   /**
-   * 清理烟花效果
+   * 娓呯悊鐑熻姳鏁堟灉
    */
   const cleanup = () => {
     if (fireworksInterval) {
@@ -182,3 +182,4 @@ export function useCeremony() {
     isShowFireworks
   }
 }
+

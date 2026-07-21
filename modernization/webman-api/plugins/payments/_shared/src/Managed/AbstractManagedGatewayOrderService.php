@@ -106,9 +106,8 @@ abstract class AbstractManagedGatewayOrderService
             ),
         ];
     }
-
     /**
-     * 将官方网关返回结果挂载到已经创建好的本地订单。
+     * 将网关返回结果挂载到已创建的本地订单上。
      *
      * @param array<string, mixed> $merchant
      * @param array<string, mixed> $account

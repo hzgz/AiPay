@@ -1,12 +1,13 @@
-/**
- * 表单工具函数统一导出
+﻿/**
+ * 琛ㄥ崟宸ュ叿鍑芥暟缁熶竴瀵煎嚭
  *
  * @module utils/form
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
-// 表单验证器
+// 琛ㄥ崟楠岃瘉鍣?
 export * from './validator'
 
-// 响应式布局
+// 鍝嶅簲寮忓竷灞€
 export * from './responsive'
+

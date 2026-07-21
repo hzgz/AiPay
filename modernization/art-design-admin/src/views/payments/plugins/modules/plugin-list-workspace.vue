@@ -16,7 +16,7 @@
           @click="emit('toggle-governance')"
           v-ripple
         >
-          {{ showGovernancePanels ? '收起恢复中心' : '恢复中心' }}
+          {{ showGovernancePanels ? '收起回滚中心' : '回滚中心' }}
         </ElButton>
         <ElButton
           class="plugin-list-refresh"

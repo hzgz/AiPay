@@ -129,16 +129,16 @@
 
           <section class="detail-section">
             <h4>目录概览</h4>
-            <ElDescriptions :column="1" border>
-              <ElDescriptionsItem label="目录名">
+              <ElDescriptions :column="1" border>
+              <ElDescriptionsItem label="目录路径">
                 <span class="mono-text">{{ activeItem.path }}</span>
               </ElDescriptionsItem>
-              <ElDescriptionsItem label="关联页面">
-                <span class="mono-text">{{ displayAdminFixtureText(activeItem.legacy_page) }}</span>
+              <ElDescriptionsItem label="目录状态">
+                {{ activeItem.directory_exists ? '目录存在' : '仅保留索引记录' }}
               </ElDescriptionsItem>
-              <ElDescriptionsItem label="目录接口">
+              <ElDescriptionsItem label="预览状态">
                 <span class="mono-text">{{
-                  displayAdminFixtureText(activeItem.legacy_list_endpoint)
+                  activeItem.preview_url ? '已配置可预览素材' : '当前目录暂无可预览素材'
                 }}</span>
               </ElDescriptionsItem>
               <ElDescriptionsItem label="最近索引时间">
@@ -433,7 +433,7 @@
             { class: 'cell-sub' },
             displayAdminFixtureText(row.latest_file_name, '当前目录暂无素材')
           ),
-          h('p', { class: 'cell-sub mono-text' }, displayAdminFixtureText(row.legacy_list_endpoint))
+          h('p', { class: 'cell-sub' }, row.latest_disk_time || row.latest_db_time || '--')
         ])
     },
     {

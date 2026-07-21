@@ -257,9 +257,9 @@
         workbook.Props = {
           Title: filename,
           Subject: '数据导出',
-          Author: props.workbookOptions.creator || 'Art Design Pro',
+          Author: props.workbookOptions.creator || 'AiPay',
           Manager: props.workbookOptions.lastModifiedBy || '',
-          Company: '系统导出',
+          Company: 'AiPay',
           Category: '数据',
           Keywords: 'excel,export,data',
           Comments: '由系统自动生成',

@@ -1,38 +1,38 @@
-/**
- * 全局 Loading 加载管理模块
+﻿/**
+ * 鍏ㄥ眬 Loading 鍔犺浇绠＄悊妯″潡
  *
- * 提供统一的全屏加载动画管理
+ * 鎻愪緵缁熶竴鐨勫叏灞忓姞杞藉姩鐢荤鐞?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 全屏 Loading 显示和隐藏
- * - 自动适配明暗主题背景色
- * - 自定义 SVG 加载动画
- * - 单例模式防止重复创建
- * - 锁定页面交互
+ * - 鍏ㄥ睆 Loading 鏄剧ず鍜岄殣钘?
+ * - 鑷姩閫傞厤鏄庢殫涓婚鑳屾櫙鑹?
+ * - 鑷畾涔?SVG 鍔犺浇鍔ㄧ敾
+ * - 鍗曚緥妯″紡闃叉閲嶅鍒涘缓
+ * - 閿佸畾椤甸潰浜や簰
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 页面初始化加载
- * - 大量数据请求
- * - 路由切换过渡
- * - 异步操作等待
+ * - 椤甸潰鍒濆鍖栧姞杞?
+ * - 澶ч噺鏁版嵁璇锋眰
+ * - 璺敱鍒囨崲杩囨浮
+ * - 寮傛鎿嶄綔绛夊緟
  *
- * ## 特性
+ * ## 鐗规€?
  *
- * - 自动检测当前主题并应用对应背景色
- * - 使用自定义 SVG 动画（四点旋转）
- * - 单例模式确保同时只有一个 Loading
- * - 提供便捷的显示/隐藏方法
+ * - 鑷姩妫€娴嬪綋鍓嶄富棰樺苟搴旂敤瀵瑰簲鑳屾櫙鑹?
+ * - 浣跨敤鑷畾涔?SVG 鍔ㄧ敾锛堝洓鐐规棆杞級
+ * - 鍗曚緥妯″紡纭繚鍚屾椂鍙湁涓€涓?Loading
+ * - 鎻愪緵渚挎嵎鐨勬樉绀?闅愯棌鏂规硶
  *
  * @module utils/ui/loading
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import { fourDotsSpinnerSvg } from '@/assets/svg/loading'
 
 /**
- * 获取当前主题对应的loading背景色
- * @returns 背景色字符串
+ * 鑾峰彇褰撳墠涓婚瀵瑰簲鐨刲oading鑳屾櫙鑹?
+ * @returns 鑳屾櫙鑹插瓧绗︿覆
  */
 const getLoadingBackground = (): string => {
   const isDark = document.documentElement.classList.contains('dark')
@@ -57,12 +57,12 @@ let loadingInstance: LoadingInstance | null = null
 
 export const loadingService = {
   /**
-   * 显示 loading
-   * @returns 关闭 loading 的函数
+   * 鏄剧ず loading
+   * @returns 鍏抽棴 loading 鐨勫嚱鏁?
    */
   showLoading(): () => void {
     if (!loadingInstance) {
-      // 每次显示时获取最新的配置，确保背景色与当前主题同步
+      // 姣忔鏄剧ず鏃惰幏鍙栨渶鏂扮殑閰嶇疆锛岀‘淇濊儗鏅壊涓庡綋鍓嶄富棰樺悓姝?
       const config = {
         ...DEFAULT_LOADING_CONFIG,
         background: getLoadingBackground()
@@ -73,7 +73,7 @@ export const loadingService = {
   },
 
   /**
-   * 隐藏 loading
+   * 闅愯棌 loading
    */
   hideLoading(): void {
     if (loadingInstance) {
@@ -82,3 +82,4 @@ export const loadingService = {
     }
   }
 }
+

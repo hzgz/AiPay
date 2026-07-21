@@ -36,7 +36,7 @@
       <div class="merchant-grid-3">
         <section class="merchant-soft-panel merchant-real-name-state__panel">
           <strong>当前状态</strong>
-          <p>当前仅展示实名状态。</p>
+          <p>当前页展示实名功能状态与开通提示。</p>
         </section>
 
         <section class="merchant-soft-panel merchant-real-name-state__panel">

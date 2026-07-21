@@ -150,11 +150,11 @@
   },
   "login": {
     "leftView": {
-      "title": "一款兼具设计美学与高效开发的后台系统",
-      "subTitle": "美观实用的界面，经过视觉优化，确保卓越的用户体验"
+      "title": "AiPay 管理后台",
+      "subTitle": "统一管理商户、订单、支付、风控与系统配置"
     },
-    "title": "欢迎回来",
-    "subTitle": "输入您的账号和密码登录",
+    "title": "管理员登录",
+    "subTitle": "输入管理员账号和密码进入 AiPay 管理后台",
     "roles": {
       "super": "超级管理员",
       "admin": "管理员",
@@ -174,7 +174,7 @@
     "register": "注册",
     "success": {
       "title": "登录成功",
-      "message": "欢迎回来"
+      "message": "正在进入"
     }
   },
   "forgetPassword": {

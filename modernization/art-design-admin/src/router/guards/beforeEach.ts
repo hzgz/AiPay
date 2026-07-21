@@ -16,9 +16,6 @@ import { IframeRouteManager, MenuProcessor, RoutePermissionValidator, RouteRegis
 import { staticRoutes } from '../routes/staticRoutes'
 import { RoutesAlias } from '../routesAlias'
 
-const PAYMENT_PLUGIN_WORKSPACE_PATH = '/payments/plugins'
-const LEGACY_PAYMENT_WORKSPACE_PATHS = ['/payments/catalog', '/payments/channels']
-
 let routeRegistry: RouteRegistry | null = null
 const menuProcessor = new MenuProcessor()
 let pendingLoading = false
@@ -75,7 +72,6 @@ async function handleRouteGuard(
 ): Promise<void> {
   const settingStore = useSettingStore()
   const userStore = useUserStore()
-  const legacyPaymentWorkspaceRedirect = resolveLegacyPaymentWorkspaceRedirect(to)
 
   if (to.path === RoutesAlias.Login) {
     setPageTitle(to)
@@ -85,11 +81,6 @@ async function handleRouteGuard(
 
   if (settingStore.showNprogress) {
     NProgress.start()
-  }
-
-  if (legacyPaymentWorkspaceRedirect) {
-    next(legacyPaymentWorkspaceRedirect)
-    return
   }
 
   if (!handleLoginStatus(to, userStore, next)) {
@@ -190,27 +181,6 @@ function isStaticRoute(path: string): boolean {
 
 function isMerchantRoute(path: string): boolean {
   return path === '/merchant' || path.startsWith('/merchant/')
-}
-
-function resolveLegacyPaymentWorkspaceRedirect(to: RouteLocationNormalized) {
-  const isLegacyWorkspacePath = LEGACY_PAYMENT_WORKSPACE_PATHS.includes(to.path)
-  const hasLegacyWorkspaceQuery = String(to.query.workspace || '').trim() !== ''
-  const needsRedirect =
-    isLegacyWorkspacePath ||
-    (to.path === PAYMENT_PLUGIN_WORKSPACE_PATH && hasLegacyWorkspaceQuery)
-
-  if (!needsRedirect) {
-    return null
-  }
-
-  const normalizedQuery = { ...to.query }
-  delete normalizedQuery.workspace
-
-  return {
-    path: PAYMENT_PLUGIN_WORKSPACE_PATH,
-    query: Object.keys(normalizedQuery).length > 0 ? normalizedQuery : undefined,
-    replace: true
-  }
 }
 
 async function handleDynamicRoutes(

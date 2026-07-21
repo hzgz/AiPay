@@ -4,7 +4,7 @@
 
 SET @news_table := CONCAT('aip', 'ay_', 'news');
 SET @title := '欢迎使用 AiPay';
-SET @content := '<p>AiPay 已完成 Webman 架构升级，商户可通过首页完成注册、登录与支付接入。</p><p>如需对接支付、回调或订单查询，请前往开发文档查看完整说明。</p>';
+SET @content := '<p>欢迎使用 AiPay，可在首页完成商户注册、登录与接入配置。</p><p>支付接入、回调规则与订单查询请查看开发文档。</p>';
 SET @old_plain := '当前为本地纯净预览环境。';
 SET @old_html := '<p>当前为本地纯净预览环境。</p>';
 SET @migration_sql := CONCAT(

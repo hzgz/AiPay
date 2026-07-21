@@ -60,7 +60,7 @@ class GoogleAuthenticator
         $size = max($width, $height);
         $otpAuthUrl = $this->buildOtpAuthUrl($name, $secret, $issuer);
 
-        return '/qrcode.php?text=' . rawurlencode($otpAuthUrl) . '&size=' . $size;
+        return '/api/public/qrcode?text=' . rawurlencode($otpAuthUrl) . '&size=' . $size;
     }
 
     public function verifyCode(string $secret, string $code, int $discrepancy = 1, ?int $currentTimeSlice = null): bool

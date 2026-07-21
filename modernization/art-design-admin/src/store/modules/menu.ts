@@ -1,32 +1,32 @@
-/**
- * 菜单状态管理模块
+﻿/**
+ * 鑿滃崟鐘舵€佺鐞嗘ā鍧?
  *
- * 提供菜单数据和动态路由的状态管理
+ * 鎻愪緵鑿滃崟鏁版嵁鍜屽姩鎬佽矾鐢辩殑鐘舵€佺鐞?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 菜单列表存储和管理
- * - 首页路径配置
- * - 动态路由注册和移除
- * - 路由移除函数管理
- * - 菜单宽度配置
+ * - 鑿滃崟鍒楄〃瀛樺偍鍜岀鐞?
+ * - 棣栭〉璺緞閰嶇疆
+ * - 鍔ㄦ€佽矾鐢辨敞鍐屽拰绉婚櫎
+ * - 璺敱绉婚櫎鍑芥暟绠＄悊
+ * - 鑿滃崟瀹藉害閰嶇疆
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 动态菜单加载和渲染
- * - 路由权限控制
- * - 首页路径动态设置
- * - 登出时清理动态路由
+ * - 鍔ㄦ€佽彍鍗曞姞杞藉拰娓叉煋
+ * - 璺敱鏉冮檺鎺у埗
+ * - 棣栭〉璺緞鍔ㄦ€佽缃?
+ * - 鐧诲嚭鏃舵竻鐞嗗姩鎬佽矾鐢?
  *
- * ## 工作流程
+ * ## 宸ヤ綔娴佺▼
  *
- * 1. 获取菜单数据（前端/后端模式）
- * 2. 设置菜单列表和首页路径
- * 3. 注册动态路由并保存移除函数
- * 4. 登出时调用移除函数清理路由
+ * 1. 鑾峰彇鑿滃崟鏁版嵁锛堝墠绔?鍚庣妯″紡锛?
+ * 2. 璁剧疆鑿滃崟鍒楄〃鍜岄椤佃矾寰?
+ * 3. 娉ㄥ唽鍔ㄦ€佽矾鐢卞苟淇濆瓨绉婚櫎鍑芥暟
+ * 4. 鐧诲嚭鏃惰皟鐢ㄧЩ闄ゅ嚱鏁版竻鐞嗚矾鐢?
  *
  * @module store/modules/menu
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -35,22 +35,22 @@ import { getFirstMenuPath } from '@/utils'
 import { HOME_PAGE_PATH } from '@/router'
 
 /**
- * 菜单状态管理
- * 管理应用的菜单列表、首页路径、菜单宽度和动态路由移除函数
+ * 鑿滃崟鐘舵€佺鐞?
+ * 绠＄悊搴旂敤鐨勮彍鍗曞垪琛ㄣ€侀椤佃矾寰勩€佽彍鍗曞搴﹀拰鍔ㄦ€佽矾鐢辩Щ闄ゅ嚱鏁?
  */
 export const useMenuStore = defineStore('menuStore', () => {
-  /** 首页路径 */
+  /** 棣栭〉璺緞 */
   const homePath = ref(HOME_PAGE_PATH)
-  /** 菜单列表 */
+  /** 鑿滃崟鍒楄〃 */
   const menuList = ref<AppRouteRecord[]>([])
-  /** 菜单宽度 */
+  /** 鑿滃崟瀹藉害 */
   const menuWidth = ref('')
-  /** 存储路由移除函数的数组 */
+  /** 瀛樺偍璺敱绉婚櫎鍑芥暟鐨勬暟缁?*/
   const removeRouteFns = ref<(() => void)[]>([])
 
   /**
-   * 设置菜单列表
-   * @param list 菜单路由记录数组
+   * 璁剧疆鑿滃崟鍒楄〃
+   * @param list 鑿滃崟璺敱璁板綍鏁扮粍
    */
   const setMenuList = (list: AppRouteRecord[]) => {
     menuList.value = list
@@ -58,30 +58,30 @@ export const useMenuStore = defineStore('menuStore', () => {
   }
 
   /**
-   * 获取首页路径
-   * @returns 首页路径字符串
+   * 鑾峰彇棣栭〉璺緞
+   * @returns 棣栭〉璺緞瀛楃涓?
    */
   const getHomePath = () => homePath.value
 
   /**
-   * 设置主页路径
-   * @param path 主页路径
+   * 璁剧疆涓婚〉璺緞
+   * @param path 涓婚〉璺緞
    */
   const setHomePath = (path: string) => {
     homePath.value = path
   }
 
   /**
-   * 添加路由移除函数
-   * @param fns 要添加的路由移除函数数组
+   * 娣诲姞璺敱绉婚櫎鍑芥暟
+   * @param fns 瑕佹坊鍔犵殑璺敱绉婚櫎鍑芥暟鏁扮粍
    */
   const addRemoveRouteFns = (fns: (() => void)[]) => {
     removeRouteFns.value.push(...fns)
   }
 
   /**
-   * 移除所有动态路由
-   * 执行所有存储的路由移除函数并清空数组
+   * 绉婚櫎鎵€鏈夊姩鎬佽矾鐢?
+   * 鎵ц鎵€鏈夊瓨鍌ㄧ殑璺敱绉婚櫎鍑芥暟骞舵竻绌烘暟缁?
    */
   const removeAllDynamicRoutes = () => {
     removeRouteFns.value.forEach((fn) => fn())
@@ -89,7 +89,7 @@ export const useMenuStore = defineStore('menuStore', () => {
   }
 
   /**
-   * 清空路由移除函数数组
+   * 娓呯┖璺敱绉婚櫎鍑芥暟鏁扮粍
    */
   const clearRemoveRouteFns = () => {
     removeRouteFns.value = []
@@ -107,3 +107,4 @@ export const useMenuStore = defineStore('menuStore', () => {
     clearRemoveRouteFns
   }
 })
+

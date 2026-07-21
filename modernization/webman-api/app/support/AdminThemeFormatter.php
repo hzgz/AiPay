@@ -35,7 +35,7 @@ class AdminThemeFormatter
             'has_style' => $hasStyle,
             'has_screenshot' => $hasScreenshot,
             'metadata_complete' => $metadataComplete,
-            'metadata_label' => $metadataComplete ? '元数据完整' : '元数据未完善',
+            'metadata_label' => $metadataComplete ? '元数据完整' : '元数据待补充',
             'metadata_type' => $metadataComplete ? 'success' : 'warning',
             'is_active' => $isActive,
             'status_label' => self::statusLabel($isActive, $hasStyle),
@@ -99,18 +99,18 @@ class AdminThemeFormatter
     private static function maintenanceNote(bool $activateSupported, bool $deleteSupported): string
     {
         if ($activateSupported && $deleteSupported) {
-            return '当前范围已接入模板中心，支持启用切换与安全删除。若删除的是正在使用的模板，系统会先切回标准模板再完成清理。';
+            return '当前模板支持启用切换与安全删除。若删除的是正在使用的模板，系统会先切回标准模板再完成清理。';
         }
 
         if ($deleteSupported) {
-            return '当前范围已接入模板中心，现阶段开放查看与安全删除；通过引用检查后即可执行模板清理。';
+            return '当前模板支持查看与安全删除；通过引用检查后即可执行模板清理。';
         }
 
         if ($activateSupported) {
-            return '当前范围已接入模板中心，现阶段支持启用切换；模板删除与文件清理暂未开放。';
+            return '当前模板支持启用切换；删除与文件清理暂未开放。';
         }
 
-        return '当前范围当前仅开放信息查看；模板删除与文件清理暂未开放。';
+        return '当前模板仅提供查看信息。';
     }
 
     private static function preview(?string $text, int $length): ?string

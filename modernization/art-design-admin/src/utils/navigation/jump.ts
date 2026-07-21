@@ -1,47 +1,47 @@
-/**
- * 导航跳转工具模块
+﻿/**
+ * 瀵艰埅璺宠浆宸ュ叿妯″潡
  *
- * 提供统一的页面跳转和导航功能
+ * 鎻愪緵缁熶竴鐨勯〉闈㈣烦杞拰瀵艰埅鍔熻兘
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 外部链接打开（新窗口）
- * - 菜单项跳转处理（支持内部路由和外部链接）
- * - iframe 页面跳转支持
- * - 递归查找并跳转到第一个可见的子菜单
- * - 智能判断跳转目标类型（外部链接/内部路由）
+ * - 澶栭儴閾炬帴鎵撳紑锛堟柊绐楀彛锛?
+ * - 鑿滃崟椤硅烦杞鐞嗭紙鏀寔鍐呴儴璺敱鍜屽閮ㄩ摼鎺ワ級
+ * - iframe 椤甸潰璺宠浆鏀寔
+ * - 閫掑綊鏌ユ壘骞惰烦杞埌绗竴涓彲瑙佺殑瀛愯彍鍗?
+ * - 鏅鸿兘鍒ゆ柇璺宠浆鐩爣绫诲瀷锛堝閮ㄩ摼鎺?鍐呴儴璺敱锛?
  *
  * @module utils/navigation/jump
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import { AppRouteRecord } from '@/types/router'
 import { router } from '@/router'
 import { isNavigableMenuItem } from './route'
 
-// 打开外部链接
+// 鎵撳紑澶栭儴閾炬帴
 export const openExternalLink = (link: string) => {
   window.open(link, '_blank')
 }
 
 /**
- * 菜单跳转
- * @param item 菜单项
- * @param jumpToFirst 是否跳转到第一个子菜单
+ * 鑿滃崟璺宠浆
+ * @param item 鑿滃崟椤?
+ * @param jumpToFirst 鏄惁璺宠浆鍒扮涓€涓瓙鑿滃崟
  * @returns
  */
 export const handleMenuJump = (item: AppRouteRecord, jumpToFirst: boolean = false) => {
-  // 处理外部链接
+  // 澶勭悊澶栭儴閾炬帴
   const { link, isIframe } = item.meta
   if (link && !isIframe) {
     return openExternalLink(link)
   }
 
-  // 如果不需要跳转到第一个子菜单，或者没有子菜单，直接跳转当前路径
+  // 濡傛灉涓嶉渶瑕佽烦杞埌绗竴涓瓙鑿滃崟锛屾垨鑰呮病鏈夊瓙鑿滃崟锛岀洿鎺ヨ烦杞綋鍓嶈矾寰?
   if (!jumpToFirst || !item.children?.length) {
     return router.push(item.path)
   }
 
-  // 递归查找第一个可导航的叶子节点菜单
+  // 閫掑綊鏌ユ壘绗竴涓彲瀵艰埅鐨勫彾瀛愯妭鐐硅彍鍗?
   const findFirstLeafMenu = (items: AppRouteRecord[]): AppRouteRecord | undefined => {
     for (const child of items) {
       if (isNavigableMenuItem(child)) {
@@ -53,16 +53,17 @@ export const handleMenuJump = (item: AppRouteRecord, jumpToFirst: boolean = fals
 
   const firstChild = findFirstLeafMenu(item.children)
 
-  // 如果子菜单都不可见，则回退到父级页面自身。
+  // 濡傛灉瀛愯彍鍗曢兘涓嶅彲瑙侊紝鍒欏洖閫€鍒扮埗绾ч〉闈㈣嚜韬€?
   if (!firstChild) {
     return router.push(item.path)
   }
 
-  // 如果第一个子菜单是外部链接则打开新窗口
+  // 濡傛灉绗竴涓瓙鑿滃崟鏄閮ㄩ摼鎺ュ垯鎵撳紑鏂扮獥鍙?
   if (firstChild.meta?.link) {
     return openExternalLink(firstChild.meta.link)
   }
 
-  // 跳转到子菜单路径
+  // 璺宠浆鍒板瓙鑿滃崟璺緞
   router.push(firstChild.path)
 }
+

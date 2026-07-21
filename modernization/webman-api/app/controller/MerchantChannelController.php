@@ -29,8 +29,8 @@ use Webman\Http\UploadFile;
 
 class MerchantChannelController
 {
-    private const CREDENTIAL_IMAGE_UPLOAD_URL = '/My/channels/credential-image';
-    private const CREDENTIAL_DECODE_URL = '/My/channels/credential-decode';
+    private const CREDENTIAL_IMAGE_UPLOAD_URL = '/api/merchant/channels/credential-image';
+    private const CREDENTIAL_DECODE_URL = '/api/merchant/channels/credential-decode';
     private const TEST_PAY_ORDER_MEMOS = ['merchant_channel_test_pay', 'merchant_channel_test_paid'];
     private const ALIPAY_BILL_RECONCILE_CODES = ['alipay_bill', 'alipay_mck'];
     private const ALIPAY_BILL_RECONCILE_GRACE_SECONDS = 300;
@@ -1451,7 +1451,7 @@ class MerchantChannelController
 
     private function buildAlipayTransferBridgeUrl(Request $request, string $userId, string $amount, string $memo): string
     {
-        return $this->requestOrigin($request) . '/url.php?' . http_build_query([
+        return \app\support\FrontendUrlBuilder::publicApiUrl($request, 'url', [
             'user_id' => $userId,
             'price' => $amount,
             'trade_no' => $memo,
@@ -1625,7 +1625,7 @@ class MerchantChannelController
 
         return [
             'display_mode' => 'qrcode',
-            'qrcode_url' => $this->requestOrigin($request) . '/qrcode.php?text=' . rawurlencode($normalized) . '&size=350',
+            'qrcode_url' => \app\support\FrontendUrlBuilder::publicQrCodeUrl($request, $normalized, 350),
         ];
     }
 
@@ -1649,7 +1649,7 @@ class MerchantChannelController
 
     private function testPayConsoleUrl(Request $request, string $tradeNo): string
     {
-        return $this->requestOrigin($request) . '/Pay/console?trade_no=' . rawurlencode($tradeNo);
+        return $this->requestOrigin($request) . '/api/public/cashier/console?trade_no=' . rawurlencode($tradeNo);
     }
 
     private function testPayStateLabel(string $state): string
@@ -3974,7 +3974,7 @@ class MerchantChannelController
         return match ($normalized) {
             '', '0', 'submit', 'page', 'web' => '0',
             '1', 'mapi', 'api' => '1',
-            default => throw new \InvalidArgumentException('接口模式仅支持普通接口或 MAPI 接口'),
+            default => throw new \InvalidArgumentException('接口模式仅支持普通接口或接口直连'),
         };
     }
 

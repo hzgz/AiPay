@@ -1,55 +1,56 @@
-/**
- * 表格全局配置模块
+﻿/**
+ * 琛ㄦ牸鍏ㄥ眬閰嶇疆妯″潡
  *
- * 提供表格与后端接口的字段映射配置
+ * 鎻愪緵琛ㄦ牸涓庡悗绔帴鍙ｇ殑瀛楁鏄犲皠閰嶇疆
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 响应数据字段自动识别和映射
- * - 支持多种常见的后端响应格式
- * - 请求参数字段映射配置
- * - 可扩展的字段配置机制
+ * - 鍝嶅簲鏁版嵁瀛楁鑷姩璇嗗埆鍜屾槧灏?
+ * - 鏀寔澶氱甯歌鐨勫悗绔搷搴旀牸寮?
+ * - 璇锋眰鍙傛暟瀛楁鏄犲皠閰嶇疆
+ * - 鍙墿灞曠殑瀛楁閰嶇疆鏈哄埗
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 适配不同后端的分页接口格式
- * - 统一前端表格组件的数据处理
- * - 减少重复的数据转换代码
- * - 支持多个后端服务的接口对接
+ * - 閫傞厤涓嶅悓鍚庣鐨勫垎椤垫帴鍙ｆ牸寮?
+ * - 缁熶竴鍓嶇琛ㄦ牸缁勪欢鐨勬暟鎹鐞?
+ * - 鍑忓皯閲嶅鐨勬暟鎹浆鎹唬鐮?
+ * - 鏀寔澶氫釜鍚庣鏈嶅姟鐨勬帴鍙ｅ鎺?
  *
- * ## 配置说明
+ * ## 閰嶇疆璇存槑
  *
- * - recordFields: 列表数据字段名（按优先级顺序查找）
- * - totalFields: 总条数字段名
- * - currentFields: 当前页码字段名
- * - sizeFields: 每页大小字段名
- * - paginationKey: 前端发送请求时使用的分页参数名
+ * - recordFields: 鍒楄〃鏁版嵁瀛楁鍚嶏紙鎸変紭鍏堢骇椤哄簭鏌ユ壘锛?
+ * - totalFields: 鎬绘潯鏁板瓧娈靛悕
+ * - currentFields: 褰撳墠椤电爜瀛楁鍚?
+ * - sizeFields: 姣忛〉澶у皬瀛楁鍚?
+ * - paginationKey: 鍓嶇鍙戦€佽姹傛椂浣跨敤鐨勫垎椤靛弬鏁板悕
  *
- * ## 扩展方式
+ * ## 鎵╁睍鏂瑰紡
  *
- * 如果后端使用其他字段名，可以在对应数组中添加新的字段名
- * 例如：recordFields: ['list', 'data', 'records', 'items', 'yourCustomField']
+ * 濡傛灉鍚庣浣跨敤鍏朵粬瀛楁鍚嶏紝鍙互鍦ㄥ搴旀暟缁勪腑娣诲姞鏂扮殑瀛楁鍚?
+ * 渚嬪锛歳ecordFields: ['list', 'data', 'records', 'items', 'yourCustomField']
  *
  * @module utils/table/tableConfig
- * @author Art Design Pro Team
+ * @author AiPay
  */
 export const tableConfig = {
-  // 响应数据字段映射配置，系统会从接口返回数据中按顺序查找这些字段
-  // 列表数据
+  // 鍝嶅簲鏁版嵁瀛楁鏄犲皠閰嶇疆锛岀郴缁熶細浠庢帴鍙ｈ繑鍥炴暟鎹腑鎸夐『搴忔煡鎵捐繖浜涘瓧娈?
+  // 鍒楄〃鏁版嵁
   recordFields: ['list', 'data', 'records', 'items', 'result', 'rows'],
-  // 总条数
+  // 鎬绘潯鏁?
   totalFields: ['total', 'count'],
-  // 当前页码
+  // 褰撳墠椤电爜
   currentFields: ['current', 'page', 'pageNum'],
-  // 每页大小
+  // 姣忛〉澶у皬
   sizeFields: ['size', 'pageSize', 'limit'],
 
-  // 请求参数映射配置，前端发送请求时使用的分页参数名
-  // useTable 组合式函数传递分页参数的时候 用 current 跟 size
+  // 璇锋眰鍙傛暟鏄犲皠閰嶇疆锛屽墠绔彂閫佽姹傛椂浣跨敤鐨勫垎椤靛弬鏁板悕
+  // useTable 缁勫悎寮忓嚱鏁颁紶閫掑垎椤靛弬鏁扮殑鏃跺€?鐢?current 璺?size
   paginationKey: {
-    // 当前页码
+    // 褰撳墠椤电爜
     current: 'current',
-    // 每页大小
+    // 姣忛〉澶у皬
     size: 'size'
   }
 }
+

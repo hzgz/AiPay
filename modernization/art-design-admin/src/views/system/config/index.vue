@@ -96,14 +96,12 @@
                 <div class="config-row__title">
                   <strong>{{ resolveFieldLabel(field) }}</strong>
                   <ElTag
-                    v-if="isFieldFilled(activeForm.key, field)"
                     size="small"
-                    type="success"
+                    :type="resolveFieldTagType(activeForm.key, field)"
                     effect="plain"
                   >
-                    已配置
+                    {{ resolveFieldTagText(activeForm.key, field) }}
                   </ElTag>
-                  <ElTag v-else size="small" effect="plain">未设置</ElTag>
                 </div>
 
                 <p v-if="resolveFieldHelpText(field)" class="config-row__help">
@@ -244,7 +242,7 @@
   const GROUP_COPY_MAP: Record<string, { title: string; description: string }> = {
     basic_display: {
       title: '基础展示',
-      description: '站点名称、标题、Logo 和首页入口配置。'
+      description: '站点名称、标题、标志和首页入口配置。'
     },
     template_content: {
       title: '模板内容',
@@ -252,7 +250,7 @@
     },
     transaction_rules: {
       title: '交易规则',
-      description: '订单金额、测试支付和线路配置。'
+      description: '订单金额、支付测试和线路配置。'
     },
     merchant_access: {
       title: '商户准入',
@@ -284,7 +282,7 @@
     key: '站点关键字',
     adminMail: '管理员邮箱',
     icp: 'ICP备案',
-    logo: '站点 Logo',
+    logo: '站点标志',
     favicon: '浏览器图标',
     bgtype: '背景类型',
     bg: '全站背景',
@@ -294,7 +292,7 @@
     home_url: '首页入口地址',
     diyApiTemp: '自定义接口页模板',
     is_notice: '公告开关',
-    demo_theme: '测试页模板',
+    demo_theme: '支付测试页模板',
     doc_theme: '文档页模板',
     home_popup: '首页弹窗',
     index_popup: '入口弹窗',
@@ -309,12 +307,12 @@
     is_channelPay: '商户通道测试支付',
     isDiy_orderNo: '自定义订单号开关',
     diy_orderNo: '自定义订单号规则',
-    demopay_money: '测试默认金额',
-    demopay_name: '测试收款人名称',
-    diy_demoPay: '测试可用支付方式',
-    epayid_demo: '测试商户号',
-    epaykey_demo: '测试密钥',
-    epayurl_demo: '测试网关地址',
+    demopay_money: '支付测试默认金额',
+    demopay_name: '支付测试收款人名称',
+    diy_demoPay: '支付测试可用方式',
+    epayid_demo: '支付测试商户号',
+    epaykey_demo: '支付测试密钥',
+    epayurl_demo: '支付测试网关地址',
     min_orderprice: '单笔最小金额',
     max_orderprice: '单笔最大金额',
     timeout: '订单超时时间',
@@ -367,32 +365,35 @@
     'logincode-type': '登录方式',
     'regcode-type': '注册方式',
     'retrieve-type': '找回密码方式',
+    merchant_login_drag_verify: '商户登录滑动验证',
+    merchant_register_drag_verify: '商户注册滑动验证',
+    merchant_retrieve_drag_verify: '找回密码滑动验证',
     smstype: '短信服务商',
     shield_tips: '风控提示',
     shield_key: '风控密钥',
     email_switch: '邮件通知',
-    'smtp-host': 'SMTP 主机',
-    'smtp-port': 'SMTP 端口',
-    'smtp-user': 'SMTP 账号',
-    'smtp-pass': 'SMTP 密码',
-    SmtpSecure: 'SMTP 加密方式',
-    'alisms-accessKeyId': '阿里云短信 AccessKey ID',
-    'alisms-Secret': '阿里云短信 AccessKey Secret',
+    'smtp-host': '邮件服务器',
+    'smtp-port': '邮件端口',
+    'smtp-user': '发信账号',
+    'smtp-pass': '发信密码',
+    SmtpSecure: '邮件加密方式',
+    'alisms-accessKeyId': '阿里云短信访问密钥编号',
+    'alisms-Secret': '阿里云短信访问密钥',
     'alisms-SignName': '阿里云短信签名',
-    'alisms-LoginCodeId': '阿里云登录模板 ID',
-    'alisms-RegCodeId': '阿里云注册模板 ID',
-    'tensms-AppId': '腾讯云短信 AppID',
-    'tensms-accessKeyId': '腾讯云短信 AccessKey ID',
-    'tensms-Secret': '腾讯云短信 AccessKey Secret',
+    'alisms-LoginCodeId': '阿里云登录模板编号',
+    'alisms-RegCodeId': '阿里云注册模板编号',
+    'tensms-AppId': '腾讯云短信应用编号',
+    'tensms-accessKeyId': '腾讯云短信访问密钥编号',
+    'tensms-Secret': '腾讯云短信访问密钥',
     'tensms-SignName': '腾讯云短信签名',
-    'tensms-LoginCodeId': '腾讯云登录模板 ID',
-    'tensms-RegCodeId': '腾讯云注册模板 ID',
+    'tensms-LoginCodeId': '腾讯云登录模板编号',
+    'tensms-RegCodeId': '腾讯云注册模板编号',
     'smsbao-user': '短信宝账号',
     'smsbao-pass': '短信宝密码',
-    'smsbao-api': '短信宝 API',
+    'smsbao-api': '短信宝接口地址',
     'smsbao-SignName': '短信宝签名',
     tg_switch: '电报通知',
-    tg_admin_id: '电报管理员 ID',
+    tg_admin_id: '电报管理员编号',
     tg_bot_token: '电报机器人令牌',
     wxpusher_switch: '微信推送通知',
     wxpusher_appToken: '微信推送应用令牌',
@@ -410,14 +411,14 @@
     tg_bind_tips: '电报绑定提示',
     'file-type': '文件存储方式',
     imageSize: '图片压缩大小',
-    'file-endpoint': '对象存储 Endpoint',
-    'file-accessKeyId': '对象存储 AccessKey ID',
-    'file-accessKeySecret': '对象存储 AccessKey Secret',
-    'file-OssName': '对象存储 Bucket',
+    'file-endpoint': '对象存储服务地址',
+    'file-accessKeyId': '对象存储访问密钥编号',
+    'file-accessKeySecret': '对象存储访问密钥',
+    'file-OssName': '对象存储存储桶',
     'qiniu-Domain': '七牛云访问域名',
-    'qiniu-Bucket': '七牛云空间名',
-    'qiniu-AK': '七牛云 AccessKey',
-    'qiniu-SK': '七牛云 SecretKey',
+    'qiniu-Bucket': '七牛云存储桶',
+    'qiniu-AK': '七牛云访问密钥编号',
+    'qiniu-SK': '七牛云访问密钥',
     isMtce: '维护模式',
     is_weboff: '前台停站',
     mtceType: '维护页类型',
@@ -430,7 +431,7 @@
 
   const FIELD_HELP_MAP: Record<string, string> = {
     home_url: '启用外链首页时填写完整地址。',
-    diyApiTemp: '仅自定义接口页模板时生效，支持 HTML。',
+    diyApiTemp: '仅在启用自定义接口页时生效。',
     domain_notice: '显示在商户域名提审入口附近。',
     is_channelPay: '开启后，商户可在通道列表发起“测试”。',
     diy_demoPay: '每行一个支付方式编码，例如 wxpay、alipay、qqpay。',
@@ -446,7 +447,10 @@
     qr_codeType: '选择本地或远程解析方式。',
     software_callback_sign_mode: '正式商用建议启用强签名模式。',
     software_callback_sign_window: '单位秒，默认建议 300。',
-    imageSize: '仅在启用本地图片压缩时生效。'
+    imageSize: '仅在启用本地图片压缩时生效。',
+    merchant_login_drag_verify: '开启后，商户登录提交前必须先完成滑动验证。',
+    merchant_register_drag_verify: '开启后，商户注册发送验证码和提交注册前都需要先完成滑动验证。',
+    merchant_retrieve_drag_verify: '开启后，商户找回密码发送验证码和重置密码前都需要先完成滑动验证。'
   }
 
   const OPTION_LABEL_MAP: Record<string, Record<string, string>> = {
@@ -473,20 +477,8 @@
     }
   }
 
-  const BROKEN_TEXT_FRAGMENTS = [
-    '绯荤',
-    '鍟嗘',
-    '鏀',
-    '寮€',
-    '鏂囨',
-    '鍥炶',
-    '璇疯',
-    '閫氱',
-    '缁存',
-    '榛樿',
-    '鍚敤',
-    '鐢ㄤ簬'
-  ]
+  const SUSPICIOUS_TEXT_CHAR_REGEX =
+    /[\u5a34\u7481\u7eef\u7f01\u9225\u934f\u935f\u93c0\u95ab\ufffd]/gu
 
   const GROUP_ICONS: Record<string, string> = {
     basic_display: 'ri:global-line',
@@ -714,7 +706,7 @@
 
   function resolveFieldPlaceholder(field: ConfigField) {
     if (field.editor === 'select') return '请选择'
-    if (HTML_FIELDS.has(field.key) || field.type === 'html') return '请输入 HTML 内容'
+    if (HTML_FIELDS.has(field.key) || field.type === 'html') return '请输入富文本内容'
     if (LIST_TEXT_FIELDS.has(field.key)) return '每行一项，或使用英文逗号分隔'
     if (ASSET_FIELDS.has(field.key)) return '请输入图片地址'
     if (SENSITIVE_FIELDS.has(field.key) || field.editor === 'password') return '请输入密钥或密码'
@@ -733,9 +725,29 @@
     return field.editor === 'textarea'
   }
 
+  function isSwitchEnabled(groupKey: string, field: ConfigField) {
+    return field.editor === 'switch' && readBooleanValue(groupKey, field.key)
+  }
+
   function isFieldFilled(groupKey: string, field: ConfigField) {
-    if (field.editor === 'switch') return true
+    if (field.editor === 'switch') return isSwitchEnabled(groupKey, field)
     return readStringValue(groupKey, field.key).trim().length > 0
+  }
+
+  function resolveFieldTagText(groupKey: string, field: ConfigField) {
+    if (field.editor === 'switch') {
+      return isSwitchEnabled(groupKey, field) ? '已开启' : '已关闭'
+    }
+
+    return isFieldFilled(groupKey, field) ? '已配置' : '未设置'
+  }
+
+  function resolveFieldTagType(groupKey: string, field: ConfigField) {
+    if (field.editor === 'switch') {
+      return isSwitchEnabled(groupKey, field) ? 'success' : 'info'
+    }
+
+    return isFieldFilled(groupKey, field) ? 'success' : 'info'
   }
 
   function countFilledFields(form: DisplayForm) {
@@ -817,7 +829,11 @@
   }
 
   function looksLikeBrokenText(value: string) {
-    return BROKEN_TEXT_FRAGMENTS.some((fragment) => value.includes(fragment))
+    if (value.includes('\uFFFD')) {
+      return true
+    }
+
+    return (value.match(SUSPICIOUS_TEXT_CHAR_REGEX)?.length ?? 0) >= 2
   }
 
   function humanizeConfigKey(value: string) {

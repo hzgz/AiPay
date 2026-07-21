@@ -174,7 +174,7 @@
                 </div>
 
                 <template v-if="!googleWriteEnabled">
-                  <div class="merchant-google-placeholder"> 当前仅展示状态。 </div>
+                  <div class="merchant-google-placeholder"> 当前页展示谷歌验证状态，二维码开通需按平台安全策略处理。 </div>
                 </template>
 
                 <template v-else-if="payload.google_auth?.bound">
@@ -214,7 +214,7 @@
                 </div>
 
                 <template v-if="!googleWriteEnabled">
-                  <div class="merchant-google-placeholder"> 当前不开放绑定或解绑。 </div>
+                  <div class="merchant-google-placeholder"> 当前绑定与解绑由平台安全策略统一管理。 </div>
                 </template>
 
                 <template v-else-if="payload.google_auth?.bound">
@@ -485,7 +485,9 @@
   )
 
   const googleManagementDescription = computed(() =>
-    googleWriteEnabled.value ? '可生成二维码并完成绑定或解绑。' : '当前仅展示状态。'
+    googleWriteEnabled.value
+      ? '可生成二维码并完成绑定或解绑。'
+      : '当前页提供谷歌验证状态查看。'
   )
 
   const accountCancellation = computed<Record<string, any>>(

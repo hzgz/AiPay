@@ -1,34 +1,34 @@
-/**
- * 系统设置状态管理模块
+﻿/**
+ * 绯荤粺璁剧疆鐘舵€佺鐞嗘ā鍧?
  *
- * 提供完整的系统设置状态管理
+ * 鎻愪緵瀹屾暣鐨勭郴缁熻缃姸鎬佺鐞?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 菜单布局配置（左侧、顶部、混合、双栏）
- * - 主题管理（亮色、暗色、自动）
- * - 菜单主题样式配置
- * - 界面显示开关（面包屑、标签页、语言切换等）
- * - 功能开关（手风琴模式、色弱模式、水印等）
- * - 样式配置（边框、圆角、容器宽度、页面过渡）
- * - 节日功能配置
- * - Element Plus 主题色动态设置
+ * - 鑿滃崟甯冨眬閰嶇疆锛堝乏渚с€侀《閮ㄣ€佹贩鍚堛€佸弻鏍忥級
+ * - 涓婚绠＄悊锛堜寒鑹层€佹殫鑹层€佽嚜鍔級
+ * - 鑿滃崟涓婚鏍峰紡閰嶇疆
+ * - 鐣岄潰鏄剧ず寮€鍏筹紙闈㈠寘灞戙€佹爣绛鹃〉銆佽瑷€鍒囨崲绛夛級
+ * - 鍔熻兘寮€鍏筹紙鎵嬮鐞存ā寮忋€佽壊寮辨ā寮忋€佹按鍗扮瓑锛?
+ * - 鏍峰紡閰嶇疆锛堣竟妗嗐€佸渾瑙掋€佸鍣ㄥ搴︺€侀〉闈㈣繃娓★級
+ * - 鑺傛棩鍔熻兘閰嶇疆
+ * - Element Plus 涓婚鑹插姩鎬佽缃?
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 设置面板配置管理
- * - 主题切换和样式定制
- * - 界面功能开关控制
- * - 用户偏好设置持久化
+ * - 璁剧疆闈㈡澘閰嶇疆绠＄悊
+ * - 涓婚鍒囨崲鍜屾牱寮忓畾鍒?
+ * - 鐣岄潰鍔熻兘寮€鍏虫帶鍒?
+ * - 鐢ㄦ埛鍋忓ソ璁剧疆鎸佷箙鍖?
  *
- * ## 持久化
+ * ## 鎸佷箙鍖?
  *
- * - 使用 localStorage 存储
- * - 存储键：sys-v{version}-setting
- * - 支持跨版本数据迁移
+ * - 浣跨敤 localStorage 瀛樺偍
+ * - 瀛樺偍閿細sys-v{version}-setting
+ * - 鏀寔璺ㄧ増鏈暟鎹縼绉?
  *
  * @module store/modules/setting
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
@@ -41,85 +41,85 @@ import { StorageConfig } from '@/utils'
 import { SETTING_DEFAULT_CONFIG } from '@/config/setting'
 
 /**
- * 系统设置状态管理
- * 管理应用的菜单、主题、界面显示等各项设置
+ * 绯荤粺璁剧疆鐘舵€佺鐞?
+ * 绠＄悊搴旂敤鐨勮彍鍗曘€佷富棰樸€佺晫闈㈡樉绀虹瓑鍚勯」璁剧疆
  */
 export const useSettingStore = defineStore(
   'settingStore',
   () => {
-    // 菜单相关设置
-    /** 菜单类型 */
+    // 鑿滃崟鐩稿叧璁剧疆
+    /** 鑿滃崟绫诲瀷 */
     const menuType = ref(SETTING_DEFAULT_CONFIG.menuType)
-    /** 菜单展开宽度 */
+    /** 鑿滃崟灞曞紑瀹藉害 */
     const menuOpenWidth = ref(SETTING_DEFAULT_CONFIG.menuOpenWidth)
-    /** 菜单是否展开 */
+    /** 鑿滃崟鏄惁灞曞紑 */
     const menuOpen = ref(SETTING_DEFAULT_CONFIG.menuOpen)
-    /** 双菜单是否显示文本 */
+    /** 鍙岃彍鍗曟槸鍚︽樉绀烘枃鏈?*/
     const dualMenuShowText = ref(SETTING_DEFAULT_CONFIG.dualMenuShowText)
 
-    // 主题相关设置
-    /** 系统主题类型 */
+    // 涓婚鐩稿叧璁剧疆
+    /** 绯荤粺涓婚绫诲瀷 */
     const systemThemeType = ref(SETTING_DEFAULT_CONFIG.systemThemeType)
-    /** 系统主题模式 */
+    /** 绯荤粺涓婚妯″紡 */
     const systemThemeMode = ref(SETTING_DEFAULT_CONFIG.systemThemeMode)
-    /** 菜单主题类型 */
+    /** 鑿滃崟涓婚绫诲瀷 */
     const menuThemeType = ref(SETTING_DEFAULT_CONFIG.menuThemeType)
-    /** 系统主题颜色 */
+    /** 绯荤粺涓婚棰滆壊 */
     const systemThemeColor = ref(SETTING_DEFAULT_CONFIG.systemThemeColor)
 
-    // 界面显示设置
-    /** 是否显示菜单按钮 */
+    // 鐣岄潰鏄剧ず璁剧疆
+    /** 鏄惁鏄剧ず鑿滃崟鎸夐挳 */
     const showMenuButton = ref(SETTING_DEFAULT_CONFIG.showMenuButton)
-    /** 是否显示快速入口 */
+    /** 鏄惁鏄剧ず蹇€熷叆鍙?*/
     const showFastEnter = ref(SETTING_DEFAULT_CONFIG.showFastEnter)
-    /** 是否显示刷新按钮 */
+    /** 鏄惁鏄剧ず鍒锋柊鎸夐挳 */
     const showRefreshButton = ref(SETTING_DEFAULT_CONFIG.showRefreshButton)
-    /** 是否显示面包屑 */
+    /** 鏄惁鏄剧ず闈㈠寘灞?*/
     const showCrumbs = ref(SETTING_DEFAULT_CONFIG.showCrumbs)
-    /** 是否显示工作台标签 */
+    /** 鏄惁鏄剧ず宸ヤ綔鍙版爣绛?*/
     const showWorkTab = ref(SETTING_DEFAULT_CONFIG.showWorkTab)
-    /** 是否显示语言切换 */
+    /** 鏄惁鏄剧ず璇█鍒囨崲 */
     const showLanguage = ref(SETTING_DEFAULT_CONFIG.showLanguage)
-    /** 是否显示进度条 */
+    /** 鏄惁鏄剧ず杩涘害鏉?*/
     const showNprogress = ref(SETTING_DEFAULT_CONFIG.showNprogress)
-    /** 是否显示设置引导 */
+    /** 鏄惁鏄剧ず璁剧疆寮曞 */
     const showSettingGuide = ref(SETTING_DEFAULT_CONFIG.showSettingGuide)
-    /** 是否显示节日文本 */
+    /** 鏄惁鏄剧ず鑺傛棩鏂囨湰 */
     const showFestivalText = ref(SETTING_DEFAULT_CONFIG.showFestivalText)
-    /** 是否显示水印 */
+    /** 鏄惁鏄剧ず姘村嵃 */
     const watermarkVisible = ref(SETTING_DEFAULT_CONFIG.watermarkVisible)
 
-    // 功能设置
-    /** 是否自动关闭 */
+    // 鍔熻兘璁剧疆
+    /** 鏄惁鑷姩鍏抽棴 */
     const autoClose = ref(SETTING_DEFAULT_CONFIG.autoClose)
-    /** 是否唯一展开 */
+    /** 鏄惁鍞竴灞曞紑 */
     const uniqueOpened = ref(SETTING_DEFAULT_CONFIG.uniqueOpened)
-    /** 是否色弱模式 */
+    /** 鏄惁鑹插急妯″紡 */
     const colorWeak = ref(SETTING_DEFAULT_CONFIG.colorWeak)
-    /** 是否刷新 */
+    /** 鏄惁鍒锋柊 */
     const refresh = ref(SETTING_DEFAULT_CONFIG.refresh)
-    /** 是否加载节日烟花 */
+    /** 鏄惁鍔犺浇鑺傛棩鐑熻姳 */
     const holidayFireworksLoaded = ref(SETTING_DEFAULT_CONFIG.holidayFireworksLoaded)
 
-    // 样式设置
-    /** 边框模式 */
+    // 鏍峰紡璁剧疆
+    /** 杈规妯″紡 */
     const boxBorderMode = ref(SETTING_DEFAULT_CONFIG.boxBorderMode)
-    /** 页面过渡效果 */
+    /** 椤甸潰杩囨浮鏁堟灉 */
     const pageTransition = ref(SETTING_DEFAULT_CONFIG.pageTransition)
-    /** 标签页样式 */
+    /** 鏍囩椤垫牱寮?*/
     const tabStyle = ref(SETTING_DEFAULT_CONFIG.tabStyle)
-    /** 自定义圆角 */
+    /** 鑷畾涔夊渾瑙?*/
     const customRadius = ref(SETTING_DEFAULT_CONFIG.customRadius)
-    /** 容器宽度 */
+    /** 瀹瑰櫒瀹藉害 */
     const containerWidth = ref(SETTING_DEFAULT_CONFIG.containerWidth)
 
-    // 节日相关
-    /** 节日日期 */
+    // 鑺傛棩鐩稿叧
+    /** 鑺傛棩鏃ユ湡 */
     const festivalDate = ref('')
 
     /**
-     * 获取菜单主题
-     * 根据当前主题类型和暗色模式返回对应的主题配置
+     * 鑾峰彇鑿滃崟涓婚
+     * 鏍规嵁褰撳墠涓婚绫诲瀷鍜屾殫鑹叉ā寮忚繑鍥炲搴旂殑涓婚閰嶇疆
      */
     const getMenuTheme = computed((): MenuThemeType => {
       const list = AppConfig.themeList.filter((item) => item.theme === menuThemeType.value)
@@ -131,54 +131,54 @@ export const useSettingStore = defineStore(
     })
 
     /**
-     * 判断是否为暗色模式
+     * 鍒ゆ柇鏄惁涓烘殫鑹叉ā寮?
      */
     const isDark = computed((): boolean => {
       return systemThemeType.value === SystemThemeEnum.DARK
     })
 
     /**
-     * 获取菜单展开宽度
+     * 鑾峰彇鑿滃崟灞曞紑瀹藉害
      */
     const getMenuOpenWidth = computed((): string => {
       return menuOpenWidth.value + 'px' || SETTING_DEFAULT_CONFIG.menuOpenWidth + 'px'
     })
 
     /**
-     * 获取自定义圆角
+     * 鑾峰彇鑷畾涔夊渾瑙?
      */
     const getCustomRadius = computed((): string => {
       return customRadius.value + 'rem' || SETTING_DEFAULT_CONFIG.customRadius + 'rem'
     })
 
     /**
-     * 是否显示烟花
-     * 根据当前日期和节日日期判断是否显示烟花效果
+     * 鏄惁鏄剧ず鐑熻姳
+     * 鏍规嵁褰撳墠鏃ユ湡鍜岃妭鏃ユ棩鏈熷垽鏂槸鍚︽樉绀虹儫鑺辨晥鏋?
      */
     const isShowFireworks = computed((): boolean => {
       return festivalDate.value === useCeremony().currentFestivalData.value?.date ? false : true
     })
 
     /**
-     * 切换菜单布局
-     * @param type 菜单类型
+     * 鍒囨崲鑿滃崟甯冨眬
+     * @param type 鑿滃崟绫诲瀷
      */
     const switchMenuLayouts = (type: MenuTypeEnum) => {
       menuType.value = type
     }
 
     /**
-     * 设置菜单展开宽度
-     * @param width 宽度值
+     * 璁剧疆鑿滃崟灞曞紑瀹藉害
+     * @param width 瀹藉害鍊?
      */
     const setMenuOpenWidth = (width: number) => {
       menuOpenWidth.value = width
     }
 
     /**
-     * 设置全局主题
-     * @param theme 主题类型
-     * @param themeMode 主题模式
+     * 璁剧疆鍏ㄥ眬涓婚
+     * @param theme 涓婚绫诲瀷
+     * @param themeMode 涓婚妯″紡
      */
     const setGlopTheme = (theme: SystemThemeEnum, themeMode: SystemThemeEnum) => {
       systemThemeType.value = theme
@@ -187,16 +187,16 @@ export const useSettingStore = defineStore(
     }
 
     /**
-     * 切换菜单样式
-     * @param theme 菜单主题
+     * 鍒囨崲鑿滃崟鏍峰紡
+     * @param theme 鑿滃崟涓婚
      */
     const switchMenuStyles = (theme: MenuThemeEnum) => {
       menuThemeType.value = theme
     }
 
     /**
-     * 设置Element Plus主题颜色
-     * @param theme 主题颜色
+     * 璁剧疆Element Plus涓婚棰滆壊
+     * @param theme 涓婚棰滆壊
      */
     const setElementTheme = (theme: string) => {
       systemThemeColor.value = theme
@@ -204,147 +204,147 @@ export const useSettingStore = defineStore(
     }
 
     /**
-     * 切换边框模式
+     * 鍒囨崲杈规妯″紡
      */
     const setBorderMode = () => {
       boxBorderMode.value = !boxBorderMode.value
     }
 
     /**
-     * 设置容器宽度
-     * @param width 容器宽度枚举值
+     * 璁剧疆瀹瑰櫒瀹藉害
+     * @param width 瀹瑰櫒瀹藉害鏋氫妇鍊?
      */
     const setContainerWidth = (width: ContainerWidthEnum) => {
       containerWidth.value = width
     }
 
     /**
-     * 切换唯一展开模式
+     * 鍒囨崲鍞竴灞曞紑妯″紡
      */
     const setUniqueOpened = () => {
       uniqueOpened.value = !uniqueOpened.value
     }
 
     /**
-     * 切换菜单按钮显示
+     * 鍒囨崲鑿滃崟鎸夐挳鏄剧ず
      */
     const setButton = () => {
       showMenuButton.value = !showMenuButton.value
     }
 
     /**
-     * 切换快速入口显示
+     * 鍒囨崲蹇€熷叆鍙ｆ樉绀?
      */
     const setFastEnter = () => {
       showFastEnter.value = !showFastEnter.value
     }
 
     /**
-     * 切换自动关闭
+     * 鍒囨崲鑷姩鍏抽棴
      */
     const setAutoClose = () => {
       autoClose.value = !autoClose.value
     }
 
     /**
-     * 切换刷新按钮显示
+     * 鍒囨崲鍒锋柊鎸夐挳鏄剧ず
      */
     const setShowRefreshButton = () => {
       showRefreshButton.value = !showRefreshButton.value
     }
 
     /**
-     * 切换面包屑显示
+     * 鍒囨崲闈㈠寘灞戞樉绀?
      */
     const setCrumbs = () => {
       showCrumbs.value = !showCrumbs.value
     }
 
     /**
-     * 设置工作台标签显示
-     * @param show 是否显示
+     * 璁剧疆宸ヤ綔鍙版爣绛炬樉绀?
+     * @param show 鏄惁鏄剧ず
      */
     const setWorkTab = (show: boolean) => {
       showWorkTab.value = show
     }
 
     /**
-     * 切换语言切换显示
+     * 鍒囨崲璇█鍒囨崲鏄剧ず
      */
     const setLanguage = () => {
       showLanguage.value = !showLanguage.value
     }
 
     /**
-     * 切换进度条显示
+     * 鍒囨崲杩涘害鏉℃樉绀?
      */
     const setNprogress = () => {
       showNprogress.value = !showNprogress.value
     }
 
     /**
-     * 切换色弱模式
+     * 鍒囨崲鑹插急妯″紡
      */
     const setColorWeak = () => {
       colorWeak.value = !colorWeak.value
     }
 
     /**
-     * 隐藏设置引导
+     * 闅愯棌璁剧疆寮曞
      */
     const hideSettingGuide = () => {
       showSettingGuide.value = false
     }
 
     /**
-     * 显示设置引导
+     * 鏄剧ず璁剧疆寮曞
      */
     const openSettingGuide = () => {
       showSettingGuide.value = true
     }
 
     /**
-     * 设置页面过渡效果
-     * @param transition 过渡效果名称
+     * 璁剧疆椤甸潰杩囨浮鏁堟灉
+     * @param transition 杩囨浮鏁堟灉鍚嶇О
      */
     const setPageTransition = (transition: string) => {
       pageTransition.value = transition
     }
 
     /**
-     * 设置标签页样式
-     * @param style 样式名称
+     * 璁剧疆鏍囩椤垫牱寮?
+     * @param style 鏍峰紡鍚嶇О
      */
     const setTabStyle = (style: string) => {
       tabStyle.value = style
     }
 
     /**
-     * 设置菜单展开状态
-     * @param open 是否展开
+     * 璁剧疆鑿滃崟灞曞紑鐘舵€?
+     * @param open 鏄惁灞曞紑
      */
     const setMenuOpen = (open: boolean) => {
       menuOpen.value = open
     }
 
     /**
-     * 刷新页面
+     * 鍒锋柊椤甸潰
      */
     const reload = () => {
       refresh.value = !refresh.value
     }
 
     /**
-     * 设置水印显示
-     * @param visible 是否显示
+     * 璁剧疆姘村嵃鏄剧ず
+     * @param visible 鏄惁鏄剧ず
      */
     const setWatermarkVisible = (visible: boolean) => {
       watermarkVisible.value = visible
     }
 
     /**
-     * 设置自定义圆角
-     * @param radius 圆角值
+     * 璁剧疆鑷畾涔夊渾瑙?
+     * @param radius 鍦嗚鍊?
      */
     const setCustomRadius = (radius: string) => {
       customRadius.value = radius
@@ -352,16 +352,16 @@ export const useSettingStore = defineStore(
     }
 
     /**
-     * 设置节日烟花加载状态
-     * @param isLoad 是否已加载
+     * 璁剧疆鑺傛棩鐑熻姳鍔犺浇鐘舵€?
+     * @param isLoad 鏄惁宸插姞杞?
      */
     const setholidayFireworksLoaded = (isLoad: boolean) => {
       holidayFireworksLoaded.value = isLoad
     }
 
     /**
-     * 设置节日文本显示
-     * @param show 是否显示
+     * 璁剧疆鑺傛棩鏂囨湰鏄剧ず
+     * @param show 鏄惁鏄剧ず
      */
     const setShowFestivalText = (show: boolean) => {
       showFestivalText.value = show
@@ -448,3 +448,4 @@ export const useSettingStore = defineStore(
     }
   }
 )
+

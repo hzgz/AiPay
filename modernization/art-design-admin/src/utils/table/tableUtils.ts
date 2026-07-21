@@ -1,60 +1,60 @@
-/**
- * 表格工具函数模块
+﻿/**
+ * 琛ㄦ牸宸ュ叿鍑芥暟妯″潡
  *
- * 提供表格数据处理和请求管理的核心工具函数
+ * 鎻愪緵琛ㄦ牸鏁版嵁澶勭悊鍜岃姹傜鐞嗙殑鏍稿績宸ュ叿鍑芥暟
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 多格式 API 响应自动适配和标准化
- * - 表格数据提取和转换
- * - 分页信息自动更新和校验
- * - 智能防抖函数（支持取消和立即执行）
- * - 统一的错误处理机制
- * - 嵌套数据结构解析
+ * - 澶氭牸寮?API 鍝嶅簲鑷姩閫傞厤鍜屾爣鍑嗗寲
+ * - 琛ㄦ牸鏁版嵁鎻愬彇鍜岃浆鎹?
+ * - 鍒嗛〉淇℃伅鑷姩鏇存柊鍜屾牎楠?
+ * - 鏅鸿兘闃叉姈鍑芥暟锛堟敮鎸佸彇娑堝拰绔嬪嵆鎵ц锛?
+ * - 缁熶竴鐨勯敊璇鐞嗘満鍒?
+ * - 宓屽鏁版嵁缁撴瀯瑙ｆ瀽
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - useTable 组合式函数的底层工具
- * - 适配各种后端接口响应格式
- * - 表格数据的标准化处理
- * - 请求防抖和性能优化
- * - 错误统一处理和日志记录
+ * - useTable 缁勫悎寮忓嚱鏁扮殑搴曞眰宸ュ叿
+ * - 閫傞厤鍚勭鍚庣鎺ュ彛鍝嶅簲鏍煎紡
+ * - 琛ㄦ牸鏁版嵁鐨勬爣鍑嗗寲澶勭悊
+ * - 璇锋眰闃叉姈鍜屾€ц兘浼樺寲
+ * - 閿欒缁熶竴澶勭悊鍜屾棩蹇楄褰?
  *
- * ## 支持的响应格式
+ * ## 鏀寔鐨勫搷搴旀牸寮?
  *
- * 1. 直接数组: [item1, item2, ...]
- * 2. 标准对象: { records: [], total: 100 }
- * 3. 嵌套data: { data: { list: [], total: 100 } }
- * 4. 多种字段名: list/data/records/items/result/rows
+ * 1. 鐩存帴鏁扮粍: [item1, item2, ...]
+ * 2. 鏍囧噯瀵硅薄: { records: [], total: 100 }
+ * 3. 宓屽data: { data: { list: [], total: 100 } }
+ * 4. 澶氱瀛楁鍚? list/data/records/items/result/rows
  *
- * ## 核心功能
+ * ## 鏍稿績鍔熻兘
  *
- * - defaultResponseAdapter: 智能识别和转换响应格式
- * - extractTableData: 提取表格数据数组
- * - updatePaginationFromResponse: 更新分页信息
- * - createSmartDebounce: 创建可控的防抖函数
- * - createErrorHandler: 生成错误处理器
+ * - defaultResponseAdapter: 鏅鸿兘璇嗗埆鍜岃浆鎹㈠搷搴旀牸寮?
+ * - extractTableData: 鎻愬彇琛ㄦ牸鏁版嵁鏁扮粍
+ * - updatePaginationFromResponse: 鏇存柊鍒嗛〉淇℃伅
+ * - createSmartDebounce: 鍒涘缓鍙帶鐨勯槻鎶栧嚱鏁?
+ * - createErrorHandler: 鐢熸垚閿欒澶勭悊鍣?
  *
  * @module utils/table/tableUtils
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import type { ApiResponse } from './tableCache'
 import { tableConfig } from './tableConfig'
 
-// 请求参数基础接口，扩展分页参数
+// 璇锋眰鍙傛暟鍩虹鎺ュ彛锛屾墿灞曞垎椤靛弬鏁?
 export interface BaseRequestParams extends Api.Common.PaginationParams {
   [key: string]: unknown
 }
 
-// 错误处理接口
+// 閿欒澶勭悊鎺ュ彛
 export interface TableError {
   code: string
   message: string
   details?: unknown
 }
 
-// 辅助函数：从对象中提取记录数组
+// 杈呭姪鍑芥暟锛氫粠瀵硅薄涓彁鍙栬褰曟暟缁?
 function extractRecords<T>(obj: Record<string, unknown>, fields: string[]): T[] {
   for (const field of fields) {
     if (field in obj && Array.isArray(obj[field])) {
@@ -64,7 +64,7 @@ function extractRecords<T>(obj: Record<string, unknown>, fields: string[]): T[] 
   return []
 }
 
-// 辅助函数：从对象中提取总数
+// 杈呭姪鍑芥暟锛氫粠瀵硅薄涓彁鍙栨€绘暟
 function extractTotal(obj: Record<string, unknown>, records: unknown[], fields: string[]): number {
   for (const field of fields) {
     if (field in obj && typeof obj[field] === 'number') {
@@ -74,7 +74,7 @@ function extractTotal(obj: Record<string, unknown>, records: unknown[], fields: 
   return records.length
 }
 
-// 辅助函数：提取分页参数
+// 杈呭姪鍑芥暟锛氭彁鍙栧垎椤靛弬鏁?
 function extractPagination(
   obj: Record<string, unknown>,
   data?: Record<string, unknown>
@@ -109,10 +109,10 @@ function extractPagination(
 }
 
 /**
- * 默认响应适配器 - 支持多种常见的API响应格式
+ * 榛樿鍝嶅簲閫傞厤鍣?- 鏀寔澶氱甯歌鐨凙PI鍝嶅簲鏍煎紡
  */
 export const defaultResponseAdapter = <T>(response: unknown): ApiResponse<T> => {
-  // 定义支持的字段
+  // 瀹氫箟鏀寔鐨勫瓧娈?
   const recordFields = tableConfig.recordFields
 
   if (!response) {
@@ -125,9 +125,9 @@ export const defaultResponseAdapter = <T>(response: unknown): ApiResponse<T> => 
 
   if (typeof response !== 'object') {
     console.warn(
-      '[tableUtils] 无法识别的响应格式，支持的格式包括: 数组、包含' +
+      '[tableUtils] 无法识别的响应格式，支持数组、包含 ' +
         recordFields.join('/') +
-        '字段的对象、嵌套data对象。当前格式:',
+        ' 字段的对象，或嵌套 data 对象。',
       response
     )
     return { records: [], total: 0 }
@@ -138,12 +138,12 @@ export const defaultResponseAdapter = <T>(response: unknown): ApiResponse<T> => 
   let total = 0
   let pagination: Pick<ApiResponse<unknown>, 'current' | 'size'> | undefined
 
-  // 处理标准格式或直接列表
+  // 澶勭悊鏍囧噯鏍煎紡鎴栫洿鎺ュ垪琛?
   records = extractRecords(res, recordFields)
   total = extractTotal(res, records, tableConfig.totalFields)
   pagination = extractPagination(res)
 
-  // 如果没有找到，检查嵌套data
+  // 濡傛灉娌℃湁鎵惧埌锛屾鏌ュ祵濂梔ata
   if (records.length === 0 && 'data' in res && typeof res.data === 'object') {
     const data = res.data as Record<string, unknown>
     records = extractRecords(data, ['list', 'records', 'items'])
@@ -159,7 +159,7 @@ export const defaultResponseAdapter = <T>(response: unknown): ApiResponse<T> => 
   if (!recordFields.some((field) => field in res) && records.length === 0) {
     console.warn('[tableUtils] 无法识别的响应格式')
     console.warn('支持的字段包括: ' + recordFields.join('、'), response)
-    console.warn('扩展字段请到 utils/table/tableConfig 文件配置')
+    console.warn('如需扩展字段，请到 utils/table/tableConfig 文件中配置')
   }
 
   const result: ApiResponse<T> = { records, total }
@@ -170,7 +170,7 @@ export const defaultResponseAdapter = <T>(response: unknown): ApiResponse<T> => 
 }
 
 /**
- * 从标准化的API响应中提取表格数据
+ * 浠庢爣鍑嗗寲鐨凙PI鍝嶅簲涓彁鍙栬〃鏍兼暟鎹?
  */
 export const extractTableData = <T>(response: ApiResponse<T>): T[] => {
   const data = response.records || response.data || []
@@ -178,7 +178,7 @@ export const extractTableData = <T>(response: ApiResponse<T>): T[] => {
 }
 
 /**
- * 根据API响应更新分页信息
+ * 鏍规嵁API鍝嶅簲鏇存柊鍒嗛〉淇℃伅
  */
 export const updatePaginationFromResponse = <T>(
   pagination: Api.Common.PaginationParams,
@@ -197,7 +197,7 @@ export const updatePaginationFromResponse = <T>(
 }
 
 /**
- * 创建智能防抖函数 - 支持取消和立即执行
+ * 鍒涘缓鏅鸿兘闃叉姈鍑芥暟 - 鏀寔鍙栨秷鍜岀珛鍗虫墽琛?
  */
 export const createSmartDebounce = <T extends (...args: any[]) => Promise<any>>(
   fn: T,
@@ -264,7 +264,7 @@ export const createSmartDebounce = <T extends (...args: any[]) => Promise<any>>(
 }
 
 /**
- * 生成错误处理函数
+ * 鐢熸垚閿欒澶勭悊鍑芥暟
  */
 export const createErrorHandler = (
   onError?: (error: TableError) => void,
@@ -279,7 +279,7 @@ export const createErrorHandler = (
   return (err: unknown, context: string): TableError => {
     const tableError: TableError = {
       code: 'UNKNOWN_ERROR',
-      message: '未知错误',
+      message: '鏈煡閿欒',
       details: err
     }
 
@@ -295,3 +295,4 @@ export const createErrorHandler = (
     return tableError
   }
 }
+

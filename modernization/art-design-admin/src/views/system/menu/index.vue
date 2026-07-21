@@ -119,8 +119,8 @@
                 <strong>{{ activePermission.status_label }}</strong>
               </div>
               <div class="drawer-item">
-                <span>节点路径</span>
-                <strong>{{ legacyPathSummary(activePermission.path) }}</strong>
+                <span>权限标识</span>
+                <strong>{{ activePermission.path || '--' }}</strong>
               </div>
               <div class="drawer-item">
                 <span>所属分组</span>
@@ -150,8 +150,8 @@
               <ElDescriptionsItem label="当前菜单">
                 {{ activePermission.modern_menu_title || '--' }}
               </ElDescriptionsItem>
-              <ElDescriptionsItem label="节点路径">
-                {{ legacyPathSummary(activePermission.path) }}
+              <ElDescriptionsItem label="权限标识">
+                {{ activePermission.path || '--' }}
               </ElDescriptionsItem>
               <ElDescriptionsItem label="访问入口">
                 {{ activePermission.modern_route_path || '--' }}
@@ -491,10 +491,6 @@
     }
   ])
 
-  const legacyPathSummary = (path: string | null | undefined) => {
-    return String(path || '').trim() || '--'
-  }
-
   const iconConfiguredSummary = (icon: string | null | undefined) => {
     return String(icon || '').trim() ? '已设置' : '未设置'
   }
@@ -527,9 +523,9 @@
     },
     {
       prop: 'path',
-      label: '节点路径',
+      label: '节点摘要',
       minWidth: 280,
-      formatter: (row) => renderLegacyCell(row)
+      formatter: (row) => renderMetaCell(row)
     },
     {
       prop: 'type_label',
@@ -758,9 +754,10 @@
     return h('div', { class: 'mapping-cell' }, children)
   }
 
-  function renderLegacyCell(row: PermissionItem) {
+  function renderMetaCell(row: PermissionItem) {
     return h('div', { class: 'mapping-cell' }, [
-      h('strong', { class: 'cell-title' }, legacyPathSummary(row.path)),
+      h('strong', { class: 'cell-title' }, row.status_label || '--'),
+      h('p', { class: 'cell-sub' }, `类型：${row.type_label || '--'}`),
       h('p', { class: 'cell-sub' }, `图标状态：${iconConfiguredSummary(row.icon)}`)
     ])
   }

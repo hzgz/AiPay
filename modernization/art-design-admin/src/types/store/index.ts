@@ -1,157 +1,158 @@
-/**
- * Store 状态类型定义模块
+﻿/**
+ * Store 鐘舵€佺被鍨嬪畾涔夋ā鍧?
  *
- * 提供 Pinia Store 的状态类型定义
+ * 鎻愪緵 Pinia Store 鐨勭姸鎬佺被鍨嬪畾涔?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 系统主题类型
- * - 菜单主题类型
- * - 设置状态类型
- * - 工作标签页类型
- * - 用户状态类型
- * - 菜单状态类型
- * - 根状态类型
+ * - 绯荤粺涓婚绫诲瀷
+ * - 鑿滃崟涓婚绫诲瀷
+ * - 璁剧疆鐘舵€佺被鍨?
+ * - 宸ヤ綔鏍囩椤电被鍨?
+ * - 鐢ㄦ埛鐘舵€佺被鍨?
+ * - 鑿滃崟鐘舵€佺被鍨?
+ * - 鏍圭姸鎬佺被鍨?
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - Store 状态类型约束
- * - 状态数据结构定义
- * - 类型提示和自动补全
+ * - Store 鐘舵€佺被鍨嬬害鏉?
+ * - 鐘舵€佹暟鎹粨鏋勫畾涔?
+ * - 绫诲瀷鎻愮ず鍜岃嚜鍔ㄨˉ鍏?
  *
  * @module types/store/index
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { MenuThemeEnum, SystemThemeEnum } from '@/enums/appEnum'
 import { LocationQueryRaw } from 'vue-router'
 
-// 系统主题样式（light | dark）
+// 绯荤粺涓婚鏍峰紡锛坙ight | dark锛?
 export interface SystemThemeType {
-  /** 主题类名 */
+  /** 涓婚绫诲悕 */
   className: string
 }
 
-// 定义包含多个主题的类型
+// 瀹氫箟鍖呭惈澶氫釜涓婚鐨勭被鍨?
 export type SystemThemeTypes = {
   [key in Exclude<SystemThemeEnum, SystemThemeEnum.AUTO>]: SystemThemeType
 }
 
-// 菜单主题样式
+// 鑿滃崟涓婚鏍峰紡
 export interface MenuThemeType {
-  /** 主题类型 */
+  /** 涓婚绫诲瀷 */
   theme: MenuThemeEnum
-  /** 背景颜色 */
+  /** 鑳屾櫙棰滆壊 */
   background: string
-  /** 系统名称颜色 */
+  /** 绯荤粺鍚嶇О棰滆壊 */
   systemNameColor: string
-  /** 文本颜色 */
+  /** 鏂囨湰棰滆壊 */
   textColor: string
-  /** 图标颜色 */
+  /** 鍥炬爣棰滆壊 */
   iconColor: string
-  /** 背景图片 */
+  /** 鑳屾櫙鍥剧墖 */
   img?: string
 }
 
-// 设置中心
+// 璁剧疆涓績
 export interface SettingState {
-  /** 主题 */
+  /** 涓婚 */
   theme: string
-  /** 是否只保持一个子菜单的展开 */
+  /** 鏄惁鍙繚鎸佷竴涓瓙鑿滃崟鐨勫睍寮€ */
   uniqueOpened: boolean
-  /** 是否显示菜单按钮 */
+  /** 鏄惁鏄剧ず鑿滃崟鎸夐挳 */
   menuButton: boolean
-  /** 是否显示刷新按钮 */
+  /** 鏄惁鏄剧ず鍒锋柊鎸夐挳 */
   showRefreshButton: boolean
-  /** 是否显示面包屑 */
+  /** 鏄惁鏄剧ず闈㈠寘灞?*/
   showCrumbs: boolean
-  /** 是否自动关闭 */
+  /** 鏄惁鑷姩鍏抽棴 */
   autoClose: boolean
-  /** 是否显示工作标签页 */
+  /** 鏄惁鏄剧ず宸ヤ綔鏍囩椤?*/
   showWorkTab: boolean
-  /** 是否显示语言切换 */
+  /** 鏄惁鏄剧ず璇█鍒囨崲 */
   showLanguage: boolean
-  /** 是否显示进度条 */
+  /** 鏄惁鏄剧ず杩涘害鏉?*/
   showNprogress: boolean
-  /** 主题模式 */
+  /** 涓婚妯″紡 */
   themeModel: string
 }
 
-// 多标签
+// 澶氭爣绛?
 export interface WorkTab {
-  /** 标签标题 */
+  /** 鏍囩鏍囬 */
   title: string
-  /** 自定义标题 */
+  /** 鑷畾涔夋爣棰?*/
   customTitle?: string
-  /** 路由路径 */
+  /** 璺敱璺緞 */
   path: string
-  /** 路由名称 */
+  /** 璺敱鍚嶇О */
   name: string
-  /** 是否缓存 */
+  /** 鏄惁缂撳瓨 */
   keepAlive: boolean
-  /** 是否固定标签 */
+  /** 鏄惁鍥哄畾鏍囩 */
   fixedTab?: boolean
-  /** 路由参数 */
+  /** 璺敱鍙傛暟 */
   params?: object
-  /** 路由查询参数 */
+  /** 璺敱鏌ヨ鍙傛暟 */
   query?: LocationQueryRaw
-  /** 图标 */
+  /** 鍥炬爣 */
   icon?: string
-  /** 是否激活 */
+  /** 鏄惁婵€娲?*/
   isActive?: boolean
 }
 
-// 用户Store状态
+// 鐢ㄦ埛Store鐘舵€?
 export interface UserState {
-  /** 用户信息 */
+  /** 鐢ㄦ埛淇℃伅 */
   userInfo: Api.Auth.UserInfo | null
-  /** 认证令牌 */
+  /** 璁よ瘉浠ょ墝 */
   token: string | null
-  /** 用户角色列表 */
+  /** 鐢ㄦ埛瑙掕壊鍒楄〃 */
   roles: string[]
-  /** 用户权限列表 */
+  /** 鐢ㄦ埛鏉冮檺鍒楄〃 */
   permissions: string[]
 }
 
-// 设置Store状态
+// 璁剧疆Store鐘舵€?
 export interface SettingStoreState extends SettingState {
-  // 额外的设置状态
-  /** 菜单是否折叠 */
+  // 棰濆鐨勮缃姸鎬?
+  /** 鑿滃崟鏄惁鎶樺彔 */
   collapsed: boolean
-  /** 设备类型 */
+  /** 璁惧绫诲瀷 */
   device: 'desktop' | 'mobile'
-  /** 当前语言 */
+  /** 褰撳墠璇█ */
   language: string
 }
 
-// 工作标签页Store状态
+// 宸ヤ綔鏍囩椤礢tore鐘舵€?
 export interface WorkTabState {
-  /** 标签页列表 */
+  /** 鏍囩椤靛垪琛?*/
   tabs: WorkTab[]
-  /** 当前激活的标签页 */
+  /** 褰撳墠婵€娲荤殑鏍囩椤?*/
   activeTab: string
-  /** 缓存的标签页列表 */
+  /** 缂撳瓨鐨勬爣绛鹃〉鍒楄〃 */
   cachedTabs: string[]
 }
 
-// 菜单Store状态
+// 鑿滃崟Store鐘舵€?
 export interface MenuState {
-  /** 菜单列表 */
+  /** 鑿滃崟鍒楄〃 */
   menuList: any[]
-  /** 菜单是否已加载 */
+  /** 鑿滃崟鏄惁宸插姞杞?*/
   isLoaded: boolean
-  /** 菜单是否折叠 */
+  /** 鑿滃崟鏄惁鎶樺彔 */
   collapsed: boolean
 }
 
-// 根Store状态类型
+// 鏍筍tore鐘舵€佺被鍨?
 export interface RootState {
-  /** 用户状态 */
+  /** 鐢ㄦ埛鐘舵€?*/
   user: UserState
-  /** 设置状态 */
+  /** 璁剧疆鐘舵€?*/
   setting: SettingStoreState
-  /** 工作标签页状态 */
+  /** 宸ヤ綔鏍囩椤电姸鎬?*/
   workTab: WorkTabState
-  /** 菜单状态 */
+  /** 鑿滃崟鐘舵€?*/
   menu: MenuState
 }
+

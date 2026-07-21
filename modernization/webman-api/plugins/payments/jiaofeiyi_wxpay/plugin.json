@@ -20,7 +20,7 @@
       "code": "jiaofeiyi_wxpay",
       "name": "缴费易微信",
       "type": "wxpay",
-      "info": "缴费易微信通道由独立插件托管管理。",
+      "info": "缴费易微信通道，由独立插件托管。",
       "status": 1,
       "sort": 110,
       "maxcount": 999
@@ -37,7 +37,7 @@
         ],
         "notes": [
           "初始化缴费易微信插件的配置表和日志表。",
-          "保留原有字段映射，同时统一生命周期和清理元数据。"
+          "沿用当前字段映射，并统一生命周期与清理元数据。"
         ]
       }
     ]
@@ -47,7 +47,7 @@
     "downtime": "none",
     "requires_disable_after_upgrade": false,
     "notes": [
-      "该插件当前聚焦于账户托管和测试订单接入。",
+      "该插件当前聚焦于账户托管与统一下单接入。",
       "公共下单、远程兜底和查询逻辑已统一收口到后端。"
     ],
     "checklist": [
@@ -57,14 +57,14 @@
     "changelog": [
       {
         "version": "1.0.0",
-        "summary": "缴费易微信插件目录首版。",
+        "summary": "缴费易微信插件目录版本 1.0.0。",
         "breaking": false,
         "migration_files": [
           "001_create_config_table.sql",
           "002_create_plugin_log_table.sql"
         ],
         "notes": [
-          "保留原有商户ID、商户号、支付模式、店铺名、备注和远程接口映射。",
+          "沿用商户ID、商户号、支付模式、店铺名、备注和远程接口映射。",
           "缴费易请求逻辑已统一收口到后端共享支持层。"
         ]
       }

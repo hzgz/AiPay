@@ -195,7 +195,7 @@
   const loading = ref(false)
   const overview = ref<Api.CommerceOverview.OverviewResponse | null>(null)
   const readonlyAlertTitle = computed(
-    () => overview.value?.readonly_note || '当前页面仅展示经营统计数据。'
+    () => overview.value?.readonly_note || '当前页面展示经营统计数据与关键指标。'
   )
 
   const summary = computed<CommerceSummary>(() => overview.value?.summary ?? emptySummary())

@@ -12,7 +12,7 @@ $failures = [];
 checkRequiredFiles($projectRoot, $passes, $failures);
 checkRequiredDirectories($projectRoot, $passes, $failures, $warnings);
 $env = checkEnvironment($projectRoot, $passes, $warnings, $failures);
-checkPaymentPlugins($projectRoot, $passes, $failures);
+checkPaymentPlugins($projectRoot, $passes, $warnings, $failures);
 checkDatabase($env, $passes, $warnings, $failures);
 checkHttpTargets($env, $options, $passes, $warnings, $failures);
 
@@ -307,10 +307,10 @@ function checkEnvironment(string $projectRoot, array &$passes, array &$warnings,
     return $env;
 }
 
-function checkPaymentPlugins(string $projectRoot, array &$passes, array &$failures): void
+function checkPaymentPlugins(string $projectRoot, array &$passes, array &$warnings, array &$failures): void
 {
     $pluginsRoot = $projectRoot . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . 'payments';
-    $pluginDirectories = array_values(array_filter(
+    $candidateDirectories = array_values(array_filter(
         glob($pluginsRoot . DIRECTORY_SEPARATOR . '*') ?: [],
         static function (string $path): bool {
             if (!is_dir($path)) {
@@ -322,23 +322,47 @@ function checkPaymentPlugins(string $projectRoot, array &$passes, array &$failur
         }
     ));
 
-    if ($pluginDirectories === []) {
+    if ($candidateDirectories === []) {
         $failures[] = 'No payment plugin directories were found under plugins/payments';
         return;
     }
 
-    $passes[] = sprintf('%d payment plugin directories detected', count($pluginDirectories));
-
+    $pluginDirectories = [];
     $missingFiles = [];
-    foreach ($pluginDirectories as $pluginDirectory) {
+    foreach ($candidateDirectories as $pluginDirectory) {
         $pluginName = basename($pluginDirectory);
-        if (!is_file($pluginDirectory . DIRECTORY_SEPARATOR . 'plugin.json')) {
+        $pluginJsonPath = $pluginDirectory . DIRECTORY_SEPARATOR . 'plugin.json';
+        $pluginEntryPath = $pluginDirectory . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Plugin.php';
+        $hasPluginJson = is_file($pluginJsonPath);
+        $hasPluginEntry = is_file($pluginEntryPath);
+
+        if ($hasPluginJson && $hasPluginEntry) {
+            $pluginDirectories[] = $pluginDirectory;
+            continue;
+        }
+
+        if (!$hasPluginJson && !$hasPluginEntry && isDirectoryEffectivelyEmpty($pluginDirectory)) {
+            $warnings[] = sprintf(
+                'Ignored empty payment plugin residue directory: %s (recommended to remove before packaging)',
+                $pluginName
+            );
+            continue;
+        }
+
+        if (!$hasPluginJson) {
             $missingFiles[] = "{$pluginName}/plugin.json";
         }
-        if (!is_file($pluginDirectory . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Plugin.php')) {
+        if (!$hasPluginEntry) {
             $missingFiles[] = "{$pluginName}/src/Plugin.php";
         }
     }
+
+    if ($pluginDirectories === []) {
+        $failures[] = 'No valid payment plugin directories with plugin.json and src/Plugin.php were found under plugins/payments';
+        return;
+    }
+
+    $passes[] = sprintf('%d payment plugin directories detected', count($pluginDirectories));
 
     if ($missingFiles !== []) {
         $failures[] = 'Payment plugin metadata is incomplete: ' . implode(', ', $missingFiles);
@@ -454,7 +478,54 @@ function checkDatabase(array $env, array &$passes, array &$warnings, array &$fai
                 $passes[] = 'Root admin is bound to the default super-admin role';
             }
         }
+
+        $fixtureAdmins = [];
+        $fixtureStatement = $pdo->query('SELECT id, username, status FROM admin_admin WHERE id <> 1 ORDER BY id');
+        foreach ($fixtureStatement->fetchAll() as $adminRow) {
+            $username = trim((string)($adminRow['username'] ?? ''));
+            if ($username === '' || !isFixtureAdminUsername($username)) {
+                continue;
+            }
+
+            $fixtureAdmins[] = sprintf('#%d:%s', (int)($adminRow['id'] ?? 0), $username);
+        }
+
+        if ($fixtureAdmins !== []) {
+            $sample = implode(', ', array_slice($fixtureAdmins, 0, 10));
+            if (count($fixtureAdmins) > 10) {
+                $sample .= sprintf(' ... and %d more', count($fixtureAdmins) - 10);
+            }
+
+            $failures[] = sprintf(
+                'Fixture admin accounts are still present in admin_admin (%d rows): %s',
+                count($fixtureAdmins),
+                $sample
+            );
+        }
     }
+}
+
+function isDirectoryEffectivelyEmpty(string $directory): bool
+{
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS)
+    );
+
+    foreach ($iterator as $item) {
+        if ($item->isFile()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function isFixtureAdminUsername(string $username): bool
+{
+    return (bool)preg_match(
+        '/^(suite_|ppla_|paya_|cca_|adm_|ops_|role_|menu_|delverify_)/i',
+        $username
+    );
 }
 
 function checkHttpTargets(array $env, array $options, array &$passes, array &$warnings, array &$failures): void

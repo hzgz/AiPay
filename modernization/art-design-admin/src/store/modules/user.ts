@@ -1,35 +1,35 @@
-/**
- * 用户状态管理模块
+﻿/**
+ * 鐢ㄦ埛鐘舵€佺鐞嗘ā鍧?
  *
- * 提供用户相关的状态管理
+ * 鎻愪緵鐢ㄦ埛鐩稿叧鐨勭姸鎬佺鐞?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 用户登录状态管理
- * - 用户信息存储
- * - 访问令牌和刷新令牌管理
- * - 语言设置
- * - 搜索历史记录
- * - 锁屏状态和密码管理
- * - 登出清理逻辑
+ * - 鐢ㄦ埛鐧诲綍鐘舵€佺鐞?
+ * - 鐢ㄦ埛淇℃伅瀛樺偍
+ * - 璁块棶浠ょ墝鍜屽埛鏂颁护鐗岀鐞?
+ * - 璇█璁剧疆
+ * - 鎼滅储鍘嗗彶璁板綍
+ * - 閿佸睆鐘舵€佸拰瀵嗙爜绠＄悊
+ * - 鐧诲嚭娓呯悊閫昏緫
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 用户登录和认证
- * - 权限验证
- * - 个人信息展示
- * - 多语言切换
- * - 锁屏功能
- * - 搜索历史管理
+ * - 鐢ㄦ埛鐧诲綍鍜岃璇?
+ * - 鏉冮檺楠岃瘉
+ * - 涓汉淇℃伅灞曠ず
+ * - 澶氳瑷€鍒囨崲
+ * - 閿佸睆鍔熻兘
+ * - 鎼滅储鍘嗗彶绠＄悊
  *
- * ## 持久化
+ * ## 鎸佷箙鍖?
  *
- * - 使用 localStorage 存储
- * - 存储键：sys-v{version}-user
- * - 登出时自动清理
+ * - 浣跨敤 localStorage 瀛樺偍
+ * - 瀛樺偍閿細sys-v{version}-user
+ * - 鐧诲嚭鏃惰嚜鍔ㄦ竻鐞?
  *
  * @module store/modules/user
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
@@ -44,55 +44,55 @@ import { useMenuStore } from './menu'
 import { StorageConfig } from '@/utils/storage/storage-config'
 
 /**
- * 用户状态管理
- * 管理用户登录状态、个人信息、语言设置、搜索历史、锁屏状态等
+ * 鐢ㄦ埛鐘舵€佺鐞?
+ * 绠＄悊鐢ㄦ埛鐧诲綍鐘舵€併€佷釜浜轰俊鎭€佽瑷€璁剧疆銆佹悳绱㈠巻鍙层€侀攣灞忕姸鎬佺瓑
  */
 export const useUserStore = defineStore(
   'userStore',
   () => {
-    // 语言设置
+    // 璇█璁剧疆
     const language = ref(LanguageEnum.ZH)
-    // 登录状态
+    // 鐧诲綍鐘舵€?
     const isLogin = ref(false)
-    // 锁屏状态
+    // 閿佸睆鐘舵€?
     const isLock = ref(false)
-    // 锁屏密码
+    // 閿佸睆瀵嗙爜
     const lockPassword = ref('')
-    // 用户信息
+    // 鐢ㄦ埛淇℃伅
     const info = ref<Partial<Api.Auth.UserInfo>>({})
-    // 搜索历史记录
+    // 鎼滅储鍘嗗彶璁板綍
     const searchHistory = ref<AppRouteRecord[]>([])
-    // 访问令牌
+    // 璁块棶浠ょ墝
     const accessToken = ref('')
-    // 刷新令牌
+    // 鍒锋柊浠ょ墝
     const refreshToken = ref('')
 
-    // 计算属性：获取用户信息
+    // 璁＄畻灞炴€э細鑾峰彇鐢ㄦ埛淇℃伅
     const getUserInfo = computed(() => info.value)
-    // 计算属性：获取设置状态
+    // 璁＄畻灞炴€э細鑾峰彇璁剧疆鐘舵€?
     const getSettingState = computed(() => useSettingStore().$state)
-    // 计算属性：获取工作台状态
+    // 璁＄畻灞炴€э細鑾峰彇宸ヤ綔鍙扮姸鎬?
     const getWorktabState = computed(() => useWorktabStore().$state)
 
     /**
-     * 设置用户信息
-     * @param newInfo 新的用户信息
+     * 璁剧疆鐢ㄦ埛淇℃伅
+     * @param newInfo 鏂扮殑鐢ㄦ埛淇℃伅
      */
     const setUserInfo = (newInfo: Api.Auth.UserInfo) => {
       info.value = newInfo
     }
 
     /**
-     * 设置登录状态
-     * @param status 登录状态
+     * 璁剧疆鐧诲綍鐘舵€?
+     * @param status 鐧诲綍鐘舵€?
      */
     const setLoginStatus = (status: boolean) => {
       isLogin.value = status
     }
 
     /**
-     * 设置语言
-     * @param lang 语言枚举值
+     * 璁剧疆璇█
+     * @param lang 璇█鏋氫妇鍊?
      */
     const setLanguage = (lang: LanguageEnum) => {
       setPageTitle(router.currentRoute.value)
@@ -100,33 +100,33 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 设置搜索历史
-     * @param list 搜索历史列表
+     * 璁剧疆鎼滅储鍘嗗彶
+     * @param list 鎼滅储鍘嗗彶鍒楄〃
      */
     const setSearchHistory = (list: AppRouteRecord[]) => {
       searchHistory.value = list
     }
 
     /**
-     * 设置锁屏状态
-     * @param status 锁屏状态
+     * 璁剧疆閿佸睆鐘舵€?
+     * @param status 閿佸睆鐘舵€?
      */
     const setLockStatus = (status: boolean) => {
       isLock.value = status
     }
 
     /**
-     * 设置锁屏密码
-     * @param password 锁屏密码
+     * 璁剧疆閿佸睆瀵嗙爜
+     * @param password 閿佸睆瀵嗙爜
      */
     const setLockPassword = (password: string) => {
       lockPassword.value = password
     }
 
     /**
-     * 设置令牌
-     * @param newAccessToken 访问令牌
-     * @param newRefreshToken 刷新令牌（可选）
+     * 璁剧疆浠ょ墝
+     * @param newAccessToken 璁块棶浠ょ墝
+     * @param newRefreshToken 鍒锋柊浠ょ墝锛堝彲閫夛級
      */
     const setToken = (newAccessToken: string, newRefreshToken?: string) => {
       accessToken.value = newAccessToken
@@ -136,37 +136,37 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 退出登录
-     * 清空所有用户相关状态并跳转到登录页
-     * 如果是同一账号重新登录，保留工作台标签页
+     * 閫€鍑虹櫥褰?
+     * 娓呯┖鎵€鏈夌敤鎴风浉鍏崇姸鎬佸苟璺宠浆鍒扮櫥褰曢〉
+     * 濡傛灉鏄悓涓€璐﹀彿閲嶆柊鐧诲綍锛屼繚鐣欏伐浣滃彴鏍囩椤?
      */
     const logOut = () => {
-      // 保存当前用户 ID，用于下次登录时判断是否为同一用户
+      // 淇濆瓨褰撳墠鐢ㄦ埛 ID锛岀敤浜庝笅娆＄櫥褰曟椂鍒ゆ柇鏄惁涓哄悓涓€鐢ㄦ埛
       const currentUserId = info.value.userId
       if (currentUserId) {
         localStorage.setItem(StorageConfig.LAST_USER_ID_KEY, String(currentUserId))
       }
 
-      // 清空用户信息
+      // 娓呯┖鐢ㄦ埛淇℃伅
       info.value = {}
-      // 重置登录状态
+      // 閲嶇疆鐧诲綍鐘舵€?
       isLogin.value = false
-      // 重置锁屏状态
+      // 閲嶇疆閿佸睆鐘舵€?
       isLock.value = false
-      // 清空锁屏密码
+      // 娓呯┖閿佸睆瀵嗙爜
       lockPassword.value = ''
-      // 清空访问令牌
+      // 娓呯┖璁块棶浠ょ墝
       accessToken.value = ''
-      // 清空刷新令牌
+      // 娓呯┖鍒锋柊浠ょ墝
       refreshToken.value = ''
-      // 注意：不清空工作台标签页，等下次登录时根据用户判断
-      // 移除iframe路由缓存
+      // 娉ㄦ剰锛氫笉娓呯┖宸ヤ綔鍙版爣绛鹃〉锛岀瓑涓嬫鐧诲綍鏃舵牴鎹敤鎴峰垽鏂?
+      // 绉婚櫎iframe璺敱缂撳瓨
       sessionStorage.removeItem('iframeRoutes')
-      // 清空主页路径
+      // 娓呯┖涓婚〉璺緞
       useMenuStore().setHomePath('')
-      // 重置路由状态
+      // 閲嶇疆璺敱鐘舵€?
       resetRouterState(500)
-      // 跳转到登录页，携带当前路由作为 redirect 参数
+      // 璺宠浆鍒扮櫥褰曢〉锛屾惡甯﹀綋鍓嶈矾鐢变綔涓?redirect 鍙傛暟
       const currentRoute = router.currentRoute.value
       const redirect = currentRoute.path !== '/login' ? currentRoute.fullPath : undefined
       router.push({
@@ -176,30 +176,30 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 检查并清理工作台标签页
-     * 如果不是同一用户登录，清空工作台标签页
-     * 应在登录成功后调用
+     * 妫€鏌ュ苟娓呯悊宸ヤ綔鍙版爣绛鹃〉
+     * 濡傛灉涓嶆槸鍚屼竴鐢ㄦ埛鐧诲綍锛屾竻绌哄伐浣滃彴鏍囩椤?
+     * 搴斿湪鐧诲綍鎴愬姛鍚庤皟鐢?
      */
     const checkAndClearWorktabs = () => {
       const lastUserId = localStorage.getItem(StorageConfig.LAST_USER_ID_KEY)
       const currentUserId = info.value.userId
 
-      // 无法获取当前用户 ID，跳过检查
+      // 鏃犳硶鑾峰彇褰撳墠鐢ㄦ埛 ID锛岃烦杩囨鏌?
       if (!currentUserId) return
 
-      // 首次登录或缓存已清除，保留现有标签页
+      // 棣栨鐧诲綍鎴栫紦瀛樺凡娓呴櫎锛屼繚鐣欑幇鏈夋爣绛鹃〉
       if (!lastUserId) {
         return
       }
 
-      // 不同用户登录，清空工作台标签页
+      // 涓嶅悓鐢ㄦ埛鐧诲綍锛屾竻绌哄伐浣滃彴鏍囩椤?
       if (String(currentUserId) !== lastUserId) {
         const worktabStore = useWorktabStore()
         worktabStore.opened = []
         worktabStore.keepAliveExclude = []
       }
 
-      // 清除临时存储
+      // 娓呴櫎涓存椂瀛樺偍
       localStorage.removeItem(StorageConfig.LAST_USER_ID_KEY)
     }
 
@@ -233,3 +233,4 @@ export const useUserStore = defineStore(
     }
   }
 )
+

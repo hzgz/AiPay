@@ -3,8 +3,8 @@
     <LoginLeftView
       class="merchant-auth__left"
       brand-title="AiPay"
-      hero-title="AiPay 商户入驻"
-      hero-subtitle="完成开户注册后即可接入支付、配置通道并开始收款"
+      hero-title="商户密码找回"
+      hero-subtitle="验证商户身份后即可重置登录密码，重置后原登录会话会自动失效"
     />
 
     <div class="relative flex-1 merchant-auth">
@@ -13,29 +13,28 @@
       <div class="merchant-auth__wrap">
         <div class="merchant-auth__card">
           <div class="merchant-auth__head">
-            <h1>商户注册</h1>
+            <h1>找回密码</h1>
+            <p>请填写商户账号与验证信息后重置密码。</p>
           </div>
 
           <el-alert
-            v-if="pendingPayment"
+            v-if="retrieveDisabled"
             type="warning"
             show-icon
             :closable="false"
             class="merchant-auth__alert"
-            title="注册已生成待支付订单"
-            :description="pendingPaymentDescription"
+            title="当前未开启找回密码"
+            description="请联系平台管理员处理，或直接使用已有账号登录。"
           />
 
-          <el-alert
-            v-if="successMessage"
-            type="success"
-            show-icon
-            :closable="false"
-            class="merchant-auth__alert"
-            :title="successMessage"
-          />
-
-          <ElForm ref="formRef" :model="formData" :rules="rules" label-position="top">
+          <ElForm
+            v-else
+            ref="formRef"
+            :model="formData"
+            :rules="rules"
+            label-position="top"
+            @keyup.enter="handleSubmit"
+          >
             <ElFormItem label="商户账号" prop="username">
               <ElInput
                 v-model.trim="formData.username"
@@ -44,7 +43,7 @@
               />
             </ElFormItem>
 
-            <ElFormItem v-if="requiresEmail" label="邮箱地址" prop="email">
+            <ElFormItem v-if="requiresEmail" label="注册邮箱" prop="email">
               <ElInput
                 v-model.trim="formData.email"
                 class="merchant-auth__input"
@@ -52,11 +51,11 @@
               />
             </ElFormItem>
 
-            <ElFormItem v-if="requiresMobile" label="手机号码" prop="mobile">
+            <ElFormItem v-if="requiresMobile" label="注册手机号" prop="mobile">
               <ElInput
                 v-model.trim="formData.mobile"
                 class="merchant-auth__input"
-                placeholder="请输入手机号码"
+                placeholder="请输入注册手机号"
               />
             </ElFormItem>
 
@@ -68,29 +67,29 @@
               />
             </ElFormItem>
 
-            <ElFormItem label="登录密码" prop="password">
+            <ElFormItem label="新密码" prop="password">
               <ElInput
                 v-model.trim="formData.password"
                 class="merchant-auth__input"
                 type="password"
                 show-password
                 autocomplete="new-password"
-                placeholder="请输入登录密码"
+                placeholder="请输入新密码"
               />
             </ElFormItem>
 
-            <ElFormItem label="确认密码" prop="password2">
+            <ElFormItem label="确认新密码" prop="password2">
               <ElInput
                 v-model.trim="formData.password2"
                 class="merchant-auth__input"
                 type="password"
                 show-password
                 autocomplete="new-password"
-                placeholder="请再次输入登录密码"
+                placeholder="请再次输入新密码"
               />
             </ElFormItem>
 
-            <ElFormItem v-if="requiresVerifyCode" label="验证码" prop="captcha">
+            <ElFormItem label="验证码" prop="captcha">
               <div class="merchant-auth__code-row">
                 <ElInput
                   v-model.trim="formData.captcha"
@@ -130,7 +129,7 @@
             />
 
             <div class="merchant-auth__summary">
-              <span>注册方式：{{ registerTypeLabel }}</span>
+              <span>找回方式：{{ retrieveTypeLabel }}</span>
               <span>校验方式：{{ captchaTypeLabel }}</span>
             </div>
 
@@ -140,16 +139,17 @@
               :loading="submitting"
               @click="handleSubmit"
             >
-              创建商户账号
+              重置登录密码
             </ElButton>
-
-            <div class="merchant-auth__links">
-              <ElButton text @click="openFrontHome">返回首页</ElButton>
-              <RouterLink class="merchant-auth__link" to="/merchant/login"
-                >已有账号，去登录</RouterLink
-              >
-            </div>
           </ElForm>
+
+          <div class="merchant-auth__links">
+            <ElButton text @click="openFrontHome">返回首页</ElButton>
+            <div class="merchant-auth__link-group">
+              <RouterLink class="merchant-auth__link" to="/merchant/login">商户登录</RouterLink>
+              <RouterLink class="merchant-auth__link" to="/merchant/register">注册商户</RouterLink>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -165,19 +165,17 @@
     buildPublicCaptchaUrl,
     createDefaultPublicSoftwareConfig,
     fetchPublicSoftwareConfig,
-    sendPublicRegisterCode,
-    submitPublicRegister,
-    type PublicRegisterPendingPaymentPayload,
+    sendPublicRetrieveCode,
+    submitPublicRetrievePassword,
     type PublicSoftwareConfigPayload
   } from '@/api/public-auth'
   import LoginLeftView from '@/components/core/views/login/LoginLeftView.vue'
   import AuthTopBar from '@/components/core/views/login/AuthTopBar.vue'
   import MerchantAuthSlider from '../shared/merchant-auth-slider.vue'
 
-  defineOptions({ name: 'MerchantRegister' })
+  defineOptions({ name: 'MerchantForgotPassword' })
 
   const router = useRouter()
-  const route = useRoute()
   const formRef = ref<FormInstance>()
   const config = ref<PublicSoftwareConfigPayload>(createDefaultPublicSoftwareConfig())
   const submitting = ref(false)
@@ -186,8 +184,6 @@
   const captchaUrl = ref('')
   const sliderPassed = ref(false)
   const sliderInvalid = ref(false)
-  const successMessage = ref('')
-  const pendingPayment = ref<PublicRegisterPendingPaymentPayload | null>(null)
   let countdownTimer: ReturnType<typeof setInterval> | null = null
 
   const formData = reactive({
@@ -201,21 +197,21 @@
     ordinary_captcha: ''
   })
 
-  const requiresMobile = computed(() => config.value.register_type === 1)
-  const requiresEmail = computed(() => config.value.register_type === 2)
-  const requiresTelegram = computed(() => config.value.register_type === 3)
-  const requiresVerifyCode = computed(() => [1, 2, 3].includes(config.value.register_type))
+  const retrieveDisabled = computed(() => config.value.retrieve_type === 0)
+  const requiresMobile = computed(() => config.value.retrieve_type === 1)
+  const requiresEmail = computed(() => config.value.retrieve_type === 2)
+  const requiresTelegram = computed(() => config.value.retrieve_type === 3)
   const requiresImageCaptcha = computed(() => config.value.captcha_type !== 0)
-  const requiresSliderVerify = computed(() => config.value.merchant_register_drag_verify === 1)
+  const requiresSliderVerify = computed(() => config.value.merchant_retrieve_drag_verify === 1)
 
-  const registerTypeLabel = computed(() => {
+  const retrieveTypeLabel = computed(() => {
     return (
       {
-        0: '账号密码',
-        1: '手机验证码',
-        2: '邮箱验证码',
+        0: '未开启',
+        1: '手机验证',
+        2: '邮箱验证',
         3: '电报验证'
-      }[config.value.register_type] || '账号密码'
+      }[config.value.retrieve_type] || '未开启'
     )
   })
 
@@ -223,48 +219,14 @@
     return config.value.captcha_type === 0 ? '未启用图形验证码' : '已启用图形验证码'
   })
 
-  const pendingPaymentDescription = computed(() => {
-    if (!pendingPayment.value) {
-      return ''
-    }
-
-    const methods = Array.isArray(pendingPayment.value.paytype)
-      ? pendingPayment.value.paytype
-          .map((item) =>
-            String(
-              (item as { showname?: string })?.showname || (item as { name?: string })?.name || ''
-            )
-          )
-          .filter(Boolean)
-          .join(' / ')
-      : ''
-
-    return `待支付金额 ${pendingPayment.value.need || '--'}，订单号 ${pendingPayment.value.trade_no || '--'}${
-      methods ? `，可用方式：${methods}` : ''
-    }。`
-  })
-
-  const affiliateId = computed(() => {
-    const raw = route.query.aff
-    if (typeof raw === 'string') {
-      return raw.trim()
-    }
-
-    if (Array.isArray(raw)) {
-      return String(raw[0] || '').trim()
-    }
-
-    return ''
-  })
-
   const rules = computed<FormRules>(() => ({
     username: [{ required: true, message: '请输入商户账号', trigger: 'blur' }],
     password: [
-      { required: true, message: '请输入登录密码', trigger: 'blur' },
-      { min: 6, message: '登录密码至少 6 位', trigger: 'blur' }
+      { required: true, message: '请输入新密码', trigger: 'blur' },
+      { min: 6, message: '新密码至少 6 位', trigger: 'blur' }
     ],
     password2: [
-      { required: true, message: '请再次输入登录密码', trigger: 'blur' },
+      { required: true, message: '请再次输入新密码', trigger: 'blur' },
       {
         validator: (_rule, value: string, callback) => {
           if (value !== formData.password) {
@@ -284,16 +246,14 @@
       : [],
     mobile: requiresMobile.value
       ? [
-          { required: true, message: '请输入手机号码', trigger: 'blur' },
+          { required: true, message: '请输入注册手机号', trigger: 'blur' },
           { pattern: /^1\d{10}$/, message: '手机号码格式不正确', trigger: ['blur', 'change'] }
         ]
       : [],
     tg_chat_id: requiresTelegram.value
       ? [{ required: true, message: '请输入电报会话标识', trigger: 'blur' }]
       : [],
-    captcha: requiresVerifyCode.value
-      ? [{ required: true, message: '请输入验证码', trigger: 'blur' }]
-      : [],
+    captcha: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
     ordinary_captcha: requiresImageCaptcha.value
       ? [{ required: true, message: '请输入图形验证码', trigger: 'blur' }]
       : []
@@ -310,7 +270,7 @@
         refreshCaptcha()
       }
     } catch (error) {
-      console.error('[MerchantRegister] Failed to load public register config', error)
+      console.error('[MerchantForgotPassword] Failed to load public config', error)
       config.value = createDefaultPublicSoftwareConfig()
     }
   }
@@ -340,7 +300,8 @@
   }
 
   async function handleSendCode() {
-    if (!requiresVerifyCode.value) {
+    if (retrieveDisabled.value) {
+      ElMessage.warning('当前未开启找回密码')
       return
     }
 
@@ -363,7 +324,7 @@
 
     codeSending.value = true
     try {
-      await sendPublicRegisterCode({
+      await sendPublicRetrieveCode({
         email: formData.email || undefined,
         mobile: formData.mobile || undefined,
         tg_chat_id: formData.tg_chat_id || undefined
@@ -371,7 +332,7 @@
       ElMessage.success('验证码已发送')
       startCountdown()
     } catch (error: any) {
-      console.error('[MerchantRegister] Failed to send verification code', error)
+      console.error('[MerchantForgotPassword] Failed to send verification code', error)
       ElMessage.error(error?.message || '验证码发送失败')
       if (requiresImageCaptcha.value) {
         refreshCaptcha()
@@ -382,6 +343,11 @@
   }
 
   async function handleSubmit() {
+    if (retrieveDisabled.value) {
+      ElMessage.warning('当前未开启找回密码')
+      return
+    }
+
     const valid = await formRef.value?.validate().catch(() => false)
     if (!valid) {
       return
@@ -393,11 +359,8 @@
     }
 
     submitting.value = true
-    successMessage.value = ''
-    pendingPayment.value = null
-
     try {
-      const response = await submitPublicRegister({
+      await submitPublicRetrievePassword({
         username: formData.username,
         password: formData.password,
         password2: formData.password2,
@@ -405,24 +368,15 @@
         mobile: formData.mobile || undefined,
         tg_chat_id: formData.tg_chat_id || undefined,
         captcha: formData.captcha || undefined,
-        ordinary_captcha: formData.ordinary_captcha || undefined,
-        ...(affiliateId.value ? { superior_id: affiliateId.value } : {})
+        ordinary_captcha: formData.ordinary_captcha || undefined
       })
-
-      if (response.code === 888) {
-        pendingPayment.value = (response.data || {}) as PublicRegisterPendingPaymentPayload
-        ElMessage.warning('当前注册需要先完成支付')
-        return
-      }
-
-      successMessage.value = '注册成功，正在跳转到商户登录页。'
-      ElMessage.success('注册成功')
+      ElMessage.success('密码重置成功，正在跳转到商户登录页')
       window.setTimeout(() => {
         router.replace('/merchant/login')
       }, 900)
     } catch (error: any) {
-      console.error('[MerchantRegister] Registration failed', error)
-      ElMessage.error(error?.message || '注册失败，请稍后重试')
+      console.error('[MerchantForgotPassword] Password reset failed', error)
+      ElMessage.error(error?.message || '密码重置失败，请稍后重试')
       if (requiresImageCaptcha.value) {
         refreshCaptcha()
       }
@@ -454,14 +408,14 @@
 <style lang="scss" scoped>
   .merchant-auth {
     background:
-      radial-gradient(circle at top left, rgb(16 185 129 / 10%), transparent 26%),
+      radial-gradient(circle at top left, rgb(245 158 11 / 10%), transparent 26%),
       radial-gradient(circle at right bottom, rgb(59 130 246 / 8%), transparent 28%),
       var(--default-bg-color);
   }
 
   .dark .merchant-auth {
     background:
-      radial-gradient(circle at top left, rgb(16 185 129 / 12%), transparent 26%),
+      radial-gradient(circle at top left, rgb(245 158 11 / 12%), transparent 26%),
       radial-gradient(circle at right bottom, rgb(59 130 246 / 10%), transparent 28%),
       var(--default-bg-color);
   }
@@ -489,13 +443,13 @@
   }
 
   .merchant-auth__head h1 {
-    margin: 0 0 10px;
+    margin: 0 0 8px;
     font-size: 32px;
     font-weight: 700;
   }
 
-  .merchant-auth__desc {
-    margin: 0 0 24px;
+  .merchant-auth__head p {
+    margin: 0 0 20px;
     color: var(--art-gray-600);
     line-height: 1.8;
   }
@@ -547,23 +501,15 @@
   .merchant-auth__summary {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin: 4px 0 12px;
+    gap: 12px;
+    margin-bottom: 18px;
     color: var(--art-gray-600);
     font-size: 13px;
-  }
-
-  .merchant-auth__summary span {
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(15, 118, 110, 0.08);
-    color: #0f766e;
   }
 
   .merchant-auth__submit {
     width: 100%;
     min-height: 48px;
-    margin-top: 4px;
     border-radius: 16px;
     font-size: 15px;
     font-weight: 700;
@@ -573,8 +519,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
     margin-top: 14px;
+  }
+
+  .merchant-auth__link-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .merchant-auth__link {
@@ -605,16 +558,18 @@
     }
 
     .merchant-auth__code-row,
-    .merchant-auth__captcha-row,
-    .merchant-auth__links {
+    .merchant-auth__captcha-row {
       grid-template-columns: 1fr;
+    }
+
+    .merchant-auth__links {
+      gap: 10px;
       flex-direction: column;
       align-items: stretch;
     }
 
-    .merchant-auth__code-btn,
-    .merchant-auth__captcha-card {
-      min-width: 0;
+    .merchant-auth__link-group {
+      justify-content: space-between;
     }
   }
 </style>

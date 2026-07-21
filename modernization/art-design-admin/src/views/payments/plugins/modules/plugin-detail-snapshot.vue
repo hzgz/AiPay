@@ -34,7 +34,7 @@
       type="info"
       :closable="false"
       show-icon
-      title="该插件暂时还没有恢复快照。"
+      title="该插件暂时还没有可用回滚快照。"
     />
 
     <div v-else class="snapshot-list">
@@ -87,7 +87,7 @@
               :loading="snapshotRestoringId === snapshot.snapshot_id"
               @click="emit('restoreSnapshot', snapshot)"
             >
-              恢复快照
+              回滚快照
             </ElButton>
             <ElButton
               v-if="hasPluginDeleteSnapshotAuth"

@@ -1,10 +1,10 @@
-/**
- * 路由验证器
+﻿/**
+ * 璺敱楠岃瘉鍣?
  *
- * 负责验证路由配置的合法性
+ * 璐熻矗楠岃瘉璺敱閰嶇疆鐨勫悎娉曟€?
  *
  * @module router/core/RouteValidator
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import type { AppRouteRecord } from '@/types/router'
@@ -17,23 +17,23 @@ export interface ValidationResult {
 }
 
 export class RouteValidator {
-  // 用于记录已经提示过的路由，避免重复提示
+  // 鐢ㄤ簬璁板綍宸茬粡鎻愮ず杩囩殑璺敱锛岄伩鍏嶉噸澶嶆彁绀?
   private warnedRoutes = new Set<string>()
 
   /**
-   * 验证路由配置
+   * 楠岃瘉璺敱閰嶇疆
    */
   validate(routes: AppRouteRecord[]): ValidationResult {
     const errors: string[] = []
     const warnings: string[] = []
 
-    // 检测重复路由
+    // 妫€娴嬮噸澶嶈矾鐢?
     this.checkDuplicates(routes, errors, warnings)
 
-    // 检测组件配置
+    // 妫€娴嬬粍浠堕厤缃?
     this.checkComponents(routes, errors, warnings)
 
-    // 检测嵌套菜单的 /index/index 配置
+    // 妫€娴嬪祵濂楄彍鍗曠殑 /index/index 閰嶇疆
     this.checkNestedIndexComponent(routes)
 
     return {
@@ -44,7 +44,7 @@ export class RouteValidator {
   }
 
   /**
-   * 检测重复路由
+   * 妫€娴嬮噸澶嶈矾鐢?
    */
   private checkDuplicates(
     routes: AppRouteRecord[],
@@ -60,30 +60,30 @@ export class RouteValidator {
         const currentPath = route.path || ''
         const fullPath = this.resolvePath(parentPath, currentPath)
 
-        // 名称重复检测
+        // 鍚嶇О閲嶅妫€娴?
         if (route.name) {
           const routeName = String(route.name)
           if (routeNameMap.has(routeName)) {
-            warnings.push(`路由名称重复: "${routeName}" (${fullPath})`)
+            warnings.push(`璺敱鍚嶇О閲嶅: "${routeName}" (${fullPath})`)
           } else {
             routeNameMap.set(routeName, fullPath)
           }
         }
 
-        // 组件路径重复检测
+        // 缁勪欢璺緞閲嶅妫€娴?
         if (route.component && typeof route.component === 'string') {
           const componentPath = route.component
           if (componentPath !== RoutesAlias.Layout) {
             const componentKey = `${parentPath}:${componentPath}`
             if (componentPathMap.has(componentKey)) {
-              warnings.push(`组件路径重复: "${componentPath}" (${fullPath})`)
+              warnings.push(`缁勪欢璺緞閲嶅: "${componentPath}" (${fullPath})`)
             } else {
               componentPathMap.set(componentKey, fullPath)
             }
           }
         }
 
-        // 递归处理子路由
+        // 閫掑綊澶勭悊瀛愯矾鐢?
         if (route.children?.length) {
           checkRoutes(route.children, fullPath)
         }
@@ -94,7 +94,7 @@ export class RouteValidator {
   }
 
   /**
-   * 检测组件配置
+   * 妫€娴嬬粍浠堕厤缃?
    */
   private checkComponents(
     routes: AppRouteRecord[],
@@ -105,12 +105,12 @@ export class RouteValidator {
     routes.forEach((route) => {
       const hasExternalLink = !!route.meta?.link?.trim()
       const hasChildren = Array.isArray(route.children) && route.children.length > 0
-      const routePath = route.path || '[未定义路径]'
+      const routePath = route.path || '[鏈畾涔夎矾寰刔'
       const isIframe = route.meta?.isIframe
 
-      // 如果配置了 component，则无需校验
+      // 濡傛灉閰嶇疆浜?component锛屽垯鏃犻渶鏍￠獙
       if (route.component) {
-        // 递归检查子路由
+        // 閫掑綊妫€鏌ュ瓙璺敱
         if (route.children?.length) {
           const fullPath = this.resolvePath(parentPath, route.path || '')
           this.checkComponents(route.children, errors, warnings, fullPath)
@@ -118,18 +118,18 @@ export class RouteValidator {
         return
       }
 
-      // 一级菜单：必须指定 Layout，除非是外链或 iframe
+      // 涓€绾ц彍鍗曪細蹇呴』鎸囧畾 Layout锛岄櫎闈炴槸澶栭摼鎴?iframe
       if (parentPath === '' && !hasExternalLink && !isIframe) {
-        errors.push(`一级菜单(${routePath}) 缺少 component，必须指向 ${RoutesAlias.Layout}`)
+        errors.push(`涓€绾ц彍鍗?${routePath}) 缂哄皯 component锛屽繀椤绘寚鍚?${RoutesAlias.Layout}`)
         return
       }
 
-      // 非一级菜单：如果既不是外链、iframe，也没有子路由，则必须配置 component
+      // 闈炰竴绾ц彍鍗曪細濡傛灉鏃笉鏄閾俱€乮frame锛屼篃娌℃湁瀛愯矾鐢憋紝鍒欏繀椤婚厤缃?component
       if (!hasExternalLink && !isIframe && !hasChildren) {
-        errors.push(`路由(${routePath}) 缺少 component 配置`)
+        errors.push(`璺敱(${routePath}) 缂哄皯 component 閰嶇疆`)
       }
 
-      // 递归检查子路由
+      // 閫掑綊妫€鏌ュ瓙璺敱
       if (route.children?.length) {
         const fullPath = this.resolvePath(parentPath, route.path || '')
         this.checkComponents(route.children, errors, warnings, fullPath)
@@ -138,17 +138,17 @@ export class RouteValidator {
   }
 
   /**
-   * 检测嵌套菜单的 Layout 组件配置
-   * 只有一级菜单才能使用 Layout，二级及以下菜单不能使用
+   * 妫€娴嬪祵濂楄彍鍗曠殑 Layout 缁勪欢閰嶇疆
+   * 鍙湁涓€绾ц彍鍗曟墠鑳戒娇鐢?Layout锛屼簩绾у強浠ヤ笅鑿滃崟涓嶈兘浣跨敤
    */
   private checkNestedIndexComponent(routes: AppRouteRecord[], level = 1): void {
     routes.forEach((route) => {
-      // 检查二级及以下菜单是否错误使用了 Layout
+      // 妫€鏌ヤ簩绾у強浠ヤ笅鑿滃崟鏄惁閿欒浣跨敤浜?Layout
       if (level > 1 && route.component === RoutesAlias.Layout) {
         this.logLayoutError(route, level)
       }
 
-      // 递归检查子路由
+      // 閫掑綊妫€鏌ュ瓙璺敱
       if (route.children?.length) {
         this.checkNestedIndexComponent(route.children, level + 1)
       }
@@ -156,13 +156,13 @@ export class RouteValidator {
   }
 
   /**
-   * 输出 Layout 组件配置错误日志
+   * 杈撳嚭 Layout 缁勪欢閰嶇疆閿欒鏃ュ織
    */
   private logLayoutError(route: AppRouteRecord, level: number): void {
-    const routeName = String(route.name || route.path || '未知路由')
+    const routeName = String(route.name || route.path || '鏈煡璺敱')
     const routeKey = `${routeName}_${route.path}`
 
-    // 避免重复提示
+    // 閬垮厤閲嶅鎻愮ず
     if (this.warnedRoutes.has(routeKey)) return
     this.warnedRoutes.add(routeKey)
 
@@ -170,18 +170,19 @@ export class RouteValidator {
     const routePath = route.path || '/'
 
     console.error(
-      `[路由配置错误] 菜单 "${menuTitle}" (name: ${routeName}, path: ${routePath}) 配置错误\n` +
-        `  问题: ${level}级菜单不能使用 ${RoutesAlias.Layout} 作为 component\n` +
-        `  说明: 只有一级菜单才能使用 ${RoutesAlias.Layout}，二级及以下菜单应该指向具体的组件路径\n` +
-        `  当前配置: component: '${RoutesAlias.Layout}'\n` +
-        `  应该改为: component: '/your/component/path' 或留空 ''（如果是目录菜单）`
+      `[璺敱閰嶇疆閿欒] 鑿滃崟 "${menuTitle}" (name: ${routeName}, path: ${routePath}) 閰嶇疆閿欒\n` +
+        `  问题: ${level} 级菜单不能使用 ${RoutesAlias.Layout} 作为 component\n` +
+        `  说明: 只有一级菜单才能使用 ${RoutesAlias.Layout}，二级及以下菜单应指向具体组件路径\n` +
+        `  褰撳墠閰嶇疆: component: '${RoutesAlias.Layout}'\n` +
+        `  应改为: component: '/your/component/path' 或留空 ''（如果是目录菜单）`
     )
   }
 
   /**
-   * 路径解析
+   * 璺緞瑙ｆ瀽
    */
   private resolvePath(parent: string, child: string): string {
     return [parent.replace(/\/$/, ''), child.replace(/^\//, '')].filter(Boolean).join('/')
   }
 }
+

@@ -44,7 +44,7 @@
             <ElInput v-model="scaffoldForm.name" placeholder="通用易支付V1插件" autocomplete="off" />
           </ElFormItem>
           <ElFormItem label="来源" prop="provider">
-            <ElInput v-model="scaffoldForm.provider" placeholder="AiPay官方" autocomplete="off" />
+            <ElInput v-model="scaffoldForm.provider" placeholder="AiPay 官方" autocomplete="off" />
           </ElFormItem>
           <ElFormItem label="初始版本" prop="version">
             <ElInput v-model="scaffoldForm.version" placeholder="0.1.0" autocomplete="off" />

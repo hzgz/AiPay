@@ -8,14 +8,22 @@ export interface PublicSoftwareConfigPayload {
   name: string
   login_type: number
   register_type: number
+  retrieve_type: number
   captcha_type: number
+  merchant_login_drag_verify: number
+  merchant_register_drag_verify: number
+  merchant_retrieve_drag_verify: number
 }
 
 const DEFAULT_PUBLIC_SOFTWARE_CONFIG: PublicSoftwareConfigPayload = {
   name: 'AiPay',
   login_type: 0,
   register_type: 0,
-  captcha_type: 0
+  retrieve_type: 0,
+  captcha_type: 0,
+  merchant_login_drag_verify: 1,
+  merchant_register_drag_verify: 1,
+  merchant_retrieve_drag_verify: 1
 }
 
 export interface PublicRegisterSubmitPayload {
@@ -35,6 +43,17 @@ export interface PublicRegisterPendingPaymentPayload {
   need?: string
   trade_no?: string
   [key: string]: any
+}
+
+export interface PublicRetrieveSubmitPayload {
+  username: string
+  password: string
+  password2: string
+  email?: string
+  mobile?: string
+  tg_chat_id?: string
+  captcha?: string
+  ordinary_captcha?: string
 }
 
 export function createDefaultPublicSoftwareConfig(): PublicSoftwareConfigPayload {
@@ -103,6 +122,21 @@ export function sendPublicRegisterCode(payload: {
   })
 }
 
+export function sendPublicRetrieveCode(payload: {
+  email?: string
+  mobile?: string
+  tg_chat_id?: string
+}) {
+  return publicCompatEnvelopeRequest<Record<string, any>>({
+    url: '/api/getCode',
+    method: 'POST',
+    data: {
+      type: 'retrieve',
+      ...payload
+    }
+  })
+}
+
 export function submitPublicRegister(payload: PublicRegisterSubmitPayload) {
   return publicCompatEnvelopeRequest<PublicRegisterPendingPaymentPayload | Record<string, any>>(
     {
@@ -112,6 +146,14 @@ export function submitPublicRegister(payload: PublicRegisterSubmitPayload) {
     },
     [200, 888]
   )
+}
+
+export function submitPublicRetrievePassword(payload: PublicRetrieveSubmitPayload) {
+  return publicCompatEnvelopeRequest<Record<string, any>>({
+    url: '/api/retrievePassword',
+    method: 'POST',
+    data: payload
+  })
 }
 
 export function buildPublicCaptchaUrl() {

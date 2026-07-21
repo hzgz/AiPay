@@ -1,11 +1,12 @@
-/**
- * UI 相关工具函数统一导出
+﻿/**
+ * UI 鐩稿叧宸ュ叿鍑芥暟缁熶竴瀵煎嚭
  *
  * @module utils/ui/index
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 export * from './colors'
 export * from './loading'
 export * from './tabs'
 export * from './emojo'
+

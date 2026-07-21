@@ -3,7 +3,7 @@
   <div class="login-left-view">
     <div class="logo">
       <ArtLogo class="icon" size="46" />
-      <h1 class="title">{{ AppConfig.systemInfo.name }}</h1>
+      <h1 class="title">{{ brandTitle || AppConfig.systemInfo.name }}</h1>
     </div>
 
     <div class="left-img">
@@ -11,8 +11,8 @@
     </div>
 
     <div class="text-wrap">
-      <h1> {{ $t('login.leftView.title') }} </h1>
-      <p> {{ $t('login.leftView.subTitle') }} </p>
+      <h1> {{ heroTitle || $t('login.leftView.title') }} </h1>
+      <p> {{ heroSubtitle || $t('login.leftView.subTitle') }} </p>
     </div>
 
     <!-- 几何装饰元素 -->
@@ -78,6 +78,9 @@
   // 定义 props
   defineProps<{
     hideContent?: boolean // 是否隐藏内容，只显示 logo
+    brandTitle?: string
+    heroTitle?: string
+    heroSubtitle?: string
   }>()
 </script>
 

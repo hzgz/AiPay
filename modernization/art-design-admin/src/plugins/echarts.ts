@@ -1,17 +1,17 @@
-/**
- * ECharts 插件配置
+﻿/**
+ * ECharts 鎻掍欢閰嶇疆
  *
- * 按需导入 ECharts 图表和组件，减小打包体积。
- * 只注册项目中实际使用的图表类型和组件。
+ * 鎸夐渶瀵煎叆 ECharts 鍥捐〃鍜岀粍浠讹紝鍑忓皬鎵撳寘浣撶Н銆?
+ * 鍙敞鍐岄」鐩腑瀹為檯浣跨敤鐨勫浘琛ㄧ被鍨嬪拰缁勪欢銆?
  *
  * @module plugins/echarts
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
-// ECharts 按需导入配置
+// ECharts 鎸夐渶瀵煎叆閰嶇疆
 import * as echarts from 'echarts/core'
 
-// 导入图表类型
+// 瀵煎叆鍥捐〃绫诲瀷
 import {
   BarChart,
   LineChart,
@@ -22,7 +22,7 @@ import {
   CandlestickChart
 } from 'echarts/charts'
 
-// 导入组件
+// 瀵煎叆缁勪欢
 import {
   TitleComponent,
   TooltipComponent,
@@ -37,12 +37,12 @@ import {
   VisualMapComponent
 } from 'echarts/components'
 
-// 导入渲染器
+// 瀵煎叆娓叉煋鍣?
 import { CanvasRenderer } from 'echarts/renderers'
 
-// 注册必要的组件
+// 娉ㄥ唽蹇呰鐨勭粍浠?
 echarts.use([
-  // 图表类型
+  // 鍥捐〃绫诲瀷
   BarChart,
   LineChart,
   PieChart,
@@ -51,7 +51,7 @@ echarts.use([
   MapChart,
   CandlestickChart,
 
-  // 组件
+  // 缁勪欢
   TitleComponent,
   TooltipComponent,
   GridComponent,
@@ -64,13 +64,14 @@ echarts.use([
   GeoComponent,
   VisualMapComponent,
 
-  // 渲染器
+  // 娓叉煋鍣?
   CanvasRenderer
 ])
 
-// 导出 echarts 实例和类型
+// 瀵煎嚭 echarts 瀹炰緥鍜岀被鍨?
 export { echarts }
 export type { EChartsOption, BarSeriesOption } from 'echarts'
 
-// 导出常用的图形工具
+// 瀵煎嚭甯哥敤鐨勫浘褰㈠伐鍏?
 export const graphic = echarts.graphic
+

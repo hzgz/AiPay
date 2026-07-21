@@ -247,7 +247,7 @@ class AdminChannelCatalogFormatter
             return '受限维护';
         }
 
-        return '只读';
+        return '查看';
     }
 
     private static function lifecycleModeType(array $policy): string
@@ -296,7 +296,7 @@ class AdminChannelCatalogFormatter
             return '当前为本地通道，可直接创建、编辑、切换状态和删除。';
         }
 
-        return '当前记录仅提供查看能力。';
+        return '当前记录支持查看。';
     }
 
     private static function createTypeType(int $createType): string

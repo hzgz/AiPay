@@ -1,27 +1,27 @@
-/**
- * API 接口类型定义模块
+﻿/**
+ * API 鎺ュ彛绫诲瀷瀹氫箟妯″潡
  *
- * 提供所有后端接口的类型定义
+ * 鎻愪緵鎵€鏈夊悗绔帴鍙ｇ殑绫诲瀷瀹氫箟
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 通用类型（分页参数、响应结构等）
- * - 认证类型（登录、用户信息等）
- * - 系统管理类型（用户、角色等）
- * - 全局命名空间声明
+ * - 閫氱敤绫诲瀷锛堝垎椤靛弬鏁般€佸搷搴旂粨鏋勭瓑锛?
+ * - 璁よ瘉绫诲瀷锛堢櫥褰曘€佺敤鎴蜂俊鎭瓑锛?
+ * - 绯荤粺绠＄悊绫诲瀷锛堢敤鎴枫€佽鑹茬瓑锛?
+ * - 鍏ㄥ眬鍛藉悕绌洪棿澹版槑
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - API 请求参数类型约束
- * - API 响应数据类型定义
- * - 接口文档类型同步
+ * - API 璇锋眰鍙傛暟绫诲瀷绾︽潫
+ * - API 鍝嶅簲鏁版嵁绫诲瀷瀹氫箟
+ * - 鎺ュ彛鏂囨。绫诲瀷鍚屾
  *
- * ## 注意事项
+ * ## 娉ㄦ剰浜嬮」
  *
- * - 在 .vue 文件使用需要在 eslint.config.mjs 中配置 globals: { Api: 'readonly' }
- * - 使用全局命名空间，无需导入即可使用
+ * - 鍦?.vue 鏂囦欢浣跨敤闇€瑕佸湪 eslint.config.mjs 涓厤缃?globals: { Api: 'readonly' }
+ * - 浣跨敤鍏ㄥ眬鍛藉悕绌洪棿锛屾棤闇€瀵煎叆鍗冲彲浣跨敤
  *
- * ## 使用方式
+ * ## 浣跨敤鏂瑰紡
  *
  * ```typescript
  * const params: Api.Auth.LoginParams = { userName: 'admin', password: '123456' }
@@ -29,26 +29,26 @@
  * ```
  *
  * @module types/api/api
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 declare namespace Api {
-  /** 通用类型 */
+  /** 閫氱敤绫诲瀷 */
   namespace Common {
-    /** 分页参数 */
+    /** 鍒嗛〉鍙傛暟 */
     interface PaginationParams {
-      /** 当前页码 */
+      /** 褰撳墠椤电爜 */
       current: number
-      /** 每页条数 */
+      /** 姣忛〉鏉℃暟 */
       size: number
-      /** 总条数 */
+      /** 鎬绘潯鏁?*/
       total: number
     }
 
-    /** 通用搜索参数 */
+    /** 閫氱敤鎼滅储鍙傛暟 */
     type CommonSearchParams = Pick<PaginationParams, 'current' | 'size'>
 
-    /** 分页响应基础结构 */
+    /** 鍒嗛〉鍝嶅簲鍩虹缁撴瀯 */
     interface PaginatedResponse<T = any> {
       records: T[]
       current: number
@@ -56,25 +56,25 @@ declare namespace Api {
       total: number
     }
 
-    /** 启用状态 */
+    /** 鍚敤鐘舵€?*/
     type EnableStatus = '1' | '2'
   }
 
-  /** 认证类型 */
+  /** 璁よ瘉绫诲瀷 */
   namespace Auth {
-    /** 登录参数 */
+    /** 鐧诲綍鍙傛暟 */
     interface LoginParams {
       userName: string
       password: string
     }
 
-    /** 登录响应 */
+    /** 鐧诲綍鍝嶅簲 */
     interface LoginResponse {
       token: string
       refreshToken: string
     }
 
-    /** 用户信息 */
+    /** 鐢ㄦ埛淇℃伅 */
     interface UserInfo {
       buttons: string[]
       roles: string[]
@@ -85,12 +85,12 @@ declare namespace Api {
     }
   }
 
-  /** 系统管理类型 */
+  /** 绯荤粺绠＄悊绫诲瀷 */
   namespace SystemManage {
-    /** 用户列表 */
+    /** 鐢ㄦ埛鍒楄〃 */
     type UserList = Api.Common.PaginatedResponse<UserListItem>
 
-    /** 用户列表项 */
+    /** 鐢ㄦ埛鍒楄〃椤?*/
     interface UserListItem {
       id: number
       avatar: string
@@ -107,16 +107,16 @@ declare namespace Api {
       updateTime: string
     }
 
-    /** 用户搜索参数 */
+    /** 鐢ㄦ埛鎼滅储鍙傛暟 */
     type UserSearchParams = Partial<
       Pick<UserListItem, 'id' | 'userName' | 'userGender' | 'userPhone' | 'userEmail' | 'status'> &
         Api.Common.CommonSearchParams
     >
 
-    /** 角色列表 */
+    /** 瑙掕壊鍒楄〃 */
     type RoleList = Api.Common.PaginatedResponse<RoleListItem>
 
-    /** 角色列表项 */
+    /** 瑙掕壊鍒楄〃椤?*/
     interface RoleListItem {
       roleId: number
       roleName: string
@@ -126,7 +126,7 @@ declare namespace Api {
       createTime: string
     }
 
-    /** 角色搜索参数 */
+    /** 瑙掕壊鎼滅储鍙傛暟 */
     type RoleSearchParams = Partial<
       Pick<RoleListItem, 'roleId' | 'roleName' | 'roleCode' | 'description' | 'enabled'> &
         Api.Common.CommonSearchParams & {
@@ -6077,3 +6077,4 @@ declare namespace Api {
     }
   }
 }
+

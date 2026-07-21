@@ -12,8 +12,8 @@
       <section class="home-hero">
         <div class="home-hero__copy">
           <span class="home-eyebrow">AiPay</span>
-          <h1>{{ siteName }} 商户注册、登录与支付接入入口</h1>
-          <p>在这里查看公告、文档，并完成商户注册或登录。</p>
+          <h1>{{ siteName }} 商户服务平台</h1>
+          <p>商户注册、登录与支付接入。</p>
 
           <div class="home-hero__actions">
             <a class="home-button home-button--primary" :href="merchantEntryUrl">
@@ -67,7 +67,7 @@
       <section class="home-band">
         <div class="home-band__head">
           <div>
-            <span class="home-eyebrow">公告预览</span>
+            <span class="home-eyebrow">公告动态</span>
             <h2>公告与常见问题</h2>
           </div>
 
@@ -132,36 +132,36 @@
   const heroLinks = computed(() => [
     {
       label: isLoggedIn.value ? '商户中心' : '商户登录',
-      note: isLoggedIn.value ? '进入商户后台继续使用' : '已有账号可直接登录',
+      note: isLoggedIn.value ? '进入商户中心' : '已有账号可直接登录',
       href: merchantEntryUrl.value
     },
-    { label: '公告中心', note: '查看公告和帮助内容', href: newsIndexUrl.value },
-    { label: '支付测试', note: '查看当前开放方式', href: demoUrl.value }
+    { label: '公告中心', note: '查看公告与帮助', href: newsIndexUrl.value },
+    { label: '支付测试', note: '查看可用方式', href: demoUrl.value }
   ])
 
   const quickEntries = computed(() => [
     {
       eyebrow: '商户接入',
       title: isLoggedIn.value ? '进入商户中心' : '商户登录',
-      description: isLoggedIn.value ? '继续管理通道、订单和账户配置。' : '登录后即可进入商户后台。',
+      description: isLoggedIn.value ? '继续管理通道、订单和账户。' : '登录后进入商户中心。',
       href: merchantEntryUrl.value
     },
     {
       eyebrow: '注册入驻',
       title: '注册商户',
-      description: '进入商户注册流程并完成基础配置。',
+      description: '创建商户账号并完成基础配置。',
       href: merchantRegisterUrl.value
     },
     {
       eyebrow: '开发接入',
       title: '查看开发文档',
-      description: '查看接入文档、回调规则和查询入口。',
+      description: '查看接入参数、回调规则与查询地址。',
       href: docUrl.value
     },
     {
-      eyebrow: '支付展示',
+      eyebrow: '支付测试',
       title: '支付测试',
-      description: '查看可用支付方式和展示效果。',
+      description: '查看当前开放的支付方式。',
       href: demoUrl.value
     }
   ])
@@ -221,7 +221,7 @@
     font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
+    text-transform: none;
   }
 
   .home-hero {
@@ -306,7 +306,6 @@
     font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 
   .home-side__links {
@@ -367,7 +366,6 @@
     font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 
   .home-entry-item h3,

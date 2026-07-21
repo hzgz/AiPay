@@ -1,33 +1,33 @@
-/**
- * useAuth - 权限验证管理
+﻿/**
+ * useAuth - 鏉冮檺楠岃瘉绠＄悊
  *
- * 提供统一的权限验证功能，支持前端和后端两种权限模式。
- * 用于控制页面按钮、操作等功能的显示和访问权限。
+ * 鎻愪緵缁熶竴鐨勬潈闄愰獙璇佸姛鑳斤紝鏀寔鍓嶇鍜屽悗绔袱绉嶆潈闄愭ā寮忋€?
+ * 鐢ㄤ簬鎺у埗椤甸潰鎸夐挳銆佹搷浣滅瓑鍔熻兘鐨勬樉绀哄拰璁块棶鏉冮檺銆?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * 1. 权限检查 - 检查用户是否拥有指定的权限标识
- * 2. 双模式支持 - 自动适配前端模式和后端模式的权限验证
- * 3. 前端模式 - 从用户信息中获取按钮权限列表（如 ['add', 'edit', 'delete']）
- * 4. 后端模式 - 从路由 meta 配置中获取权限列表（如 [{ authMark: 'add' }]）
+ * 1. 鏉冮檺妫€鏌?- 妫€鏌ョ敤鎴锋槸鍚︽嫢鏈夋寚瀹氱殑鏉冮檺鏍囪瘑
+ * 2. 鍙屾ā寮忔敮鎸?- 鑷姩閫傞厤鍓嶇妯″紡鍜屽悗绔ā寮忕殑鏉冮檺楠岃瘉
+ * 3. 鍓嶇妯″紡 - 浠庣敤鎴蜂俊鎭腑鑾峰彇鎸夐挳鏉冮檺鍒楄〃锛堝 ['add', 'edit', 'delete']锛?
+ * 4. 鍚庣妯″紡 - 浠庤矾鐢?meta 閰嶇疆涓幏鍙栨潈闄愬垪琛紙濡?[{ authMark: 'add' }]锛?
  *
- * ## 使用示例
+ * ## 浣跨敤绀轰緥
  *
  * ```typescript
  * const { hasAuth } = useAuth()
  *
- * // 检查是否有新增权限
+ * // 妫€鏌ユ槸鍚︽湁鏂板鏉冮檺
  * if (hasAuth('add')) {
- *   // 显示新增按钮
+ *   // 鏄剧ず鏂板鎸夐挳
  * }
  *
- * // 在模板中使用
- * <el-button v-if="hasAuth('edit')">编辑</el-button>
- * <el-button v-if="hasAuth('delete')">删除</el-button>
+ * // 鍦ㄦā鏉夸腑浣跨敤
+ * <el-button v-if="hasAuth('edit')">缂栬緫</el-button>
+ * <el-button v-if="hasAuth('delete')">鍒犻櫎</el-button>
  * ```
  *
  * @module useAuth
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { useRoute } from 'vue-router'
@@ -45,30 +45,28 @@ export const useAuth = () => {
   const { isFrontendMode } = useAppMode()
   const { info } = storeToRefs(userStore)
 
-  // 前端按钮权限（例如：['add', 'edit']）
+  // 鍓嶇鎸夐挳鏉冮檺锛堜緥濡傦細['add', 'edit']锛?
   const frontendAuthList = info.value?.buttons ?? []
 
-  // 后端路由 meta 配置的权限列表（例如：[{ authMark: 'add' }]）
+  // 鍚庣璺敱 meta 閰嶇疆鐨勬潈闄愬垪琛紙渚嬪锛歔{ authMark: 'add' }]锛?
   const backendAuthList: AuthItem[] = Array.isArray(route.meta.authList)
     ? (route.meta.authList as AuthItem[])
     : []
 
   /**
-   * 检查是否拥有某权限标识（前后端模式通用）
-   * @param auth 权限标识
-   * @returns 是否有权限
+   * 妫€鏌ユ槸鍚︽嫢鏈夋煇鏉冮檺鏍囪瘑锛堝墠鍚庣妯″紡閫氱敤锛?
+   * @param auth 鏉冮檺鏍囪瘑
+   * @returns 鏄惁鏈夋潈闄?
    */
   const hasAuth = (auth: string): boolean => {
-    // 前端模式
+    // 鍓嶇妯″紡
     if (isFrontendMode.value) {
       return frontendAuthList.includes(auth)
     }
 
-    // 后端模式
+    // 鍚庣妯″紡
     if (backendAuthList.length === 0) {
-      // 路由未挂载按钮权限时，默认保留页面基础访问权限，
-      // 让依赖 hasAuth('index') 的管理页不再整体变灰。
-      return auth === 'index'
+      // 璺敱鏈寕杞芥寜閽潈闄愭椂锛岄粯璁や繚鐣欓〉闈㈠熀纭€璁块棶鏉冮檺锛?      // 璁╀緷璧?hasAuth('index') 鐨勭鐞嗛〉涓嶅啀鏁翠綋鍙樼伆銆?      return auth === 'index'
     }
 
     return backendAuthList.some((item) => item?.authMark === auth)
@@ -78,3 +76,4 @@ export const useAuth = () => {
     hasAuth
   }
 }
+

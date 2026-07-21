@@ -1,18 +1,18 @@
-/**
- * useCommon - 通用功能集合
+﻿/**
+ * useCommon - 閫氱敤鍔熻兘闆嗗悎
  *
- * 提供常用的页面操作功能，包括页面刷新、滚动控制、路径获取等。
- * 这些功能在多个页面和组件中都会用到，统一封装便于复用。
+ * 鎻愪緵甯哥敤鐨勯〉闈㈡搷浣滃姛鑳斤紝鍖呮嫭椤甸潰鍒锋柊銆佹粴鍔ㄦ帶鍒躲€佽矾寰勮幏鍙栫瓑銆?
+ * 杩欎簺鍔熻兘鍦ㄥ涓〉闈㈠拰缁勪欢涓兘浼氱敤鍒帮紝缁熶竴灏佽渚夸簬澶嶇敤銆?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * 1. 首页路径 - 获取系统配置的首页路径
- * 2. 页面刷新 - 刷新当前页面内容
- * 3. 滚动控制 - 提供多种滚动到顶部和指定位置的方法
- * 4. 平滑滚动 - 支持平滑滚动动画效果
+ * 1. 棣栭〉璺緞 - 鑾峰彇绯荤粺閰嶇疆鐨勯椤佃矾寰?
+ * 2. 椤甸潰鍒锋柊 - 鍒锋柊褰撳墠椤甸潰鍐呭
+ * 3. 婊氬姩鎺у埗 - 鎻愪緵澶氱婊氬姩鍒伴《閮ㄥ拰鎸囧畾浣嶇疆鐨勬柟娉?
+ * 4. 骞虫粦婊氬姩 - 鏀寔骞虫粦婊氬姩鍔ㄧ敾鏁堟灉
  *
  * @module useCommon
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { computed } from 'vue'
@@ -24,22 +24,22 @@ export function useCommon() {
   const settingStore = useSettingStore()
 
   /**
-   * 首页路径
-   * 从菜单 store 中获取配置的首页路径
+   * 棣栭〉璺緞
+   * 浠庤彍鍗?store 涓幏鍙栭厤缃殑棣栭〉璺緞
    */
   const homePath = computed(() => menuStore.getHomePath())
 
   /**
-   * 刷新当前页面
-   * 通过切换 setting store 中的 refresh 状态触发页面重新渲染
+   * 鍒锋柊褰撳墠椤甸潰
+   * 閫氳繃鍒囨崲 setting store 涓殑 refresh 鐘舵€佽Е鍙戦〉闈㈤噸鏂版覆鏌?
    */
   const refresh = () => {
     settingStore.reload()
   }
 
   /**
-   * 滚动到页面顶部
-   * 查找主内容区域并将其滚动位置重置为顶部
+   * 婊氬姩鍒伴〉闈㈤《閮?
+   * 鏌ユ壘涓诲唴瀹瑰尯鍩熷苟灏嗗叾婊氬姩浣嶇疆閲嶇疆涓洪《閮?
    */
   const scrollToTop = () => {
     const scrollContainer = document.getElementById('app-main')
@@ -49,8 +49,8 @@ export function useCommon() {
   }
 
   /**
-   * 平滑滚动到页面顶部
-   * 使用 smooth 行为实现平滑滚动效果
+   * 骞虫粦婊氬姩鍒伴〉闈㈤《閮?
+   * 浣跨敤 smooth 琛屼负瀹炵幇骞虫粦婊氬姩鏁堟灉
    */
   const smoothScrollToTop = () => {
     const scrollContainer = document.getElementById('app-main')
@@ -63,9 +63,9 @@ export function useCommon() {
   }
 
   /**
-   * 滚动到指定位置
-   * @param top 目标滚动位置（像素）
-   * @param smooth 是否使用平滑滚动
+   * 婊氬姩鍒版寚瀹氫綅缃?
+   * @param top 鐩爣婊氬姩浣嶇疆锛堝儚绱狅級
+   * @param smooth 鏄惁浣跨敤骞虫粦婊氬姩
    */
   const scrollTo = (top: number, smooth: boolean = false) => {
     const scrollContainer = document.getElementById('app-main')
@@ -85,3 +85,4 @@ export function useCommon() {
     smoothScrollToTop
   }
 }
+

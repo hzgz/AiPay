@@ -1,35 +1,35 @@
-/**
- * 图表组件类型定义模块
+﻿/**
+ * 鍥捐〃缁勪欢绫诲瀷瀹氫箟妯″潡
  *
- * 提供 ECharts 图表组件的完整类型定义
+ * 鎻愪緵 ECharts 鍥捐〃缁勪欢鐨勫畬鏁寸被鍨嬪畾涔?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 基础图表配置类型
- * - 柱状图类型定义
- * - 折线图类型定义
- * - 饼图/环形图类型定义
- * - 雷达图类型定义
- * - K线图类型定义
- * - 散点图类型定义
- * - 地图图表类型定义
- * - 双向堆叠柱状图类型定义
- * - 图表主题配置类型
- * - 图表事件回调类型
+ * - 鍩虹鍥捐〃閰嶇疆绫诲瀷
+ * - 鏌辩姸鍥剧被鍨嬪畾涔?
+ * - 鎶樼嚎鍥剧被鍨嬪畾涔?
+ * - 楗煎浘/鐜舰鍥剧被鍨嬪畾涔?
+ * - 闆疯揪鍥剧被鍨嬪畾涔?
+ * - K绾垮浘绫诲瀷瀹氫箟
+ * - 鏁ｇ偣鍥剧被鍨嬪畾涔?
+ * - 鍦板浘鍥捐〃绫诲瀷瀹氫箟
+ * - 鍙屽悜鍫嗗彔鏌辩姸鍥剧被鍨嬪畾涔?
+ * - 鍥捐〃涓婚閰嶇疆绫诲瀷
+ * - 鍥捐〃浜嬩欢鍥炶皟绫诲瀷
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 图表组件 Props 类型约束
- * - 图表配置类型定义
- * - 图表数据结构定义
- * - 图表事件处理
+ * - 鍥捐〃缁勪欢 Props 绫诲瀷绾︽潫
+ * - 鍥捐〃閰嶇疆绫诲瀷瀹氫箟
+ * - 鍥捐〃鏁版嵁缁撴瀯瀹氫箟
+ * - 鍥捐〃浜嬩欢澶勭悊
  *
  * @module types/component/chart
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import type { EChartsOption } from '@/plugins/echarts'
 
-// 图例位置类型
+// 鍥句緥浣嶇疆绫诲瀷
 export type LegendPosition = 'bottom' | 'top' | 'left' | 'right'
 
 export type SymbolType =
@@ -42,283 +42,284 @@ export type SymbolType =
   | 'arrow'
   | 'none'
 
-// 图表主题配置
+// 鍥捐〃涓婚閰嶇疆
 export interface ChartThemeConfig {
-  /** 图表高度 */
+  /** 鍥捐〃楂樺害 */
   chartHeight: string
-  /** 字体大小 */
+  /** 瀛椾綋澶у皬 */
   fontSize: number
-  /** 字体颜色 */
+  /** 瀛椾綋棰滆壊 */
   fontColor: string
-  /** 主题颜色 */
+  /** 涓婚棰滆壊 */
   themeColor: string
-  /** 颜色组 */
+  /** 棰滆壊缁?*/
   colors: string[]
 }
 
-// 图表初始化选项
+// 鍥捐〃鍒濆鍖栭€夐」
 export interface UseChartOptions {
-  /** 初始化选项 */
+  /** 鍒濆鍖栭€夐」 */
   initOptions?: EChartsOption
-  /** 延迟初始化时间(ms) */
+  /** 寤惰繜鍒濆鍖栨椂闂?ms) */
   initDelay?: number
-  /** IntersectionObserver阈值 */
+  /** IntersectionObserver闃堝€?*/
   threshold?: number
-  /** 是否自动响应主题变化 */
+  /** 鏄惁鑷姩鍝嶅簲涓婚鍙樺寲 */
   autoTheme?: boolean
 }
 
-// 基础图表 Props 接口 - 统一所有图表的基础属性
+// 鍩虹鍥捐〃 Props 鎺ュ彛 - 缁熶竴鎵€鏈夊浘琛ㄧ殑鍩虹灞炴€?
 export interface BaseChartProps {
-  /** 图表高度 */
+  /** 鍥捐〃楂樺害 */
   height?: string
-  /** 是否加载中 */
+  /** 鏄惁鍔犺浇涓?*/
   loading?: boolean
   isEmpty?: boolean
-  /** 颜色配置 */
+  /** 棰滆壊閰嶇疆 */
   colors?: string[]
 }
 
-// 轴线显示控制接口 - 统一轴线相关配置
+// 杞寸嚎鏄剧ず鎺у埗鎺ュ彛 - 缁熶竴杞寸嚎鐩稿叧閰嶇疆
 export interface AxisDisplayProps {
-  /** 是否显示坐标轴标签 */
+  /** 鏄惁鏄剧ず鍧愭爣杞存爣绛?*/
   showAxisLabel?: boolean
-  /** 是否显示坐标轴线 */
+  /** 鏄惁鏄剧ず鍧愭爣杞寸嚎 */
   showAxisLine?: boolean
-  /** 是否显示分割线 */
+  /** 鏄惁鏄剧ず鍒嗗壊绾?*/
   showSplitLine?: boolean
 }
 
-// 交互显示控制接口 - 统一交互相关配置
+// 浜や簰鏄剧ず鎺у埗鎺ュ彛 - 缁熶竴浜や簰鐩稿叧閰嶇疆
 export interface InteractionProps {
-  /** 是否显示提示框 */
+  /** 鏄惁鏄剧ず鎻愮ず妗?*/
   showTooltip?: boolean
-  /** 是否显示图例 */
+  /** 鏄惁鏄剧ず鍥句緥 */
   showLegend?: boolean
-  /** 图例位置 */
+  /** 鍥句緥浣嶇疆 */
   legendPosition?: LegendPosition
 }
 
-// 柱状图数据项接口
+// 鏌辩姸鍥炬暟鎹」鎺ュ彛
 export interface BarDataItem {
-  /** 系列名称 */
+  /** 绯诲垪鍚嶇О */
   name: string
-  /** 数据值 */
+  /** 鏁版嵁鍊?*/
   data: number[]
-  /** 柱状图宽度 */
+  /** 鏌辩姸鍥惧搴?*/
   barWidth?: string | number
-  /** 堆叠分组名称 */
+  /** 鍫嗗彔鍒嗙粍鍚嶇О */
   stack?: string
 }
 
-// 柱状图 Props 接口 - 统一柱状图配置
+// 鏌辩姸鍥?Props 鎺ュ彛 - 缁熶竴鏌辩姸鍥鹃厤缃?
 export interface BarChartProps extends BaseChartProps, AxisDisplayProps, InteractionProps {
-  /** 图表数据 - 支持单组数据或多组数据 */
+  /** 鍥捐〃鏁版嵁 - 鏀寔鍗曠粍鏁版嵁鎴栧缁勬暟鎹?*/
   data: number[] | BarDataItem[]
-  /** X轴标签数据 */
+  /** X杞存爣绛炬暟鎹?*/
   xAxisData?: string[]
-  /** 柱状图宽度 */
+  /** 鏌辩姸鍥惧搴?*/
   barWidth?: string | number
-  /** 是否堆叠显示 */
+  /** 鏄惁鍫嗗彔鏄剧ず */
   stack?: boolean
-  /** 圆角 */
+  /** 鍦嗚 */
   borderRadius?: number | number[]
 }
 
-// 折线图数据项接口
+// 鎶樼嚎鍥炬暟鎹」鎺ュ彛
 export interface LineDataItem {
-  /** 系列名称 */
+  /** 绯诲垪鍚嶇О */
   name: string
-  /** 数据值 */
+  /** 鏁版嵁鍊?*/
   data: number[]
-  /** 线条宽度 */
+  /** 绾挎潯瀹藉害 */
   lineWidth?: number
-  /** 是否显示区域填充 */
+  /** 鏄惁鏄剧ず鍖哄煙濉厖 */
   showAreaColor?: boolean
-  /** 区域样式配置 */
+  /** 鍖哄煙鏍峰紡閰嶇疆 */
   areaStyle?: {
-    /** 渐变开始透明度 */
+    /** 娓愬彉寮€濮嬮€忔槑搴?*/
     startOpacity?: number
-    /** 渐变结束透明度 */
+    /** 娓愬彉缁撴潫閫忔槑搴?*/
     endOpacity?: number
-    /** 自定义 ECharts areaStyle 配置 */
+    /** 鑷畾涔?ECharts areaStyle 閰嶇疆 */
     custom?: any
   }
-  /** 是否平滑曲线 */
+  /** 鏄惁骞虫粦鏇茬嚎 */
   smooth?: boolean
-  /** 数据点符号 */
+  /** 鏁版嵁鐐圭鍙?*/
   symbol?: SymbolType
-  /** 数据点大小 */
+  /** 鏁版嵁鐐瑰ぇ灏?*/
   symbolSize?: number
 }
 
-// 折线图 Props 接口 - 统一折线图配置
+// 鎶樼嚎鍥?Props 鎺ュ彛 - 缁熶竴鎶樼嚎鍥鹃厤缃?
 export interface LineChartProps extends BaseChartProps, AxisDisplayProps, InteractionProps {
-  /** 图表数据 - 支持单组数据或多组数据 */
+  /** 鍥捐〃鏁版嵁 - 鏀寔鍗曠粍鏁版嵁鎴栧缁勬暟鎹?*/
   data: number[] | LineDataItem[]
-  /** X轴标签数据 */
+  /** X杞存爣绛炬暟鎹?*/
   xAxisData?: string[]
-  /** 线条宽度 */
+  /** 绾挎潯瀹藉害 */
   lineWidth?: number
-  /** 是否显示区域填充 */
+  /** 鏄惁鏄剧ず鍖哄煙濉厖 */
   showAreaColor?: boolean
-  /** 是否平滑曲线 */
+  /** 鏄惁骞虫粦鏇茬嚎 */
   smooth?: boolean
-  /** 数据点符号 */
+  /** 鏁版嵁鐐圭鍙?*/
   symbol?: SymbolType
-  /** 数据点大小 */
+  /** 鏁版嵁鐐瑰ぇ灏?*/
   symbolSize?: number
-  /** 多数据动画延迟间隔（毫秒） */
+  /** 澶氭暟鎹姩鐢诲欢杩熼棿闅旓紙姣锛?*/
   animationDelay?: number
 }
 
-// 雷达图数据项接口
+// 闆疯揪鍥炬暟鎹」鎺ュ彛
 export interface RadarDataItem {
-  /** 系列名称 */
+  /** 绯诲垪鍚嶇О */
   name: string
-  /** 数据值 */
+  /** 鏁版嵁鍊?*/
   value: number[]
 }
 
-// 雷达图 Props 接口 - 统一雷达图配置
+// 闆疯揪鍥?Props 鎺ュ彛 - 缁熶竴闆疯揪鍥鹃厤缃?
 export interface RadarChartProps extends BaseChartProps, InteractionProps {
-  /** 雷达图指标配置 */
+  /** 闆疯揪鍥炬寚鏍囬厤缃?*/
   indicator?: Array<{ name: string; max: number }>
-  /** 图表数据 */
+  /** 鍥捐〃鏁版嵁 */
   data?: RadarDataItem[]
 }
 
-// 饼图/环形图数据项接口
+// 楗煎浘/鐜舰鍥炬暟鎹」鎺ュ彛
 export interface PieDataItem {
-  /** 数据值 */
+  /** 鏁版嵁鍊?*/
   value: number
-  /** 数据名称 */
+  /** 鏁版嵁鍚嶇О */
   name: string
 }
 
-// 环形图 Props 接口 - 统一环形图配置
+// 鐜舰鍥?Props 鎺ュ彛 - 缁熶竴鐜舰鍥鹃厤缃?
 export interface RingChartProps extends BaseChartProps, InteractionProps {
-  /** 图表数据 */
+  /** 鍥捐〃鏁版嵁 */
   data: PieDataItem[]
-  /** 内外半径 */
+  /** 鍐呭鍗婂緞 */
   radius?: string[]
-  /** 边框圆角 */
+  /** 杈规鍦嗚 */
   borderRadius?: number
-  /** 中心文本 */
+  /** 涓績鏂囨湰 */
   centerText?: string
-  /** 是否显示标签 */
+  /** 鏄惁鏄剧ず鏍囩 */
   showLabel?: boolean
 }
 
-// K线图数据项接口
+// K绾垮浘鏁版嵁椤规帴鍙?
 export interface KLineDataItem {
-  /** 时间标签 */
+  /** 鏃堕棿鏍囩 */
   time: string
-  /** 开盘价 */
+  /** 寮€鐩樹环 */
   open: number
-  /** 收盘价 */
+  /** 鏀剁洏浠?*/
   close: number
-  /** 最高价 */
+  /** 鏈€楂樹环 */
   high: number
-  /** 最低价 */
+  /** 鏈€浣庝环 */
   low: number
 }
 
-// K线图 Props 接口 - 统一K线图配置
+// K绾垮浘 Props 鎺ュ彛 - 缁熶竴K绾垮浘閰嶇疆
 export interface KLineChartProps extends BaseChartProps {
-  /** 图表数据 */
+  /** 鍥捐〃鏁版嵁 */
   data?: KLineDataItem[]
-  /** 是否显示数据缩放控件 */
+  /** 鏄惁鏄剧ず鏁版嵁缂╂斁鎺т欢 */
   showDataZoom?: boolean
-  /** 数据缩放初始开始位置 */
+  /** 鏁版嵁缂╂斁鍒濆寮€濮嬩綅缃?*/
   dataZoomStart?: number
-  /** 数据缩放初始结束位置 */
+  /** 鏁版嵁缂╂斁鍒濆缁撴潫浣嶇疆 */
   dataZoomEnd?: number
 }
 
-// 散点图数据项接口
+// 鏁ｇ偣鍥炬暟鎹」鎺ュ彛
 export interface ScatterDataItem {
-  /** 坐标值 [x, y] */
+  /** 鍧愭爣鍊?[x, y] */
   value: number[]
 }
 
-// 散点图 Props 接口 - 统一散点图配置
+// 鏁ｇ偣鍥?Props 鎺ュ彛 - 缁熶竴鏁ｇ偣鍥鹃厤缃?
 export interface ScatterChartProps extends BaseChartProps, AxisDisplayProps, InteractionProps {
-  /** 图表数据 */
+  /** 鍥捐〃鏁版嵁 */
   data?: ScatterDataItem[]
-  /** 散点大小 */
+  /** 鏁ｇ偣澶у皬 */
   symbolSize?: number
 }
 
-// 双柱对比图 Props 接口 - 统一双柱对比图配置
+// 鍙屾煴瀵规瘮鍥?Props 鎺ュ彛 - 缁熶竴鍙屾煴瀵规瘮鍥鹃厤缃?
 export interface DualBarCompareChartProps extends BaseChartProps {
-  /** 上方数据 */
+  /** 涓婃柟鏁版嵁 */
   topData: number[]
-  /** 下方数据 */
+  /** 涓嬫柟鏁版嵁 */
   bottomData: number[]
-  /** X轴标签数据 */
+  /** X杞存爣绛炬暟鎹?*/
   xAxisData: string[]
-  /** 上方柱子颜色 */
+  /** 涓婃柟鏌卞瓙棰滆壊 */
   topColor?: string
-  /** 下方柱子颜色 */
+  /** 涓嬫柟鏌卞瓙棰滆壊 */
   bottomColor?: string
-  /** 柱状图宽度 */
+  /** 鏌辩姸鍥惧搴?*/
   barWidth?: number
 }
 
-// 地图图表 Props 接口 - 统一地图图表配置
+// 鍦板浘鍥捐〃 Props 鎺ュ彛 - 缁熶竴鍦板浘鍥捐〃閰嶇疆
 export interface MapChartProps extends BaseChartProps {
-  /** 地图数据 */
+  /** 鍦板浘鏁版嵁 */
   mapData?: any[]
-  /** 选中区域 */
+  /** 閫変腑鍖哄煙 */
   selectedRegion?: string
-  /** 是否显示标签 */
+  /** 鏄惁鏄剧ず鏍囩 */
   showLabels?: boolean
-  /** 是否显示散点 */
+  /** 鏄惁鏄剧ず鏁ｇ偣 */
   showScatter?: boolean
 }
 
-// 双向堆叠柱状图 Props 接口（人口金字塔样式）
+// 鍙屽悜鍫嗗彔鏌辩姸鍥?Props 鎺ュ彛锛堜汉鍙ｉ噾瀛楀鏍峰紡锛?
 export interface BidirectionalBarChartProps
   extends BaseChartProps,
     AxisDisplayProps,
     InteractionProps {
-  /** 正向数据（向上显示） */
+  /** 姝ｅ悜鏁版嵁锛堝悜涓婃樉绀猴級 */
   positiveData: number[]
-  /** 负向数据（向下显示） */
+  /** 璐熷悜鏁版嵁锛堝悜涓嬫樉绀猴級 */
   negativeData: number[]
-  /** X轴标签数据 */
+  /** X杞存爣绛炬暟鎹?*/
   xAxisData?: string[]
-  /** 正向数据名称 */
+  /** 姝ｅ悜鏁版嵁鍚嶇О */
   positiveName?: string
-  /** 负向数据名称 */
+  /** 璐熷悜鏁版嵁鍚嶇О */
   negativeName?: string
-  /** 柱状图宽度 */
+  /** 鏌辩姸鍥惧搴?*/
   barWidth?: string | number
-  /** Y轴最小值 */
+  /** Y杞存渶灏忓€?*/
   yAxisMin?: number
-  /** Y轴最大值 */
+  /** Y杞存渶澶у€?*/
   yAxisMax?: number
-  /** 是否显示数据标签 */
+  /** 鏄惁鏄剧ず鏁版嵁鏍囩 */
   showDataLabel?: boolean
-  /** 正向数据圆角配置 */
+  /** 姝ｅ悜鏁版嵁鍦嗚閰嶇疆 */
   positiveBorderRadius?: number | number[]
-  /** 负向数据圆角配置 */
+  /** 璐熷悜鏁版嵁鍦嗚閰嶇疆 */
   negativeBorderRadius?: number | number[]
 }
 
-// 图表配置生成器函数类型
+// 鍥捐〃閰嶇疆鐢熸垚鍣ㄥ嚱鏁扮被鍨?
 export type ChartOptionGenerator = () => EChartsOption
 
-// 图表事件回调类型
+// 鍥捐〃浜嬩欢鍥炶皟绫诲瀷
 export type ChartEventCallback = (params: any) => void
 
-// 图表错误信息接口
+// 鍥捐〃閿欒淇℃伅鎺ュ彛
 export interface ChartError {
-  /** 错误码 */
+  /** 閿欒鐮?*/
   code: string
-  /** 错误信息 */
+  /** 閿欒淇℃伅 */
   message: string
-  /** 错误详情 */
+  /** 閿欒璇︽儏 */
   details?: any
 }
+

@@ -1,25 +1,25 @@
-/**
- * 工作标签页管理模块
+﻿/**
+ * 宸ヤ綔鏍囩椤电鐞嗘ā鍧?
  *
- * 提供工作标签页（Worktab）的自动管理功能
+ * 鎻愪緵宸ヤ綔鏍囩椤碉紙Worktab锛夌殑鑷姩绠＄悊鍔熻兘
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 根据路由导航自动创建和更新工作标签页
- * - iframe 页面标签页特殊处理
- * - 标签页信息提取（标题、路径、缓存状态等）
- * - 固定标签页支持
- * - 根据系统设置控制标签页显示
- * - 首页标签页特殊处理
+ * - 鏍规嵁璺敱瀵艰埅鑷姩鍒涘缓鍜屾洿鏂板伐浣滄爣绛鹃〉
+ * - iframe 椤甸潰鏍囩椤电壒娈婂鐞?
+ * - 鏍囩椤典俊鎭彁鍙栵紙鏍囬銆佽矾寰勩€佺紦瀛樼姸鎬佺瓑锛?
+ * - 鍥哄畾鏍囩椤垫敮鎸?
+ * - 鏍规嵁绯荤粺璁剧疆鎺у埗鏍囩椤垫樉绀?
+ * - 棣栭〉鏍囩椤电壒娈婂鐞?
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 路由守卫中自动创建标签页
- * - 页面切换时更新标签页状态
- * - 多标签页导航系统
+ * - 璺敱瀹堝崼涓嚜鍔ㄥ垱寤烘爣绛鹃〉
+ * - 椤甸潰鍒囨崲鏃舵洿鏂版爣绛鹃〉鐘舵€?
+ * - 澶氭爣绛鹃〉瀵艰埅绯荤粺
  *
  * @module utils/navigation/worktab
- * @author Art Design Pro Team
+ * @author AiPay
  */
 import { useWorktabStore } from '@/store/modules/worktab'
 import { RouteLocationNormalized } from 'vue-router'
@@ -29,14 +29,14 @@ import { IframeRouteManager } from '@/router/core'
 import { useCommon } from '@/hooks/core/useCommon'
 
 /**
- * 根据当前路由信息设置工作标签页（worktab）
- * @param to 当前路由对象
+ * 鏍规嵁褰撳墠璺敱淇℃伅璁剧疆宸ヤ綔鏍囩椤碉紙worktab锛?
+ * @param to 褰撳墠璺敱瀵硅薄
  */
 export const setWorktab = (to: RouteLocationNormalized): void => {
   const worktabStore = useWorktabStore()
   const { meta, path, name, params, query } = to
   if (!meta.isHideTab) {
-    // 如果是 iframe 页面，则特殊处理工作标签页
+    // 濡傛灉鏄?iframe 椤甸潰锛屽垯鐗规畩澶勭悊宸ヤ綔鏍囩椤?
     if (isIframe(path)) {
       const iframeRoute = IframeRouteManager.getInstance().findByPath(to.path)
 
@@ -65,3 +65,4 @@ export const setWorktab = (to: RouteLocationNormalized): void => {
     }
   }
 }
+

@@ -59,9 +59,7 @@
 
 适用入口：
 
-- `/Api/getSoftwareConfig`
 - `/api/getSoftwareConfig`
-- `/Api/findorder`
 - `/api/findorder`
 
 当前策略：

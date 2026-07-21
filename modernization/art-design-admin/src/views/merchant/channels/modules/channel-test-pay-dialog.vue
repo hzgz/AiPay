@@ -229,7 +229,7 @@
       return '等待通道返回二维码'
     }
 
-    return '请扫码完成测试支付'
+    return '请扫码完成通道测试'
   }
 
   function resolveTestPayHeroDescription(result: AccountTestPayResult) {

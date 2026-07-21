@@ -6,6 +6,16 @@ namespace app\support;
 
 final class MerchantPortalHtmlLocalizer
 {
+    private const MOJIBAKE_FRAGMENTS = [
+        "\u{FFFD}", "\u{20AC}", "\u{935F}", "\u{93B4}", "\u{7487}", "\u{95AB}",
+        "\u{93C0}", "\u{9427}", "\u{934F}", "\u{5BF0}", "\u{7039}", "\u{7490}",
+        "\u{7F01}", "\u{95C8}", "\u{7EEF}", "\u{7EFE}", "\u{7F03}", "\u{9422}",
+        "\u{9352}", "\u{9359}", "\u{95C2}", "\u{8930}", "\u{748B}", "\u{9365}",
+        "\u{93C3}", "\u{951B}", "\u{9286}", "\u{9369}", "\u{59AF}", "\u{95B0}",
+        "\u{93BB}", "\u{935A}", "\u{7481}", "\u{9475}", "\u{95C3}", "\u{942D}",
+        "\u{95AD}", "\u{74A7}", "\u{7F02}", "\u{93BA}", "\u{7ED4}", "\u{7EE0}",
+        "\u{935B}", "\u{6A40}", "\u{5056}", "\u{5D85}", "\u{608A}",
+    ];
     public static function localize(string $html): string
     {
         $replacements = [];
@@ -88,7 +98,7 @@ final class MerchantPortalHtmlLocalizer
             '>Not bound<' => '>未绑定<',
             '>Closed<' => '>关闭<',
             '>Current<' => '>当前<',
-            '>Read Only<' => '>信息查看<',
+            '>Read Only<' => '>查看<',
             '>Blocked<' => '>受限<',
             '>Missing<' => '>未配置<',
             '>Verified<' => '>已认证<',
@@ -106,7 +116,7 @@ final class MerchantPortalHtmlLocalizer
             '>Provider<' => '>提供方<',
             '>Status<' => '>状态<',
             '>Masked Secret<' => '>脱敏密钥<',
-            '>Migration State<' => '>当前状态<',
+            '>Migration State<' => '>状态<',
             '>Write Actions<' => '>写入能力<',
             '>Low Balance Threshold<' => '>余额预警阈值<',
             '>Console Notice<' => '>控制台提示<',
@@ -137,7 +147,7 @@ final class MerchantPortalHtmlLocalizer
             '>Quota Enabled<' => '>额度限制套餐<',
             '>Purchase<' => '>购买状态<',
             '>Mode<' => '>模式<',
-            '>Migration Guard<' => '>当前状态<',
+            '>Migration Guard<' => '>状态<',
             '>Key Actions<' => '>密钥操作<',
             '>Key Rotation<' => '>密钥重置<',
             '>Reset Sign Key<' => '>重置签名密钥<',
@@ -239,28 +249,28 @@ final class MerchantPortalHtmlLocalizer
             '>Delete<' => '>删除<',
             '>Edit / Resubmit<' => '>编辑 / 重新提交<',
             '>Payload<' => '>载荷<',
-            'Use the migrated username and password flow to enter the Webman merchant center. Captcha, SMS/email-code, and Google-auth login branches are blocked until those security flows are migrated.' => '请直接使用账号密码登录商户中心。当前登录入口采用账号密码方式。',
-            'If your account requires migrated captcha, SMS/email verification, or Google verification, keep using the legacy flow until that branch is rebuilt.' => '如果你的账号启用了额外安全校验，请通过平台支持渠道完成处理。',
-            ', this Webman page lists your own frontend behavior and login audit records only. Delete, batch-delete, and cleanup actions remain blocked from the merchant center.' => '，当前页面仅展示你自己的前台行为与登录记录，并自动按当前商户范围过滤。',
-            'Migration guard is enabled: logs are read-only here, and cross-merchant log access is blocked by the current front_token merchant scope.' => '当前页面仅限在当前商户范围内查看。',
-            ', this Webman page keeps current keys masked on load, but now lets you rotate the merchant sign key and legacy appkey directly from Webman. QR payload generation and raw-secret export still stay blocked.' => '，当前页面会在加载时对现有密钥做脱敏展示，并支持重置签名密钥、通讯密钥与按所选线路生成商户二维码。原始密钥导出仍保持关闭。',
-            'Current secrets remain masked until you choose to rotate them. Each reset returns the fresh secret one time so you can copy it into your integration before leaving this page.' => '现有密钥会一直以脱敏形式展示，只有在你主动重置时才会返回一次新的明文密钥，请在离开页面前完成保存。',
-            'Use these actions to rotate the signing key stored in <code>' . 'aip' . 'ay' . '_' . 'user.user_key</code> or the legacy appkey stored in <code>' . 'aip' . 'ay' . '_' . 'userbasic.appkey</code>. Current values stay masked above, and each reset returns the fresh secret below one time only.' => '你可以在这里重置商户签名密钥或通讯密钥。当前值会保持脱敏，重置后仅返回一次新的明文密钥。',
-            'Use the rotation panel above to generate a fresh sign key or appkey for the current merchant.' => '请使用上方密钥重置面板为当前商户生成新的签名密钥或通讯密钥。',
-            'Legacy QR generation embeds merchant ID and raw key, so it is disabled during migration.' => '商户二维码会按所选线路、商户 ID 与当前通讯密钥生成加密信息，并在点击时按需展示。',
-            ', this Webman page is read-only. VIP purchase and renewal are blocked until the audited merchant payment flow is migrated.' => '，当前页面展示会员套餐与权益信息；购买和续费请使用平台提供的办理入口。',
-            ', this read-only Webman page replaces the first merchant order-log landing flow. Callback replay and status reset remain blocked until their audit controls are migrated.' => '，当前页面用于承接商户订单记录入口。已支持回调重放，状态重置入口已关闭。',
-            'Migration guard is enabled: legacy `/Deal/set_function` requests now return a safe 405 response and do not replay callbacks or reset order status.' => '当前订单状态重置能力已关闭，请直接使用现有订单操作入口。',
-            ', your Webman merchant center can now create balance recharge orders directly. The only remaining legacy write guard on this screen is CDK redemption.' => '，当前已支持直接创建余额充值订单。该页面不处理卡密兑换，请使用卡密兑换入口。',
+            'Use the migrated username and password flow to enter the Webman merchant center. Captcha, SMS/email-code, and Google-auth login branches are blocked until those security flows are migrated.' => '请直接使用账号密码登录商户中心。',
+            'If your account requires migrated captcha, SMS/email verification, or Google verification, keep using the legacy flow until that branch is rebuilt.' => '如需额外安全校验，请先完成验证。',
+            ', this Webman page lists your own frontend behavior and login audit records only. Delete, batch-delete, and cleanup actions remain blocked from the merchant center.' => '，仅展示当前商户的前台行为与登录记录。',
+            'Migration guard is enabled: logs are read-only here, and cross-merchant log access is blocked by the current front_token merchant scope.' => '仅限当前商户范围内查看。',
+            ', this Webman page keeps current keys masked on load, but now lets you rotate the merchant sign key and legacy appkey directly from Webman. QR payload generation and raw-secret export still stay blocked.' => '，现有密钥会脱敏展示，并支持重置签名密钥、通讯密钥与生成商户二维码。',
+            'Current secrets remain masked until you choose to rotate them. Each reset returns the fresh secret one time so you can copy it into your integration before leaving this page.' => '现有密钥会保持脱敏，重置时才返回一次新的明文密钥。',
+            'Use these actions to rotate the signing key stored in <code>' . 'aip' . 'ay' . '_' . 'user.user_key</code> or the legacy appkey stored in <code>' . 'aip' . 'ay' . '_' . 'userbasic.appkey</code>. Current values stay masked above, and each reset returns the fresh secret below one time only.' => '你可以在这里重置商户签名密钥或通讯密钥。',
+            'Use the rotation panel above to generate a fresh sign key or appkey for the current merchant.' => '请使用上方密钥重置面板生成新的密钥。',
+            'Legacy QR generation embeds merchant ID and raw key, so it is disabled during migration.' => '商户二维码会按所选线路、商户 ID 与当前通讯密钥生成加密信息。',
+            ', this Webman page is read-only. VIP purchase and renewal are blocked until the audited merchant payment flow is migrated.' => '，可查看套餐与权益，购买与续费暂未开放。',
+            ', this read-only Webman page replaces the first merchant order-log landing flow. Callback replay and status reset remain blocked until their audit controls are migrated.' => '，可查看订单并重放回调，状态重置暂未开放。',
+            'Migration guard is enabled: legacy `/Deal/set_function` requests now return a safe 405 response and do not replay callbacks or reset order status.' => '订单支持查询与回调重放；状态重置暂未开放。',
+            ', your Webman merchant center can now create balance recharge orders directly. The only remaining legacy write guard on this screen is CDK redemption.' => '，支持直接创建余额充值订单；卡密兑换暂未开放。',
             'Create a new recharge order' => '创建新的充值订单',
             'Supported methods are loaded from the current system recharge mapping. Amounts outside the configured range are rejected before an upstream handoff is attempted.' => '可用充值方式由当前系统充值映射动态加载。超出配置范围的金额会在跳转上游前被直接拦截。',
             'Enabled methods: <strong>' => '已启用方式：<strong>',
             '. Minimum amount: <strong>' => '。最小金额：<strong>',
             '. Maximum amount: <strong>' => '。最大金额：<strong>',
-            ', this read-only Webman page exposes your own balance ledger only. Balance adjustment, recharge, VIP purchase, and cleanup actions remain blocked until audited merchant controls are migrated.' => '，当前页面仅展示你自己的余额流水；调账、补录、会员办理与日志整理不在此页处理。',
-            ', notification-channel and low-balance settings can now be saved on Webman. Channel binding and test-send flows are still intentionally blocked until their external side effects are rebuilt.' => '，当前已支持保存通知渠道与余额预警设置。此页仅保留通知设置保存与渠道可用性查看。',
-            'Save is enabled for the current merchant only and writes into <code>' . 'aip' . 'ay' . '_' . 'userbasic</code>. Binding QR flows, verification flows, and test-send actions remain blocked in this migration step.' => '当前仅允许为本商户保存设置。通知渠道是否可用会直接在页面展示，且不再暴露底层表结构。',
-            'Use the form below to persist low-balance, console, and voice-tip preferences. Unsupported delivery channels stay visible for audit clarity and normalize to <code>close</code> if they are disabled system-wide.' => '你可以通过下列表单保存余额预警、控制台提示与语音提醒偏好。系统级被禁用的渠道仍会展示出来用于确认当前可用状态，并在保存时自动归一到 <code>close</code>。',
+            ', this read-only Webman page exposes your own balance ledger only. Balance adjustment, recharge, VIP purchase, and cleanup actions remain blocked until audited merchant controls are migrated.' => '，仅展示当前商户的余额流水。',
+            ', notification-channel and low-balance settings can now be saved on Webman. Channel binding and test-send flows are still intentionally blocked until their external side effects are rebuilt.' => '，支持保存通知渠道与余额预警设置。',
+            'Save is enabled for the current merchant only and writes into <code>' . 'aip' . 'ay' . '_' . 'userbasic</code>. Binding QR flows, verification flows, and test-send actions remain blocked in this migration step.' => '当前仅允许为本商户保存设置。',
+            'Use the form below to persist low-balance, console, and voice-tip preferences. Unsupported delivery channels stay visible for audit clarity and normalize to <code>close</code> if they are disabled system-wide.' => '你可以通过下列表单保存余额预警、控制台提示与语音提醒偏好。',
             'Voice-tip text uses <code>[money]</code> as the amount placeholder.' => '语音提醒文案使用 <code>[money]</code> 作为金额占位符。',
             'Leave blank to clear the extra console notice line.' => '留空即可清空额外的控制台提示语。',
             'Voice template preview:' => '语音模板预览：',
@@ -269,33 +279,33 @@ final class MerchantPortalHtmlLocalizer
             'Notification settings saved successfully.' => '通知设置已保存。',
             'Notification save failed.' => '通知设置保存失败。',
             'Notification save failed. Please try again.' => '通知设置保存失败，请稍后重试。',
-            ', this Webman page now supports replaying paid-order callbacks directly from the merchant center while keeping status reset under migration protection.' => '，当前页面已支持直接在商户中心重放已支付订单回调，状态重置入口已关闭。',
-            'Paid-order callback replay is now live on legacy <code>/Deal/set_function</code>. Status reset stays protected and still returns a safe 405 response.' => '订单回调入口当前支持已支付订单回调重放；状态重置入口已关闭。',
+            ', this Webman page now supports replaying paid-order callbacks directly from the merchant center while keeping status reset under migration protection.' => '，支持重放已支付订单回调，状态重置暂未开放。',
+            'Paid-order callback replay is now live on legacy <code>/Deal/set_function</code>. Status reset stays protected and still returns a safe 405 response.' => '订单回调入口当前支持回调重放；状态重置暂未开放。',
             '>Detail<' => '>详情<',
-            ', this Webman page keeps the legacy Google Auth landing route available, but verification, binding, unbinding, and QR enrollment remain blocked until the audited security flow is migrated.' => '，当前页面展示谷歌验证信息；验证、绑定、解绑与二维码开通请在安全流程中处理。',
-            '当前页面已支持修改商户密码和重置密钥；Google Auth、实名认证和账号注销等流程仍保留在受控迁移阶段。' => '当前页面已支持修改商户密码和重置密钥；谷歌验证、实名认证和账号注销请在当前安全页中处理。',
-            '密码修改已在 Webman 生效，保存后需要重新登录。Google Auth 开通/解绑及注销账号等高风险操作，仍会返回受控响应，待完整重建后再开放。' => '密码修改已生效，保存后需要重新登录。谷歌验证开通/解绑及账号注销等高风险操作，请在当前安全页中处理。',
-            ', current page keeps the legacy Google Auth landing route available, but verification, binding, unbinding, and QR enrollment remain blocked until the audited security flow is migrated.' => '，当前页面展示谷歌验证信息；验证、绑定、解绑与二维码开通请在安全流程中处理。',
+            ', this Webman page keeps the legacy Google Auth landing route available, but verification, binding, unbinding, and QR enrollment remain blocked until the audited security flow is migrated.' => '，当前展示谷歌验证信息，校验、绑定与解绑请在安全页完成。',
+            '当前页面已支持修改商户密码和重置密钥；Google Auth、实名认证和账号注销等流程仍保留在受控迁移阶段。' => '当前支持修改商户密码和重置密钥；谷歌验证、实名认证和账号注销请在安全页处理。',
+            '密码修改已在 Webman 生效，保存后需要重新登录。Google Auth 开通/解绑及注销账号等高风险操作，仍会返回受控响应，待完整重建后再开放。' => '密码修改已生效，保存后需要重新登录。谷歌验证开通、解绑及账号注销等高风险操作暂未开放。',
+            ', current page keeps the legacy Google Auth landing route available, but verification, binding, unbinding, and QR enrollment remain blocked until the audited security flow is migrated.' => '，当前展示谷歌验证信息，校验、绑定与解绑请在安全页完成。',
             'Security verification setup notice' => '安全验证说明',
-            'This merchant flow is still pending migration.' => '当前安全页以状态查看和基础操作为主。',
-            'Use the legacy flow if you need to complete Google Auth verification or binding during migration.' => '如需完成谷歌验证校验或绑定，请在当前安全页中处理。',
-            'read-only' => '信息查看',
+            'This merchant flow is still pending migration.' => '当前安全页提供状态查看与基础安全操作。',
+            'Use the legacy flow if you need to complete Google Auth verification or binding during migration.' => '如需完成谷歌验证校验或绑定，请在安全页中处理。',
+            'read-only' => '查看',
             'Password save failed.' => '密码保存失败。',
             'Password save failed. Please try again.' => '密码保存失败，请稍后重试。',
-            ', this Webman page now lets you submit, edit, resubmit, and delete your own domains while keeping the audit scope locked to the current merchant.' => '，当前页面已支持提交、修改、重新提交与删除你自己的域名，同时严格将审核范围限制在当前商户内。',
-            'New and edited domains still pass through the existing approval rules: blacklist blocks immediately, whitelist or auto-approve can mark a domain approved, and everything else returns to pending review.' => '新增或修改后的域名仍会沿用现有审核规则：命中黑名单会直接拦截，命中白名单或自动通过规则会直接审核通过，其余情况则进入待审核状态。',
-            'Use this form to add a new merchant domain. Choosing an existing row for edit will switch the form into resubmission mode and reset that row back through the approval rules.' => '你可以通过这里提交新的商户域名。选择已有记录进行编辑后，表单会切换到重新提交模式，并重新走一遍审核规则。',
+            ', this Webman page now lets you submit, edit, resubmit, and delete your own domains while keeping the audit scope locked to the current merchant.' => '，支持提交、修改、重新提交与删除你自己的域名。',
+            'New and edited domains still pass through the existing approval rules: blacklist blocks immediately, whitelist or auto-approve can mark a domain approved, and everything else returns to pending review.' => '新增或修改后的域名仍会沿用现有审核规则。',
+            'Use this form to add a new merchant domain. Choosing an existing row for edit will switch the form into resubmission mode and reset that row back through the approval rules.' => '你可以通过这里提交新的商户域名。',
             'Shown in the domain review list for your merchant account.' => '该名称会展示在当前商户的域名审核列表中。',
             'Do not include spaces. `http://` and trailing `/` are normalized automatically.' => '请不要包含空格，`http://` 前缀和末尾 `/` 会自动规范化。',
-            ', this Webman page now lets you create and delete your own support tickets while keeping admin replies and cross-merchant access safely scoped.' => '，当前页面已支持创建和删除你自己的工单，同时会安全限制管理员回复展示与跨商户访问范围。',
-            'Ticket create and delete are enabled. Reply workflows still remain admin-side, so Webman only opens and removes merchant-owned tickets here.' => '当前已开放工单创建与删除。回复流程仍保留在管理员侧，因此这里只允许处理商户自己创建的工单。',
-            'Open a new merchant ticket with one of the enabled categories. If no categories are enabled, the create form stays disabled until the admin restores at least one category.' => '请使用已启用的工单分类提交新的工单。如果当前没有任何启用分类，创建表单会保持禁用，直到管理员恢复至少一个分类。',
-            'Categories come from the enabled admin ticket-category list.' => '工单分类来自管理员侧已启用的工单分类列表。',
-            'Keep the title short and specific so the admin queue is easier to sort.' => '建议标题简短且明确，便于管理员侧队列快速分拣。',
+            ', this Webman page now lets you create and delete your own support tickets while keeping admin replies and cross-merchant access safely scoped.' => '，支持创建和删除你自己的工单。',
+            'Ticket create and delete are enabled. Reply workflows still remain admin-side, so Webman only opens and removes merchant-owned tickets here.' => '当前已开放工单创建与删除。',
+            'Open a new merchant ticket with one of the enabled categories. If no categories are enabled, the create form stays disabled until the admin restores at least one category.' => '请使用已启用的工单分类提交新的工单。没有可用分类时，创建表单会保持禁用。',
+            'Categories come from the enabled admin ticket-category list.' => '工单分类来自当前已启用的分类列表。',
+            'Keep the title short and specific so the admin queue is easier to sort.' => '建议标题简短明确，便于快速处理。',
             'Enabled Categories:' => '已启用分类：',
             'Describe the issue' => '请输入问题标题',
             'Provide the full issue details, steps, and expected outcome.' => '请填写完整的问题详情、复现步骤和期望结果。',
-            ', this Webman page replaces the first merchant order-log landing flow. Callback replay and status reset remain blocked until their audit controls are migrated.' => '，当前页面用于承接商户订单记录入口。回调重放已开放，状态重置入口已关闭。',
+            ', this Webman page replaces the first merchant order-log landing flow. Callback replay and status reset remain blocked until their audit controls are migrated.' => '，支持查看订单记录与回调重放，状态重置暂未开放。',
             'No merchant notification settings were found.' => '当前未找到通知设置项。',
             'No quick-login bindings are configured for this merchant.' => '当前商户未配置快捷登录绑定。',
             'No merchant order records matched the current filter.' => '当前筛选条件下暂无订单记录。',
@@ -319,7 +329,7 @@ final class MerchantPortalHtmlLocalizer
             'No merchant orders matched the current filter.' => '当前筛选条件下暂无订单记录。',
             'No gateway lines are available.' => '当前没有可用网关线路。',
             'No endpoint metadata is available.' => '当前没有可展示的接口说明。',
-            'Legacy EPay compatible browser form entry.' => '易支付浏览器表单下单入口。',
+            'Legacy EPay compatible browser form entry.' => '网页下单入口',
             'Saving WxPusher UID...' => '正在保存微信推送标识...',
             'WxPusher UID saved.' => '微信推送标识已保存。',
             'WxPusher UID save failed.' => '微信推送标识保存失败。',
@@ -348,7 +358,7 @@ final class MerchantPortalHtmlLocalizer
             'Clear the stored ' . '\' + button.dataset.label + \'' . ' binding for the current merchant?' => '确认清除当前商户的\' + button.dataset.label + \'绑定信息吗？',
             'Unbind failed.' => '解绑失败。',
             'Unbind failed. Please try again.' => '解绑失败，请稍后重试。',
-            ', your Webman merchant center can now create balance recharge orders and redeem CDKs directly from the same screen.' => '，当前已可在同一页面直接创建余额充值订单并兑换卡密。',
+            ', your Webman merchant center can now create balance recharge orders and redeem CDKs directly from the same screen.' => '，可在同一页面直接创建余额充值订单并兑换卡密。',
             'A successful callback credits the merchant balance, writes a `money_log` row, and applies the configured superior rebate when `is_aff=1` and `aff_type=0`.' => '充值成功回调后会为商户余额入账、写入 `money_log` 记录，并在 `is_aff=1` 且 `aff_type=0` 时结算对应上级返佣。',
             'CDK redemption is now live for balance cards and VIP cards owned by the current merchant session.' => '当前商户会话下，余额卡与会员卡的卡密兑换功能已开放。',
             'Last recharge:' => '最近充值：',
@@ -358,10 +368,10 @@ final class MerchantPortalHtmlLocalizer
             'Last domain submission:' => '最近域名提交：',
             'Last login log:' => '最近登录日志：',
             'Last ticket:' => '最近工单：',
-            'Legacy EPay compatible JSON/API entry.' => '易支付 JSON/API 下单入口。',
+            'Legacy EPay compatible JSON/API entry.' => '接口下单入口',
             'Upstream payment notify callback entry.' => '上游支付异步回调入口。',
             'Upstream payment return callback entry.' => '上游支付同步跳转入口。',
-            'CDK redemption is still intentionally guarded until that branch is migrated and audited separately.' => '卡密兑换入口正在整理中，请使用系统提供的兑换入口。',
+            'CDK redemption is still intentionally guarded until that branch is migrated and audited separately.' => '当前页面暂未开放卡密兑换。',
             'A successful callback credits the merchant balance, writes a `money_log` row, and applies the configured superior rebate when `is_aff=1` and `aff_type=0`.' => '充值成功回调后，会为商户余额入账、写入 `money_log` 流水，并在 `is_aff=1` 且 `aff_type=0` 时结算上级返佣。',
             'Rebate Type:' => '返佣类型：',
             'Rebate Ratio:' => '返佣比例：',
@@ -376,7 +386,7 @@ final class MerchantPortalHtmlLocalizer
             'Current: Email' => '当前：邮箱',
             'Current: WxPusher' => '当前：微信推送',
             'Current: Telegram' => '当前：电报',
-            'read-only' => '只读',
+            'read-only' => '查看',
             'Live' => '已启用',
             'Use order callback host' => '使用订单回调域名',
             'Use configured timeout_url' => '使用已配置的超时跳转地址',
@@ -385,7 +395,7 @@ final class MerchantPortalHtmlLocalizer
             'Balance increase' => '余额增加',
             'Balance decrease' => '余额减少',
             'Merchant password change is live in the Webman merchant center and will require a fresh login after save' => '商户密码修改已生效，保存后需要重新登录。',
-            'Quick-login unbind is live in Webman. Fresh OAuth bind flows still follow the legacy route during migration.' => '快捷登录解绑已生效；当前页面仅展示已接入状态，不再提供新的授权绑定入口。',
+            'Quick-login unbind is live in Webman. Fresh OAuth bind flows still follow the legacy route during migration.' => '快捷登录解绑已生效，新增授权暂未开放',
             ' (disabled)' => '（已关闭）',
             'Signing in...' => '正在登录...',
             'Login failed. Please try again.' => '登录失败，请稍后重试。',
@@ -476,13 +486,14 @@ final class MerchantPortalHtmlLocalizer
     private static function repairReplacementText(string $value): string
     {
         $value = ApiResponse::normalizeText($value);
-        $converted = @mb_convert_encoding($value, 'UTF-8', 'GB18030');
+        $converted = @iconv('UTF-8', 'GB18030//IGNORE', $value);
         if (is_string($converted) && $converted !== '' && mb_check_encoding($converted, 'UTF-8')) {
             if (self::mojibakeScore($converted) < self::mojibakeScore($value)) {
                 $value = $converted;
             }
         }
 
+        $value = str_replace("\u{FFFD}", '', $value);
         $value = str_replace('??', '', $value);
         $value = preg_replace('/\?+(?=$|[\s<>"\'\/\]\)])/u', '', $value) ?? $value;
         $value = preg_replace('/(?<=[>\s])\?+(?=<)/u', '', $value) ?? $value;
@@ -494,7 +505,7 @@ final class MerchantPortalHtmlLocalizer
     {
         $value = trim($value);
         $value = preg_replace('/^<title>/u', '', $value) ?? $value;
-        $value = preg_replace('/(?:<\/title>|\/title>|title>)$/u', '', $value) ?? $value;
+        $value = preg_replace('/(?:<\\/title>|\\/title>|title>)$/u', '', $value) ?? $value;
 
         return trim($value, ' <>/');
     }
@@ -527,8 +538,11 @@ final class MerchantPortalHtmlLocalizer
             return 0;
         }
 
-        preg_match_all('/[鍟鎴璇閫鏀鐧鍏寰缁闈绯绾缃鍒鍙闂褰璋鍥鏃锛銆鍩妯閰鎻鍚璁鑵闃鐭閭璧缂鎺绔绠鍛橀偖嶅悊]/u', $text, $matches);
+        $score = 0;
+        foreach (self::MOJIBAKE_FRAGMENTS as $fragment) {
+            $score += substr_count($text, $fragment);
+        }
 
-        return count($matches[0]);
+        return $score;
     }
 }

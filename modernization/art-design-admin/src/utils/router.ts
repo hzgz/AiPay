@@ -74,7 +74,11 @@ function resolveRouteAppTitle(route: RouteLocationNormalized): string {
 }
 
 function resolveAppTitle(path: string): string {
-  if (path === '/merchant/login' || path === '/merchant' || path.startsWith('/merchant/')) {
+  if (path === '/merchant/login' || path === '/merchant/register') {
+    return 'AiPay'
+  }
+
+  if (path === '/merchant' || path.startsWith('/merchant/')) {
     return 'AiPay 商户中心'
   }
 

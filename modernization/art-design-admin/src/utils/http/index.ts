@@ -1,17 +1,17 @@
-/**
- * HTTP 请求封装模块
- * 基于 Axios 封装的 HTTP 请求工具，提供统一的请求/响应处理
+﻿/**
+ * HTTP 璇锋眰灏佽妯″潡
+ * 鍩轰簬 Axios 灏佽鐨?HTTP 璇锋眰宸ュ叿锛屾彁渚涚粺涓€鐨勮姹?鍝嶅簲澶勭悊
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 请求/响应拦截器（自动添加 Token、统一错误处理）
- * - 401 未授权自动登出（带防抖机制）
- * - 请求失败自动重试（可配置）
- * - 统一的成功/错误消息提示
- * - 支持 GET/POST/PUT/DELETE 等常用方法
+ * - 璇锋眰/鍝嶅簲鎷︽埅鍣紙鑷姩娣诲姞 Token銆佺粺涓€閿欒澶勭悊锛?
+ * - 401 鏈巿鏉冭嚜鍔ㄧ櫥鍑猴紙甯﹂槻鎶栨満鍒讹級
+ * - 璇锋眰澶辫触鑷姩閲嶈瘯锛堝彲閰嶇疆锛?
+ * - 缁熶竴鐨勬垚鍔?閿欒娑堟伅鎻愮ず
+ * - 鏀寔 GET/POST/PUT/DELETE 绛夊父鐢ㄦ柟娉?
  *
  * @module utils/http
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
@@ -22,18 +22,18 @@ import { $t } from '@/locales'
 import { BaseResponse } from '@/types'
 import { resolveApiBaseUrl } from './base'
 
-/** 请求配置常量 */
+/** 璇锋眰閰嶇疆甯搁噺 */
 const REQUEST_TIMEOUT = 15000
 const LOGOUT_DELAY = 500
 const MAX_RETRIES = 0
 const RETRY_DELAY = 1000
 const UNAUTHORIZED_DEBOUNCE_TIME = 3000
 
-/** 401防抖状态 */
+/** 401闃叉姈鐘舵€?*/
 let isUnauthorizedErrorShown = false
 let unauthorizedTimer: NodeJS.Timeout | null = null
 
-/** 扩展 AxiosRequestConfig */
+/** 鎵╁睍 AxiosRequestConfig */
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   showErrorMessage?: boolean
   showSuccessMessage?: boolean
@@ -41,7 +41,7 @@ interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
 
 const { VITE_WITH_CREDENTIALS } = import.meta.env
 
-/** Axios实例 */
+/** Axios瀹炰緥 */
 const axiosInstance = axios.create({
   timeout: REQUEST_TIMEOUT,
   baseURL: resolveApiBaseUrl(),
@@ -62,7 +62,7 @@ const axiosInstance = axios.create({
   ]
 })
 
-/** 请求拦截器 */
+/** 璇锋眰鎷︽埅鍣?*/
 axiosInstance.interceptors.request.use(
   (request: InternalAxiosRequestConfig) => {
     const { accessToken } = useUserStore()
@@ -81,7 +81,7 @@ axiosInstance.interceptors.request.use(
   }
 )
 
-/** 响应拦截器 */
+/** 鍝嶅簲鎷︽埅鍣?*/
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<BaseResponse>) => {
     const { code, msg } = response.data
@@ -95,12 +95,12 @@ axiosInstance.interceptors.response.use(
   }
 )
 
-/** 统一创建HttpError */
+/** 缁熶竴鍒涘缓HttpError */
 function createHttpError(message: string, code: number) {
   return new HttpError(message, code)
 }
 
-/** 处理401错误（带防抖） */
+/** 澶勭悊401閿欒锛堝甫闃叉姈锛?*/
 function handleUnauthorizedError(message?: string): never {
   const error = createHttpError(message || $t('httpMsg.unauthorized'), ApiStatus.unauthorized)
 
@@ -117,21 +117,21 @@ function handleUnauthorizedError(message?: string): never {
   throw error
 }
 
-/** 重置401防抖状态 */
+/** 閲嶇疆401闃叉姈鐘舵€?*/
 function resetUnauthorizedError() {
   isUnauthorizedErrorShown = false
   if (unauthorizedTimer) clearTimeout(unauthorizedTimer)
   unauthorizedTimer = null
 }
 
-/** 退出登录函数 */
+/** 閫€鍑虹櫥褰曞嚱鏁?*/
 function logOut() {
   setTimeout(() => {
     useUserStore().logOut()
   }, LOGOUT_DELAY)
 }
 
-/** 是否需要重试 */
+/** 鏄惁闇€瑕侀噸璇?*/
 function shouldRetry(statusCode: number) {
   return [
     ApiStatus.requestTimeout,
@@ -142,7 +142,7 @@ function shouldRetry(statusCode: number) {
   ].includes(statusCode)
 }
 
-/** 请求重试逻辑 */
+/** 璇锋眰閲嶈瘯閫昏緫 */
 async function retryRequest<T>(
   config: ExtendedAxiosRequestConfig,
   retries: number = MAX_RETRIES
@@ -158,14 +158,14 @@ async function retryRequest<T>(
   }
 }
 
-/** 延迟函数 */
+/** 寤惰繜鍑芥暟 */
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-/** 请求函数 */
+/** 璇锋眰鍑芥暟 */
 async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> {
-  // POST | PUT 参数自动填充
+  // POST | PUT 鍙傛暟鑷姩濉厖
   if (
     ['POST', 'PUT'].includes(config.method?.toUpperCase() || '') &&
     config.params &&
@@ -178,7 +178,7 @@ async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> 
   try {
     const res = await axiosInstance.request<BaseResponse<T>>(config)
 
-    // 显示成功消息
+    // 鏄剧ず鎴愬姛娑堟伅
     if (config.showSuccessMessage && res.data.msg) {
       showSuccess(res.data.msg)
     }
@@ -193,7 +193,7 @@ async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> 
   }
 }
 
-/** API方法集合 */
+/** API鏂规硶闆嗗悎 */
 const api = {
   get<T>(config: ExtendedAxiosRequestConfig) {
     return retryRequest<T>({ ...config, method: 'GET' })
@@ -213,3 +213,4 @@ const api = {
 }
 
 export default api
+

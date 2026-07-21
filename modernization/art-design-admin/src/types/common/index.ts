@@ -1,64 +1,64 @@
-/**
- * 通用类型定义模块
+﻿/**
+ * 閫氱敤绫诲瀷瀹氫箟妯″潡
  *
- * 提供项目中常用的通用类型定义
+ * 鎻愪緵椤圭洰涓父鐢ㄧ殑閫氱敤绫诲瀷瀹氫箟
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 状态类型（启用/禁用）
- * - 性别类型
- * - 排序方向类型
- * - 操作类型（增删改查）
- * - 记录类型（键值对）
- * - 时间范围类型
- * - 文件信息类型
- * - 坐标和尺寸类型
- * - 响应式断点类型
- * - 主题和语言类型
- * - 环境和弹窗类型
+ * - 鐘舵€佺被鍨嬶紙鍚敤/绂佺敤锛?
+ * - 鎬у埆绫诲瀷
+ * - 鎺掑簭鏂瑰悜绫诲瀷
+ * - 鎿嶄綔绫诲瀷锛堝鍒犳敼鏌ワ級
+ * - 璁板綍绫诲瀷锛堥敭鍊煎锛?
+ * - 鏃堕棿鑼冨洿绫诲瀷
+ * - 鏂囦欢淇℃伅绫诲瀷
+ * - 鍧愭爣鍜屽昂瀵哥被鍨?
+ * - 鍝嶅簲寮忔柇鐐圭被鍨?
+ * - 涓婚鍜岃瑷€绫诲瀷
+ * - 鐜鍜屽脊绐楃被鍨?
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 通用数据结构定义
- * - 类型约束和提示
- * - 减少重复类型定义
+ * - 閫氱敤鏁版嵁缁撴瀯瀹氫箟
+ * - 绫诲瀷绾︽潫鍜屾彁绀?
+ * - 鍑忓皯閲嶅绫诲瀷瀹氫箟
  *
  * @module types/common/index
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
-// 导出响应类型
+// 瀵煎嚭鍝嶅簲绫诲瀷
 export * from './response'
 
-// 状态类型
-export type Status = 0 | 1 // 0: 禁用, 1: 启用
+// 鐘舵€佺被鍨?
+export type Status = 0 | 1 // 0: 绂佺敤, 1: 鍚敤
 
-// 性别类型
+// 鎬у埆绫诲瀷
 export type Gender = 'male' | 'female' | 'unknown'
 
-// 排序方向
+// 鎺掑簭鏂瑰悜
 export type SortOrder = 'ascending' | 'descending'
 
-// 操作类型
+// 鎿嶄綔绫诲瀷
 export type ActionType = 'create' | 'update' | 'delete' | 'view'
 
-// 可选的记录类型
+// 鍙€夌殑璁板綍绫诲瀷
 export type Recordable<T = any> = Record<string, T>
 
-// 键值对类型
+// 閿€煎绫诲瀷
 export type KeyValue<T = any> = {
   key: string
   value: T
   label?: string
 }
 
-// 时间范围类型
+// 鏃堕棿鑼冨洿绫诲瀷
 export interface TimeRange {
   startTime: string
   endTime: string
 }
 
-// 文件类型
+// 鏂囦欢绫诲瀷
 export interface FileInfo {
   name: string
   url: string
@@ -67,29 +67,30 @@ export interface FileInfo {
   lastModified?: number
 }
 
-// 坐标类型
+// 鍧愭爣绫诲瀷
 export interface Position {
   x: number
   y: number
 }
 
-// 尺寸类型
+// 灏哄绫诲瀷
 export interface Size {
   width: number
   height: number
 }
 
-// 响应式断点类型
+// 鍝嶅簲寮忔柇鐐圭被鍨?
 export type Breakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
-// 主题类型
+// 涓婚绫诲瀷
 export type ThemeMode = 'light' | 'dark' | 'auto'
 
-// 语言类型
+// 璇█绫诲瀷
 export type Language = 'zh-CN' | 'en-US'
 
-// 环境类型
+// 鐜绫诲瀷
 export type Environment = 'development' | 'production' | 'test'
 
-// 弹窗类型
+// 寮圭獥绫诲瀷
 export type DialogType = 'add' | 'edit'
+

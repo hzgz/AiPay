@@ -2,9 +2,9 @@
   <ElCard class="vault-card recovery-card" shadow="never">
     <div class="vault-header">
       <div class="vault-copy">
-        <p class="vault-eyebrow">恢复中心</p>
-        <h3 class="vault-title">恢复快照</h3>
-        <p class="vault-desc">即使本地插件包已不在当前目录中，恢复快照仍会保留在这里，方便后续恢复。</p>
+        <p class="vault-eyebrow">回滚中心</p>
+        <h3 class="vault-title">回滚快照</h3>
+        <p class="vault-desc">即使本地插件包已不在当前目录中，回滚快照仍会保留在这里，方便后续回滚或重建。</p>
       </div>
 
       <div class="vault-summary-grid">
@@ -32,7 +32,7 @@
       type="warning"
       :closable="false"
       show-icon
-      title="部分快照对应的插件已不在本地目录中，可在这里恢复，重建插件目录和插件专属资源。"
+      title="部分快照对应的插件已不在本地目录中，可在这里回滚，重建插件目录和专属资源。"
     />
 
     <ElAlert
@@ -40,7 +40,7 @@
       type="info"
       :closable="false"
       show-icon
-      title="当前还没有恢复快照，建议先创建。"
+      title="当前还没有可用回滚快照，建议先创建。"
     />
 
     <ElTable
@@ -64,7 +64,7 @@
                 {{ row.catalog_available ? '插件目录可用' : '插件目录缺失' }}
               </ElTag>
               <ElTag :type="row.current_state.enabled ? 'danger' : 'info'" effect="plain">
-                {{ row.current_state.enabled ? '恢复前请先停用' : '允许恢复' }}
+                {{ row.current_state.enabled ? '回滚前请先停用' : '允许回滚' }}
               </ElTag>
             </div>
           </div>
@@ -201,7 +201,7 @@
       type="warning"
       :closable="false"
       show-icon
-      title="这些插件编码已不在当前目录中。请先确认是否保留恢复快照、是否已解除托管通道阻塞，再执行清理。"
+      title="这些插件编码已不在当前目录中。请先确认是否保留回滚快照、是否已解除托管通道阻塞，再执行清理。"
     />
 
     <ElAlert

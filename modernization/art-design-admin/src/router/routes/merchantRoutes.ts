@@ -22,6 +22,16 @@ export const merchantRoutes: AppRouteRecordRaw[] = [
     }
   },
   {
+    path: '/merchant/forgot-password',
+    name: 'MerchantForgotPassword',
+    component: () => import('@views/merchant/forgot-password/index.vue'),
+    meta: {
+      title: '找回密码',
+      isHideTab: true,
+      merchantPublic: true
+    }
+  },
+  {
     path: '/merchant',
     component: () => import('@views/merchant/layout/index.vue'),
     name: 'MerchantLayout',

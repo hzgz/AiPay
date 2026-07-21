@@ -288,7 +288,7 @@ export const ACCOUNT_CODE_META = {
     identifierPlaceholder: '请输入上游易支付商户ID',
     qrTypeOptions: [
       { label: '普通接口', value: '0' },
-      { label: 'MAPI接口', value: '1' }
+      { label: '接口直连', value: '1' }
     ],
     supportsPid: false,
     pidLabel: '商户PID',

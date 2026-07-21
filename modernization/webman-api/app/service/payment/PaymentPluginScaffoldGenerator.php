@@ -9,7 +9,7 @@ use RuntimeException;
 
 class PaymentPluginScaffoldGenerator
 {
-    private const DEFAULT_PROVIDER = 'AiPay官方';
+    private const DEFAULT_PROVIDER = 'AiPay 官方';
     private const DEFAULT_DESCRIPTION = '为支付通道生成独立插件目录与基础配置。';
     private const DEFAULT_VERSION = '0.1.0';
 

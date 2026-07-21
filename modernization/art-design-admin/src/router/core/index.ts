@@ -1,8 +1,8 @@
-/**
- * 路由核心模块导出
+﻿/**
+ * 璺敱鏍稿績妯″潡瀵煎嚭
  *
  * @module router/core
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 export { RouteRegistry } from './RouteRegistry'
@@ -12,3 +12,4 @@ export { RouteTransformer } from './RouteTransformer'
 export { IframeRouteManager } from './IframeRouteManager'
 export { MenuProcessor } from './MenuProcessor'
 export { RoutePermissionValidator } from './RoutePermissionValidator'
+

@@ -16,7 +16,7 @@ class HealthController
             'service' => 'aipay-webman-api',
             'status' => 'ok',
             'mode' => 'backend_only',
-            'message' => 'Webman backend is running. Use the frontend site on port 8132.',
+            'message' => 'AiPay 后端服务运行正常。',
             'time' => date('Y-m-d H:i:s'),
         ]);
     }

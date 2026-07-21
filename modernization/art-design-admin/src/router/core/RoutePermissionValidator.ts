@@ -1,39 +1,39 @@
-/**
- * 路由权限验证模块
+﻿/**
+ * 璺敱鏉冮檺楠岃瘉妯″潡
  *
- * 提供路由权限验证和路径检查功能
+ * 鎻愪緵璺敱鏉冮檺楠岃瘉鍜岃矾寰勬鏌ュ姛鑳?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - 验证路径是否在用户菜单权限中
- * - 构建菜单路径集合（扁平化处理）
- * - 支持动态路由参数匹配
- * - 路径前缀匹配
+ * - 楠岃瘉璺緞鏄惁鍦ㄧ敤鎴疯彍鍗曟潈闄愪腑
+ * - 鏋勫缓鑿滃崟璺緞闆嗗悎锛堟墎骞冲寲澶勭悊锛?
+ * - 鏀寔鍔ㄦ€佽矾鐢卞弬鏁板尮閰?
+ * - 璺緞鍓嶇紑鍖归厤
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 路由守卫中验证用户权限
- * - 动态路由注册后的权限检查
- * - 防止用户访问无权限的页面
+ * - 璺敱瀹堝崼涓獙璇佺敤鎴锋潈闄?
+ * - 鍔ㄦ€佽矾鐢辨敞鍐屽悗鐨勬潈闄愭鏌?
+ * - 闃叉鐢ㄦ埛璁块棶鏃犳潈闄愮殑椤甸潰
  *
  * @module router/core/RoutePermissionValidator
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import type { AppRouteRecord } from '@/types/router'
 
 /**
- * 路由权限验证器
+ * 璺敱鏉冮檺楠岃瘉鍣?
  */
 export class RoutePermissionValidator {
   /**
-   * 验证路径是否在用户菜单权限中
-   * @param targetPath 目标路径
-   * @param menuList 菜单列表
-   * @returns 是否有权限访问
+   * 楠岃瘉璺緞鏄惁鍦ㄧ敤鎴疯彍鍗曟潈闄愪腑
+   * @param targetPath 鐩爣璺緞
+   * @param menuList 鑿滃崟鍒楄〃
+   * @returns 鏄惁鏈夋潈闄愯闂?
    */
   static hasPermission(targetPath: string, menuList: AppRouteRecord[]): boolean {
-    // 根路径始终允许访问
+    // 鏍硅矾寰勫缁堝厑璁歌闂?
     if (targetPath === '/') {
       return true
     }
@@ -42,10 +42,10 @@ export class RoutePermissionValidator {
   }
 
   /**
-   * 构建菜单路径集合（扁平化处理）
-   * @param menuList 菜单列表
-   * @param pathSet 路径集合
-   * @returns 路径集合
+   * 鏋勫缓鑿滃崟璺緞闆嗗悎锛堟墎骞冲寲澶勭悊锛?
+   * @param menuList 鑿滃崟鍒楄〃
+   * @param pathSet 璺緞闆嗗悎
+   * @returns 璺緞闆嗗悎
    */
   static buildMenuPathSet(
     menuList: AppRouteRecord[],
@@ -60,11 +60,11 @@ export class RoutePermissionValidator {
         continue
       }
 
-      // 标准化路径并添加到集合
+      // 鏍囧噯鍖栬矾寰勫苟娣诲姞鍒伴泦鍚?
       const menuPath = menuItem.path.startsWith('/') ? menuItem.path : `/${menuItem.path}`
       pathSet.add(menuPath)
 
-      // 递归处理子菜单
+      // 閫掑綊澶勭悊瀛愯彍鍗?
       if (menuItem.children?.length) {
         this.buildMenuPathSet(menuItem.children, pathSet)
       }
@@ -74,14 +74,14 @@ export class RoutePermissionValidator {
   }
 
   /**
-   * 检查目标路径是否匹配集合中的某个路径前缀
-   * 用于支持动态路由参数匹配，如 /user/123 匹配 /user
-   * @param targetPath 目标路径
-   * @param pathSet 路径集合
-   * @returns 是否匹配
+   * 妫€鏌ョ洰鏍囪矾寰勬槸鍚﹀尮閰嶉泦鍚堜腑鐨勬煇涓矾寰勫墠缂€
+   * 鐢ㄤ簬鏀寔鍔ㄦ€佽矾鐢卞弬鏁板尮閰嶏紝濡?/user/123 鍖归厤 /user
+   * @param targetPath 鐩爣璺緞
+   * @param pathSet 璺緞闆嗗悎
+   * @returns 鏄惁鍖归厤
    */
   static checkPathPrefix(targetPath: string, pathSet: Set<string>): boolean {
-    // 遍历路径集合，检查是否有前缀匹配
+    // 閬嶅巻璺緞闆嗗悎锛屾鏌ユ槸鍚︽湁鍓嶇紑鍖归厤
     for (const menuPath of pathSet) {
       if (targetPath.startsWith(`${menuPath}/`)) {
         return true
@@ -91,7 +91,7 @@ export class RoutePermissionValidator {
   }
 
   /**
-   * 递归匹配路由配置，支持隐藏路由和动态参数路由
+   * 閫掑綊鍖归厤璺敱閰嶇疆锛屾敮鎸侀殣钘忚矾鐢卞拰鍔ㄦ€佸弬鏁拌矾鐢?
    */
   static matchRoute(targetPath: string, routes: AppRouteRecord[]): boolean {
     if (!Array.isArray(routes) || routes.length === 0) {
@@ -122,7 +122,7 @@ export class RoutePermissionValidator {
   }
 
   /**
-   * 检查目标路径是否匹配动态参数路由，如 /demo/123 匹配 /demo/:id
+   * 妫€鏌ョ洰鏍囪矾寰勬槸鍚﹀尮閰嶅姩鎬佸弬鏁拌矾鐢憋紝濡?/demo/123 鍖归厤 /demo/:id
    */
   static isDynamicRouteMatch(targetPath: string, routePath: string): boolean {
     if (!routePath.includes(':')) {
@@ -138,12 +138,12 @@ export class RoutePermissionValidator {
   }
 
   /**
-   * 验证并返回有效的路径
-   * 如果目标路径无权限，返回首页路径
-   * @param targetPath 目标路径
-   * @param menuList 菜单列表
-   * @param homePath 首页路径
-   * @returns 验证后的路径
+   * 楠岃瘉骞惰繑鍥炴湁鏁堢殑璺緞
+   * 濡傛灉鐩爣璺緞鏃犳潈闄愶紝杩斿洖棣栭〉璺緞
+   * @param targetPath 鐩爣璺緞
+   * @param menuList 鑿滃崟鍒楄〃
+   * @param homePath 棣栭〉璺緞
+   * @returns 楠岃瘉鍚庣殑璺緞
    */
   static validatePath(
     targetPath: string,
@@ -159,3 +159,4 @@ export class RoutePermissionValidator {
     return { path: homePath, hasPermission: false }
   }
 }
+

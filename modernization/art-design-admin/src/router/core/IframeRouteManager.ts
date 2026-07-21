@@ -1,10 +1,10 @@
-/**
- * Iframe 路由管理器
+﻿/**
+ * Iframe 璺敱绠＄悊鍣?
  *
- * 负责管理 iframe 类型的路由
+ * 璐熻矗绠＄悊 iframe 绫诲瀷鐨勮矾鐢?
  *
  * @module router/core/IframeRouteManager
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import type { AppRouteRecord } from '@/types/router'
@@ -23,7 +23,7 @@ export class IframeRouteManager {
   }
 
   /**
-   * 添加 iframe 路由
+   * 娣诲姞 iframe 璺敱
    */
   add(route: AppRouteRecord): void {
     if (!this.iframeRoutes.find((r) => r.path === route.path)) {
@@ -32,28 +32,28 @@ export class IframeRouteManager {
   }
 
   /**
-   * 获取所有 iframe 路由
+   * 鑾峰彇鎵€鏈?iframe 璺敱
    */
   getAll(): AppRouteRecord[] {
     return this.iframeRoutes
   }
 
   /**
-   * 根据路径查找 iframe 路由
+   * 鏍规嵁璺緞鏌ユ壘 iframe 璺敱
    */
   findByPath(path: string): AppRouteRecord | undefined {
     return this.iframeRoutes.find((route) => route.path === path)
   }
 
   /**
-   * 清空所有 iframe 路由
+   * 娓呯┖鎵€鏈?iframe 璺敱
    */
   clear(): void {
     this.iframeRoutes = []
   }
 
   /**
-   * 保存到 sessionStorage
+   * 淇濆瓨鍒?sessionStorage
    */
   save(): void {
     if (this.iframeRoutes.length > 0) {
@@ -62,7 +62,7 @@ export class IframeRouteManager {
   }
 
   /**
-   * 从 sessionStorage 加载
+   * 浠?sessionStorage 鍔犺浇
    */
   load(): void {
     try {
@@ -71,8 +71,9 @@ export class IframeRouteManager {
         this.iframeRoutes = JSON.parse(data)
       }
     } catch (error) {
-      console.error('[IframeRouteManager] 加载 iframe 路由失败:', error)
+      console.error('[IframeRouteManager] 鍔犺浇 iframe 璺敱澶辫触:', error)
       this.iframeRoutes = []
     }
   }
 }
+

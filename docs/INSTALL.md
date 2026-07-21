@@ -1,6 +1,6 @@
 # AiPay 安装与部署教程
 
-AiPay 推荐固定架构如下：
+AiPay 推荐使用以下正式结构：
 
 - `8132`：前端壳，只负责游客首页、商户端、管理员端
 - `8787`：Webman 后端，只负责 API、支付、回调
@@ -35,12 +35,13 @@ php windows.php
 
 - 游客首页：`http://127.0.0.1:8132/`
 - 商户登录：`http://127.0.0.1:8132/#/merchant/login`
+- 商户注册：`http://127.0.0.1:8132/#/merchant/register`
 - 管理员登录：`http://127.0.0.1:8132/#/auth/login`
 - Webman 后端：`http://127.0.0.1:8787`
 
 ## 2. Linux 正式部署
 
-### 2.1 建议目录
+### 2.1 推荐目录结构
 
 ```text
 /var/www/aipay/
@@ -48,8 +49,8 @@ php windows.php
   console/
 ```
 
-- `console/` 放前端构建产物
-- `backend/` 放 Webman 后端
+- `console/`：前端静态产物
+- `backend/`：Webman 后端
 - 公网域名直接指向 `console/`
 - Nginx 反代 `/api`、`/submit.php`、`/mapi.php`、`/Pay/*` 到 `127.0.0.1:8787`
 
@@ -62,7 +63,7 @@ sudo bash deploy/linux/install-oneclick.sh
 
 脚本会自动处理：
 
-- 基础依赖检查与安装
+- 检查并安装基础依赖
 - 写入 `backend/.env`
 - 初始化数据库
 - 创建管理员账号
@@ -70,7 +71,7 @@ sudo bash deploy/linux/install-oneclick.sh
 - 安装 Webman systemd 服务
 - 生成 Nginx 配置
 - 可选申请 HTTPS
-- 最后自动执行部署验收
+- 自动执行部署验收
 
 ### 2.3 非交互示例
 
@@ -79,8 +80,8 @@ cd /var/www/aipay/backend
 sudo bash deploy/linux/install-oneclick.sh \
   --domain=p.973700.xyz \
   --backend-port=8787 \
-  --db-name=aipay_prod \
-  --db-user=aipay_prod \
+  --db-name=aipay \
+  --db-user=aipay \
   --db-password='ReplaceMe123!' \
   --admin-user=adminroot \
   --admin-password='ReplaceMe123!' \
@@ -103,8 +104,8 @@ sudo bash deploy/linux/install-aapanel.sh \
   --domain=p.973700.xyz \
   --public-root=/www/wwwroot/p.973700.xyz \
   --nginx-conf=/www/server/panel/vhost/nginx/p.973700.xyz.conf \
-  --db-name=aipay_prod \
-  --db-user=aipay_prod \
+  --db-name=aipay \
+  --db-user=aipay \
   --db-password='ReplaceMe123!' \
   --admin-user=adminroot \
   --admin-password='ReplaceMe123!' \
@@ -115,7 +116,7 @@ sudo bash deploy/linux/install-aapanel.sh \
 
 ## 4. 80/443 反代与 HTTPS
 
-公网只开放 80/443，Webman `8787` 只监听本机。
+公网只开放 `80/443`，Webman `8787` 只监听本机。
 
 推荐反代规则：
 
@@ -170,10 +171,10 @@ bash deploy/linux/verify-deployment.sh \
 
 ## 7. 上线前检查
 
-- 管理员口令已改为强密码
-- 数据库、`.env`、HTTPS 已配置
+- 管理员密码已改为强密码
+- 数据库、`.env`、HTTPS 已配置完成
 - 管理员登录页 `/#/auth/login` 可正常使用
 - 商户登录与注册页可正常使用
 - 游客首页与移动端显示正常
-- 支付插件、支付方式、商户通道已按正式环境配好
+- 支付插件、支付方式、商户通道已按正式环境配置好
 - 回调、查单轮询、订单落账已联调完成

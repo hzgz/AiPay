@@ -1,37 +1,37 @@
-/**
- * 路由工具模块
+﻿/**
+ * 璺敱宸ュ叿妯″潡
  *
- * 提供路由处理和菜单路径相关的工具函数
+ * 鎻愪緵璺敱澶勭悊鍜岃彍鍗曡矾寰勭浉鍏崇殑宸ュ叿鍑芥暟
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * - iframe 路由检测，判断是否为外部嵌入页面
- * - 菜单项有效性验证，过滤隐藏和无效菜单
- * - 路径标准化处理，统一路径格式
- * - 递归查找菜单树中第一个有效路径
- * - 支持多级嵌套菜单的路径解析
+ * - iframe 璺敱妫€娴嬶紝鍒ゆ柇鏄惁涓哄閮ㄥ祵鍏ラ〉闈?
+ * - 鑿滃崟椤规湁鏁堟€ч獙璇侊紝杩囨护闅愯棌鍜屾棤鏁堣彍鍗?
+ * - 璺緞鏍囧噯鍖栧鐞嗭紝缁熶竴璺緞鏍煎紡
+ * - 閫掑綊鏌ユ壘鑿滃崟鏍戜腑绗竴涓湁鏁堣矾寰?
+ * - 鏀寔澶氱骇宓屽鑿滃崟鐨勮矾寰勮В鏋?
  *
- * ## 使用场景
+ * ## 浣跨敤鍦烘櫙
  *
- * - 系统初始化时获取默认跳转路径
- * - 菜单权限过滤后获取首个可访问页面
- * - 路由重定向逻辑处理
- * - iframe 页面特殊处理
+ * - 绯荤粺鍒濆鍖栨椂鑾峰彇榛樿璺宠浆璺緞
+ * - 鑿滃崟鏉冮檺杩囨护鍚庤幏鍙栭涓彲璁块棶椤甸潰
+ * - 璺敱閲嶅畾鍚戦€昏緫澶勭悊
+ * - iframe 椤甸潰鐗规畩澶勭悊
  *
  * @module utils/navigation/route
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { AppRouteRecord } from '@/types'
 
-// 检查是否为 iframe 路由
+// 妫€鏌ユ槸鍚︿负 iframe 璺敱
 export function isIframe(url: string): boolean {
   return url.startsWith('/outside/iframe/')
 }
 
 /**
- * 判断菜单项是否可作为默认导航落点
- * 隐藏的全屏页面虽然不展示在菜单中，但仍然可能是合法首页。
+ * 鍒ゆ柇鑿滃崟椤规槸鍚﹀彲浣滀负榛樿瀵艰埅钀界偣
+ * 闅愯棌鐨勫叏灞忛〉闈㈣櫧鐒朵笉灞曠ず鍦ㄨ彍鍗曚腑锛屼絾浠嶇劧鍙兘鏄悎娉曢椤点€?
  */
 export const isNavigableMenuItem = (menuItem: AppRouteRecord): boolean => {
   if (!menuItem.path || !menuItem.path.trim()) {
@@ -46,18 +46,18 @@ export const isNavigableMenuItem = (menuItem: AppRouteRecord): boolean => {
 }
 
 /**
- * 标准化路径格式
- * @param path 路径
- * @returns 标准化后的路径
+ * 鏍囧噯鍖栬矾寰勬牸寮?
+ * @param path 璺緞
+ * @returns 鏍囧噯鍖栧悗鐨勮矾寰?
  */
 const normalizePath = (path: string): string => {
   return path.startsWith('/') ? path : `/${path}`
 }
 
 /**
- * 递归获取菜单的第一个有效路径
- * @param menuList 菜单列表
- * @returns 第一个有效路径，如果没有找到则返回空字符串
+ * 閫掑綊鑾峰彇鑿滃崟鐨勭涓€涓湁鏁堣矾寰?
+ * @param menuList 鑿滃崟鍒楄〃
+ * @returns 绗竴涓湁鏁堣矾寰勶紝濡傛灉娌℃湁鎵惧埌鍒欒繑鍥炵┖瀛楃涓?
  */
 export const getFirstMenuPath = (menuList: AppRouteRecord[]): string => {
   if (!Array.isArray(menuList) || menuList.length === 0) {
@@ -69,7 +69,7 @@ export const getFirstMenuPath = (menuList: AppRouteRecord[]): string => {
       continue
     }
 
-    // 如果有子菜单，优先查找子菜单
+    // 濡傛灉鏈夊瓙鑿滃崟锛屼紭鍏堟煡鎵惧瓙鑿滃崟
     if (menuItem.children?.length) {
       const childPath = getFirstMenuPath(menuItem.children)
       if (childPath) {
@@ -77,9 +77,10 @@ export const getFirstMenuPath = (menuList: AppRouteRecord[]): string => {
       }
     }
 
-    // 返回当前菜单项的标准化路径
+    // 杩斿洖褰撳墠鑿滃崟椤圭殑鏍囧噯鍖栬矾寰?
     return normalizePath(menuItem.path!)
   }
 
   return ''
 }
+

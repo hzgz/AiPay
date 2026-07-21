@@ -1,48 +1,48 @@
-/**
- * useTableHeight - 表格高度自动计算
+﻿/**
+ * useTableHeight - 琛ㄦ牸楂樺害鑷姩璁＄畻
  *
- * 自动计算表格容器的最佳高度，确保表格在不同布局场景下都能正确显示。
- * 根据表格头部、分页器等元素的高度动态调整容器高度，避免出现滚动条或布局错乱。
+ * 鑷姩璁＄畻琛ㄦ牸瀹瑰櫒鐨勬渶浣抽珮搴︼紝纭繚琛ㄦ牸鍦ㄤ笉鍚屽竷灞€鍦烘櫙涓嬮兘鑳芥纭樉绀恒€?
+ * 鏍规嵁琛ㄦ牸澶撮儴銆佸垎椤靛櫒绛夊厓绱犵殑楂樺害鍔ㄦ€佽皟鏁村鍣ㄩ珮搴︼紝閬垮厤鍑虹幇婊氬姩鏉℃垨甯冨眬閿欎贡銆?
  *
- * ## 主要功能
+ * ## 涓昏鍔熻兘
  *
- * 1. 动态高度计算 - 根据表格头部、分页器高度自动计算容器高度
- * 2. 响应式更新 - 配置变化时自动重新计算高度
- * 3. 灵活配置 - 支持自定义各部分高度和间距
- * 4. 智能适配 - 无额外元素时自动使用 100% 高度
+ * 1. 鍔ㄦ€侀珮搴﹁绠?- 鏍规嵁琛ㄦ牸澶撮儴銆佸垎椤靛櫒楂樺害鑷姩璁＄畻瀹瑰櫒楂樺害
+ * 2. 鍝嶅簲寮忔洿鏂?- 閰嶇疆鍙樺寲鏃惰嚜鍔ㄩ噸鏂拌绠楅珮搴?
+ * 3. 鐏垫椿閰嶇疆 - 鏀寔鑷畾涔夊悇閮ㄥ垎楂樺害鍜岄棿璺?
+ * 4. 鏅鸿兘閫傞厤 - 鏃犻澶栧厓绱犳椂鑷姩浣跨敤 100% 楂樺害
  *
  * @module useTableHeight
- * @author Art Design Pro Team
+ * @author AiPay
  */
 
 import { computed, type Ref } from 'vue'
 
 /**
- * 表格高度计算器配置接口
+ * 琛ㄦ牸楂樺害璁＄畻鍣ㄩ厤缃帴鍙?
  */
 interface TableHeightOptions {
-  /** 是否显示表格头部 */
+  /** 鏄惁鏄剧ず琛ㄦ牸澶撮儴 */
   showTableHeader: Ref<boolean>
-  /** 分页器高度 */
+  /** 鍒嗛〉鍣ㄩ珮搴?*/
   paginationHeight: Ref<number>
-  /** 表格头部高度 */
+  /** 琛ㄦ牸澶撮儴楂樺害 */
   tableHeaderHeight: Ref<number>
-  /** 分页器间距 */
+  /** 鍒嗛〉鍣ㄩ棿璺?*/
   paginationSpacing: Ref<number>
 }
 
 /**
- * 表格高度计算器类
+ * 琛ㄦ牸楂樺害璁＄畻鍣ㄧ被
  */
 class TableHeightCalculator {
-  // 常量配置
+  // 甯搁噺閰嶇疆
   private static readonly DEFAULT_TABLE_HEADER_HEIGHT = 44
   private static readonly TABLE_HEADER_SPACING = 12
 
   constructor(private options: TableHeightOptions) {}
 
   /**
-   * 计算容器高度
+   * 璁＄畻瀹瑰櫒楂樺害
    */
   calculate(): { height: string } {
     const offset = this.calculateOffset()
@@ -52,7 +52,7 @@ class TableHeightCalculator {
   }
 
   /**
-   * 计算偏移量
+   * 璁＄畻鍋忕Щ閲?
    */
   private calculateOffset(): number {
     if (!this.options.showTableHeader.value) {
@@ -66,14 +66,14 @@ class TableHeightCalculator {
   }
 
   /**
-   * 获取表格头部高度
+   * 鑾峰彇琛ㄦ牸澶撮儴楂樺害
    */
   private getHeaderHeight(): number {
     return this.options.tableHeaderHeight.value || TableHeightCalculator.DEFAULT_TABLE_HEADER_HEIGHT
   }
 
   /**
-   * 计算分页器偏移量
+   * 璁＄畻鍒嗛〉鍣ㄥ亸绉婚噺
    */
   private calculatePaginationOffset(): number {
     const { paginationHeight, paginationSpacing } = this.options
@@ -82,15 +82,15 @@ class TableHeightCalculator {
 }
 
 /**
- * 表格高度计算 Hook
+ * 琛ㄦ牸楂樺害璁＄畻 Hook
  *
- * 提供表格容器高度的自动计算功能，支持：
- * - 表格头部高度
- * - 分页器高度
- * - 动态间距计算
+ * 鎻愪緵琛ㄦ牸瀹瑰櫒楂樺害鐨勮嚜鍔ㄨ绠楀姛鑳斤紝鏀寔锛?
+ * - 琛ㄦ牸澶撮儴楂樺害
+ * - 鍒嗛〉鍣ㄩ珮搴?
+ * - 鍔ㄦ€侀棿璺濊绠?
  *
- * @param options 配置选项
- * @returns 容器高度计算结果
+ * @param options 閰嶇疆閫夐」
+ * @returns 瀹瑰櫒楂樺害璁＄畻缁撴灉
  */
 export function useTableHeight(options: TableHeightOptions) {
   const containerHeight = computed(() => {
@@ -99,7 +99,8 @@ export function useTableHeight(options: TableHeightOptions) {
   })
 
   return {
-    /** 容器高度样式对象 */
+    /** 瀹瑰櫒楂樺害鏍峰紡瀵硅薄 */
     containerHeight
   }
 }
+

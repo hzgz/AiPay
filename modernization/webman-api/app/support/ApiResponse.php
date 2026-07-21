@@ -8,6 +8,16 @@ use Webman\Http\Response;
 
 class ApiResponse
 {
+    private const MOJIBAKE_FRAGMENTS = [
+        "\u{FFFD}", "\u{20AC}", "\u{935F}", "\u{93B4}", "\u{7487}", "\u{95AB}",
+        "\u{93C0}", "\u{9427}", "\u{934F}", "\u{5BF0}", "\u{7039}", "\u{7490}",
+        "\u{7F01}", "\u{95C8}", "\u{7EEF}", "\u{7EFE}", "\u{7F03}", "\u{9422}",
+        "\u{9352}", "\u{9359}", "\u{95C2}", "\u{8930}", "\u{748B}", "\u{9365}",
+        "\u{93C3}", "\u{951B}", "\u{9286}", "\u{9369}", "\u{59AF}", "\u{95B0}",
+        "\u{93BB}", "\u{935A}", "\u{7481}", "\u{9475}", "\u{95C3}", "\u{942D}",
+        "\u{95AD}", "\u{74A7}", "\u{7F02}", "\u{93BA}", "\u{7ED4}", "\u{7EE0}",
+        "\u{935B}", "\u{6A40}", "\u{5056}", "\u{5D85}", "\u{608A}",
+    ];
     public static function success(array|object|null $data = null, string $message = '成功', int $code = 200): Response
     {
         return self::json($code, $message, $data);
@@ -423,7 +433,7 @@ class ApiResponse
             return '未找到' . self::translateEntity($matches[1] . ' config');
         }
 
-        if (preg_match('/^payment plugin \[(.+?)\] does not declare the \[(.+?)\] capability$/i', $message, $matches)) {
+        if (preg_match('/^payment plugin \\[(.+?)\\] does not declare the \\[(.+?)\\] capability$/i', $message, $matches)) {
             return '支付插件[' . $matches[1] . ']未声明[' . $matches[2] . ']能力';
         }
 
@@ -487,35 +497,35 @@ class ApiResponse
             return '单次批量操作选择的' . self::translateEntity($matches[1]) . '数量过多';
         }
 
-        if (preg_match('/^payment plugin \[(.+?)\] does not support gateway order creation$/i', $message, $matches)) {
+        if (preg_match('/^payment plugin \\[(.+?)\\] does not support gateway order creation$/i', $message, $matches)) {
             return '支付插件[' . $matches[1] . ']不支持网关下单';
         }
 
-        if (preg_match('/^payment plugin \[(.+?)\] does not support notify callbacks$/i', $message, $matches)) {
+        if (preg_match('/^payment plugin \\[(.+?)\\] does not support notify callbacks$/i', $message, $matches)) {
             return '支付插件[' . $matches[1] . ']不支持回调处理';
         }
 
-        if (preg_match('/^payment plugin \[(.+?)\] is not installed$/i', $message, $matches)) {
+        if (preg_match('/^payment plugin \\[(.+?)\\] is not installed$/i', $message, $matches)) {
             return '支付插件[' . $matches[1] . ']未安装';
         }
 
-        if (preg_match('/^payment plugin \[(.+?)\] is disabled$/i', $message, $matches)) {
+        if (preg_match('/^payment plugin \\[(.+?)\\] is disabled$/i', $message, $matches)) {
             return '支付插件[' . $matches[1] . ']已停用';
         }
 
-        if (preg_match('/^payment plugin \[(.+?)\] was not found$/i', $message, $matches)) {
+        if (preg_match('/^payment plugin \\[(.+?)\\] was not found$/i', $message, $matches)) {
             return '支付插件[' . $matches[1] . ']不存在';
         }
 
-        if (preg_match('/^payment plugin registry residue \[(.+?)\] was not found$/i', $message, $matches)) {
+        if (preg_match('/^payment plugin registry residue \\[(.+?)\\] was not found$/i', $message, $matches)) {
             return '支付插件注册残留[' . $matches[1] . ']不存在';
         }
 
-        if (preg_match('/^payment plugin snapshot \[(.+?)\] was not found$/i', $message, $matches)) {
+        if (preg_match('/^payment plugin snapshot \\[(.+?)\\] was not found$/i', $message, $matches)) {
             return '支付插件快照[' . $matches[1] . ']不存在';
         }
 
-        if (preg_match('/^plugin manifest code \[(.+?)\] does not match directory \[(.+?)\]$/i', $message, $matches)) {
+        if (preg_match('/^plugin manifest code \\[(.+?)\\] does not match directory \\[(.+?)\\]$/i', $message, $matches)) {
             return '插件清单编码[' . $matches[1] . ']与目录[' . $matches[2] . ']不一致';
         }
 
@@ -531,19 +541,19 @@ class ApiResponse
             return '插件类不存在：' . $matches[1];
         }
 
-        if (preg_match('/^safe cleanup target \[(.+?)\] is outside the allowed runtime scope$/i', $message, $matches)) {
+        if (preg_match('/^safe cleanup target \\[(.+?)\\] is outside the allowed runtime scope$/i', $message, $matches)) {
             return '安全清理目标[' . $matches[1] . ']超出允许的运行目录范围';
         }
 
-        if (preg_match('/^failed to remove cleanup target \[(.+?)\]$/i', $message, $matches)) {
+        if (preg_match('/^failed to remove cleanup target \\[(.+?)\\]$/i', $message, $matches)) {
             return '清理目标[' . $matches[1] . ']删除失败';
         }
 
-        if (preg_match('/^safe cleanup table \[(.+?)\] is outside the allowed plugin namespace$/i', $message, $matches)) {
+        if (preg_match('/^safe cleanup table \\[(.+?)\\] is outside the allowed plugin namespace$/i', $message, $matches)) {
             return '安全清理数据表[' . $matches[1] . ']超出允许的插件命名空间';
         }
 
-        if (preg_match('/^purge cleanup target \[(.+?)\] is outside the allowed plugin scope$/i', $message, $matches)) {
+        if (preg_match('/^purge cleanup target \\[(.+?)\\] is outside the allowed plugin scope$/i', $message, $matches)) {
             return '彻底清理目标[' . $matches[1] . ']超出允许的插件范围';
         }
 
@@ -551,23 +561,23 @@ class ApiResponse
             return '插件配置不完整：' . self::repairMessage($matches[1]);
         }
 
-        if (preg_match('/^managed channel code must equal the plugin code \[(.+?)\] or start with the plugin code prefix \[(.+?)\]$/i', $message, $matches)) {
+        if (preg_match('/^managed channel code must equal the plugin code \\[(.+?)\\] or start with the plugin code prefix \\[(.+?)\\]$/i', $message, $matches)) {
             return '插件托管通道编码必须等于插件编码[' . $matches[1] . ']，或以插件前缀[' . $matches[2] . ']开头';
         }
 
-        if (preg_match('/^snapshot managed channel payload is missing row data for \[(.+?)\]$/i', $message, $matches)) {
+        if (preg_match('/^snapshot managed channel payload is missing row data for \\[(.+?)\\]$/i', $message, $matches)) {
             return '快照中的托管通道[' . $matches[1] . ']缺少行数据';
         }
 
-        if (preg_match('/^managed channel \[(.+?)\] is outside the allowed plugin namespace$/i', $message, $matches)) {
+        if (preg_match('/^managed channel \\[(.+?)\\] is outside the allowed plugin namespace$/i', $message, $matches)) {
             return '插件托管通道[' . $matches[1] . ']超出允许的插件命名空间';
         }
 
-        if (preg_match('/^snapshot target \[(.+?)\] is outside the allowed plugin scope$/i', $message, $matches)) {
+        if (preg_match('/^snapshot target \\[(.+?)\\] is outside the allowed plugin scope$/i', $message, $matches)) {
             return '快照文件目标[' . $matches[1] . ']超出允许的插件范围';
         }
 
-        if (preg_match('/^snapshot table \[(.+?)\] is outside the allowed plugin namespace$/i', $message, $matches)) {
+        if (preg_match('/^snapshot table \\[(.+?)\\] is outside the allowed plugin namespace$/i', $message, $matches)) {
             return '快照数据表[' . $matches[1] . ']超出允许的插件命名空间';
         }
 
@@ -583,7 +593,7 @@ class ApiResponse
             return 'TronGrid 请求失败：' . self::repairMessage($matches[1]);
         }
 
-        if (preg_match('/^trongrid request returned http (\d+)$/i', $message, $matches)) {
+        if (preg_match('/^trongrid request returned http (\\d+)$/i', $message, $matches)) {
             return 'TronGrid 请求返回 HTTP ' . $matches[1];
         }
 
@@ -607,27 +617,27 @@ class ApiResponse
             return '删除快照目录失败：' . $matches[1];
         }
 
-        if (preg_match('/^failed to decode snapshot file content for \[(.+?)\]$/i', $message, $matches)) {
+        if (preg_match('/^failed to decode snapshot file content for \\[(.+?)\\]$/i', $message, $matches)) {
             return '解析快照文件内容失败：' . $matches[1];
         }
 
-        if (preg_match('/^snapshot table definition is missing for \[(.+?)\]$/i', $message, $matches)) {
+        if (preg_match('/^snapshot table definition is missing for \\[(.+?)\\]$/i', $message, $matches)) {
             return '快照缺少数据表定义：' . $matches[1];
         }
 
-        if (preg_match('/^failed to load create statement for table \[(.+?)\]$/i', $message, $matches)) {
+        if (preg_match('/^failed to load create statement for table \\[(.+?)\\]$/i', $message, $matches)) {
             return '读取数据表创建语句失败：' . $matches[1];
         }
 
-        if (preg_match('/^failed to normalize create statement for table \[(.+?)\]$/i', $message, $matches)) {
+        if (preg_match('/^failed to normalize create statement for table \\[(.+?)\\]$/i', $message, $matches)) {
             return '整理数据表创建语句失败：' . $matches[1];
         }
 
-        if (preg_match('/^create statement was not returned for table \[(.+?)\]$/i', $message, $matches)) {
+        if (preg_match('/^create statement was not returned for table \\[(.+?)\\]$/i', $message, $matches)) {
             return '未获取到数据表创建语句：' . $matches[1];
         }
 
-        if (preg_match('/^failed to remove purge target \[(.+?)\]$/i', $message, $matches)) {
+        if (preg_match('/^failed to remove purge target \\[(.+?)\\]$/i', $message, $matches)) {
             return '彻底清理目标[' . $matches[1] . ']删除失败';
         }
 
@@ -787,16 +797,16 @@ class ApiResponse
             return $message;
         }
 
-        $repaired = @mb_convert_encoding($message, 'UTF-8', 'GB18030');
+        $repaired = @iconv('UTF-8', 'GB18030//IGNORE', $message);
         if (is_string($repaired) && $repaired !== '' && mb_check_encoding($repaired, 'UTF-8')) {
             if (self::mojibakeScore($repaired) < self::mojibakeScore($message)) {
                 $message = $repaired;
             }
         }
 
-        $message = str_replace('�', '', $message);
-        $message = str_replace('閿?', '', $message);
-        $message = preg_replace('/\?+(?=$|[\s，。；：、】【）])/', '', $message) ?? $message;
+        $message = str_replace("\u{FFFD}", '', $message);
+        $message = str_replace("\u{95FF}?", '', $message);
+        $message = preg_replace('/\?+(?=$|[\s，。；：、】【）])/u', '', $message) ?? $message;
 
         return trim($message);
     }
@@ -807,8 +817,11 @@ class ApiResponse
             return 0;
         }
 
-        preg_match_all('/[�€鏀鍟璇鍏寰鐧瀹鎴璐缁闈绯绾缃閫鐢鍒鍙闂褰璋鍥鏃锛銆鍩妯閰鎻鍚璁鑵闃鐭閭璧缂鎺绔绠鍛橀偖嶅悊]/u', $text, $matches);
+        $score = 0;
+        foreach (self::MOJIBAKE_FRAGMENTS as $fragment) {
+            $score += substr_count($text, $fragment);
+        }
 
-        return count($matches[0]);
+        return $score;
     }
 }

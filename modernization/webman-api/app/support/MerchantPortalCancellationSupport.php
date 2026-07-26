@@ -44,7 +44,7 @@ class MerchantPortalCancellationSupport
             ],
             'write_message' => !$featureEnabled
                 ? '系统未开启商户账户注销功能。'
-                : '账号注销已开放。余额、下级关系、未完成交易等将按商户自愿放弃处理，不再作为拦截条件；提交后会立即清理当前商户及其归属数据，并退出当前登录。',
+                : '账号注销已开放。你的余额、下级关系、未完成交易等将按自愿放弃处理。提交后会立即清理当前商户及其归属数据，并退出当前登录。',
         ];
     }
 
@@ -72,7 +72,7 @@ class MerchantPortalCancellationSupport
                 'column_name' => 'user_id',
                 'count' => $pendingOrderCount,
                 'delete_action' => 'delete',
-                'help_text' => '注销提交后会一并清理未完成订单，相关交易按商户自愿放弃处理。',
+                'help_text' => '注销提交后会一并清理未完成订单，相关交易按自愿放弃处理。',
             ],
             [
                 'key' => 'pending_recharges',
@@ -81,7 +81,7 @@ class MerchantPortalCancellationSupport
                 'column_name' => 'user_id',
                 'count' => $pendingRechargeCount,
                 'delete_action' => 'delete',
-                'help_text' => '注销提交后会一并清理未完成充值记录，相关到账与对账按商户自愿放弃处理。',
+                'help_text' => '注销提交后会一并清理未完成充值记录，相关到账与对账按自愿放弃处理。',
             ],
         ];
 
@@ -107,7 +107,7 @@ class MerchantPortalCancellationSupport
 
         $warnings = [
             '账号注销不可恢复，将同步清理当前商户归属的通道、订单、日志、工单等数据。',
-            '余额、下级关系、未完成交易等将按商户自愿放弃处理，不再作为注销拦截条件。',
+            '你的余额、下级关系、未完成交易等将按自愿放弃处理。',
         ];
         if ($balanceAmount > 0) {
             $warnings[] = sprintf('当前账户仍有 %.2f 元余额，提交注销后将视为自愿放弃，不再返还。', $balanceAmount);

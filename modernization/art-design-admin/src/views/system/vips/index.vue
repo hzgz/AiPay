@@ -239,8 +239,8 @@
   import { VueDraggable } from 'vue-draggable-plus'
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
-  import VipEditDialog from './modules/vip-edit-dialog.vue'
+  import ArtButtonTable from '@/components/core/forms/artButtonTable/index.vue'
+  import VipEditDialog from './modules/VipEditDialog.vue'
   import {
     assignVipEditFormState,
     assignVipSortFormState,
@@ -254,14 +254,14 @@
     syncVipStatusFormFromEditable,
     validateVipEditForm,
     validateVipSortForm
-  } from './modules/vip-form-state'
+  } from './modules/vipFormState'
   import type {
     VipDialogMode,
     VipEditFormState,
     VipSortFormState,
     VipStatusFormState
-  } from './modules/vip-form-state'
-  import VipStatusSortDialogs from './modules/vip-status-sort-dialogs.vue'
+  } from './modules/vipFormState'
+  import VipStatusSortDialogs from './modules/VipStatusSortDialogs.vue'
   import {
     fetchAuditVipBatchDelete,
     fetchBatchRestoreVips,
@@ -1185,6 +1185,19 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    --vip-drag-border: #cbd5e1;
+    --vip-drag-bg: rgb(248 250 252 / 0.9);
+    --vip-drag-text: #475569;
+    --vip-drawer-border: var(--el-border-color-lighter);
+    --vip-drawer-bg: rgb(248 250 252 / 0.82);
+  }
+
+  :global(html.dark .vip-page ){
+    --vip-drag-border: rgb(71 85 105 / 0.68);
+    --vip-drag-bg: rgb(15 23 42 / 0.82);
+    --vip-drag-text: #cbd5e1;
+    --vip-drawer-border: rgb(71 85 105 / 0.42);
+    --vip-drawer-bg: rgb(15 23 42 / 0.84);
   }
 
   .vip-cell {
@@ -1194,14 +1207,14 @@
   }
 
   .cell-title {
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 14px;
     word-break: break-all;
   }
 
   .cell-sub {
     margin: 0;
-    color: #64748b;
+    color: var(--el-text-color-secondary);
     font-size: 12px;
     line-height: 1.6;
     word-break: break-all;
@@ -1220,10 +1233,10 @@
     justify-content: center;
     min-width: 44px;
     padding: 4px 10px;
-    border: 1px dashed #cbd5e1;
+    border: 1px dashed var(--vip-drag-border);
     border-radius: 999px;
-    background: rgb(248 250 252 / 0.9);
-    color: #475569;
+    background: var(--vip-drag-bg);
+    color: var(--vip-drag-text);
     cursor: move;
     font-size: 12px;
     line-height: 1;
@@ -1276,7 +1289,7 @@
 
   .drawer-section h4 {
     margin: 0 0 12px;
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 15px;
   }
 
@@ -1291,18 +1304,18 @@
     flex-direction: column;
     gap: 6px;
     padding: 14px 16px;
-    border: 1px solid var(--el-border-color-lighter);
+    border: 1px solid var(--vip-drawer-border);
     border-radius: 14px;
-    background: rgb(248 250 252 / 0.82);
+    background: var(--vip-drawer-bg);
   }
 
   .drawer-item span {
-    color: #64748b;
+    color: var(--el-text-color-secondary);
     font-size: 12px;
   }
 
   .drawer-item strong {
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     word-break: break-all;
   }
 

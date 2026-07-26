@@ -172,14 +172,19 @@ class AdminRouteAuthMapBuilder
 
         $this->appendDerivedRouteWriteCompatibility($map, 'SystemProcesses', 'SystemConfigOverview', 'index', [
             'index' => '进程管理',
-            'pauseMonitor' => '暂停监控',
-            'resumeMonitor' => '恢复监控',
             'cleanupSupervisors' => '清理重复进程',
         ]);
 
         $this->appendRouteWriteCompatibility($map, 'SystemCleanupAudit', 'index', [
             'execute' => '执行清理',
         ]);
+
+        if ($adminId === 1) {
+            $this->appendSuperAdminWriteFallback($map, 'SystemCleanupAudit', [
+                'index' => '数据清理',
+                'execute' => '执行清理',
+            ]);
+        }
 
         $this->appendRouteWriteCompatibility($map, 'SystemDomains', 'index', [
             'add' => '新增域名',
@@ -264,13 +269,12 @@ class AdminRouteAuthMapBuilder
             'recycle' => '回收站',
         ]);
 
-        $this->appendRouteWriteCompatibility($map, 'ContentPluginDownloads', 'edit', [
+        $this->appendRouteWriteCompatibility($map, 'ContentThemes', 'edit', [
             'status' => '状态切换',
         ]);
 
-        $this->appendRouteWriteCompatibility($map, 'ContentPluginDownloads', 'remove', [
-            'batchRemove' => '批量删除',
-            'recycle' => '回收站',
+        $this->appendRouteWriteCompatibility($map, 'ContentThemes', 'remove', [
+            'delete' => '删除',
         ]);
 
         if ($this->shouldApplySuperAdminFullFallback($adminId)) {
@@ -423,8 +427,6 @@ class AdminRouteAuthMapBuilder
             ],
             'SystemProcesses' => [
                 'index' => '进程管理',
-                'pauseMonitor' => '暂停监控',
-                'resumeMonitor' => '恢复监控',
                 'cleanupSupervisors' => '清理重复进程',
             ],
             'SystemAdminLogs' => [
@@ -565,14 +567,10 @@ class AdminRouteAuthMapBuilder
                 'batchRemove' => '批量删除',
                 'recycle' => '回收站',
             ],
-            'ContentPluginDownloads' => [
-                'index' => '插件下载',
-                'add' => '新增下载',
-                'edit' => '编辑下载',
-                'status' => '状态切换',
-                'remove' => '删除下载',
-                'batchRemove' => '批量删除',
-                'recycle' => '回收站',
+            'ContentThemes' => [
+                'index' => '模板管理',
+                'edit' => '启用模板',
+                'remove' => '删除模板',
             ],
         ];
 

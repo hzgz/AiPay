@@ -1,0 +1,7 @@
+ThemeName: Aurora 支付模板
+Description: 偏沉浸式的深色收银台布局，适合夜间风格或品牌化展示。
+Version: 1.0.0
+
+:root {
+  --theme-pay-aurora: 1;
+}

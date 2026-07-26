@@ -44,7 +44,8 @@ final class UniversalEpayGatewayService extends AbstractManagedGatewayOrderServi
             'return_url',
         ]);
 
-        $merchant = $this->merchants->findMerchant((int)$cleanPayload['pid']);
+        $merchantBundle = $this->merchants->findMerchantBundle((int)$cleanPayload['pid']);
+        $merchant = $merchantBundle['merchant'];
         if (!$this->epayProtocol->verifySignature($cleanPayload, (string)($merchant['user_key'] ?? ''))) {
             throw PaymentPluginException::unauthorized();
         }
@@ -59,7 +60,7 @@ final class UniversalEpayGatewayService extends AbstractManagedGatewayOrderServi
         $this->assertMerchantBalance($merchant, (float)$cleanPayload['money'], $systemConfig);
         $this->orders->assertRequestCanCreate($cleanPayload);
 
-        $basicSettings = $this->merchants->findBasicSettings((int)$merchant['id']);
+        $basicSettings = $merchantBundle['basic'];
         $basicSettings['system_timeout'] = SystemConfig::int('timeout', 180);
         $cleanPayload['_trade_no'] = $this->resolveTradeNo($systemConfig);
         $cleanPayload['_resolved_payment_type'] = $paymentType;

@@ -1,60 +1,18 @@
-﻿/**
- * 琛ㄦ牸宸ュ叿鍑芥暟妯″潡
- *
- * 鎻愪緵琛ㄦ牸鏁版嵁澶勭悊鍜岃姹傜鐞嗙殑鏍稿績宸ュ叿鍑芥暟
- *
- * ## 涓昏鍔熻兘
- *
- * - 澶氭牸寮?API 鍝嶅簲鑷姩閫傞厤鍜屾爣鍑嗗寲
- * - 琛ㄦ牸鏁版嵁鎻愬彇鍜岃浆鎹?
- * - 鍒嗛〉淇℃伅鑷姩鏇存柊鍜屾牎楠?
- * - 鏅鸿兘闃叉姈鍑芥暟锛堟敮鎸佸彇娑堝拰绔嬪嵆鎵ц锛?
- * - 缁熶竴鐨勯敊璇鐞嗘満鍒?
- * - 宓屽鏁版嵁缁撴瀯瑙ｆ瀽
- *
- * ## 浣跨敤鍦烘櫙
- *
- * - useTable 缁勫悎寮忓嚱鏁扮殑搴曞眰宸ュ叿
- * - 閫傞厤鍚勭鍚庣鎺ュ彛鍝嶅簲鏍煎紡
- * - 琛ㄦ牸鏁版嵁鐨勬爣鍑嗗寲澶勭悊
- * - 璇锋眰闃叉姈鍜屾€ц兘浼樺寲
- * - 閿欒缁熶竴澶勭悊鍜屾棩蹇楄褰?
- *
- * ## 鏀寔鐨勫搷搴旀牸寮?
- *
- * 1. 鐩存帴鏁扮粍: [item1, item2, ...]
- * 2. 鏍囧噯瀵硅薄: { records: [], total: 100 }
- * 3. 宓屽data: { data: { list: [], total: 100 } }
- * 4. 澶氱瀛楁鍚? list/data/records/items/result/rows
- *
- * ## 鏍稿績鍔熻兘
- *
- * - defaultResponseAdapter: 鏅鸿兘璇嗗埆鍜岃浆鎹㈠搷搴旀牸寮?
- * - extractTableData: 鎻愬彇琛ㄦ牸鏁版嵁鏁扮粍
- * - updatePaginationFromResponse: 鏇存柊鍒嗛〉淇℃伅
- * - createSmartDebounce: 鍒涘缓鍙帶鐨勯槻鎶栧嚱鏁?
- * - createErrorHandler: 鐢熸垚閿欒澶勭悊鍣?
- *
- * @module utils/table/tableUtils
- * @author AiPay
- */
+
 
 import type { ApiResponse } from './tableCache'
 import { tableConfig } from './tableConfig'
 
-// 璇锋眰鍙傛暟鍩虹鎺ュ彛锛屾墿灞曞垎椤靛弬鏁?
 export interface BaseRequestParams extends Api.Common.PaginationParams {
   [key: string]: unknown
 }
 
-// 閿欒澶勭悊鎺ュ彛
 export interface TableError {
   code: string
   message: string
   details?: unknown
 }
 
-// 杈呭姪鍑芥暟锛氫粠瀵硅薄涓彁鍙栬褰曟暟缁?
 function extractRecords<T>(obj: Record<string, unknown>, fields: string[]): T[] {
   for (const field of fields) {
     if (field in obj && Array.isArray(obj[field])) {
@@ -64,7 +22,6 @@ function extractRecords<T>(obj: Record<string, unknown>, fields: string[]): T[] 
   return []
 }
 
-// 杈呭姪鍑芥暟锛氫粠瀵硅薄涓彁鍙栨€绘暟
 function extractTotal(obj: Record<string, unknown>, records: unknown[], fields: string[]): number {
   for (const field of fields) {
     if (field in obj && typeof obj[field] === 'number') {
@@ -74,7 +31,6 @@ function extractTotal(obj: Record<string, unknown>, records: unknown[], fields: 
   return records.length
 }
 
-// 杈呭姪鍑芥暟锛氭彁鍙栧垎椤靛弬鏁?
 function extractPagination(
   obj: Record<string, unknown>,
   data?: Record<string, unknown>
@@ -108,11 +64,8 @@ function extractPagination(
   return result
 }
 
-/**
- * 榛樿鍝嶅簲閫傞厤鍣?- 鏀寔澶氱甯歌鐨凙PI鍝嶅簲鏍煎紡
- */
 export const defaultResponseAdapter = <T>(response: unknown): ApiResponse<T> => {
-  // 瀹氫箟鏀寔鐨勫瓧娈?
+
   const recordFields = tableConfig.recordFields
 
   if (!response) {
@@ -138,12 +91,10 @@ export const defaultResponseAdapter = <T>(response: unknown): ApiResponse<T> => 
   let total = 0
   let pagination: Pick<ApiResponse<unknown>, 'current' | 'size'> | undefined
 
-  // 澶勭悊鏍囧噯鏍煎紡鎴栫洿鎺ュ垪琛?
   records = extractRecords(res, recordFields)
   total = extractTotal(res, records, tableConfig.totalFields)
   pagination = extractPagination(res)
 
-  // 濡傛灉娌℃湁鎵惧埌锛屾鏌ュ祵濂梔ata
   if (records.length === 0 && 'data' in res && typeof res.data === 'object') {
     const data = res.data as Record<string, unknown>
     records = extractRecords(data, ['list', 'records', 'items'])
@@ -169,17 +120,11 @@ export const defaultResponseAdapter = <T>(response: unknown): ApiResponse<T> => 
   return result
 }
 
-/**
- * 浠庢爣鍑嗗寲鐨凙PI鍝嶅簲涓彁鍙栬〃鏍兼暟鎹?
- */
 export const extractTableData = <T>(response: ApiResponse<T>): T[] => {
   const data = response.records || response.data || []
   return Array.isArray(data) ? data : []
 }
 
-/**
- * 鏍规嵁API鍝嶅簲鏇存柊鍒嗛〉淇℃伅
- */
 export const updatePaginationFromResponse = <T>(
   pagination: Api.Common.PaginationParams,
   response: ApiResponse<T>
@@ -196,9 +141,6 @@ export const updatePaginationFromResponse = <T>(
   }
 }
 
-/**
- * 鍒涘缓鏅鸿兘闃叉姈鍑芥暟 - 鏀寔鍙栨秷鍜岀珛鍗虫墽琛?
- */
 export const createSmartDebounce = <T extends (...args: any[]) => Promise<any>>(
   fn: T,
   delay: number
@@ -263,9 +205,6 @@ export const createSmartDebounce = <T extends (...args: any[]) => Promise<any>>(
   return debouncedFn as any
 }
 
-/**
- * 鐢熸垚閿欒澶勭悊鍑芥暟
- */
 export const createErrorHandler = (
   onError?: (error: TableError) => void,
   enableLog: boolean = false
@@ -279,7 +218,7 @@ export const createErrorHandler = (
   return (err: unknown, context: string): TableError => {
     const tableError: TableError = {
       code: 'UNKNOWN_ERROR',
-      message: '鏈煡閿欒',
+      message: '未知错误',
       details: err
     }
 

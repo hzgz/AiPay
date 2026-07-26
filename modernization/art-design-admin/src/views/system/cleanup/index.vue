@@ -1,10 +1,12 @@
 <template>
   <div class="cleanup-page art-full-height">
+    <div class="cleanup-scroll-area">
     <ElCard class="cache-card" shadow="never">
       <template #header>
         <div class="cache-card-header">
           <div class="cache-card-copy">
-            <h3>缓存清理</h3>
+            <h3>数据清理</h3>
+            <p>统一管理订单、充值、后台日志和商户日志的清理审计，Redis 和浏览器缓存工具保留在这里。</p>
           </div>
 
           <div class="cache-card-aside">
@@ -28,7 +30,16 @@
                 type="warning"
                 :disabled="!hasCleanupExecuteAuth"
                 :loading="serverCacheClearing"
-                @click="handleClearServerCache"
+                @click="handleClearServerCache(['hot_path_redis'])"
+              >
+                清 Redis
+              </ElButton>
+              <ElButton
+                plain
+                type="warning"
+                :disabled="!hasCleanupExecuteAuth"
+                :loading="serverCacheClearing"
+                @click="() => handleClearServerCache()"
               >
                 清服务端
               </ElButton>
@@ -131,13 +142,15 @@
       </div>
     </ElCard>
 
-    <ArtSearchBar
-      v-model="searchForm"
-      :items="searchItems"
-      :showExpand="false"
-      @search="handleSearch"
-      @reset="handleReset"
-    />
+      <div class="cleanup-search-bar">
+        <ArtSearchBar
+          v-model="searchForm"
+          :items="searchItems"
+          :showExpand="false"
+          @search="handleSearch"
+          @reset="handleReset"
+        />
+      </div>
 
     <ElCard class="art-table-card" shadow="never">
       <ArtTableHeader
@@ -164,6 +177,7 @@
         @pagination:current-change="handleCurrentChange"
       />
     </ElCard>
+    </div>
 
     <ElDrawer
       v-model="detailVisible"
@@ -254,14 +268,14 @@
   import { useAuth } from '@/hooks'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import { displayAdminFixtureText } from '@/utils/adminFixtureText'
-  import { StorageConfig } from '@/utils/storage/storage-config'
+  import { StorageConfig } from '@/utils/storage/storageConfig'
   import {
     fetchExecuteCleanupAction,
     fetchGetCleanupAuditDetail,
     fetchGetCleanupAuditList,
     fetchGetCleanupExecutionAudit
-  } from '@/api/cleanup-audit'
-  import { fetchCleanupServerCache, fetchGetSystemCacheAudit } from '@/api/system-cache'
+  } from '@/api/cleanupAudit'
+  import { fetchCleanupServerCache, fetchGetSystemCacheAudit } from '@/api/systemCache'
 
   defineOptions({ name: 'SystemCleanupAudit' })
 
@@ -620,18 +634,22 @@
     }
   }
 
-  async function handleClearServerCache() {
+  async function handleClearServerCache(targetKeys: string[] = []) {
     if (!hasCleanupExecuteAuth.value) {
-      ElMessage.warning('当前没有缓存清理权限。')
+      ElMessage.warning('当前没有清理权限。')
       return
     }
 
     try {
-      await ElMessageBox.confirm(buildServerCachePrompt(), '清服务端', {
+      await ElMessageBox.confirm(
+        buildServerCachePrompt(targetKeys),
+        buildServerCacheTitle(targetKeys),
+        {
         type: 'warning',
         confirmButtonText: '确认清理',
         cancelButtonText: '取消'
-      })
+        }
+      )
     } catch (error) {
       if (isDialogCancel(error)) {
         return
@@ -641,11 +659,11 @@
 
     serverCacheClearing.value = true
     try {
-      const response = await fetchCleanupServerCache()
-      cacheAudit.value = response.audit
-      ElMessage.success(
-        `服务端缓存已清理，释放 ${response.released_size_label}，删除文件 ${response.removed_file_count} 个。`
+      const response = await fetchCleanupServerCache(
+        targetKeys.length > 0 ? { targets: targetKeys } : undefined
       )
+      cacheAudit.value = response.audit
+      ElMessage.success(buildServerCacheSuccessMessage(response, targetKeys))
 
       if (response.warnings.length > 0) {
         ElMessage.warning(
@@ -679,7 +697,7 @@
 
   async function handleClearAllCaches() {
     if (!hasCleanupExecuteAuth.value) {
-      ElMessage.warning('当前没有缓存清理权限。')
+      ElMessage.warning('当前没有清理权限。')
       return
     }
 
@@ -876,19 +894,48 @@
     ].join('\n')
   }
 
-  function buildServerCachePrompt() {
-    const targets = cacheAudit.value.server_targets
+  function resolveServerCacheTargets(targetKeys: string[] = []) {
+    if (targetKeys.length === 0) {
+      return cacheAudit.value.server_targets
+    }
+
+    return cacheAudit.value.server_targets.filter((target) => targetKeys.includes(target.key))
+  }
+
+  function buildServerCacheTitle(targetKeys: string[] = []) {
+    if (targetKeys.length === 1 && targetKeys[0] === 'hot_path_redis') {
+      return '清 Redis'
+    }
+
+    return '清服务端'
+  }
+
+  function buildServerCachePrompt(targetKeys: string[] = []) {
+    const targets = resolveServerCacheTargets(targetKeys)
+    const entryCount = targets.reduce((carry, target) => carry + target.entry_count, 0)
+    const sizeBytes = targets.reduce((carry, target) => carry + target.size_bytes, 0)
     const lines = [
       '将清理以下服务端缓存：',
       ...targets.map(
         (target) => `- ${target.title}（${target.relative_path}，${target.size_label}）`
       ),
       '',
-      `当前共 ${cacheAudit.value.server_summary.entry_count} 项，预计释放 ${cacheAudit.value.server_summary.size_label}。`,
+      `当前共 ${entryCount} 项，预计释放 ${formatBytes(sizeBytes)}。`,
       '该操作不会删除订单、商户、支付插件快照或业务数据。'
     ]
 
     return lines.join('\n')
+  }
+
+  function buildServerCacheSuccessMessage(
+    response: Api.SystemCache.ServerCacheCleanupResponse,
+    targetKeys: string[] = []
+  ) {
+    if (targetKeys.length === 1 && targetKeys[0] === 'hot_path_redis') {
+      return `Redis 热缓存已清理，释放 ${response.released_size_label}，移除 ${response.removed_key_count} 个键。`
+    }
+
+    return `服务端缓存已清理，释放 ${response.released_size_label}，删除文件 ${response.removed_file_count} 个。`
   }
 
   function buildBrowserCachePrompt() {
@@ -963,6 +1010,58 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    min-height: 0;
+    --cleanup-card-border: rgb(15 23 42 / 0.08);
+    --cleanup-card-bg:
+      linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.96)),
+      radial-gradient(circle at top right, rgb(56 189 248 / 0.1), transparent 48%);
+    --cleanup-card-bg-soft:
+      linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(255 247 237 / 0.94)),
+      radial-gradient(circle at top right, rgb(248 113 113 / 0.12), transparent 50%);
+    --cleanup-item-bg: rgb(255 255 255 / 0.78);
+    --cleanup-note-bg: rgb(248 250 252 / 0.88);
+    --cleanup-hero-bg:
+      linear-gradient(135deg, rgb(255 251 235 / 0.98), rgb(255 247 237 / 0.96)),
+      radial-gradient(circle at top right, rgb(248 113 113 / 0.12), transparent 54%);
+    --cleanup-title-color: var(--el-text-color-primary);
+    --cleanup-text-color: #334155;
+    --cleanup-muted-color: var(--el-text-color-secondary);
+  }
+
+  .cleanup-scroll-area {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 16px;
+  }
+
+  .cleanup-scroll-area > * {
+    flex-shrink: 0;
+  }
+
+  .cleanup-search-bar {
+    flex-shrink: 0;
+  }
+
+  :global(html.dark .cleanup-page ){
+    --cleanup-card-border: rgb(71 85 105 / 0.42);
+    --cleanup-card-bg:
+      linear-gradient(180deg, rgb(15 23 42 / 0.96), rgb(2 6 23 / 0.94)),
+      radial-gradient(circle at top right, rgb(56 189 248 / 0.08), transparent 48%);
+    --cleanup-card-bg-soft:
+      linear-gradient(180deg, rgb(15 23 42 / 0.96), rgb(2 6 23 / 0.94)),
+      radial-gradient(circle at top right, rgb(248 113 113 / 0.1), transparent 50%);
+    --cleanup-item-bg: rgb(15 23 42 / 0.84);
+    --cleanup-note-bg: rgb(15 23 42 / 0.86);
+    --cleanup-hero-bg:
+      linear-gradient(135deg, rgb(30 41 59 / 0.96), rgb(15 23 42 / 0.94)),
+      radial-gradient(circle at top right, rgb(248 113 113 / 0.1), transparent 54%);
+    --cleanup-title-color: #e2e8f0;
+    --cleanup-text-color: #cbd5e1;
+    --cleanup-muted-color: #94a3b8;
   }
 
   .cache-card-header {
@@ -986,16 +1085,29 @@
     justify-content: flex-end;
   }
 
+  .cache-card,
+  .art-table-card {
+    flex: 0 0 auto;
+  }
+
   .cache-card-copy {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 6px;
   }
 
   .cache-card-copy h3 {
     margin: 0;
     color: var(--el-text-color-primary);
     font-size: 20px;
+  }
+
+  .cache-card-copy p {
+    margin: 0;
+    max-width: 760px;
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+    line-height: 1.75;
   }
 
   .cache-target-grid {
@@ -1010,17 +1122,13 @@
     flex-direction: column;
     gap: 14px;
     padding: 18px;
-    border: 1px solid rgb(15 23 42 / 0.08);
+    border: 1px solid var(--cleanup-card-border);
     border-radius: 18px;
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.96)),
-      radial-gradient(circle at top right, rgb(56 189 248 / 0.1), transparent 48%);
+    background: var(--cleanup-card-bg);
   }
 
   .browser-target-card {
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(255 247 237 / 0.94)),
-      radial-gradient(circle at top right, rgb(248 113 113 / 0.12), transparent 50%);
+    background: var(--cleanup-card-bg-soft);
     min-height: 100%;
   }
 
@@ -1046,7 +1154,7 @@
 
   .cache-target-path {
     margin: 0;
-    color: #475569;
+    color: var(--cleanup-text-color);
     font-size: 12px;
     line-height: 1.6;
     word-break: break-all;
@@ -1064,9 +1172,9 @@
     flex-direction: column;
     gap: 6px;
     padding: 12px 14px;
-    border: 1px solid rgb(15 23 42 / 0.06);
+    border: 1px solid var(--cleanup-card-border);
     border-radius: 14px;
-    background: rgb(255 255 255 / 0.78);
+    background: var(--cleanup-item-bg);
   }
 
   .cache-target-fact strong,
@@ -1087,9 +1195,9 @@
     gap: 4px;
     min-height: 88px;
     padding: 12px 14px;
-    border: 1px solid rgb(15 23 42 / 0.06);
+    border: 1px solid var(--cleanup-card-border);
     border-radius: 14px;
-    background: rgb(255 255 255 / 0.75);
+    background: var(--cleanup-item-bg);
   }
 
   .browser-cache-item strong {
@@ -1146,9 +1254,7 @@
     padding: 20px;
     border: 1px solid rgb(248 113 113 / 0.16);
     border-radius: 18px;
-    background:
-      linear-gradient(135deg, rgb(255 251 235 / 0.98), rgb(255 247 237 / 0.96)),
-      radial-gradient(circle at top right, rgb(248 113 113 / 0.12), transparent 54%);
+    background: var(--cleanup-hero-bg);
   }
 
   .detail-hero-copy {
@@ -1159,13 +1265,14 @@
 
   .detail-hero-copy h3 {
     margin: 0;
+    color: var(--cleanup-title-color);
     font-size: 22px;
   }
 
   .detail-hero-copy p,
   .detail-hero-copy span {
     margin: 0;
-    color: var(--el-text-color-secondary);
+    color: var(--cleanup-muted-color);
     line-height: 1.7;
     word-break: break-all;
   }
@@ -1198,7 +1305,7 @@
     min-height: 96px;
     margin: 0;
     padding: 14px 16px;
-    color: #334155;
+    color: var(--cleanup-text-color);
     font-family: inherit;
     font-size: 13px;
     line-height: 1.8;
@@ -1206,7 +1313,7 @@
     word-break: break-word;
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 14px;
-    background: rgb(248 250 252 / 0.88);
+    background: var(--cleanup-note-bg);
   }
 
   .detail-item {
@@ -1216,7 +1323,7 @@
     padding: 14px 16px;
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 14px;
-    background: rgb(248 250 252 / 0.82);
+    background: var(--cleanup-item-bg);
   }
 
   .detail-item span {

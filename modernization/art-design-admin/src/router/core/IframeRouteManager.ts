@@ -1,7 +1,7 @@
-﻿/**
- * Iframe 璺敱绠＄悊鍣?
+/**
+ * Iframe route registry.
  *
- * 璐熻矗绠＄悊 iframe 绫诲瀷鐨勮矾鐢?
+ * Stores iframe-backed route records for lookup and persistence.
  *
  * @module router/core/IframeRouteManager
  * @author AiPay
@@ -23,7 +23,7 @@ export class IframeRouteManager {
   }
 
   /**
-   * 娣诲姞 iframe 璺敱
+   * Add an iframe route when it has not been recorded yet.
    */
   add(route: AppRouteRecord): void {
     if (!this.iframeRoutes.find((r) => r.path === route.path)) {
@@ -32,28 +32,28 @@ export class IframeRouteManager {
   }
 
   /**
-   * 鑾峰彇鎵€鏈?iframe 璺敱
+   * Get all tracked iframe routes.
    */
   getAll(): AppRouteRecord[] {
     return this.iframeRoutes
   }
 
   /**
-   * 鏍规嵁璺緞鏌ユ壘 iframe 璺敱
+   * Find an iframe route by its path.
    */
   findByPath(path: string): AppRouteRecord | undefined {
     return this.iframeRoutes.find((route) => route.path === path)
   }
 
   /**
-   * 娓呯┖鎵€鏈?iframe 璺敱
+   * Clear all tracked iframe routes.
    */
   clear(): void {
     this.iframeRoutes = []
   }
 
   /**
-   * 淇濆瓨鍒?sessionStorage
+   * Persist iframe routes to session storage.
    */
   save(): void {
     if (this.iframeRoutes.length > 0) {
@@ -62,7 +62,7 @@ export class IframeRouteManager {
   }
 
   /**
-   * 浠?sessionStorage 鍔犺浇
+   * Restore iframe routes from session storage.
    */
   load(): void {
     try {
@@ -71,9 +71,8 @@ export class IframeRouteManager {
         this.iframeRoutes = JSON.parse(data)
       }
     } catch (error) {
-      console.error('[IframeRouteManager] 鍔犺浇 iframe 璺敱澶辫触:', error)
+      console.error('[IframeRouteManager] 加载 iframe 路由失败:', error)
       this.iframeRoutes = []
     }
   }
 }
-

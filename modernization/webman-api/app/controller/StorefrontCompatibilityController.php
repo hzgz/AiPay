@@ -9,6 +9,7 @@ use app\support\BusinessTable;
 use app\support\FrontendUrlBuilder;
 use app\support\MerchantFrontSession;
 use app\support\SystemConfig;
+use app\support\ThemeCatalog;
 use support\Db;
 use Webman\Http\Request;
 use Webman\Http\Response;
@@ -199,6 +200,7 @@ class StorefrontCompatibilityController
 
     private function homePayload(Request $request): array
     {
+        $activeTheme = ThemeCatalog::activeThemeSummary('home');
         $navs = $this->navItems($request);
         $sections = [];
         foreach ([1, 2, 3] as $type) {
@@ -214,6 +216,8 @@ class StorefrontCompatibilityController
 
         return [
             'site_name' => $this->displaySiteName((string)(SystemConfig::get('sitename', 'AiPay'))),
+            'active_theme_id' => $activeTheme['id'],
+            'active_theme_title' => $activeTheme['title'],
             'is_logged_in' => $this->merchantFromRequest($request) !== null,
             'merchant_login_url' => $this->merchantLoginUrl($request),
             'merchant_register_url' => FrontendUrlBuilder::merchantRegisterUrl($request),

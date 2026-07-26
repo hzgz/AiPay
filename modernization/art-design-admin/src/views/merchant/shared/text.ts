@@ -42,7 +42,6 @@ const EXACT_MAP: Record<string, string> = {
   'qq wallet': 'QQ 钱包',
   'qq pay': 'QQ 支付',
   '网站bug': '网站问题',
-  '缃戠珯bug': '网站问题',
   usdt: 'USDT',
   'line 1': '线路 1',
   'line 2': '线路 2',

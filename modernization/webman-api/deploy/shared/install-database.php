@@ -439,15 +439,16 @@ function applySqlAsset(
         fail("Migration file is missing: {$path}");
     }
 
-    $checksum = sha1_file($path);
-    if ($checksum === false) {
+    $checksumCandidates = migrationChecksumCandidates($path);
+    if ($checksumCandidates === []) {
         fail("Unable to hash migration file: {$path}");
     }
+    $checksum = $checksumCandidates[0];
 
     $record = findTrackerRecord($pdo, $trackerTable, $scope, $migrationKey);
     if ($record !== null) {
         $recordChecksum = (string)($record['checksum'] ?? '');
-        if ($recordChecksum !== '' && !hashEqualsSafe($recordChecksum, $checksum)) {
+        if ($recordChecksum !== '' && !migrationChecksumMatches($scope, $migrationKey, $recordChecksum, $checksumCandidates)) {
             fail("Migration checksum changed after it was recorded: {$scope}:{$migrationKey}");
         }
 
@@ -491,6 +492,83 @@ function applySqlAsset(
 
         fail("Migration failed for {$scope}:{$migrationKey}: " . $exception->getMessage());
     }
+}
+
+/**
+ * @return array<int, string>
+ */
+function migrationChecksumCandidates(string $path): array
+{
+    $content = file_get_contents($path);
+    if ($content === false) {
+        return [];
+    }
+
+    if (strncmp($content, "\xEF\xBB\xBF", 3) === 0) {
+        $content = substr($content, 3);
+    }
+
+    $normalized = str_replace(["\r\n", "\r"], "\n", $content);
+    $canonical = sha1($normalized);
+    $windowsVariant = sha1(str_replace("\n", "\r\n", $normalized));
+
+    return array_values(array_unique([$canonical, $windowsVariant]));
+}
+
+/**
+ * @param array<int, string> $checksumCandidates
+ */
+function migrationChecksumMatches(
+    string $scope,
+    string $migrationKey,
+    string $recordChecksum,
+    array $checksumCandidates
+): bool {
+    $recordChecksum = strtolower(trim($recordChecksum));
+    if ($recordChecksum === '') {
+        return false;
+    }
+
+    foreach ($checksumCandidates as $candidate) {
+        if (hashEqualsSafe($recordChecksum, strtolower(trim((string)$candidate)))) {
+            return true;
+        }
+    }
+
+    $legacyChecksums = knownMigrationChecksumAliases($scope, $migrationKey);
+    if ($legacyChecksums === []) {
+        return false;
+    }
+
+    return in_array($recordChecksum, $legacyChecksums, true);
+}
+
+/**
+ * @return array<int, string>
+ */
+function knownMigrationChecksumAliases(string $scope, string $migrationKey): array
+{
+    $map = [
+        'core:20260712_normalize_default_public_news.sql' => [
+            '20528ba679a12edc5edab585c6266658e4c6a05f',
+        ],
+        'core:20260713_add_payment_transaction_claim_table.sql' => [
+            '2724cbb396fe9f9341d9bf7318a718b821164c67',
+        ],
+        'core:20260713_add_order_reconcile_lookup_indexes.sql' => [
+            '54226602fcce2443421174ac1cde03ef39df4d84',
+        ],
+    ];
+
+    $key = strtolower(trim($scope)) . ':' . strtolower(trim($migrationKey));
+    if (!isset($map[$key])) {
+        return [];
+    }
+
+    return array_values(array_unique(array_map(
+        static fn (string $value): string => strtolower(trim($value)),
+        $map[$key]
+    )));
 }
 
 function findTrackerRecord(PDO $pdo, string $trackerTable, string $scope, string $migrationKey): ?array

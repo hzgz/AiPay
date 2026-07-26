@@ -165,7 +165,9 @@ CREATE TABLE `aipay_account` (
   `daymaxmoney` varchar(50) DEFAULT NULL,
   `remark` varchar(225) DEFAULT NULL,
   `money` decimal(10,2) NOT NULL DEFAULT 0.00,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_code` (`code`),
+  KEY `idx_user_type_status_is_status_code` (`user_id`,`type`,`status`,`is_status`,`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `aipay_cdk` (
@@ -246,7 +248,10 @@ CREATE TABLE `aipay_order` (
   UNIQUE KEY `uq_aipay_order_out_trade_no` (`out_trade_no`),
   KEY `idx_trade_no` (`trade_no`),
   KEY `idx_account_status_money_time` (`account_id`,`status`,`truemoney`,`out_time`),
-  KEY `idx_alipay_order_no` (`alipay_order_no`(191))
+  KEY `idx_alipay_order_no` (`alipay_order_no`(191)),
+  KEY `idx_status_create_time` (`status`,`create_time`),
+  KEY `idx_user_status_create_time` (`user_id`,`status`,`create_time`),
+  KEY `idx_status_out_time_account` (`status`,`out_time`,`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `aipay_order_callback_task` (
@@ -350,18 +355,6 @@ CREATE TABLE `aipay_payment_transaction_claim` (
   KEY `idx_account_id` (`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `aipay_plug` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) DEFAULT NULL,
-  `downurl` text DEFAULT NULL,
-  `introduce` text DEFAULT NULL,
-  `status` int(11) NOT NULL DEFAULT 1,
-  `create_time` timestamp NULL DEFAULT NULL,
-  `update_time` timestamp NULL DEFAULT NULL,
-  `delete_time` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE `aipay_poll_pool` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
@@ -389,6 +382,7 @@ CREATE TABLE `aipay_poll_pool_item` (
   `update_time` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_pool_account` (`pool_id`,`account_id`),
+  KEY `idx_pool_sort_account` (`pool_id`,`sort`,`account_id`),
   KEY `idx_user_pool` (`user_id`,`pool_id`),
   KEY `idx_account_id` (`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -653,12 +647,12 @@ INSERT IGNORE INTO `admin_permission` (`id`, `pid`, `title`, `href`, `icon`, `so
 (96, 92, '批量删除风控记录', '/aipay.risk/batchRemove', NULL, 99, 1, 1),
 (97, 92, '风控记录回收站', '/aipay.risk/recycle', NULL, 99, 1, 1),
 (98, 0, '内容中心', '', 'layui-icon layui-icon-download-circle', 10, 0, 1),
-(99, 98, '插件下载', '/aipay.plug/index', 'layui-icon layui-icon-fire', 99, 1, 1),
-(100, 99, '新增插件下载', '/aipay.plug/add', NULL, 99, 1, 1),
-(101, 99, '编辑插件下载', '/aipay.plug/edit', NULL, 99, 1, 1),
-(102, 99, '删除插件下载', '/aipay.plug/remove', NULL, 99, 1, 1),
-(103, 99, '批量删除插件下载', '/aipay.plug/batchRemove', NULL, 99, 1, 1),
-(104, 99, '插件下载回收站', '/aipay.plug/recycle', NULL, 99, 1, 1),
+(99, 98, '模板管理', '/content/themes', 'layui-icon layui-icon-fire', 99, 1, 1),
+(100, 99, '查看模板', '/aipay.themes/index', NULL, 99, 1, 1),
+(101, 99, '启用模板', '/aipay.themes/edit', NULL, 99, 1, 1),
+(102, 99, '删除模板', '/aipay.themes/remove', NULL, 99, 1, 1),
+(103, 99, '模板删除审计', '/aipay.themes/delete-audit', NULL, 99, 1, 1),
+(104, 99, '模板删除确认', '/aipay.themes/delete', NULL, 99, 1, 1),
 (105, 22, '导航管理', '/aipay.navs/index', 'layui-icon layui-icon-fire', 99, 1, 1),
 (106, 105, '新增导航管理', '/aipay.navs/add', NULL, 99, 1, 1),
 (107, 105, '编辑导航管理', '/aipay.navs/edit', NULL, 99, 1, 1),

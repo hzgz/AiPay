@@ -35,7 +35,7 @@ export const systemRoutes: AppRouteRecord = {
     {
       path: 'user-center',
       name: 'UserCenter',
-      component: '/system/user-center',
+      component: '/system/userCenter',
       meta: {
         title: 'menus.system.userCenter',
         icon: 'ri:user-line',
@@ -87,8 +87,6 @@ export const systemRoutes: AppRouteRecord = {
         roles: ['R_SUPER', 'R_ADMIN'],
         authList: [
           { title: '查看', authMark: 'index' },
-          { title: '暂停监控', authMark: 'pauseMonitor' },
-          { title: '恢复监控', authMark: 'resumeMonitor' },
           { title: '清理守护进程', authMark: 'cleanupSupervisors' }
         ]
       }

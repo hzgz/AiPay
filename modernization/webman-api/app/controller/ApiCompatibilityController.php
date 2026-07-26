@@ -7,10 +7,12 @@ namespace app\controller;
 use app\support\ApiResponse;
 use app\support\AdminSmtpMailer;
 use app\support\BusinessTable;
+use app\support\Environment;
 use app\support\GoogleAuthenticator;
 use app\support\LegacyApiCompatState;
 use app\support\LegacyPassword;
 use app\support\MerchantSmsCodeSender;
+use app\support\RequestRateLimiter;
 use app\support\SystemConfig;
 use support\Db;
 use Webman\Http\Request;
@@ -115,8 +117,13 @@ class ApiCompatibilityController
     public function login(Request $request): Response
     {
         $payload = $this->payload($request);
+        $authThrottleError = $this->checkPublicAuthThrottle('login', $request);
+        if ($authThrottleError instanceof Response) {
+            return $authThrottleError;
+        }
+
         $config = SystemConfig::all();
-        $captchaError = $this->validateImageCaptcha($payload, $config);
+        $captchaError = $this->validateImageCaptcha($payload, $config, $request);
         if ($captchaError instanceof Response) {
             return $captchaError;
         }
@@ -231,13 +238,18 @@ class ApiCompatibilityController
     public function register(Request $request): Response
     {
         $payload = $this->payload($request);
+        $authThrottleError = $this->checkPublicAuthThrottle('register', $request);
+        if ($authThrottleError instanceof Response) {
+            return $authThrottleError;
+        }
+
         $config = SystemConfig::all();
 
         if ($this->configInt($config, 'is_reg', 0) !== 1) {
             return $this->monitorResponse(201, '注册功能已关闭!');
         }
 
-        $captchaError = $this->validateImageCaptcha($payload, $config);
+        $captchaError = $this->validateImageCaptcha($payload, $config, $request);
         if ($captchaError instanceof Response) {
             return $captchaError;
         }
@@ -434,7 +446,11 @@ class ApiCompatibilityController
     public function getCaptcha(Request $request): Response
     {
         $code = $this->randomCaptchaCode();
-        LegacyApiCompatState::storeImageCaptcha($code, self::CODE_TTL);
+        LegacyApiCompatState::storeImageCaptchaForScope(
+            LegacyApiCompatState::captchaScopeFromRequest($request),
+            $code,
+            self::CODE_TTL
+        );
         $svg = LegacyApiCompatState::renderCaptchaSvg($code);
 
         return response($svg, 200, [
@@ -447,6 +463,11 @@ class ApiCompatibilityController
     public function retrievePassword(Request $request): Response
     {
         $payload = $this->payload($request);
+        $authThrottleError = $this->checkPublicAuthThrottle('retrieve', $request);
+        if ($authThrottleError instanceof Response) {
+            return $authThrottleError;
+        }
+
         $config = SystemConfig::all();
         $retrieveType = $this->configInt($config, 'retrieve-type', 0);
 
@@ -454,7 +475,7 @@ class ApiCompatibilityController
             return $this->monitorResponse(201, '找回密码功能未开启');
         }
 
-        $captchaError = $this->validateImageCaptcha($payload, $config);
+        $captchaError = $this->validateImageCaptcha($payload, $config, $request);
         if ($captchaError instanceof Response) {
             return $captchaError;
         }
@@ -576,7 +597,7 @@ class ApiCompatibilityController
         return $payload;
     }
 
-    private function validateImageCaptcha(array $payload, array $config): ?Response
+    private function validateImageCaptcha(array $payload, array $config, Request $request): ?Response
     {
         $captchaType = $this->configInt($config, 'captcha-type', 0);
         if ($captchaType > 1) {
@@ -592,7 +613,8 @@ class ApiCompatibilityController
             return $this->monitorResponse(201, '请输入正确的验证码');
         }
 
-        if (!LegacyApiCompatState::verifyImageCaptcha($captcha)) {
+        $scope = LegacyApiCompatState::captchaScopeFromRequest($request);
+        if (!LegacyApiCompatState::verifyImageCaptchaForScope($scope, $captcha)) {
             return $this->monitorResponse(201, '验证码错误');
         }
 
@@ -827,12 +849,6 @@ class ApiCompatibilityController
 
     private function checkVerificationThrottle(string $purpose, string $ip): ?Response
     {
-        $url = match ($purpose) {
-            'register' => '/api/compat/code/register',
-            'retrieve' => '/api/compat/code/retrieve',
-            default => '/api/compat/code/login',
-        };
-
         $freqMessage = match ($purpose) {
             'register' => '注册验证码之间需要相隔60秒！',
             'retrieve' => '两次发送验证码之间需要相隔60秒！',
@@ -845,34 +861,54 @@ class ApiCompatibilityController
             default => '今日登录验证码发送次数已达上限',
         };
 
-        $latest = Db::table('admin_front_log')
-            ->select('url', 'create_time')
-            ->where('type', 2)
-            ->where('ip', $ip)
-            ->orderByDesc('id')
-            ->first();
-
-        if ($latest) {
-            $row = (array)$latest;
-            $createdAt = strtotime((string)($row['create_time'] ?? ''));
-            if ($createdAt > time() - 60 && trim((string)($row['url'] ?? '')) === $url) {
-                return $this->monitorResponse(201, $freqMessage);
-            }
+        $cooldownSeconds = max(1, Environment::int('COMPAT_CODE_COOLDOWN_SECONDS', 60));
+        $cooldown = RequestRateLimiter::attempt(
+            'compat:code:' . $purpose . ':cooldown:' . $ip,
+            1,
+            $cooldownSeconds
+        );
+        if (!$cooldown['allowed']) {
+            return $this->monitorResponse(201, $freqMessage);
         }
 
         $dailyLimit = max(1, $this->configInt(SystemConfig::all(), 'daily_limit', 10));
-        $dailyCount = (int)Db::table('admin_front_log')
-            ->where('type', 2)
-            ->where('ip', $ip)
-            ->where('url', $url)
-            ->where('create_time', '>=', date('Y-m-d 00:00:00'))
-            ->count('id');
+        $dailyWindow = max(60, strtotime('tomorrow') - time());
+        $daily = RequestRateLimiter::attempt(
+            'compat:code:' . $purpose . ':daily:' . date('Ymd') . ':' . $ip,
+            $dailyLimit,
+            $dailyWindow
+        );
 
-        if ($dailyCount >= $dailyLimit) {
+        if (!$daily['allowed']) {
             return $this->monitorResponse(201, $limitMessage);
         }
 
         return null;
+    }
+
+    private function checkPublicAuthThrottle(string $action, Request $request): ?Response
+    {
+        $maxAttempts = Environment::int('PUBLIC_AUTH_RATE_LIMIT_MAX', 30);
+        $windowSeconds = Environment::int('PUBLIC_AUTH_RATE_LIMIT_WINDOW', 60);
+        if ($maxAttempts <= 0 || $windowSeconds <= 0) {
+            return null;
+        }
+
+        $ip = trim((string)$request->getRealIp());
+        if ($ip === '') {
+            return null;
+        }
+
+        $result = RequestRateLimiter::attempt(
+            'compat:auth:' . strtolower(trim($action)) . ':' . $ip,
+            $maxAttempts,
+            $windowSeconds
+        );
+        if ($result['allowed']) {
+            return null;
+        }
+
+        return $this->monitorResponse(429, '请求过于频繁，请稍后再试');
     }
 
     private function recordVerificationLog(string $purpose, Request $request): void

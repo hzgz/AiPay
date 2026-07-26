@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="merchant-page art-full-height">
     <ArtSearchBar
       v-model="searchForm"
@@ -127,11 +127,11 @@
 
 <script setup lang="ts">
   import { ElAvatar, ElMessage, ElMessageBox, ElTag } from 'element-plus'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
-  import MerchantUserCreateDialog from './modules/merchant-user-create-dialog.vue'
-  import MerchantUserDetailDrawer from './modules/merchant-user-detail-drawer.vue'
-  import MerchantUserEmailDialog from './modules/merchant-user-email-dialog.vue'
-  import MerchantUserMaintenanceDialogs from './modules/merchant-user-maintenance-dialogs.vue'
+  import ArtButtonTable from '@/components/core/forms/artButtonTable/index.vue'
+  import MerchantUserCreateDialog from './modules/MerchantUserCreateDialog.vue'
+  import MerchantUserDetailDrawer from './modules/MerchantUserDetailDrawer.vue'
+  import MerchantUserEmailDialog from './modules/MerchantUserEmailDialog.vue'
+  import MerchantUserMaintenanceDialogs from './modules/MerchantUserMaintenanceDialogs.vue'
   import {
     createMerchantUserBusinessFormState,
     createMerchantUserCreateFormState,
@@ -139,8 +139,8 @@
     createMerchantUserEmailFormState,
     createMerchantUserNotificationFormState,
     createMerchantUserStatusFormState
-  } from './modules/merchant-user-form-state'
-  import type { MerchantUserEmailFormState } from './modules/merchant-user-form-state'
+  } from './modules/merchantUserFormState'
+  import type { MerchantUserEmailFormState } from './modules/merchantUserFormState'
   import { useAuth } from '@/hooks'
   import { useTable } from '@/hooks/core/useTable'
   import { displayAdminFixtureText } from '@/utils/adminFixtureText'

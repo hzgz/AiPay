@@ -86,12 +86,12 @@ class DemoCompatibilityController
         $gatewayConfigured = $this->gatewayConfigured($config);
         $navs = $this->defaultPublicNavItems($request);
         $demoName = trim((string)($config['demopay_name'] ?? '支付测试'));
-        $demoMoney = trim((string)($config['demopay_money'] ?? '0.01'));
+        $demoMoney = trim((string)($config['demopay_money'] ?? '0.10'));
 
         return [
             'site_name' => $this->displaySiteName((string)($config['sitename'] ?? 'AiPay')),
             'demo_name' => $this->displayDemoName($demoName),
-            'demo_money' => $demoMoney !== '' ? $demoMoney : '0.01',
+            'demo_money' => $demoMoney !== '' ? $demoMoney : '0.10',
             'gateway_configured' => $gatewayConfigured,
             'available_methods' => $availableMethods,
             'navs' => $navs,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace app\service\order;
 
 use app\support\BusinessTable;
+use app\support\Environment;
 use app\support\LegacyHttpClient;
 use Plugins\Payments\Shared\EpayProtocol\EpayOrderRepository;
 use RuntimeException;
@@ -13,6 +14,7 @@ use support\Db;
 final class OrderCallbackTaskService
 {
     private const MERCHANT_TEST_ORDER_MEMOS = ['merchant_channel_test_pay', 'merchant_channel_test_paid'];
+    private const MERCHANT_TEST_OUT_TRADE_NO_PREFIX = 'TEST';
     private const STALE_LOCK_SECONDS = 180;
     private const RETRY_DELAYS = [5, 15, 30, 60, 120, 300];
 
@@ -32,7 +34,7 @@ final class OrderCallbackTaskService
     {
         $orderId = (int)($order['id'] ?? 0);
         if ($orderId <= 0) {
-            throw new RuntimeException('创建商户回调任务时缺少订单ID');
+            throw new RuntimeException('Missing order id while creating merchant callback task.');
         }
 
         if ($this->isMerchantChannelTestOrder($order)) {
@@ -54,7 +56,7 @@ final class OrderCallbackTaskService
 
         $merchant = $merchant ?? $this->loadMerchant((int)($order['user_id'] ?? 0));
         if ($merchant === null) {
-            throw new RuntimeException('创建商户回调任务时未找到商户');
+            throw new RuntimeException('Merchant was not found while creating merchant callback task.');
         }
 
         $urls = $this->builder->buildUrls($order, $merchant);
@@ -118,12 +120,7 @@ final class OrderCallbackTaskService
                     ->where('id', (int)($existingRecord['id'] ?? 0))
                     ->first();
 
-                $reloadedTask = (array)$reloaded;
-                if (!empty($options['dispatch_now'])) {
-                    return $this->dispatchTaskNow((int)($reloadedTask['id'] ?? 0), true);
-                }
-
-                return $this->taskSummary($reloadedTask, true);
+                return $this->taskSummary((array)$reloaded, true);
             }
         }
 
@@ -155,16 +152,12 @@ final class OrderCallbackTaskService
         $inserted = (int)Db::table(self::table())->insertOrIgnore($insert);
         $stored = Db::table(self::table())->where('task_key', $taskKey)->first();
         if (!$stored) {
-            throw new RuntimeException('商户回调任务写入失败');
+            throw new RuntimeException('Failed to persist merchant callback task.');
         }
-        $insert = (array)$stored;
+
         $this->updateOrderMemo($orderId, 'merchant_callback_queued');
 
-        if (!empty($options['dispatch_now'])) {
-            return $this->dispatchTaskNow((int)($insert['id'] ?? 0), $inserted === 0);
-        }
-
-        return $this->taskSummary($insert, $inserted === 0);
+        return $this->taskSummary((array)$stored, $inserted === 0);
     }
 
     /**
@@ -233,7 +226,12 @@ final class OrderCallbackTaskService
             ];
         }
 
-        $response = LegacyHttpClient::get(trim((string)($task['callback_url'] ?? '')));
+        $response = LegacyHttpClient::get(
+            trim((string)($task['callback_url'] ?? '')),
+            [],
+            $this->callbackHttpTimeout(),
+            $this->callbackHttpConnectTimeout()
+        );
         $memo = $this->builder->memoFromResponse($response);
         $success = $this->isSuccessfulResponse($response);
 
@@ -338,79 +336,6 @@ final class OrderCallbackTaskService
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    private function dispatchTaskNow(int $taskId, bool $deduplicated): array
-    {
-        if ($taskId <= 0) {
-            throw new RuntimeException('同步派发回调任务时缺少回调任务ID');
-        }
-
-        $task = Db::transaction(function () use ($taskId): array {
-            $row = Db::table(self::table())
-                ->where('id', $taskId)
-                ->lockForUpdate()
-                ->first();
-            if (!$row) {
-                throw new RuntimeException('同步派发回调任务时未找到回调任务');
-            }
-
-            $task = (array)$row;
-            $status = trim((string)($task['status'] ?? ''));
-            if ($status === 'success') {
-                return $task;
-            }
-
-            $attemptCount = (int)($task['attempt_count'] ?? 0) + 1;
-            $now = $this->now();
-
-            Db::table(self::table())
-                ->where('id', $taskId)
-                ->update([
-                    'status' => 'running',
-                    'attempt_count' => $attemptCount,
-                    'locked_at' => $now,
-                    'started_at' => $task['started_at'] ?: $now,
-                    'update_time' => $now,
-                ]);
-
-            $task['status'] = 'running';
-            $task['attempt_count'] = $attemptCount;
-            $task['locked_at'] = $now;
-            $task['started_at'] = $task['started_at'] ?: $now;
-            $task['update_time'] = $now;
-
-            return $task;
-        });
-
-        $response = LegacyHttpClient::get(trim((string)($task['callback_url'] ?? '')));
-        $memo = $this->builder->memoFromResponse($response);
-        $success = $this->isSuccessfulResponse($response);
-
-        if ($success) {
-            $this->completeSuccess($task, $response, $memo);
-        } else {
-            $this->completeRetryOrFailure($task, $response, $memo);
-        }
-
-        return [
-            'queued' => false,
-            'deduplicated' => $deduplicated,
-            'skipped' => false,
-            'scene' => trim((string)($task['scene'] ?? 'settlement')),
-            'task_id' => (int)($task['id'] ?? 0),
-            'notify_url' => trim((string)($task['notify_url'] ?? '')),
-            'return_url' => trim((string)($task['return_url'] ?? '')),
-            'callback_url' => trim((string)($task['callback_url'] ?? '')),
-            'memo' => $memo,
-            'ok' => $success,
-            'http_status' => (int)($response['status'] ?? 0),
-            'response_body' => $this->truncate(trim((string)($response['body'] ?? '')), 500),
-            'error' => trim((string)($response['error'] ?? '')),
-        ];
-    }
-
-    /**
      * @return array<string, mixed>|null
      */
     private function loadMerchant(int $merchantId): ?array
@@ -429,11 +354,18 @@ final class OrderCallbackTaskService
 
     private function isMerchantChannelTestOrder(array $order): bool
     {
-        return in_array(
-            trim((string)($order['api_memo'] ?? '')),
-            self::MERCHANT_TEST_ORDER_MEMOS,
-            true
-        );
+        $memo = trim((string)($order['api_memo'] ?? ''));
+        if (in_array($memo, self::MERCHANT_TEST_ORDER_MEMOS, true)) {
+            return true;
+        }
+
+        $outTradeNo = strtoupper(trim((string)($order['out_trade_no'] ?? '')));
+        if (!str_starts_with($outTradeNo, self::MERCHANT_TEST_OUT_TRADE_NO_PREFIX)) {
+            return false;
+        }
+
+        return trim((string)($order['notify_url'] ?? '')) === ''
+            && trim((string)($order['return_url'] ?? '')) === '';
     }
 
     private function updateOrderMemo(int $orderId, string $memo): void
@@ -480,6 +412,16 @@ final class OrderCallbackTaskService
         $index = max(0, min(count(self::RETRY_DELAYS) - 1, $attemptCount - 1));
 
         return self::RETRY_DELAYS[$index];
+    }
+
+    private function callbackHttpTimeout(): int
+    {
+        return max(1, Environment::int('CALLBACK_HTTP_TIMEOUT', 8));
+    }
+
+    private function callbackHttpConnectTimeout(): int
+    {
+        return max(1, Environment::int('CALLBACK_HTTP_CONNECT_TIMEOUT', 3));
     }
 
     private function truncate(string $value, int $limit): string

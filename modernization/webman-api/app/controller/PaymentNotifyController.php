@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Plugins\Payments\Shared\Support\EpayProtocolNotifyBridgeSupport;
 use Plugins\Payments\Shared\Support\PaymentPluginException;
 use RuntimeException;
+use support\Log;
 use Throwable;
 use Webman\Http\Request;
 use Webman\Http\Response;
@@ -34,6 +35,11 @@ class PaymentNotifyController
     public function universalEpayReturn(Request $request): Response
     {
         return $this->handlePluginNotify($request, 'universal_epay', 'return', 'universal_epay_return');
+    }
+
+    public function leshuaNotify(Request $request): Response
+    {
+        return $this->handlePluginNotify($request, 'leshua', 'notify', 'leshua_notify');
     }
 
     private function handleLegacyNotify(Request $request, string $mode, string $entry): Response
@@ -80,6 +86,7 @@ class PaymentNotifyController
                 'plugin_state' => $pluginSelection['detail']['state'],
                 'security' => $this->securityContext($pluginSelection),
                 'payload' => $this->payload($request),
+                'raw_body' => (string)$request->rawBody(),
                 'query' => $request->get(),
                 'headers' => [
                     'content_type' => (string)$request->header('content-type', ''),
@@ -101,6 +108,8 @@ class PaymentNotifyController
 
             return response((string)$body, 200, ['Content-Type' => 'text/plain; charset=utf-8']);
         } catch (Throwable $exception) {
+            $this->logNotifyFailure($request, $mode, $entry, $pluginSelection, $exception);
+
             return response(
                 $this->fallbackBody($exception, $mode),
                 200,
@@ -236,6 +245,57 @@ class PaymentNotifyController
             'resolution' => (string)($selection['resolution'] ?? ''),
             'availability' => (string)($selection['availability'] ?? ''),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $selection
+     */
+    private function logNotifyFailure(
+        Request $request,
+        string $mode,
+        string $entry,
+        array $selection,
+        Throwable $exception
+    ): void {
+        if ($mode !== 'notify') {
+            return;
+        }
+
+        $payload = $this->payload($request);
+        $safePayload = [];
+        $safeKeys = [
+            'third_order_id',
+            'leshua_order_id',
+            'out_trade_no',
+            'trade_no',
+            'merchant_id',
+            'amount',
+            'money',
+            'status',
+            'resp_code',
+            'result_code',
+            'pay_way',
+        ];
+        foreach ($payload as $key => $value) {
+            if (!in_array((string)$key, $safeKeys, true)) {
+                continue;
+            }
+
+            if (is_scalar($value) || $value === null) {
+                $safePayload[$key] = $value;
+            }
+        }
+
+        Log::warning('payment_notify_failed', [
+            'plugin' => (string)($selection['code'] ?? ''),
+            'entry' => $entry,
+            'exception' => get_class($exception),
+            'message' => $exception->getMessage(),
+            'payload_keys' => array_keys($payload),
+            'payload' => $safePayload,
+            'content_type' => (string)$request->header('content-type', ''),
+            'user_agent' => (string)$request->header('user-agent', ''),
+        ]);
     }
 
     private function fallbackBody(Throwable $exception, string $mode): string

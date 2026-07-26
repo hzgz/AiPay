@@ -222,7 +222,7 @@
     fetchUpdatePaymentAccount,
     fetchUpdatePaymentAccountCredentials,
     fetchUpdatePaymentAccountStatus
-  } from '@/api/payment-accounts'
+  } from '@/api/paymentAccounts'
   import { displayAdminMaskedPreview } from '@/utils/adminFixtureText'
   import {
     displayAccountCode,
@@ -245,7 +245,7 @@
     createEmptyPaymentAccountCreateForm,
     createEmptyPaymentAccountCredentialForm,
     usePaymentAccountFormState
-  } from './modules/payment-account-form-state'
+  } from './modules/paymentAccountFormState'
   import {
     buildPaymentAccountEditableFromItem,
     buildPaymentAccountStatusPayload,
@@ -254,12 +254,12 @@
     createEmptyPaymentAccountStatusForm,
     syncPaymentAccountEditForm,
     syncPaymentAccountStatusForm
-  } from './modules/payment-account-maintenance-state'
-  import PaymentAccountCreateDialog from './modules/payment-account-create-dialog.vue'
-  import PaymentAccountCredentialDialog from './modules/payment-account-credential-dialog.vue'
-  import PaymentAccountDetailDrawer from './modules/payment-account-detail-drawer.vue'
-  import PaymentAccountLimitDialog from './modules/payment-account-limit-dialog.vue'
-  import PaymentAccountStatusDialog from './modules/payment-account-status-dialog.vue'
+  } from './modules/paymentAccountMaintenanceState'
+  import PaymentAccountCreateDialog from './modules/PaymentAccountCreateDialog.vue'
+  import PaymentAccountCredentialDialog from './modules/PaymentAccountCredentialDialog.vue'
+  import PaymentAccountDetailDrawer from './modules/PaymentAccountDetailDrawer.vue'
+  import PaymentAccountLimitDialog from './modules/PaymentAccountLimitDialog.vue'
+  import PaymentAccountStatusDialog from './modules/PaymentAccountStatusDialog.vue'
 
   defineOptions({ name: 'PaymentAccounts' })
 

@@ -7,14 +7,10 @@ namespace app\support;
 final class UploadWorkspace
 {
     private const WORKSPACE_ROOT = 'upload-assets';
-    private const BOOTSTRAP_MARKER = '.workspace-ready';
 
     public static function rootPath(): string
     {
-        $root = self::workspaceRoot();
-        self::bootstrapFromLegacy($root);
-
-        return $root;
+        return self::workspaceRoot();
     }
 
     public static function directoryPath(string $directory): string
@@ -43,55 +39,6 @@ final class UploadWorkspace
         return $normalizedChild === '' ? $href : $href . '/' . $normalizedChild;
     }
 
-    public static function legacyPublicPath(string $directory, string $relativeChild = ''): string
-    {
-        $normalizedDirectory = self::normalizeDirectoryName($directory);
-        if ($normalizedDirectory === null) {
-            throw new \InvalidArgumentException('upload directory identifier is invalid');
-        }
-
-        $path = self::legacyUploadRoot() . DIRECTORY_SEPARATOR . $normalizedDirectory;
-        $normalizedChild = trim(str_replace('\\', '/', $relativeChild), '/');
-
-        return $normalizedChild === ''
-            ? $path
-            : $path . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $normalizedChild);
-    }
-
-    public static function mirrorFileToLegacyPublic(string $workspaceAbsolutePath, string $directory, string $relativeChild = ''): string
-    {
-        if (!is_file($workspaceAbsolutePath)) {
-            throw new \RuntimeException('工作区上传文件不存在');
-        }
-
-        $legacyPath = self::legacyPublicPath($directory, $relativeChild);
-        self::ensureDirectory(dirname($legacyPath));
-
-        if (!@copy($workspaceAbsolutePath, $legacyPath) && !is_file($legacyPath)) {
-            throw new \RuntimeException('同步上传文件到公开镜像目录失败');
-        }
-
-        return $legacyPath;
-    }
-
-    public static function deleteLegacyPublicFile(string $directory, string $relativeChild = ''): void
-    {
-        $legacyPath = self::legacyPublicPath($directory, $relativeChild);
-        if (is_file($legacyPath)) {
-            @unlink($legacyPath);
-        }
-    }
-
-    public static function deleteLegacyPublicDirectory(string $directory): void
-    {
-        $legacyPath = self::legacyPublicPath($directory);
-        if (!is_dir($legacyPath)) {
-            return;
-        }
-
-        self::deleteDirectoryRecursively($legacyPath);
-    }
-
     public static function resolveAssetPath(string $relativePath): ?string    {
         $normalizedPath = self::normalizeRelativeAssetPath($relativePath);
         if ($normalizedPath === null) {
@@ -115,22 +62,6 @@ final class UploadWorkspace
         return realpath($root) ?: $root;
     }
 
-    private static function bootstrapFromLegacy(string $workspaceRoot): void
-    {
-        $markerPath = $workspaceRoot . DIRECTORY_SEPARATOR . self::BOOTSTRAP_MARKER;
-        if (is_file($markerPath)) {
-            return;
-        }
-
-        $legacyRoot = self::legacyUploadRoot();
-        $legacyRealPath = realpath($legacyRoot);
-        if ($legacyRealPath && is_dir($legacyRealPath)) {
-            self::copyDirectoryRecursively($legacyRealPath, $workspaceRoot);
-        }
-
-        @file_put_contents($markerPath, date('Y-m-d H:i:s'));
-    }
-
     private static function projectRoot(): string
     {
         if (function_exists('base_path')) {
@@ -140,66 +71,11 @@ final class UploadWorkspace
         return dirname(__DIR__, 2);
     }
 
-    private static function legacyUploadRoot(): string
-    {
-        if (function_exists('public_path')) {
-            return public_path() . DIRECTORY_SEPARATOR . 'upload';
-        }
-
-        return self::projectRoot() . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'upload';
-    }
-
     private static function ensureDirectory(string $path): void
     {
         if (!is_dir($path)) {
             mkdir($path, 0777, true);
         }
-    }
-
-    private static function copyDirectoryRecursively(string $sourceDirectory, string $targetDirectory): void
-    {
-        self::ensureDirectory($targetDirectory);
-
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($sourceDirectory, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST
-        );
-
-        foreach ($iterator as $item) {
-            $sourcePath = $item->getPathname();
-            $relativePath = substr($sourcePath, strlen($sourceDirectory) + 1);
-            if ($relativePath === false || $relativePath === '') {
-                continue;
-            }
-
-            $targetPath = $targetDirectory . DIRECTORY_SEPARATOR . $relativePath;
-            if ($item->isDir()) {
-                self::ensureDirectory($targetPath);
-                continue;
-            }
-
-            self::ensureDirectory(dirname($targetPath));
-            copy($sourcePath, $targetPath);
-        }
-    }
-
-    private static function deleteDirectoryRecursively(string $directoryPath): void
-    {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directoryPath, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST
-        );
-
-        foreach ($iterator as $item) {
-            if ($item->isDir()) {
-                @rmdir($item->getPathname());
-                continue;
-            }
-
-            @unlink($item->getPathname());
-        }
-
-        @rmdir($directoryPath);
     }
 
     private static function normalizeDirectoryName(string $directory): ?string    {

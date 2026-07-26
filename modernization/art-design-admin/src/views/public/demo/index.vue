@@ -100,9 +100,9 @@
 </template>
 
 <script setup lang="ts">
-  import { fetchPublicDemo, type PublicDemoPayload } from '@/api/public-site'
-  import PublicShell from '../shared/public-shell.vue'
-  import { resolvePublicErrorMessage, scrollPublicPageToTop } from '../shared/public-state'
+  import { fetchPublicDemo, type PublicDemoPayload } from '@/api/publicSite'
+  import PublicShell from '../shared/PublicShell.vue'
+  import { resolvePublicErrorMessage, scrollPublicPageToTop } from '../shared/publicState'
 
   defineOptions({ name: 'PublicDemoPage' })
 
@@ -271,7 +271,7 @@
     padding: 0 16px;
     border: 1px solid var(--public-border);
     border-radius: 999px;
-    background: #fff;
+    background: var(--public-surface);
     color: var(--public-title);
     font-weight: 700;
     text-decoration: none;
@@ -282,14 +282,14 @@
   }
 
   .demo-link:hover {
-    border-color: rgba(24, 32, 47, 0.16);
-    background: #f8fafc;
+    border-color: var(--public-border-strong);
+    background: var(--public-surface-soft);
   }
 
   .demo-link--primary {
-    background: #18202f;
-    border-color: #18202f;
-    color: #fff;
+    background: var(--public-cta-bg);
+    border-color: var(--public-cta-border);
+    color: var(--public-cta-text);
   }
 
   .demo-summary {
@@ -322,9 +322,9 @@
   .demo-method-chip {
     min-height: 40px;
     padding: 0 16px;
-    border: 1px solid rgba(15, 23, 42, 0.12);
+    border: 1px solid var(--public-border-strong);
     border-radius: 999px;
-    background: #fff;
+    background: var(--public-surface);
     color: var(--public-title);
     font-weight: 700;
     cursor: pointer;
@@ -335,9 +335,9 @@
   }
 
   .demo-method-chip.is-active {
-    background: #18202f;
-    border-color: #18202f;
-    color: #fff;
+    background: var(--public-cta-bg);
+    border-color: var(--public-cta-border);
+    color: var(--public-cta-text);
   }
 
   .demo-panel {
@@ -360,7 +360,7 @@
     width: 88px;
     height: 88px;
     border-radius: 26px;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.08), rgba(15, 23, 42, 0.16));
+    background: linear-gradient(135deg, rgba(40, 80, 240, 0.14), rgba(40, 80, 240, 0.24));
     color: var(--public-title);
     font-size: 1.32rem;
     font-weight: 800;
@@ -396,8 +396,8 @@
     align-items: center;
     padding: 0 14px;
     border-radius: 999px;
-    background: #f8fafc;
-    color: #445167;
+    background: var(--public-surface-soft);
+    color: var(--public-text);
     font-size: 0.94rem;
   }
 
@@ -412,7 +412,7 @@
 
   .demo-order__row {
     padding: 14px 0;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    border-bottom: 1px solid var(--public-border);
   }
 
   .demo-order__row:last-child {
@@ -427,7 +427,7 @@
   }
 
   .demo-alert {
-    color: #b45309;
+    color: var(--public-warning);
     line-height: 1.8;
   }
 

@@ -1,7 +1,7 @@
-﻿/**
- * 璺敱娉ㄥ唽鏍稿績绫?
+/**
+ * Route registration service.
  *
- * 璐熻矗鍔ㄦ€佽矾鐢辩殑娉ㄥ唽銆侀獙璇佸拰绠＄悊
+ * Handles validation, transformation, and lifecycle management for dynamic routes.
  *
  * @module router/core/RouteRegistry
  * @author AiPay
@@ -29,21 +29,21 @@ export class RouteRegistry {
   }
 
   /**
-   * 娉ㄥ唽鍔ㄦ€佽矾鐢?
+   * Register dynamic routes.
    */
   register(menuList: AppRouteRecord[]): void {
     if (this.registered) {
-      console.warn('[RouteRegistry] 璺敱宸叉敞鍐岋紝璺宠繃閲嶅娉ㄥ唽')
+      console.warn('[RouteRegistry] 路由已注册，跳过重复注册')
       return
     }
 
-    // 楠岃瘉璺敱閰嶇疆
+    // Validate the incoming route configuration before registration.
     const validationResult = this.validator.validate(menuList)
     if (!validationResult.valid) {
-      throw new Error(`璺敱閰嶇疆楠岃瘉澶辫触: ${validationResult.errors.join(', ')}`)
+      throw new Error(`路由配置验证失败: ${validationResult.errors.join(', ')}`)
     }
 
-    // 杞崲骞舵敞鍐岃矾鐢?
+    // Transform menu data into router records and register them once.
     const removeRouteFns: (() => void)[] = []
 
     menuList.forEach((route) => {
@@ -59,7 +59,7 @@ export class RouteRegistry {
   }
 
   /**
-   * 绉婚櫎鎵€鏈夊姩鎬佽矾鐢?
+   * Unregister all dynamic routes.
    */
   unregister(): void {
     this.removeRouteFns.forEach((fn) => fn())
@@ -68,24 +68,23 @@ export class RouteRegistry {
   }
 
   /**
-   * 妫€鏌ユ槸鍚﹀凡娉ㄥ唽
+   * Check whether dynamic routes have already been registered.
    */
   isRegistered(): boolean {
     return this.registered
   }
 
   /**
-   * 鑾峰彇绉婚櫎鍑芥暟鍒楄〃锛堢敤浜?store 绠＄悊锛?
+   * Get the stored removal callbacks for store-level lifecycle management.
    */
   getRemoveRouteFns(): (() => void)[] {
     return this.removeRouteFns
   }
 
   /**
-   * 鏍囪涓哄凡娉ㄥ唽锛堢敤浜庨敊璇鐞嗗満鏅紝閬垮厤閲嶅璇锋眰锛?
+   * Mark the registry as initialized after an error-recovery flow.
    */
   markAsRegistered(): void {
     this.registered = true
   }
 }
-

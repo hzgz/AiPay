@@ -1,7 +1,7 @@
-﻿/**
- * 鑿滃崟澶勭悊鍣?
+/**
+ * Menu processing service.
  *
- * 璐熻矗鑿滃崟鏁版嵁鐨勮幏鍙栥€佽繃婊ゅ拰澶勭悊
+ * Fetches, filters, and normalizes route menus for the current app mode.
  *
  * @module router/core/MenuProcessor
  * @author AiPay
@@ -10,7 +10,7 @@
 import type { AppRouteRecord } from '@/types/router'
 import { useUserStore } from '@/store/modules/user'
 import { useAppMode } from '@/hooks/core/useAppMode'
-import { fetchGetMenuList } from '@/api/system-manage'
+import { fetchGetMenuList } from '@/api/systemManage'
 import { asyncRoutes } from '../routes/asyncRoutes'
 import { RoutesAlias } from '../routesAlias'
 import { formatMenuTitle } from '@/utils'
@@ -31,7 +31,7 @@ const hiddenReleaseRouteNames = new Set([
 
 export class MenuProcessor {
   /**
-   * 鑾峰彇鑿滃崟鏁版嵁
+   * Fetch and prepare the effective menu list.
    */
   async getMenuList(): Promise<AppRouteRecord[]> {
     const { isFrontendMode } = useAppMode()
@@ -47,14 +47,15 @@ export class MenuProcessor {
       menuList = this.filterReleaseMenus(menuList)
     }
 
-    // 鍦ㄨ鑼冨寲璺緞涔嬪墠锛岄獙璇佸師濮嬭矾寰勯厤缃?    this.validateMenuPaths(menuList)
+    // Validate raw menu paths before normalization.
+    this.validateMenuPaths(menuList)
 
-    // 瑙勮寖鍖栬矾寰勶紙灏嗙浉瀵硅矾寰勮浆鎹负瀹屾暣璺緞锛?
+    // Normalize relative paths into full route paths.
     return this.normalizeMenuPaths(menuList)
   }
 
   /**
-   * 澶勭悊鍓嶇鎺у埗妯″紡鐨勮彍鍗?
+   * Build menus for the frontend-controlled mode.
    */
   private async processFrontendMenu(): Promise<AppRouteRecord[]> {
     const userStore = useUserStore()
@@ -62,7 +63,7 @@ export class MenuProcessor {
 
     let menuList = [...asyncRoutes]
 
-    // 鏍规嵁瑙掕壊杩囨护鑿滃崟
+    // Filter menus by the current user's roles when role data is available.
     if (roles && roles.length > 0) {
       menuList = this.filterMenuByRoles(menuList, roles)
     }
@@ -71,7 +72,7 @@ export class MenuProcessor {
   }
 
   /**
-   * 澶勭悊鍚庣鎺у埗妯″紡鐨勮彍鍗?
+   * Build menus for the backend-controlled mode.
    */
   private async processBackendMenu(): Promise<AppRouteRecord[]> {
     const list = await fetchGetMenuList()
@@ -79,7 +80,7 @@ export class MenuProcessor {
   }
 
   /**
-   * 鏍规嵁瑙掕壊杩囨护鑿滃崟
+   * Filter menu entries by role permissions.
    */
   private filterMenuByRoles(menu: AppRouteRecord[], roles: string[]): AppRouteRecord[] {
     return menu.reduce((acc: AppRouteRecord[], item) => {
@@ -99,12 +100,12 @@ export class MenuProcessor {
   }
 
   /**
-   * 閫掑綊杩囨护绌鸿彍鍗曢」
+   * Recursively remove empty menu entries while keeping valid containers.
    */
   private filterEmptyMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
     return menuList
       .map((item) => {
-        // 濡傛灉鏈夊瓙鑿滃崟锛屽厛閫掑綊杩囨护瀛愯彍鍗?
+        // Filter child entries before deciding whether the container should remain.
         if (item.children && item.children.length > 0) {
           const filteredChildren = this.filterEmptyMenus(item.children)
           return {
@@ -115,36 +116,36 @@ export class MenuProcessor {
         return item
       })
       .filter((item) => {
-        // 濡傛灉瀹氫箟浜?children 灞炴€э紙鍗充娇鏄┖鏁扮粍锛夛紝璇存槑杩欐槸涓€涓洰褰曡彍鍗曪紝搴旇淇濈暀
+        // Keep directory-style menus when they explicitly carry a children field.
         if ('children' in item) {
           return true
         }
 
-        // 濡傛灉鏈夊閾炬垨 iframe锛屼繚鐣?
+        // External links and iframe routes are still navigable entries.
         if (item.meta?.isIframe === true || item.meta?.link) {
           return true
         }
 
-        // 濡傛灉鏈夋湁鏁堢殑 component锛屼繚鐣?
+        // Keep entries that point to a concrete component.
         if (item.component && item.component !== '' && item.component !== RoutesAlias.Layout) {
           return true
         }
 
-        // 鍏朵粬鎯呭喌杩囨护鎺?
+        // Drop placeholder items that cannot be opened on their own.
         return false
       })
   }
 
   /**
-   * 楠岃瘉鑿滃崟鍒楄〃鏄惁鏈夋晥
+   * Check whether the menu list contains usable data.
    */
   validateMenuList(menuList: AppRouteRecord[]): boolean {
     return Array.isArray(menuList) && menuList.length > 0
   }
 
   /**
-   * 姝ｅ紡鐜鑿滃崟瑁佸壀
-   * 绉婚櫎婕旂ず銆佺ず渚嬨€佸彉鏇存棩蹇楃瓑闈炰笟鍔″叆鍙ｏ紝閬垮厤璇毚闇插埌鐢熶骇鍚庡彴銆?   */
+   * Remove demo-style routes from release builds.
+   */
   private filterReleaseMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
     return menuList.reduce((acc: AppRouteRecord[], item) => {
       if (this.isReleaseHiddenRoute(item)) {
@@ -187,14 +188,14 @@ export class MenuProcessor {
   }
 
   /**
-   * 瑙勮寖鍖栬彍鍗曡矾寰?   * 灏嗙浉瀵硅矾寰勮浆鎹负瀹屾暣璺緞锛岀‘淇濊彍鍗曡烦杞纭?
+   * Normalize menu paths into full, navigable route paths.
    */
   private normalizeMenuPaths(menuList: AppRouteRecord[], parentPath = ''): AppRouteRecord[] {
     return menuList.map((item) => {
-      // 鏋勫缓瀹屾暣璺緞
+      // Build the full path for the current menu entry.
       const fullPath = this.buildFullPath(item.path || '', parentPath)
 
-      // 閫掑綊澶勭悊瀛愯彍鍗?
+      // Normalize children using the resolved parent path.
       const children = item.children?.length
         ? this.normalizeMenuPaths(item.children, fullPath)
         : item.children
@@ -211,7 +212,7 @@ export class MenuProcessor {
   }
 
   /**
-   * 涓虹洰褰曞瀷鑿滃崟鎺ㄥ榛樿璺宠浆鍦板潃
+   * Infer a default redirect target for directory-style menus.
    */
   private resolveDefaultRedirect(children?: AppRouteRecord[]): string | undefined {
     if (!children?.length) {
@@ -233,7 +234,7 @@ export class MenuProcessor {
   }
 
   /**
-   * 鍒ゆ柇瀛愯矾鐢辨槸鍚﹀彲浠ヤ綔涓洪粯璁よ惤鐐?
+   * Check whether a child route can be used as a redirect landing target.
    */
   private isNavigableRoute(route: AppRouteRecord): boolean {
     return Boolean(
@@ -247,38 +248,36 @@ export class MenuProcessor {
   }
 
   /**
-   * 楠岃瘉鑿滃崟璺緞閰嶇疆
-   * 妫€娴嬮潪涓€绾ц彍鍗曟槸鍚﹂敊璇娇鐢ㄤ簡 / 寮€澶寸殑璺緞
-   */
-  /**
-   * 楠岃瘉鑿滃崟璺緞閰嶇疆
-   * 妫€娴嬮潪涓€绾ц彍鍗曟槸鍚﹂敊璇娇鐢ㄤ簡 / 寮€澶寸殑璺緞
+   * Validate menu path declarations before normalization.
+   *
+   * Non-root child routes should not start with a leading slash unless they are
+   * external links or iframe routes.
    */
   private validateMenuPaths(menuList: AppRouteRecord[], level = 1): void {
     menuList.forEach((route) => {
       if (!route.children?.length) return
 
-      const parentName = String(route.name || route.path || '鏈煡璺敱')
+      const parentName = String(route.name || route.path || '未知路由')
 
       route.children.forEach((child) => {
         const childPath = child.path || ''
 
-        // 璺宠繃鍚堟硶鐨勭粷瀵硅矾寰勶細澶栭儴閾炬帴鍜?iframe 璺敱
+        // Skip valid absolute-style targets such as external links or iframes.
         if (this.isValidAbsolutePath(childPath)) return
 
-        // 妫€娴嬮潪娉曠殑缁濆璺緞
+        // Flag invalid child paths that still start with a slash.
         if (childPath.startsWith('/')) {
           this.logPathError(child, childPath, parentName, level)
         }
       })
 
-      // 閫掑綊妫€鏌ユ洿娣卞眰绾х殑瀛愯矾鐢?
+      // Continue validating deeper child levels.
       this.validateMenuPaths(route.children, level + 1)
     })
   }
 
   /**
-   * 鍒ゆ柇鏄惁涓哄悎娉曠殑缁濆璺緞
+   * Check whether an absolute-style path is valid in menu data.
    */
   private isValidAbsolutePath(path: string): boolean {
     return (
@@ -289,7 +288,7 @@ export class MenuProcessor {
   }
 
   /**
-   * 杈撳嚭璺緞閰嶇疆閿欒鏃ュ織
+   * Print a structured error for invalid child menu paths.
    */
   private logPathError(
     route: AppRouteRecord,
@@ -297,45 +296,44 @@ export class MenuProcessor {
     parentName: string,
     level: number
   ): void {
-    const routeName = String(route.name || path || '鏈煡璺敱')
+    const routeName = String(route.name || path || '未知路由')
     const menuTitle = route.meta?.title || routeName
     const suggestedPath = path.split('/').pop() || path.slice(1)
 
     console.error(
-      `[璺敱閰嶇疆閿欒] 鑿滃崟 "${formatMenuTitle(menuTitle)}" (name: ${routeName}, path: ${path}) 閰嶇疆閿欒\n` +
-        `  浣嶇疆: ${parentName} > ${routeName}\n` +
-        `  闂: ${level + 1}绾ц彍鍗曠殑 path 涓嶈兘浠?/ 寮€澶碶n` +
-        `  褰撳墠閰嶇疆: path: '${path}'\n` +
-        `  搴旇鏀逛负: path: '${suggestedPath}'`
+      `[路由配置错误] 菜单 "${formatMenuTitle(menuTitle)}" (name: ${routeName}, path: ${path}) 配置错误\n` +
+        `  位置: ${parentName} > ${routeName}\n` +
+        `  问题: ${level + 1} 级菜单的 path 不能以 / 开头\n` +
+        `  当前配置: path: '${path}'\n` +
+        `  应改为: path: '${suggestedPath}'`
     )
   }
 
   /**
-   * 鏋勫缓瀹屾暣璺緞
+   * Build a full route path from a parent path and child segment.
    */
   private buildFullPath(path: string, parentPath: string): string {
     if (!path) return ''
 
-    // 澶栭儴閾炬帴鐩存帴杩斿洖
+    // External links stay untouched.
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path
     }
 
-    // 濡傛灉宸茬粡鏄粷瀵硅矾寰勶紝鐩存帴杩斿洖
+    // Already absolute paths can be returned as-is.
     if (path.startsWith('/')) {
       return path
     }
 
-    // 鎷兼帴鐖惰矾寰勫拰褰撳墠璺緞
+    // Join the parent path with the current segment.
     if (parentPath) {
-      // 绉婚櫎鐖惰矾寰勬湯灏剧殑鏂滄潬锛岀Щ闄ゅ瓙璺緞寮€澶寸殑鏂滄潬锛岀劧鍚庢嫾鎺?
+      // Trim duplicate slashes before combining the segments.
       const cleanParent = parentPath.replace(/\/$/, '')
       const cleanChild = path.replace(/^\//, '')
       return `${cleanParent}/${cleanChild}`
     }
 
-    // 娌℃湁鐖惰矾寰勶紝娣诲姞鍓嶅鏂滄潬
+    // Root-level segments should still be normalized to absolute paths.
     return `/${path}`
   }
 }
-

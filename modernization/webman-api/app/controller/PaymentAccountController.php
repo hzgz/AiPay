@@ -189,9 +189,8 @@ class PaymentAccountController
         }
 
         $absolutePath = '';
-        $legacyPath = '';
         try {
-            [$photoId, $href] = Db::transaction(function () use ($file, $prepared, &$absolutePath, &$legacyPath): array {
+            [$photoId, $href] = Db::transaction(function () use ($file, $prepared, &$absolutePath): array {
                 $dateSegment = date('Ymd');
                 $relativeChild = $dateSegment . '/' . date('His') . '_' . bin2hex(random_bytes(8)) . '.' . $prepared['ext'];
                 $absolutePath = $this->credentialImageUploadRoot()
@@ -205,7 +204,6 @@ class PaymentAccountController
 
                 $href = UploadWorkspace::publicHref('payment-accounts', $relativeChild);
                 $file->move($absolutePath);
-                $legacyPath = UploadWorkspace::mirrorFileToLegacyPublic($absolutePath, 'payment-accounts', $relativeChild);
 
                 $photoId = (int)Db::table('admin_photo')->insertGetId([
                     'name' => $prepared['name'],
@@ -223,9 +221,6 @@ class PaymentAccountController
         } catch (\Throwable $exception) {
             if ($absolutePath !== '' && is_file($absolutePath)) {
                 @unlink($absolutePath);
-            }
-            if ($legacyPath !== '' && is_file($legacyPath)) {
-                @unlink($legacyPath);
             }
 
             return ApiResponse::error(
@@ -1162,11 +1157,10 @@ class PaymentAccountController
             throw new \InvalidArgumentException('商户不存在');
         }
 
-        $identifier = $this->normalizeRequiredText(
-            $payload['identifier'] ?? '',
-            50,
-            (string)($this->createCodeCatalog()[$code]['identifier_label'] ?? '账号标识')
-        );
+        $identifierLabel = (string)($this->createCodeCatalog()[$code]['identifier_label'] ?? '账号标识');
+        $identifier = $code === 'alipay_software' && $this->isAlipaySoftwarePictureMode($payload['qr_type'] ?? '')
+            ? $this->normalizeOptionalText($payload['identifier'] ?? '', 50, $identifierLabel)
+            : $this->normalizeRequiredText($payload['identifier'] ?? '', 50, $identifierLabel);
         $pid = $this->normalizeOptionalText(
             $payload['pid'] ?? '',
             50,
@@ -1299,12 +1293,12 @@ class PaymentAccountController
         $identifierField = $this->identifierFieldForCode($code);
         $identifierLabel = (string)($this->credentialCodeCatalog()[$code]['identifier_label'] ?? '账号标识');
 
+        $identifierValue = $payload['identifier'] ?? $this->identifierValueForCode($record, $code);
+        $identifierQrType = $payload['qr_type'] ?? ($record['qr_type'] ?? '');
         $updates = [
-            $identifierField => $this->normalizeRequiredText(
-                $payload['identifier'] ?? $this->identifierValueForCode($record, $code),
-                50,
-                $identifierLabel
-            ),
+            $identifierField => $code === 'alipay_software' && $this->isAlipaySoftwarePictureMode($identifierQrType)
+                ? $this->normalizeOptionalText($identifierValue, 50, $identifierLabel)
+                : $this->normalizeRequiredText($identifierValue, 50, $identifierLabel),
         ];
 
         if ($code === 'alipay_software') {
@@ -1319,6 +1313,23 @@ class PaymentAccountController
                 $qrUrl
             );
             $updates['qr_url'] = $qrUrl;
+
+            return $updates;
+        }
+
+        if ($code === 'wxpay_software') {
+            $qrUrl = $this->normalizeOptionalText(
+                $payload['qr_url'] ?? ($record['qr_url'] ?? ''),
+                2500,
+                '二维码内容'
+            );
+            $qrType = $this->normalizeWxpaySoftwareQrType(
+                $payload['qr_type'] ?? ($record['qr_type'] ?? ''),
+                $qrUrl
+            );
+            $updates['qr_type'] = $qrType;
+            $updates['qr_url'] = $qrUrl;
+            $updates['cookie'] = '';
 
             return $updates;
         }
@@ -1395,6 +1406,44 @@ class PaymentAccountController
                 'wx_guid' => '',
                 'cloud_id' => '',
                 'qq' => '',
+            ]);
+        }
+
+        if ($code === 'leshua') {
+            return array_merge($updates, [
+                'zfb_pid' => '',
+                'cookie' => $this->normalizeRequiredText(
+                    $payload['cookie'] ?? ($record['cookie'] ?? ''),
+                    12000,
+                    '交易密钥'
+                ),
+                'qr_url' => $this->normalizeOptionalText(
+                    $payload['qr_url'] ?? ($record['qr_url'] ?? ''),
+                    12000,
+                    '异步通知密钥'
+                ),
+                'wx_guid' => '',
+                'cloud_id' => '',
+                'qq' => '',
+                'qr_type' => '',
+            ]);
+        }
+
+        if ($code === 'usdt') {
+            return array_merge($updates, [
+                'zfb_pid' => '',
+                'cookie' => $this->encodeUsdtConfig(
+                    $this->normalizeUsdtExchangeRate(
+                        $payload['extra_value'] ?? ($this->decodeUsdtConfig($record)['exchange_rate'] ?? '')
+                    )
+                ),
+                'remark' => $this->normalizeUsdtOrderTimeout(
+                    $payload['remark'] ?? ($record['remark'] ?? '')
+                ),
+                'wx_guid' => '',
+                'cloud_id' => '',
+                'qq' => '',
+                'qr_type' => '',
             ]);
         }
 
@@ -1583,6 +1632,7 @@ class PaymentAccountController
             ? $this->decodeJiaofeiyiConfig($record)
             : ['store_name' => '', 'remote_api_url' => '', 'proxy_api_url' => ''];
         $managedConfig = $this->loadManagedCredentialConfig($code, (int)($record['id'] ?? 0));
+        $usdtConfig = $code === 'usdt' ? $this->decodeUsdtConfig($record) : ['exchange_rate' => ''];
 
         return [
             'code' => $code,
@@ -1613,7 +1663,9 @@ class PaymentAccountController
                     ? (string)($managedConfig['root_cert'] ?? '')
                     : ($code === 'wxpay_v3'
                         ? trim((string)($record['qq'] ?? ''))
-                        : (string)($jiaofeiyiConfig['remote_api_url'] ?? ''))),
+                        : ($code === 'usdt'
+                            ? (string)($usdtConfig['exchange_rate'] ?? '')
+                            : (string)($jiaofeiyiConfig['remote_api_url'] ?? '')))),
         ];
     }
 
@@ -2211,7 +2263,7 @@ class PaymentAccountController
             'alipay_software' => [
                 'type' => 'alipay',
                 'identifier_field' => 'zfb_pid',
-                'identifier_label' => 'PID',
+                'identifier_label' => '上游标识',
             ],
             'wxpay_software' => [
                 'type' => 'wxpay',
@@ -2252,6 +2304,11 @@ class PaymentAccountController
                 'type' => '',
                 'identifier_field' => 'wxname',
                 'identifier_label' => '商户ID',
+            ],
+            'leshua' => [
+                'type' => '',
+                'identifier_field' => 'wxname',
+                'identifier_label' => '商户号',
             ],
             'jiaofeiyi_alipay' => [
                 'type' => 'alipay',
@@ -2368,6 +2425,10 @@ class PaymentAccountController
     {
         if ($code === 'universal_epay') {
             return ['alipay', 'wxpay', 'qqpay'];
+        }
+
+        if ($code === 'leshua') {
+            return ['alipay', 'wxpay'];
         }
 
         $type = strtolower(trim((string)($this->createCodeCatalog()[$code]['type'] ?? '')));
@@ -2507,6 +2568,96 @@ class PaymentAccountController
         ];
     }
 
+    /**
+     * @param array<string, mixed> $record
+     * @return array{wallet_address: string, memo: string, exchange_rate: string}
+     */
+    private function decodeUsdtConfig(array $record): array
+    {
+        $raw = trim((string)($record['cookie'] ?? ''));
+        $exchangeRate = '';
+
+        if ($raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $exchangeRate = $this->sanitizeUsdtExchangeRateText(
+                    $decoded['exchange_rate'] ?? ($decoded['rate'] ?? '')
+                );
+            } else {
+                $exchangeRate = $this->sanitizeUsdtExchangeRateText($raw);
+            }
+        }
+
+        return [
+            'wallet_address' => trim((string)($record['wxname'] ?? '')),
+            'memo' => trim((string)($record['qr_url'] ?? '')),
+            'exchange_rate' => $exchangeRate,
+        ];
+    }
+
+    private function encodeUsdtConfig(string $exchangeRate): string
+    {
+        if ($exchangeRate === '') {
+            return '';
+        }
+
+        return json_encode([
+            'exchange_rate' => $exchangeRate,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
+    }
+
+    private function sanitizeUsdtExchangeRateText(mixed $value): string
+    {
+        $raw = trim((string)$value);
+        if ($raw === '' || !preg_match('/^\d+(?:\.\d{1,2})?$/', $raw)) {
+            return '';
+        }
+
+        $rate = (float)$raw;
+        if ($rate <= 0) {
+            return '';
+        }
+
+        return number_format($rate, 2, '.', '');
+    }
+
+    private function normalizeUsdtExchangeRate(mixed $value): string
+    {
+        $normalized = $this->normalizeOptionalDecimal($value, 20, 'USDT 汇率');
+        if ($normalized === '') {
+            return '';
+        }
+
+        if ((float)$normalized <= 0) {
+            throw new \InvalidArgumentException('USDT 汇率必须大于 0');
+        }
+
+        return number_format((float)$normalized, 2, '.', '');
+    }
+
+    private function sanitizeUsdtOrderTimeoutText(mixed $value): string
+    {
+        $raw = trim((string)$value);
+        if ($raw === '' || !preg_match('/^[1-9]\d*$/', $raw)) {
+            return '';
+        }
+
+        return (string)((int)$raw);
+    }
+
+    private function normalizeUsdtOrderTimeout(mixed $value): string
+    {
+        $normalized = $this->sanitizeUsdtOrderTimeoutText($value);
+        if ($normalized === '') {
+            $raw = trim((string)$value);
+            if ($raw !== '') {
+                throw new \InvalidArgumentException('USDT 订单时长必须填写正整数秒');
+            }
+        }
+
+        return $normalized;
+    }
+
     private function encodeJiaofeiyiConfig(string $storeName, string $remoteApiUrl, string $proxyApiUrl = ''): string
     {
         return $this->jiaofeiyi()->encodeConfig($storeName, $remoteApiUrl, $proxyApiUrl);
@@ -2598,6 +2749,15 @@ class PaymentAccountController
             '0', '2', 'false', 'no', 'off', 'disable', 'disabled' => $normalized === '2' ? 2 : 0,
             default => throw new \InvalidArgumentException('启用状态只能是停用、启用或系统锁定'),
         };
+    }
+
+    private function isAlipaySoftwarePictureMode(mixed $value): bool
+    {
+        if (is_array($value) || is_object($value)) {
+            return false;
+        }
+
+        return strtolower(trim((string)$value)) === 'pic';
     }
 
     private function normalizeCreateQrType(mixed $value, string $code, string $qrUrl): string

@@ -24,7 +24,7 @@ export const merchantRoutes: AppRouteRecordRaw[] = [
   {
     path: '/merchant/forgot-password',
     name: 'MerchantForgotPassword',
-    component: () => import('@views/merchant/forgot-password/index.vue'),
+    component: () => import('@views/merchant/forgotPassword/index.vue'),
     meta: {
       title: '找回密码',
       isHideTab: true,
@@ -74,7 +74,7 @@ export const merchantRoutes: AppRouteRecordRaw[] = [
       {
         path: 'real-name',
         name: 'MerchantRealName',
-        component: () => import('@views/merchant/real-name/index.vue'),
+        component: () => import('@views/merchant/realName/index.vue'),
         meta: { title: '实名认证', isHideTab: true }
       },
       {
@@ -92,7 +92,7 @@ export const merchantRoutes: AppRouteRecordRaw[] = [
       {
         path: 'money-logs',
         name: 'MerchantMoneyLogs',
-        component: () => import('@views/merchant/money-logs/index.vue'),
+        component: () => import('@views/merchant/moneyLogs/index.vue'),
         meta: { title: '资金日志', isHideTab: true }
       },
       {
@@ -145,7 +145,7 @@ export const merchantRoutes: AppRouteRecordRaw[] = [
       {
         path: 'login-logs',
         name: 'MerchantLoginLogs',
-        component: () => import('@views/merchant/login-logs/index.vue'),
+        component: () => import('@views/merchant/loginLogs/index.vue'),
         meta: { title: '登录日志', isHideTab: true }
       }
     ]

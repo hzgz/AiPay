@@ -6,20 +6,6 @@ export function fetchGetProcessOverview() {
   })
 }
 
-export function fetchPauseProcessMonitor() {
-  return request.post<Api.SystemManage.ProcessOverviewResponse>({
-    url: '/api/admin/processes/monitor/pause',
-    showSuccessMessage: false
-  })
-}
-
-export function fetchResumeProcessMonitor() {
-  return request.post<Api.SystemManage.ProcessOverviewResponse>({
-    url: '/api/admin/processes/monitor/resume',
-    showSuccessMessage: false
-  })
-}
-
 export function fetchCleanupDuplicateSupervisors() {
   return request.post<Api.SystemManage.ProcessOverviewResponse>({
     url: '/api/admin/processes/supervisors/cleanup',

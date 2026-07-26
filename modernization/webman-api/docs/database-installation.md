@@ -1,8 +1,6 @@
-# AiPay 数据库安装说明
+# AiPay 数据库安装
 
 ## 作用
-
-发布包内的数据库安装脚本负责三件事：
 
 1. 在空库时优先导入单一核心安装文件
 2. 执行 `backend/database/migrations/*.sql`
@@ -17,7 +15,7 @@
 - 运行 PHP 已安装 `pdo_mysql`
 - 推荐先备份目标数据库
 
-建议版本：
+推荐版本：
 
 - MySQL 8.x
 - MariaDB 10.5+
@@ -47,9 +45,9 @@ cd backend
 bash deploy/linux/install-database.sh --with-base-schema
 ```
 
-说明：
+行为：
 
-- `--with-base-schema` 只建议用于空库
+- `--with-base-schema` 只用于空库
 - 脚本会优先导入 `core-install.sql`
 - 如果没有单文件，则回退为 `base-schema.sql + admin-auth-seed.sql`
 - 插件表不会塞进核心安装文件，仍按插件迁移独立安装
@@ -104,14 +102,12 @@ bash deploy/linux/install-database.sh --with-base-schema --dry-run
 - 插件迁移是否已执行
 - 已执行 SQL 的校验摘要
 
-这样做可以防止：
+作用：
 
 - 同一份迁移被重复执行
 - 迁移文件被改动后仍然悄悄继续跑
 
-## 为什么还保留多份 SQL
-
-原因不是“库结构没收干净”，而是职责不同：
+## SQL 文件分工
 
 - `database/install/core-install.sql`
   - 给全新空库安装使用
@@ -127,10 +123,9 @@ bash deploy/linux/install-database.sh --with-base-schema --dry-run
 
 也就是说：
 
-- 核心系统现在适合收成一个安装 SQL
-- 正式发布包现在只需要携带 `core-install.sql`
-- 插件数据库不应该强行并进核心安装文件
-- 升级补丁也不应该混进首装 SQL
+- 正式发布包只需要携带 `core-install.sql`
+- 插件数据库不并入核心安装文件
+- 升级补丁不并入首装 SQL
 
 ## 安全规则
 

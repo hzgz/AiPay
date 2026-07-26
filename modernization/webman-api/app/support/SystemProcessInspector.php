@@ -2,7 +2,6 @@
 
 namespace app\support;
 
-use app\process\Monitor;
 
 class SystemProcessInspector
 {
@@ -18,7 +17,6 @@ class SystemProcessInspector
             $workerProcesses
         );
         $supervisorProcesses = $this->supervisorProcesses();
-        $monitor = $this->monitorState($coreProcesses);
         $duplicateCleanup = $this->duplicateSupervisorCleanupPlan($supervisorProcesses, $workerProcesses);
 
         return [
@@ -42,8 +40,6 @@ class SystemProcessInspector
                 'payment_plugin_total' => $this->paymentPluginCatalogCount(),
                 'payment_plugin_manifest_process_total' => count($paymentPluginManifestProcesses),
                 'supervisor_total' => count($supervisorProcesses),
-                'monitor_running' => (bool)($monitor['running'] ?? false),
-                'monitor_paused' => (bool)($monitor['paused'] ?? false),
             ],
             'environment' => [
                 'os_family' => PHP_OS_FAMILY,
@@ -53,7 +49,6 @@ class SystemProcessInspector
                 'server_listen' => $this->serverListen(),
                 'windows_runtime_directory' => $this->normalizeFilesystemPath(runtime_path('windows')),
             ],
-            'monitor' => $monitor,
             'duplicate_cleanup' => $duplicateCleanup,
             'supervisors' => [
                 'count' => count($supervisorProcesses),
@@ -64,20 +59,6 @@ class SystemProcessInspector
             'payment_plugin_manifest_processes' => $paymentPluginManifestProcesses,
             'runtime_files' => $this->runtimeFiles(),
         ];
-    }
-
-    public function pauseMonitor(): array
-    {
-        Monitor::pause();
-
-        return $this->snapshot();
-    }
-
-    public function resumeMonitor(): array
-    {
-        Monitor::resume();
-
-        return $this->snapshot();
     }
 
     public function cleanupDuplicateSupervisors(): array
@@ -333,34 +314,11 @@ class SystemProcessInspector
             $commandLine = self::normalizedCommandLine((string)($item['command_line'] ?? ''));
             if (PHP_OS_FAMILY === 'Windows') {
                 return str_contains($commandLine, 'start_webman.php')
-                    && str_contains($commandLine, 'start_monitor.php')
                     && !self::commandHasQueueFlag($commandLine);
             }
 
             return self::isUnixMasterCommand($commandLine);
         }));
-    }
-
-    private function monitorState(array $coreProcesses): array
-    {
-        $monitorProcess = null;
-        foreach ($coreProcesses as $item) {
-            if (($item['key'] ?? '') === 'monitor') {
-                $monitorProcess = $item;
-                break;
-            }
-        }
-
-        $lockFile = runtime_path('monitor.lock');
-
-        return [
-            'running' => (bool)($monitorProcess['running'] ?? false),
-            'paused' => Monitor::isPaused(),
-            'lock_file' => $this->normalizeFilesystemPath($lockFile),
-            'paused_at' => is_file($lockFile) ? $this->formatTimestamp((int)filemtime($lockFile)) : null,
-            'process_count' => (int)($monitorProcess['process_count'] ?? 0),
-            'workers' => $monitorProcess['workers'] ?? [],
-        ];
     }
 
     /**
@@ -370,13 +328,11 @@ class SystemProcessInspector
     {
         $server = (array)config('server', []);
         $files = [
-            $this->runtimeFile('pid_file', '进程标识文件', (string)($server['pid_file'] ?? '')),
-            $this->runtimeFile('status_file', '状态记录文件', (string)($server['status_file'] ?? '')),
-            $this->runtimeFile('stdout_file', '控制台日志', (string)($server['stdout_file'] ?? '')),
-            $this->runtimeFile('log_file', '服务日志', (string)($server['log_file'] ?? '')),
-            $this->runtimeFile('monitor_lock', '巡检锁文件', runtime_path('monitor.lock')),
-            $this->runtimeFile('start_webman', 'Windows 主服务启动文件', runtime_path('windows/start_webman.php')),
-            $this->runtimeFile('start_monitor', 'Windows 巡检启动文件', runtime_path('windows/start_monitor.php')),
+            $this->runtimeFile('pid_file', '??????', (string)($server['pid_file'] ?? '')),
+            $this->runtimeFile('status_file', '??????', (string)($server['status_file'] ?? '')),
+            $this->runtimeFile('stdout_file', '?????', (string)($server['stdout_file'] ?? '')),
+            $this->runtimeFile('log_file', '????', (string)($server['log_file'] ?? '')),
+            $this->runtimeFile('start_webman', 'Windows ???????', runtime_path('windows/start_webman.php')),
         ];
 
         return array_values(array_filter(
@@ -404,8 +360,7 @@ class SystemProcessInspector
     private function coreProcessTitle(string $processName, array $definition): string
     {
         return match ($processName) {
-            'webman' => 'HTTP 服务',
-            'monitor' => '进程巡检',
+            'webman' => 'HTTP ??',
             default => trim((string)($definition['name'] ?? $processName)),
         };
     }
@@ -481,8 +436,7 @@ class SystemProcessInspector
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $targets = Get-CimInstance Win32_Process | Where-Object {
     $_.Name -match '^php(\.exe)?$' -and (
-        $_.CommandLine -match 'start_webman\.php' -or
-        $_.CommandLine -match 'start_monitor\.php'
+        $_.CommandLine -match 'start_webman\.php'
     )
 } | Select-Object `
     @{Name='pid'; Expression={$_.ProcessId}}, `
@@ -523,7 +477,6 @@ POWERSHELL;
             $normalized = self::normalizedCommandLine($commandLine);
             if (
                 !str_contains($normalized, 'start_webman.php')
-                && !str_contains($normalized, 'start_monitor.php')
                 && !self::isUnixMasterCommand($normalized)
                 && !self::isUnixWorkerCommand($normalized)
             ) {
@@ -709,52 +662,39 @@ POWERSHELL;
         }
 
         $expectedWebmanWorkerTotal = (int)($this->configuredProcessWorkerCount('webman') ?? 1);
-        $expectedMonitorWorkerTotal = (int)($this->configuredProcessWorkerCount('monitor') ?? 1);
         $keepWebmanWorkerTotal = count(array_filter(
             $keepWorkers,
             fn (array $item): bool => $this->isWebmanWorkerRecord($item)
         ));
-        $keepMonitorWorkerTotal = count(array_filter(
-            $keepWorkers,
-            fn (array $item): bool => $this->isMonitorWorkerRecord($item)
-        ));
 
         $warnings = [];
         if (count($orderedSupervisors) <= 1) {
-            $warnings[] = '当前没有检测到可清理的重复主服务进程。';
+            $warnings[] = '???????????????????';
         }
 
         if ($unlinkedWorkers !== []) {
             $warnings[] = sprintf(
-                '检测到 %d 个无法通过父子关系归属的子进程，当前不会自动清理这些进程。',
+                '??? %d ?????????????????????????????',
                 count($unlinkedWorkers)
             );
         }
 
         if ($keepSupervisor !== null && $keepWorkers === []) {
-            $warnings[] = '保留主服务下未发现直接关联子进程，执行清理前请再次确认当前服务访问状态。';
+            $warnings[] = '????????????????????????????????????';
         }
 
         if ($keepSupervisor !== null && $keepWebmanWorkerTotal < $expectedWebmanWorkerTotal) {
             $warnings[] = sprintf(
-                '保留组当前只关联 %d 个主服务进程，低于配置值 %d，清理后请重点确认服务并发与监听状态。',
+                '???????? %d ???????????? %d???????????????????',
                 $keepWebmanWorkerTotal,
                 $expectedWebmanWorkerTotal
             );
         }
 
-        if ($keepSupervisor !== null && $keepMonitorWorkerTotal < $expectedMonitorWorkerTotal) {
-            $warnings[] = sprintf(
-                '保留组当前只关联 %d 个巡检进程，低于配置值 %d，清理后请确认进程巡检是否正常。',
-                $keepMonitorWorkerTotal,
-                $expectedMonitorWorkerTotal
-            );
-        }
-
         $summary = $keepSupervisor === null
-            ? '当前未检测到可用于保留的主服务进程。'
+            ? '??????????????????'
             : sprintf(
-                '建议保留主服务 #%d，并清理 %d 个重复主服务进程与 %d 个关联子进程。',
+                '??????? #%d???? %d ????????? %d ???????',
                 $keepSupervisorPid,
                 count($removeSupervisors),
                 count($removeWorkers)
@@ -778,12 +718,7 @@ POWERSHELL;
                 $workerProcesses,
                 fn (array $item): bool => $this->isWebmanWorkerRecord($item)
             )),
-            'current_monitor_worker_total' => count(array_filter(
-                $workerProcesses,
-                fn (array $item): bool => $this->isMonitorWorkerRecord($item)
-            )),
             'expected_webman_worker_total' => $expectedWebmanWorkerTotal,
-            'expected_monitor_worker_total' => $expectedMonitorWorkerTotal,
             'warnings' => $warnings,
         ];
     }
@@ -914,17 +849,6 @@ POWERSHELL
         }
 
         return self::unixWorkerName($commandLine) === 'webman';
-    }
-
-    private function isMonitorWorkerRecord(array $record): bool
-    {
-        $commandLine = self::normalizedCommandLine((string)($record['command_line'] ?? ''));
-
-        if (PHP_OS_FAMILY === 'Windows') {
-            return self::commandHasQueueFlag($commandLine) && str_contains($commandLine, 'start_monitor.php');
-        }
-
-        return self::unixWorkerName($commandLine) === 'monitor';
     }
 
     private function serverListen(): string

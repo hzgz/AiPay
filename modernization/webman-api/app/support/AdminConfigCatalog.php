@@ -416,7 +416,7 @@ class AdminConfigCatalog
             'editor' => 'input',
             'value_type' => 'non_negative_decimal',
             'max_length' => 12,
-            'placeholder' => '0.01',
+            'placeholder' => '0.10',
             'help_text' => '',
         ],
         'demopay_name' => [
@@ -2248,7 +2248,7 @@ https://api2.example.com/",
     {
         return match ($key) {
             'adminMail' => 'support@aipay.cn',
-            'demopay_money' => '0.01',
+            'demopay_money' => '0.10',
             'demopay_name' => '支付测试收款商户',
             'diy_codeTemp' => '您的验证码是 [code]',
             'diy_loginTips' => '账号 [login_uid] 于 [login_time] 在 [login_ip] 登录',

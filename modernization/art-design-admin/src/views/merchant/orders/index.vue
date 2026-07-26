@@ -269,7 +269,9 @@
               >
                 重放当前订单回调
               </ElButton>
-              <span class="merchant-detail-tip">仅已支付订单支持回调重放，状态重置入口已关闭。</span>
+              <span class="merchant-detail-tip"
+                >仅已支付订单支持回调重放，状态重置入口已关闭。</span
+              >
             </div>
           </section>
 
@@ -536,7 +538,7 @@
     align-items: flex-start;
     justify-content: space-between;
     min-width: 0;
-    padding-right: 34px;
+    padding-right: 88px;
   }
 
   .merchant-drawer-head__copy {
@@ -563,7 +565,7 @@
   .merchant-drawer-head__status {
     flex: none;
     margin-top: 2px;
-    margin-right: 32px;
+    margin-right: 0;
   }
 
   .merchant-detail-section__head {
@@ -617,6 +619,19 @@
   :deep(.merchant-order-drawer .el-drawer__headerbtn) {
     top: 20px;
     right: 22px;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    color: var(--merchant-muted);
+    background: rgb(148 163 184 / 10%);
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease;
+  }
+
+  :deep(.merchant-order-drawer .el-drawer__headerbtn:hover) {
+    color: var(--merchant-heading-color);
+    background: rgb(148 163 184 / 18%);
   }
 
   :deep(.merchant-order-drawer .el-drawer__body) {
@@ -642,6 +657,10 @@
     .merchant-detail-section__head {
       flex-direction: column;
       align-items: flex-start;
+    }
+
+    .merchant-drawer-head {
+      padding-right: 72px;
     }
 
     .merchant-detail-section__head span {

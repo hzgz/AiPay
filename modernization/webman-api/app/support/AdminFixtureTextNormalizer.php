@@ -11,6 +11,7 @@ class AdminFixtureTextNormalizer
         'aipay official' => 'AiPay 官方',
         'aipay smoke' => 'AiPay 官方',
         'universal_epay' => '通用易支付V1插件',
+        'leshua' => '乐刷支付插件',
         'wxpay_v3' => '微信支付 V3 插件',
         'alipay_official' => '支付宝官方版V3插件',
         'alipay_bill' => '支付宝二维码账单插件',
@@ -214,10 +215,6 @@ class AdminFixtureTextNormalizer
 
         if (preg_match('/^news-editor-upload(?:-\d+)?\.(png|jpg|jpeg|webp|gif)$/i', $normalized) === 1) {
             return '公告编辑器上传图片';
-        }
-
-        if (preg_match('/^plugin-editor-upload(?:-\d+)?\.(png|jpg|jpeg|webp|gif)$/i', $normalized) === 1) {
-            return '插件编辑器上传图片';
         }
 
         if (preg_match('/^[0-9a-f]{20,}\.(png|jpg|jpeg|webp|gif)$/i', $normalized) === 1) {

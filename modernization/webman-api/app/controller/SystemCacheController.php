@@ -1,10 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\controller;
 
 use app\support\AdminRouteAuthorization;
 use app\support\ApiResponse;
+use app\support\HotPathStore;
 use app\support\RequestPayload;
+use app\support\SystemConfig;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -16,14 +20,28 @@ class SystemCacheController
 {
     private const TARGETS = [
         'runtime_cache' => [
+            'type' => 'directory',
             'title' => '运行缓存',
             'relative_path' => 'runtime/cache',
-            'description' => '系统运行缓存目录，清理后会在后续请求中自动重建。',
+            'description' => '系统运行时缓存目录，清理后会在后续请求中自动重建。',
         ],
         'runtime_views' => [
+            'type' => 'directory',
             'title' => '模板编译缓存',
             'relative_path' => 'runtime/views',
-            'description' => '服务端模板编译输出目录，清理后首次访问页面会重新生成。',
+            'description' => '服务端模板编译输出目录，清理后会在下次访问时重新生成。',
+        ],
+        'hot_path_store' => [
+            'type' => 'directory',
+            'title' => '热路径文件缓存',
+            'relative_path' => 'runtime/hot-path-store',
+            'description' => 'HotPathStore 的文件兜底目录，Redis 不可用时会回退到这里。',
+        ],
+        'hot_path_redis' => [
+            'type' => 'redis',
+            'title' => 'Redis 热缓存',
+            'relative_path' => 'redis',
+            'description' => '只清理 HotPathStore 使用的 Redis 前缀，不会清空整个 Redis 数据库。',
         ],
     ];
 
@@ -68,30 +86,38 @@ class SystemCacheController
         $warnings = [];
         $removedFileCount = 0;
         $removedDirectoryCount = 0;
+        $removedKeyCount = 0;
         $releasedSizeBytes = 0;
 
         foreach ($targetKeys as $key) {
-            $before = $this->inspectTarget($key, self::TARGETS[$key]);
-            $cleanup = $this->clearTarget($key, self::TARGETS[$key]);
-            $after = $this->inspectTarget($key, self::TARGETS[$key]);
+            $definition = self::TARGETS[$key];
+            $before = $this->inspectTarget($key, $definition);
+            $cleanup = $this->clearTarget($key, $definition);
+            $after = $this->inspectTarget($key, $definition);
 
             $removedFileCount += (int)($cleanup['removed_file_count'] ?? 0);
             $removedDirectoryCount += (int)($cleanup['removed_directory_count'] ?? 0);
+            $removedKeyCount += (int)($cleanup['removed_key_count'] ?? 0);
             $releasedSizeBytes += (int)($cleanup['released_size_bytes'] ?? 0);
             $warnings = array_merge($warnings, (array)($cleanup['errors'] ?? []));
 
             $results[] = [
                 'key' => $key,
-                'title' => (string)self::TARGETS[$key]['title'],
-                'relative_path' => (string)self::TARGETS[$key]['relative_path'],
+                'title' => (string)$definition['title'],
+                'relative_path' => (string)($before['relative_path'] ?? $definition['relative_path']),
                 'before' => $before,
                 'after' => $after,
                 'removed_file_count' => (int)($cleanup['removed_file_count'] ?? 0),
                 'removed_directory_count' => (int)($cleanup['removed_directory_count'] ?? 0),
+                'removed_key_count' => (int)($cleanup['removed_key_count'] ?? 0),
                 'released_size_bytes' => (int)($cleanup['released_size_bytes'] ?? 0),
                 'released_size_label' => $this->formatBytes((int)($cleanup['released_size_bytes'] ?? 0)),
                 'errors' => array_values(array_unique(array_filter((array)($cleanup['errors'] ?? [])))),
             ];
+        }
+
+        if ($this->requiresHotPathReset($targetKeys)) {
+            SystemConfig::clearCache();
         }
 
         $warnings = array_values(array_unique(array_filter($warnings)));
@@ -102,6 +128,7 @@ class SystemCacheController
             $targetKeys,
             $removedFileCount,
             $removedDirectoryCount,
+            $removedKeyCount,
             $releasedSizeBytes,
             $warnings
         );
@@ -111,6 +138,7 @@ class SystemCacheController
             'cleared_target_count' => count($targetKeys),
             'removed_file_count' => $removedFileCount,
             'removed_directory_count' => $removedDirectoryCount,
+            'removed_key_count' => $removedKeyCount,
             'released_size_bytes' => $releasedSizeBytes,
             'released_size_label' => $this->formatBytes($releasedSizeBytes),
             'results' => $results,
@@ -136,11 +164,30 @@ class SystemCacheController
 
     private function buildSummary(array $targets): array
     {
-        $clearableTargetCount = count(array_filter($targets, static fn (array $target): bool => !empty($target['clearable'])));
-        $fileCount = array_reduce($targets, static fn (int $carry, array $target): int => $carry + (int)($target['file_count'] ?? 0), 0);
-        $directoryCount = array_reduce($targets, static fn (int $carry, array $target): int => $carry + (int)($target['directory_count'] ?? 0), 0);
-        $entryCount = array_reduce($targets, static fn (int $carry, array $target): int => $carry + (int)($target['entry_count'] ?? 0), 0);
-        $sizeBytes = array_reduce($targets, static fn (int $carry, array $target): int => $carry + (int)($target['size_bytes'] ?? 0), 0);
+        $clearableTargetCount = count(array_filter(
+            $targets,
+            static fn (array $target): bool => !empty($target['clearable'])
+        ));
+        $fileCount = array_reduce(
+            $targets,
+            static fn (int $carry, array $target): int => $carry + (int)($target['file_count'] ?? 0),
+            0
+        );
+        $directoryCount = array_reduce(
+            $targets,
+            static fn (int $carry, array $target): int => $carry + (int)($target['directory_count'] ?? 0),
+            0
+        );
+        $entryCount = array_reduce(
+            $targets,
+            static fn (int $carry, array $target): int => $carry + (int)($target['entry_count'] ?? 0),
+            0
+        );
+        $sizeBytes = array_reduce(
+            $targets,
+            static fn (int $carry, array $target): int => $carry + (int)($target['size_bytes'] ?? 0),
+            0
+        );
 
         return [
             'target_count' => count($targets),
@@ -155,14 +202,38 @@ class SystemCacheController
 
     private function inspectTarget(string $key, array $definition): array
     {
+        $type = (string)($definition['type'] ?? 'directory');
+        if ($type === 'redis') {
+            return $this->inspectRedisTarget($key, $definition);
+        }
+
+        return $this->inspectDirectoryTarget($key, $definition);
+    }
+
+    private function inspectDirectoryTarget(string $key, array $definition): array
+    {
         $absolutePath = $this->resolveTargetPath((string)$definition['relative_path']);
         $stats = $this->inspectDirectory($absolutePath);
+        $isHotPathFallback = $key === 'hot_path_store';
+        $fallbackEnabled = !$isHotPathFallback || HotPathStore::fileFallbackEnabled();
+        $title = (string)$definition['title'];
+        $description = (string)$definition['description'];
+        $relativePath = (string)$definition['relative_path'];
+
+        if ($isHotPathFallback) {
+            $title = 'Hot Path File Fallback';
+        }
+
+        if ($isHotPathFallback && !$fallbackEnabled) {
+            $description = 'Disk fallback is disabled. Any files shown here are leftover artifacts and are safe to clear.';
+            $relativePath = 'disabled';
+        }
 
         return [
             'key' => $key,
-            'title' => (string)$definition['title'],
-            'description' => (string)$definition['description'],
-            'relative_path' => (string)$definition['relative_path'],
+            'title' => $title,
+            'description' => $description,
+            'relative_path' => $relativePath,
             'exists' => is_dir($absolutePath),
             'clearable' => (int)$stats['entry_count'] > 0,
             'file_count' => (int)$stats['file_count'],
@@ -170,6 +241,32 @@ class SystemCacheController
             'entry_count' => (int)$stats['entry_count'],
             'size_bytes' => (int)$stats['size_bytes'],
             'size_label' => (string)$stats['size_label'],
+            'fallback_enabled' => $fallbackEnabled,
+        ];
+    }
+
+    private function inspectRedisTarget(string $key, array $definition): array
+    {
+        $stats = HotPathStore::inspectRedisPrefix();
+        $keyCount = (int)($stats['key_count'] ?? 0);
+        $sizeBytes = (int)($stats['size_bytes'] ?? 0);
+        $title = $key === 'hot_path_redis' ? 'Hot Path Redis Cache' : (string)$definition['title'];
+        $description = $key === 'hot_path_redis'
+            ? 'Clears only the Redis prefix used by HotPathStore and does not wipe the whole Redis database.'
+            : (string)$definition['description'];
+
+        return [
+            'key' => $key,
+            'title' => $title,
+            'description' => $description,
+            'relative_path' => (string)($stats['relative_path'] ?? HotPathStore::redisTargetPath()),
+            'exists' => (bool)($stats['available'] ?? false),
+            'clearable' => $keyCount > 0,
+            'file_count' => $keyCount,
+            'directory_count' => 0,
+            'entry_count' => $keyCount,
+            'size_bytes' => $sizeBytes,
+            'size_label' => $this->formatBytes($sizeBytes),
         ];
     }
 
@@ -217,13 +314,24 @@ class SystemCacheController
 
     private function clearTarget(string $key, array $definition): array
     {
-        $absolutePath = $this->resolveTargetPath((string)$definition['relative_path']);
+        $type = (string)($definition['type'] ?? 'directory');
+        if ($type === 'redis') {
+            return $this->clearRedisTarget();
+        }
+
+        return $this->clearDirectoryTarget((string)$definition['relative_path']);
+    }
+
+    private function clearDirectoryTarget(string $relativePath): array
+    {
+        $absolutePath = $this->resolveTargetPath($relativePath);
         if (!is_dir($absolutePath)) {
             @mkdir($absolutePath, 0777, true);
 
             return [
                 'removed_file_count' => 0,
                 'removed_directory_count' => 0,
+                'removed_key_count' => 0,
                 'released_size_bytes' => 0,
                 'errors' => [],
             ];
@@ -262,7 +370,7 @@ class SystemCacheController
 
                 $removedFileCount++;
             } catch (\Throwable $exception) {
-                $errors[] = sprintf('%s 清理失败', str_replace('\\', '/', $pathname));
+                $errors[] = sprintf('%s cleanup failed', str_replace('\\', '/', $pathname));
             }
         }
 
@@ -272,8 +380,22 @@ class SystemCacheController
         return [
             'removed_file_count' => $removedFileCount,
             'removed_directory_count' => $removedDirectoryCount,
+            'removed_key_count' => 0,
             'released_size_bytes' => $releasedSizeBytes,
             'errors' => $errors,
+        ];
+    }
+
+    private function clearRedisTarget(): array
+    {
+        $cleanup = HotPathStore::clearRedisPrefix();
+
+        return [
+            'removed_file_count' => 0,
+            'removed_directory_count' => 0,
+            'removed_key_count' => (int)($cleanup['removed_key_count'] ?? 0),
+            'released_size_bytes' => (int)($cleanup['released_size_bytes'] ?? 0),
+            'errors' => array_values(array_unique(array_filter((array)($cleanup['errors'] ?? [])))),
         ];
     }
 
@@ -302,6 +424,12 @@ class SystemCacheController
         );
 
         return array_values(array_unique(array_filter($normalized, static fn (string $key): bool => $key !== '')));
+    }
+
+    private function requiresHotPathReset(array $targetKeys): bool
+    {
+        return in_array('hot_path_store', $targetKeys, true)
+            || in_array('hot_path_redis', $targetKeys, true);
     }
 
     private function formatBytes(int $bytes): string
@@ -341,6 +469,7 @@ class SystemCacheController
         array $targetKeys,
         int $removedFileCount,
         int $removedDirectoryCount,
+        int $removedKeyCount,
         int $releasedSizeBytes,
         array $warnings
     ): void {
@@ -354,10 +483,11 @@ class SystemCacheController
                 'uid' => $adminId,
                 'url' => '/api/admin/system-cache/server/cleanup',
                 'desc' => sprintf(
-                    'system cache cleanup targets=%s removed_files=%d removed_directories=%d released=%s warnings=%d',
+                    'system cache cleanup targets=%s removed_files=%d removed_directories=%d removed_keys=%d released=%s warnings=%d',
                     implode(',', $targetKeys),
                     $removedFileCount,
                     $removedDirectoryCount,
+                    $removedKeyCount,
                     $this->formatBytes($releasedSizeBytes),
                     count($warnings)
                 ),

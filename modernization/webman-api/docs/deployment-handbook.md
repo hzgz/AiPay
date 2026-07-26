@@ -1,8 +1,6 @@
 # AiPay Windows / Linux 完整部署手册
 
-## 1. 架构说明
-
-这套系统上线时建议采用“前端壳 + Webman 后端”模式：
+## 1. 访问结构
 
 - 前端壳
   - 根地址：`/`
@@ -14,18 +12,11 @@
   - 只负责 API、支付、回调、插件进程
   - 不作为对外首页站点使用
 
-推荐上线方式：
+公网入口：
 
 - 对外只开放 80/443
 - Nginx 承载 `console/` 静态资源
 - Nginx 将 `/api/*`、`/submit.php`、`/mapi.php`、`/Pay/*` 等代理到 `127.0.0.1:8787`
-
-这样做的好处：
-
-- 前后端同域，最省心
-- HTTPS 统一由 Nginx 终止
-- Webman 可保持内网服务形态
-- 管理员入口可以只保留直达地址
 
 ## 2. 发布包目录建议
 
@@ -79,7 +70,7 @@ AIPAY_MERCHANT_FRONTEND_URL=https://portal.example.com
 AIPAY_PUBLIC_FRONTEND_URL=https://portal.example.com
 ```
 
-说明：
+要求：
 
 - 三个 `AIPAY_*_FRONTEND_URL` 建议保持同一个前端壳域名
 - `APP_PORT=8787` 是 Webman 内部监听端口，不是对外公开端口

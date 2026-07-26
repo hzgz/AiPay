@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="merchant-shell" :class="{ 'merchant-shell--collapsed': sidebarCollapsed }">
     <aside class="merchant-sidebar layout-sidebar">
       <div
@@ -622,8 +622,8 @@
 
 <style lang="scss">
   @use '../styles';
-  @use '@/components/core/layouts/art-menus/art-sidebar-menu/style.scss';
-  @use '@/components/core/layouts/art-menus/art-sidebar-menu/theme.scss';
+  @use '@/components/core/layouts/artMenus/artSidebarMenu/style.scss';
+  @use '@/components/core/layouts/artMenus/artSidebarMenu/theme.scss';
 </style>
 
 <style lang="scss" scoped>

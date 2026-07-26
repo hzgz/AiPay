@@ -37,7 +37,7 @@ class AdminPaymentAccountFormatter
             'merchant_name' => $merchantName === '' ? null : $merchantName,
             'merchant_display' => self::merchantDisplay($merchantUsername, $merchantName, $userId),
             'identifier' => $identifier === '' ? null : AdminFixtureTextNormalizer::normalize($identifier),
-            'identifier_source' => self::identifierSource($code),
+            'identifier_source' => self::identifierSource($account),
             'identifier_masked' => self::maskIdentifier($identifier),
             'has_identifier' => $identifier !== '',
             'identifier_length' => mb_strlen($identifier),
@@ -94,11 +94,14 @@ class AdminPaymentAccountFormatter
         });
     }
 
-    private static function identifierSource(string $code): string
+    private static function identifierSource(array $account): string
     {
+        $code = trim((string)($account['code'] ?? ''));
+
         return match ($code) {
             'alipay_grmg', 'alipay_software', 'alipay_bill' => 'PID',
             'qqpay_mg', 'qqpay_software' => 'QQ',
+            'leshua' => '商户号',
             'usdt' => 'USDT 地址',
             default => '账号标识',
         };

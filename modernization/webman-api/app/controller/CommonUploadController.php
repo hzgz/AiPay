@@ -42,9 +42,8 @@ class CommonUploadController
         }
 
         $absolutePath = '';
-        $legacyPath = '';
         try {
-            [$photoId, $href] = Db::transaction(function () use ($file, $path, $prepared, &$absolutePath, &$legacyPath): array {
+            [$photoId, $href] = Db::transaction(function () use ($file, $path, $prepared, &$absolutePath): array {
                 $dateSegment = date('Ymd');
                 $relativeChild = $dateSegment . '/' . date('His') . '_' . bin2hex(random_bytes(8)) . '.' . $prepared['ext'];
                 $absolutePath = UploadWorkspace::directoryPath($path)
@@ -58,7 +57,6 @@ class CommonUploadController
                 $href = UploadWorkspace::publicHref($path, $relativeChild);
 
                 $file->move($absolutePath);
-                $legacyPath = UploadWorkspace::mirrorFileToLegacyPublic($absolutePath, $path, $relativeChild);
 
                 $photoId = (int)Db::table('admin_photo')->insertGetId([
                     'name' => $prepared['name'],
@@ -76,9 +74,6 @@ class CommonUploadController
         } catch (\Throwable $exception) {
             if ($absolutePath !== '' && is_file($absolutePath)) {
                 @unlink($absolutePath);
-            }
-            if ($legacyPath !== '' && is_file($legacyPath)) {
-                @unlink($legacyPath);
             }
 
             return ApiResponse::error('富文本图片上传失败：' . $exception->getMessage(), 500, null, 500);
@@ -98,7 +93,7 @@ class CommonUploadController
     private function normalizeUploadDirectory(string $path): string
     {
         $normalized = strtolower(trim($path));
-        $allowed = ['editor', 'news', 'plugins'];
+        $allowed = ['editor', 'news'];
 
         if ($normalized === '' || !in_array($normalized, $allowed, true)) {
             throw new \InvalidArgumentException('upload path is not allowed');
@@ -111,7 +106,6 @@ class CommonUploadController
     {
         return match ($path) {
             'news' => (new AdminRouteAuthorization())->authorizeAny($request, 'ContentNews', ['add', 'edit']),
-            'plugins' => (new AdminRouteAuthorization())->authorizeAny($request, 'ContentPluginDownloads', ['add', 'edit']),
             default => null,
         };
     }

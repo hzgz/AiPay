@@ -34,6 +34,21 @@ final class Environment
         return (int)$normalized;
     }
 
+    public static function float(string $key, float $default): float
+    {
+        [$exists, $value] = self::lookup($key);
+        if (!$exists) {
+            return $default;
+        }
+
+        $normalized = trim((string)$value);
+        if ($normalized === '' || !is_numeric($normalized)) {
+            return $default;
+        }
+
+        return (float)$normalized;
+    }
+
     public static function bool(string $key, bool $default): bool
     {
         [$exists, $value] = self::lookup($key);

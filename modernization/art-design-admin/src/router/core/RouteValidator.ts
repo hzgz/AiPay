@@ -1,7 +1,7 @@
-﻿/**
- * 璺敱楠岃瘉鍣?
+/**
+ * Route validation service.
  *
- * 璐熻矗楠岃瘉璺敱閰嶇疆鐨勫悎娉曟€?
+ * Ensures that dynamic route definitions are structurally valid before registration.
  *
  * @module router/core/RouteValidator
  * @author AiPay
@@ -17,23 +17,23 @@ export interface ValidationResult {
 }
 
 export class RouteValidator {
-  // 鐢ㄤ簬璁板綍宸茬粡鎻愮ず杩囩殑璺敱锛岄伩鍏嶉噸澶嶆彁绀?
+  // Track routes that have already been warned about to avoid duplicate logs.
   private warnedRoutes = new Set<string>()
 
   /**
-   * 楠岃瘉璺敱閰嶇疆
+   * Validate route configuration input.
    */
   validate(routes: AppRouteRecord[]): ValidationResult {
     const errors: string[] = []
     const warnings: string[] = []
 
-    // 妫€娴嬮噸澶嶈矾鐢?
+    // Check for duplicate route names and component mappings.
     this.checkDuplicates(routes, errors, warnings)
 
-    // 妫€娴嬬粍浠堕厤缃?
+    // Ensure every route has a valid component strategy.
     this.checkComponents(routes, errors, warnings)
 
-    // 妫€娴嬪祵濂楄彍鍗曠殑 /index/index 閰嶇疆
+    // Guard against nested routes that incorrectly reuse the layout alias.
     this.checkNestedIndexComponent(routes)
 
     return {
@@ -44,7 +44,7 @@ export class RouteValidator {
   }
 
   /**
-   * 妫€娴嬮噸澶嶈矾鐢?
+   * Detect duplicate route names and component paths.
    */
   private checkDuplicates(
     routes: AppRouteRecord[],
@@ -60,30 +60,30 @@ export class RouteValidator {
         const currentPath = route.path || ''
         const fullPath = this.resolvePath(parentPath, currentPath)
 
-        // 鍚嶇О閲嶅妫€娴?
+        // Detect duplicate route names.
         if (route.name) {
           const routeName = String(route.name)
           if (routeNameMap.has(routeName)) {
-            warnings.push(`璺敱鍚嶇О閲嶅: "${routeName}" (${fullPath})`)
+            warnings.push(`路由名称重复: "${routeName}" (${fullPath})`)
           } else {
             routeNameMap.set(routeName, fullPath)
           }
         }
 
-        // 缁勪欢璺緞閲嶅妫€娴?
+        // Detect duplicate component mappings under the same parent path.
         if (route.component && typeof route.component === 'string') {
           const componentPath = route.component
           if (componentPath !== RoutesAlias.Layout) {
             const componentKey = `${parentPath}:${componentPath}`
             if (componentPathMap.has(componentKey)) {
-              warnings.push(`缁勪欢璺緞閲嶅: "${componentPath}" (${fullPath})`)
+              warnings.push(`组件路径重复: "${componentPath}" (${fullPath})`)
             } else {
               componentPathMap.set(componentKey, fullPath)
             }
           }
         }
 
-        // 閫掑綊澶勭悊瀛愯矾鐢?
+        // Continue walking nested route declarations.
         if (route.children?.length) {
           checkRoutes(route.children, fullPath)
         }
@@ -94,7 +94,7 @@ export class RouteValidator {
   }
 
   /**
-   * 妫€娴嬬粍浠堕厤缃?
+   * Validate component usage for each route node.
    */
   private checkComponents(
     routes: AppRouteRecord[],
@@ -105,12 +105,12 @@ export class RouteValidator {
     routes.forEach((route) => {
       const hasExternalLink = !!route.meta?.link?.trim()
       const hasChildren = Array.isArray(route.children) && route.children.length > 0
-      const routePath = route.path || '[鏈畾涔夎矾寰刔'
+      const routePath = route.path || '[未定义路径]'
       const isIframe = route.meta?.isIframe
 
-      // 濡傛灉閰嶇疆浜?component锛屽垯鏃犻渶鏍￠獙
+      // Routes with a component value can skip the missing-component checks.
       if (route.component) {
-        // 閫掑綊妫€鏌ュ瓙璺敱
+        // Validate nested routes with the resolved full path.
         if (route.children?.length) {
           const fullPath = this.resolvePath(parentPath, route.path || '')
           this.checkComponents(route.children, errors, warnings, fullPath)
@@ -118,18 +118,18 @@ export class RouteValidator {
         return
       }
 
-      // 涓€绾ц彍鍗曪細蹇呴』鎸囧畾 Layout锛岄櫎闈炴槸澶栭摼鎴?iframe
+      // Top-level menus must provide the layout alias unless they are links or iframes.
       if (parentPath === '' && !hasExternalLink && !isIframe) {
-        errors.push(`涓€绾ц彍鍗?${routePath}) 缂哄皯 component锛屽繀椤绘寚鍚?${RoutesAlias.Layout}`)
+        errors.push(`一级菜单(${routePath}) 缺少 component，必须指定 ${RoutesAlias.Layout}`)
         return
       }
 
-      // 闈炰竴绾ц彍鍗曪細濡傛灉鏃笉鏄閾俱€乮frame锛屼篃娌℃湁瀛愯矾鐢憋紝鍒欏繀椤婚厤缃?component
+      // Leaf routes still need a concrete component when they are not links or iframes.
       if (!hasExternalLink && !isIframe && !hasChildren) {
-        errors.push(`璺敱(${routePath}) 缂哄皯 component 閰嶇疆`)
+        errors.push(`路由(${routePath}) 缺少 component 配置`)
       }
 
-      // 閫掑綊妫€鏌ュ瓙璺敱
+      // Continue validating nested children.
       if (route.children?.length) {
         const fullPath = this.resolvePath(parentPath, route.path || '')
         this.checkComponents(route.children, errors, warnings, fullPath)
@@ -138,17 +138,18 @@ export class RouteValidator {
   }
 
   /**
-   * 妫€娴嬪祵濂楄彍鍗曠殑 Layout 缁勪欢閰嶇疆
-   * 鍙湁涓€绾ц彍鍗曟墠鑳戒娇鐢?Layout锛屼簩绾у強浠ヤ笅鑿滃崟涓嶈兘浣跨敤
+   * Validate nested layout usage.
+   *
+   * Only first-level routes should use the shared layout alias.
    */
   private checkNestedIndexComponent(routes: AppRouteRecord[], level = 1): void {
     routes.forEach((route) => {
-      // 妫€鏌ヤ簩绾у強浠ヤ笅鑿滃崟鏄惁閿欒浣跨敤浜?Layout
+      // Nested routes should not directly point back to the layout container.
       if (level > 1 && route.component === RoutesAlias.Layout) {
         this.logLayoutError(route, level)
       }
 
-      // 閫掑綊妫€鏌ュ瓙璺敱
+      // Continue validating deeper child nodes.
       if (route.children?.length) {
         this.checkNestedIndexComponent(route.children, level + 1)
       }
@@ -156,13 +157,13 @@ export class RouteValidator {
   }
 
   /**
-   * 杈撳嚭 Layout 缁勪欢閰嶇疆閿欒鏃ュ織
+   * Print a detailed error for invalid nested layout usage.
    */
   private logLayoutError(route: AppRouteRecord, level: number): void {
-    const routeName = String(route.name || route.path || '鏈煡璺敱')
+    const routeName = String(route.name || route.path || '未知路由')
     const routeKey = `${routeName}_${route.path}`
 
-    // 閬垮厤閲嶅鎻愮ず
+    // Avoid repeating the same warning across repeated validation passes.
     if (this.warnedRoutes.has(routeKey)) return
     this.warnedRoutes.add(routeKey)
 
@@ -170,19 +171,18 @@ export class RouteValidator {
     const routePath = route.path || '/'
 
     console.error(
-      `[璺敱閰嶇疆閿欒] 鑿滃崟 "${menuTitle}" (name: ${routeName}, path: ${routePath}) 閰嶇疆閿欒\n` +
+      `[路由配置错误] 菜单 "${menuTitle}" (name: ${routeName}, path: ${routePath}) 配置错误\n` +
         `  问题: ${level} 级菜单不能使用 ${RoutesAlias.Layout} 作为 component\n` +
         `  说明: 只有一级菜单才能使用 ${RoutesAlias.Layout}，二级及以下菜单应指向具体组件路径\n` +
-        `  褰撳墠閰嶇疆: component: '${RoutesAlias.Layout}'\n` +
+        `  当前配置: component: '${RoutesAlias.Layout}'\n` +
         `  应改为: component: '/your/component/path' 或留空 ''（如果是目录菜单）`
     )
   }
 
   /**
-   * 璺緞瑙ｆ瀽
+   * Resolve a child path against its parent route path.
    */
   private resolvePath(parent: string, child: string): string {
     return [parent.replace(/\/$/, ''), child.replace(/^\//, '')].filter(Boolean).join('/')
   }
 }
-

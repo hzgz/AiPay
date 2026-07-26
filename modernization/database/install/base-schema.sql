@@ -160,7 +160,9 @@ CREATE TABLE `aipay_account` (
   `daymaxmoney` varchar(50) DEFAULT NULL,
   `remark` varchar(225) DEFAULT NULL,
   `money` decimal(10,2) NOT NULL DEFAULT 0.00,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_code` (`code`),
+  KEY `idx_user_type_status_is_status_code` (`user_id`,`type`,`status`,`is_status`,`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `aipay_cdk` (
@@ -241,7 +243,10 @@ CREATE TABLE `aipay_order` (
   UNIQUE KEY `uq_aipay_order_out_trade_no` (`out_trade_no`),
   KEY `idx_trade_no` (`trade_no`),
   KEY `idx_account_status_money_time` (`account_id`,`status`,`truemoney`,`out_time`),
-  KEY `idx_alipay_order_no` (`alipay_order_no`(191))
+  KEY `idx_alipay_order_no` (`alipay_order_no`(191)),
+  KEY `idx_status_create_time` (`status`,`create_time`),
+  KEY `idx_user_status_create_time` (`user_id`,`status`,`create_time`),
+  KEY `idx_status_out_time_account` (`status`,`out_time`,`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `aipay_order_callback_task` (
@@ -345,17 +350,6 @@ CREATE TABLE `aipay_payment_transaction_claim` (
   KEY `idx_account_id` (`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `aipay_plug` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) DEFAULT NULL,
-  `downurl` text DEFAULT NULL,
-  `introduce` text DEFAULT NULL,
-  `status` int(11) NOT NULL DEFAULT 1,
-  `create_time` timestamp NULL DEFAULT NULL,
-  `update_time` timestamp NULL DEFAULT NULL,
-  `delete_time` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `aipay_poll_pool` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -384,6 +378,7 @@ CREATE TABLE `aipay_poll_pool_item` (
   `update_time` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_pool_account` (`pool_id`,`account_id`),
+  KEY `idx_pool_sort_account` (`pool_id`,`sort`,`account_id`),
   KEY `idx_user_pool` (`user_id`,`pool_id`),
   KEY `idx_account_id` (`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

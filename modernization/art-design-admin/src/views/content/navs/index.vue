@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="nav-page art-full-height">
     <ArtSearchBar
       v-model="searchForm"
@@ -273,7 +273,7 @@
   import { VueDraggable } from 'vue-draggable-plus'
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtButtonTable from '@/components/core/forms/artButtonTable/index.vue'
   import { displayAdminFixtureText, displayAdminFixtureUrl } from '@/utils/adminFixtureText'
   import {
     fetchAuditNavBatchDelete,
@@ -1186,7 +1186,7 @@
 
   .nav-drag-handle {
     cursor: grab;
-    color: #64748b;
+    color: var(--el-text-color-secondary);
     font-size: 12px;
     font-weight: 600;
     user-select: none;
@@ -1197,7 +1197,7 @@
   }
 
   .cell-title {
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 14px;
     word-break: break-all;
   }
@@ -1205,7 +1205,7 @@
   .cell-sub,
   .cell-link {
     margin: 0;
-    color: #64748b;
+    color: var(--el-text-color-secondary);
     font-size: 12px;
     line-height: 1.6;
     word-break: break-all;
@@ -1278,7 +1278,7 @@
 
   .drawer-section h4 {
     margin: 0 0 12px;
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 15px;
   }
 

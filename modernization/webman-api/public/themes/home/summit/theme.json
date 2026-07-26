@@ -1,0 +1,9 @@
+{
+  "title": "Summit 首页模板",
+  "description": "强调入口聚合与信息密度的首页布局，适合突出接入转化。",
+  "version": "1.0.0",
+  "preview": "preview.svg",
+  "activation_supported": true,
+  "delete_supported": false,
+  "builtin": true
+}

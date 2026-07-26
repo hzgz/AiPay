@@ -1,0 +1,9 @@
+{
+  "title": "标准首页模板",
+  "description": "默认首页布局，突出商户入口、开发文档和公告中心。",
+  "version": "1.0.0",
+  "preview": "preview.svg",
+  "activation_supported": true,
+  "delete_supported": false,
+  "builtin": true
+}

@@ -13,7 +13,7 @@ class ProcessController
 {
     public function index(Request $request): Response
     {
-        $authorizationError = $this->authorize($request, ['index', 'pauseMonitor', 'resumeMonitor', 'cleanupSupervisors']);
+        $authorizationError = $this->authorize($request, ['index', 'cleanupSupervisors']);
         if ($authorizationError instanceof Response) {
             return $authorizationError;
         }
@@ -22,38 +22,6 @@ class ProcessController
             return ApiResponse::success($this->inspector()->snapshot());
         } catch (Throwable $exception) {
             return ApiResponse::error('进程快照获取失败', 500, [
-                'exception' => $exception->getMessage(),
-            ], 500);
-        }
-    }
-
-    public function pauseMonitor(Request $request): Response
-    {
-        $authorizationError = $this->authorize($request, ['pauseMonitor', 'index']);
-        if ($authorizationError instanceof Response) {
-            return $authorizationError;
-        }
-
-        try {
-            return ApiResponse::success($this->inspector()->pauseMonitor(), '进程监控已暂停');
-        } catch (Throwable $exception) {
-            return ApiResponse::error('暂停进程监控失败', 500, [
-                'exception' => $exception->getMessage(),
-            ], 500);
-        }
-    }
-
-    public function resumeMonitor(Request $request): Response
-    {
-        $authorizationError = $this->authorize($request, ['resumeMonitor', 'index']);
-        if ($authorizationError instanceof Response) {
-            return $authorizationError;
-        }
-
-        try {
-            return ApiResponse::success($this->inspector()->resumeMonitor(), '进程监控已恢复');
-        } catch (Throwable $exception) {
-            return ApiResponse::error('恢复进程监控失败', 500, [
                 'exception' => $exception->getMessage(),
             ], 500);
         }

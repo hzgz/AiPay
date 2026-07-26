@@ -1,15 +1,15 @@
 ﻿/**
- * 鍏ㄥ眬缁勪欢閰嶇疆
+ * 全局组件配置
  *
- * 缁熶竴绠＄悊绯荤粺绾у叏灞€缁勪欢鐨勬敞鍐屻€?
- * 杩欎簺缁勪欢浼氬湪搴旂敤鍚姩鏃跺叏灞€娉ㄥ唽锛屽彲鍦ㄤ换浣曞湴鏂逛娇鐢ㄣ€?
+ * 统一管理系统级全局组件的注册。
+ * 这些组件会在应用启动时全局注册，可在任何地方使用。
  *
- * ## 涓昏鍔熻兘
+ * ## 主要功能
  *
- * - 缁勪欢閰嶇疆 - 闆嗕腑绠＄悊鍏ㄥ眬缁勪欢鐨勯厤缃俊鎭?
- * - 寮傛鍔犺浇 - 浣跨敤 defineAsyncComponent 瀹炵幇鎸夐渶鍔犺浇
- * - 寮€鍏虫帶鍒?- 鏀寔閫氳繃 enabled 瀛楁鍚敤/绂佺敤缁勪欢
- * - 閰嶇疆鏌ヨ - 鎻愪緵宸ュ叿鍑芥暟蹇€熸煡璇㈢粍浠堕厤缃?
+ * - 组件配置 - 集中管理全局组件的配置信息
+ * - 异步加载 - 使用 defineAsyncComponent 实现按需加载
+ * - 开关控制 - 支持通过 enabled 字段启用/禁用组件
+ * - 配置查询 - 提供工具函数快速查询组件配置
  *
  * @module config/component
  * @author AiPay
@@ -18,89 +18,88 @@
 import { defineAsyncComponent } from 'vue'
 
 /**
- * 鍏ㄥ眬缁勪欢閰嶇疆鍒楄〃
+ * 全局组件配置列表
  */
 export const globalComponentsConfig: GlobalComponentConfig[] = [
   {
-    name: '璁剧疆闈㈡澘',
+    name: '设置面板',
     key: 'settings-panel',
     component: defineAsyncComponent(
-      () => import('@/components/core/layouts/art-settings-panel/index.vue')
+      () => import('@/components/core/layouts/artSettingsPanel/index.vue')
     ),
     enabled: false
   },
   {
-    name: '鍏ㄥ眬鎼滅储',
+    name: '全局搜索',
     key: 'global-search',
     component: defineAsyncComponent(
-      () => import('@/components/core/layouts/art-global-search/index.vue')
+      () => import('@/components/core/layouts/artGlobalSearch/index.vue')
     ),
     enabled: true
   },
   {
-    name: '閿佸睆',
+    name: '锁屏',
     key: 'screen-lock',
     component: defineAsyncComponent(
-      () => import('@/components/core/layouts/art-screen-lock/index.vue')
+      () => import('@/components/core/layouts/artScreenLock/index.vue')
     ),
     enabled: false
   },
   {
-    name: '鑱婂ぉ绐楀彛',
+    name: '聊天窗口',
     key: 'chat-window',
     component: defineAsyncComponent(
-      () => import('@/components/core/layouts/art-chat-window/index.vue')
+      () => import('@/components/core/layouts/artChatWindow/index.vue')
     ),
     enabled: false
   },
   {
-    name: '绀艰姳鏁堟灉',
+    name: '礼花效果',
     key: 'fireworks-effect',
     component: defineAsyncComponent(
-      () => import('@/components/core/layouts/art-fireworks-effect/index.vue')
+      () => import('@/components/core/layouts/artFireworksEffect/index.vue')
     ),
     enabled: false
   },
   {
-    name: '姘村嵃鏁堟灉',
+    name: '水印效果',
     key: 'watermark',
     component: defineAsyncComponent(
-      () => import('@/components/core/others/art-watermark/index.vue')
+      () => import('@/components/core/others/artWatermark/index.vue')
     ),
     enabled: true
   }
 ]
 
 /**
- * 鍏ㄥ眬缁勪欢閰嶇疆鎺ュ彛
+ * 全局组件配置接口
  */
 export interface GlobalComponentConfig {
-  /** 缁勪欢鍚嶇О */
+  /** 组件名称 */
   name: string
-  /** 缁勪欢鏍囪瘑 */
+  /** 组件标识 */
   key: string
-  /** 缁勪欢 */
+  /** 组件 */
   component: any
-  /** 鏄惁鍚敤 */
+  /** 是否启用 */
   enabled?: boolean
-  /** 缁勪欢鎻忚堪 */
+  /** 组件描述 */
   description?: string
 }
 
 /**
- * 鑾峰彇鍚敤鐨勫叏灞€缁勪欢
- * @returns 宸插惎鐢ㄧ殑缁勪欢閰嶇疆鍒楄〃
+ * 获取启用的全局组件
+ * @returns 已启用的组件配置列表
  */
 export const getEnabledGlobalComponents = () => {
   return globalComponentsConfig.filter((config) => config.enabled !== false)
 }
 
 /**
- * 鏍规嵁 key 鑾峰彇缁勪欢閰嶇疆
- * @param key 缁勪欢鏍囪瘑
- * @returns 缁勪欢閰嶇疆瀵硅薄
+ * 根据 key 获取组件配置
+ * @param key 组件标识
+ * @returns 组件配置对象
  */
 export const getGlobalComponentByKey = (key: string) => {
   return globalComponentsConfig.find((config) => config.key === key)
 }
-

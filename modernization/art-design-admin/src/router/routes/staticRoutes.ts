@@ -30,7 +30,7 @@ export const staticRoutes: AppRouteRecordRaw[] = [
   {
     path: '/news/detail/:id',
     name: 'PublicNewsDetail',
-    component: () => import('@views/public/news-detail/index.vue'),
+    component: () => import('@views/public/newsDetail/index.vue'),
     meta: { title: '公告详情', isHideTab: true, publicLanding: true }
   },
   {
@@ -100,7 +100,7 @@ export const staticRoutes: AppRouteRecordRaw[] = [
         {
           path: '/auth/forget-password',
           name: 'ForgetPassword',
-          component: () => import('@views/auth/forget-password/index.vue'),
+          component: () => import('@views/auth/forgetPassword/index.vue'),
           meta: { title: 'menus.forgetPassword.title', isHideTab: true }
         }
       ]

@@ -7,6 +7,7 @@ namespace app\controller;
 use app\support\ApiResponse;
 use app\service\order\OrderCallbackTaskService;
 use app\support\BusinessTable;
+use app\support\SharedRedis;
 use app\support\SystemConfig;
 use Plugins\Payments\Shared\EpayProtocol\EpayOrderRepository;
 use support\Db;
@@ -19,6 +20,8 @@ class SoftwareCompatibilityController
 {
     public function verify(Request $request): Response
     {
+        $this->recordSoftwareReportAudit($request, ['endpoint' => 'verify', 'stage' => 'received']);
+
         [$merchant, $errorResponse] = $this->softwareMerchant($request);
         if ($errorResponse instanceof Response) {
             return $errorResponse;
@@ -38,6 +41,8 @@ class SoftwareCompatibilityController
 
     public function checkOrder(Request $request): Response
     {
+        $this->recordSoftwareReportAudit($request, ['endpoint' => 'checkOrder', 'stage' => 'received']);
+
         [$merchant, $errorResponse] = $this->softwareMerchant($request);
         if ($errorResponse instanceof Response) {
             return $errorResponse;
@@ -106,6 +111,8 @@ class SoftwareCompatibilityController
 
     public function heartbeat(Request $request): Response
     {
+        $this->recordSoftwareReportAudit($request, ['endpoint' => 'heartbeat', 'stage' => 'received']);
+
         [$merchant, $errorResponse] = $this->softwareMerchant($request);
         if ($errorResponse instanceof Response) {
             return $errorResponse;
@@ -151,6 +158,8 @@ class SoftwareCompatibilityController
 
     public function pcNotify(Request $request): Response
     {
+        $this->recordSoftwareReportAudit($request, ['endpoint' => 'pcNotify', 'stage' => 'received']);
+
         [$merchant, $errorResponse] = $this->softwareMerchant($request);
         if ($errorResponse instanceof Response) {
             return $errorResponse;
@@ -173,7 +182,7 @@ class SoftwareCompatibilityController
         }
 
         $type = $this->normalizePaymentType(trim((string)$request->input('type', '')));
-        $orderNo = trim((string)$request->input('orderNo', $request->input('out_trade_no', '')));
+        $orderReferences = $this->resolveSoftwareReportOrderReferences($request, []);
 
         try {
             $order = $this->findPendingSoftwareOrder(
@@ -181,7 +190,7 @@ class SoftwareCompatibilityController
                 (int)($account['id'] ?? 0),
                 $money,
                 $type,
-                $orderNo
+                $orderReferences
             );
         } catch (\RuntimeException $exception) {
             return $this->monitorResponse(201, $exception->getMessage());
@@ -192,7 +201,7 @@ class SoftwareCompatibilityController
                 (int)($account['id'] ?? 0),
                 $money,
                 $type,
-                $orderNo
+                $orderReferences
             );
             if ($processedOrder !== null) {
                 return $this->monitorResponse(200, '订单已处理', $this->processedSoftwareOrderPayload($processedOrder));
@@ -210,115 +219,12 @@ class SoftwareCompatibilityController
         return $this->monitorResponse(200, '回调成功', $callback);
     }
 
-    public function appReport(Request $request): Response
-    {
-        [$merchant, $errorResponse] = $this->softwareReportMerchant($request);
-        if ($errorResponse instanceof Response) {
-            return $errorResponse;
-        }
-
-        if ($signatureError = $this->assertSoftwareSignature($request, $merchant, 'token', true)) {
-            return $signatureError;
-        }
-
-        $security = $this->softwareSecurityContext($request, 'token', true);
-
-        $content = $this->decodeReportContent((string)$request->input('content', ''));
-        if ($content === null) {
-            return $this->monitorResponse(201, 'content 解析失败');
-        }
-
-        $message = trim((string)($content['msg'] ?? ''));
-        $packageName = trim((string)($content['package_name'] ?? ''));
-        if ($message === '' || $packageName === '') {
-            return $this->monitorResponse(201, 'content 缺少必要字段');
-        }
-
-        $channelId = (int)$request->input('channel_id', 0);
-        $account = null;
-        if ($channelId > 0) {
-            $account = Db::table(BusinessTable::account())
-                ->select('id', 'user_id', 'code', 'type', 'status', 'is_status', 'wxname', 'zfb_pid', 'qq')
-                ->where('id', $channelId)
-                ->where('user_id', (int)($merchant['id'] ?? 0))
-                ->first();
-
-            if (!$account) {
-                return $this->monitorResponse(201, 'channel_id 无效');
-            }
-            $account = (array)$account;
-        }
-
-        $type = $this->reportPackageType($packageName);
-        if ($type === null) {
-            return $this->monitorResponse(400, '暂不支持的支付软件');
-        }
-
-        $money = $this->extractReportAmount($message, $type);
-        if ($money === null) {
-            return $this->monitorResponse(201, '未能从软件通知中识别金额');
-        }
-
-        try {
-            $order = $this->findPendingSoftwareOrder(
-                (int)($merchant['id'] ?? 0),
-                $channelId,
-                $money,
-                $type,
-                ''
-            );
-        } catch (\RuntimeException $exception) {
-            return $this->monitorResponse(201, $exception->getMessage());
-        }
-        if ($order === null) {
-            $processedOrder = $this->findProcessedSoftwareOrder(
-                (int)($merchant['id'] ?? 0),
-                $channelId,
-                $money,
-                $type,
-                ''
-            );
-            if ($processedOrder !== null) {
-                return $this->monitorResponse(200, '订单已处理', array_merge(
-                    $this->processedSoftwareOrderPayload($processedOrder),
-                    [
-                        'matched_package' => $packageName,
-                        'matched_money' => number_format($money, 2, '.', ''),
-                        'channel_id' => $channelId,
-                    ]
-                ));
-            }
-            return $this->monitorResponse(201, '订单超时或不存在');
-        }
-
-        try {
-            $callback = $this->settleAndNotifyMerchant($order, $merchant, [
-                'trade_no' => trim((string)($content['trade_no'] ?? '')),
-                'transaction_id' => trim((string)($content['transaction_id'] ?? '')),
-                'buyer_trade_no' => trim((string)($content['buyer_trade_no'] ?? '')),
-                'software_package' => $packageName,
-                'software_channel_id' => $channelId,
-                'software_message' => $message,
-                'money' => number_format($money, 2, '.', ''),
-            ]);
-            $callback['security'] = $security;
-        } catch (\Throwable $exception) {
-            return $this->monitorResponse(201, '上报处理失败: ' . $exception->getMessage());
-        }
-
-        return $this->monitorResponse(200, '处理成功', array_merge($callback, [
-            'matched_package' => $packageName,
-            'matched_money' => number_format($money, 2, '.', ''),
-            'channel_id' => $channelId,
-        ]));
-    }
-
     private function softwareMerchant(Request $request): array
     {
         $merchantId = (int)$request->input('id', 0);
         $appKey = trim((string)$request->input('key', ''));
 
-        if ($merchantId <= 0 || $appKey === '') {
+        if ($appKey === '') {
             return [null, $this->monitorResponse(201, '商户编号和通讯密钥不能为空')];
         }
 
@@ -333,7 +239,13 @@ class SoftwareCompatibilityController
         }
 
         $appKey = trim((string)$request->input('token', $request->input('key', '')));
-        if ($merchantId <= 0 || $appKey === '') {
+        if ($merchantId <= 0) {
+            return [null, $this->monitorResponse(201, '商户编号不能为空')];
+        }
+        if ($appKey === '' && $this->isPcReportRequest($request)) {
+            return $this->findSoftwareMerchantById($merchantId);
+        }
+        if ($appKey === '') {
             return [null, $this->monitorResponse(201, '商户编号和 token 不能为空')];
         }
 
@@ -360,6 +272,36 @@ class SoftwareCompatibilityController
 
         if (!$row) {
             return [null, $this->monitorResponse(201, '商户不存在或密钥无效')];
+        }
+
+        $merchant = (array)$row;
+        if ((int)($merchant['is_frozen'] ?? 0) === 1) {
+            $reason = trim((string)($merchant['frozen_reason'] ?? '商户账户已冻结'));
+            return [null, $this->monitorResponse(201, $reason !== '' ? $reason : '商户账户已冻结')];
+        }
+
+        return [$merchant, null];
+    }
+
+    private function findSoftwareMerchantById(int $merchantId): array
+    {
+        $row = Db::table(BusinessTable::user('merchant'))
+            ->leftJoin(BusinessTable::userBasic('basic'), 'basic.user_id', '=', 'merchant.id')
+            ->select(
+                'basic.user_id',
+                'basic.appkey',
+                'merchant.id',
+                'merchant.username',
+                'merchant.user_key',
+                'merchant.money',
+                'merchant.is_frozen',
+                'merchant.frozen_reason'
+            )
+            ->where('merchant.id', $merchantId)
+            ->first();
+
+        if (!$row) {
+            return [null, $this->monitorResponse(201, '商户不存在')];
         }
 
         $merchant = (array)$row;
@@ -401,6 +343,190 @@ class SoftwareCompatibilityController
         }
 
         return [(array)$account, null];
+    }
+
+    private function resolveSoftwareReportAccount(
+        Request $request,
+        array $content,
+        int $merchantId,
+        string $type
+    ): array {
+        $explicitChannelId = $this->resolveSoftwareReportChannelId($request, $content);
+        if ($explicitChannelId > 0) {
+            $account = $this->findSoftwareAccountById($merchantId, $explicitChannelId);
+            if ($account === null) {
+                return [null, $this->monitorResponse(201, 'channel_id 无效'), [
+                    'explicit_channel_id' => $explicitChannelId,
+                    'matched_by' => 'channel_id',
+                    'resolved' => false,
+                ]];
+            }
+
+            return [$account, null, [
+                'explicit_channel_id' => $explicitChannelId,
+                'matched_by' => 'channel_id',
+                'resolved' => true,
+                'identifier' => (string)$explicitChannelId,
+            ]];
+        }
+
+        $identifiers = $this->softwareReportAccountIdentifierCandidates($request, $content);
+        if ($identifiers === []) {
+            return [null, null, [
+                'explicit_channel_id' => 0,
+                'matched_by' => '',
+                'resolved' => false,
+                'identifier_candidates' => [],
+            ]];
+        }
+
+        $account = $this->findSoftwareAccountByIdentifier($merchantId, $type, $identifiers);
+        if ($account === null) {
+            return [null, null, [
+                'explicit_channel_id' => 0,
+                'matched_by' => '',
+                'resolved' => false,
+                'identifier_candidates' => $identifiers,
+            ]];
+        }
+
+        return [$account, null, [
+            'explicit_channel_id' => 0,
+            'matched_by' => 'identifier',
+            'resolved' => true,
+            'identifier' => (string)($account['_matched_identifier'] ?? ''),
+            'identifier_source' => (string)($account['_matched_identifier_source'] ?? ''),
+            'identifier_candidates' => $identifiers,
+        ]];
+    }
+
+    private function resolveSoftwareReportChannelId(Request $request, array $content): int
+    {
+        $candidates = [
+            $request->input('channel_id', null),
+            $request->input('account_id', null),
+            $request->input('channelId', null),
+            $request->input('accountId', null),
+            $content['channel_id'] ?? null,
+            $content['account_id'] ?? null,
+            $content['channelId'] ?? null,
+            $content['accountId'] ?? null,
+        ];
+
+        foreach ($candidates as $candidate) {
+            $channelId = (int)$candidate;
+            if ($channelId > 0) {
+                return $channelId;
+            }
+        }
+
+        return 0;
+    }
+
+    private function softwareReportAccountIdentifierCandidates(Request $request, array $content): array
+    {
+        $candidates = [
+            $content['tempParam'] ?? null,
+            $request->input('tempParam', null),
+            $content['pid'] ?? null,
+            $request->input('pid', null),
+            $content['wxid'] ?? null,
+            $request->input('wxid', null),
+            $content['wxname'] ?? null,
+            $request->input('wxname', null),
+            $content['account'] ?? null,
+            $request->input('account', null),
+            $content['account_name'] ?? null,
+            $request->input('account_name', null),
+            $content['channel_code'] ?? null,
+            $request->input('channel_code', null),
+            $content['channel'] ?? null,
+            $request->input('channel', null),
+            $content['code'] ?? null,
+            $request->input('code', null),
+        ];
+
+        $identifiers = [];
+        foreach ($candidates as $candidate) {
+            $identifier = trim((string)$candidate);
+            if ($identifier === '') {
+                continue;
+            }
+
+            $identifiers[] = $identifier;
+        }
+
+        return array_values(array_unique($identifiers));
+    }
+
+    private function findSoftwareAccountById(int $merchantId, int $channelId): ?array
+    {
+        if ($merchantId <= 0 || $channelId <= 0) {
+            return null;
+        }
+
+        $account = Db::table(BusinessTable::account())
+            ->select('id', 'user_id', 'code', 'type', 'status', 'is_status', 'wxname', 'zfb_pid', 'qq', 'qr_type', 'qr_url', 'remark')
+            ->where('id', $channelId)
+            ->where('user_id', $merchantId)
+            ->first();
+
+        return $account ? (array)$account : null;
+    }
+
+    private function findSoftwareAccountByIdentifier(int $merchantId, string $type, array $identifiers): ?array
+    {
+        if ($merchantId <= 0 || $identifiers === []) {
+            return null;
+        }
+
+        $normalizedType = $this->normalizePaymentType($type);
+        foreach ($identifiers as $identifier) {
+            $query = Db::table(BusinessTable::account())
+                ->select('id', 'user_id', 'code', 'type', 'status', 'is_status', 'wxname', 'zfb_pid', 'qq', 'qr_type', 'qr_url', 'remark')
+                ->where('user_id', $merchantId);
+
+            if (in_array($normalizedType, ['alipay', 'wxpay', 'qqpay'], true)) {
+                $query->where('type', $normalizedType);
+            }
+
+            $query->where(function ($builder) use ($identifier) {
+                $builder
+                    ->where('code', $identifier)
+                    ->orWhere('wxname', $identifier)
+                    ->orWhere('zfb_pid', $identifier)
+                    ->orWhere('qq', $identifier);
+            });
+
+            $row = $query
+                ->orderByDesc('status')
+                ->orderByDesc('is_status')
+                ->orderByDesc('id')
+                ->first();
+
+            if (!$row) {
+                continue;
+            }
+
+            $account = (array)$row;
+            $account['_matched_identifier'] = $identifier;
+            $account['_matched_identifier_source'] = $this->softwareAccountIdentifierSource($account, $identifier);
+
+            return $account;
+        }
+
+        return null;
+    }
+
+    private function softwareAccountIdentifierSource(array $account, string $identifier): string
+    {
+        foreach (['code', 'wxname', 'zfb_pid', 'qq'] as $field) {
+            if (trim((string)($account[$field] ?? '')) === $identifier) {
+                return $field;
+            }
+        }
+
+        return '';
     }
 
     private function normalizeStatus(mixed $value, int $fallback): int
@@ -465,6 +591,15 @@ class SoftwareCompatibilityController
             return '';
         }
 
+        if (str_contains($type, '支付宝')) {
+            return 'alipay';
+        }
+        if (str_contains($type, '微信')) {
+            return 'wxpay';
+        }
+        if (str_contains($type, 'qq')) {
+            return 'qqpay';
+        }
         if (str_contains($type, 'ali')) {
             return 'alipay';
         }
@@ -545,57 +680,17 @@ class SoftwareCompatibilityController
             $window = 300;
         }
 
-        if (abs(time() - $timestamp) > $window) {
-            $this->recordSoftwareSignatureAudit(array_merge($auditContext, [
-                'decision' => 'blocked',
-                'reason' => 'signature_expired',
-                'window_seconds' => $window,
-            ]));
-            return $this->monitorResponse(201, '软件回调签名已过期');
-        }
-
-        $secret = trim((string)($merchant['appkey'] ?? ''));
-        if ($credentialField === 'token') {
-            $secret = trim((string)($merchant['appkey'] ?? ''));
-        }
-        if ($secret === '') {
-            $this->recordSoftwareSignatureAudit(array_merge($auditContext, [
-                'decision' => 'blocked',
-                'reason' => 'missing_signature_secret',
-            ]));
-            return $this->monitorResponse(201, '软件回调签名密钥不存在');
-        }
-
-        $payload = $this->softwareSignaturePayload($request, ['signature', 'sign']);
-        $payload['nonce'] = $nonce;
-        $payload['timestamp'] = $timestampRaw;
-        ksort($payload);
-
-        $expected = $this->softwareSignature($payload, $secret);
-        if (!hash_equals($expected, strtolower($providedSignature))) {
-            $this->recordSoftwareSignatureAudit(array_merge($auditContext, [
-                'decision' => 'blocked',
-                'reason' => 'signature_mismatch',
-            ]));
-            return $this->monitorResponse(201, '软件回调签名校验失败');
-        }
-
-        if (!$this->rememberSoftwareNonce((int)($merchant['id'] ?? 0), $credentialField, $nonce, $timestamp, $window)) {
-            $this->recordSoftwareSignatureAudit(array_merge($auditContext, [
-                'decision' => 'blocked',
-                'reason' => 'nonce_replayed',
-                'window_seconds' => $window,
-            ]));
-            return $this->monitorResponse(201, '软件回调签名重复，请勿重放');
-        }
-
-        $this->recordSoftwareSignatureAudit(array_merge($auditContext, [
-            'decision' => 'allowed',
-            'reason' => 'strong_signature_verified',
-            'window_seconds' => $window,
-        ]));
-
-        return null;
+        return $this->validateSoftwareStrongSignature(
+            $request,
+            $merchant,
+            $credentialField,
+            $providedSignature,
+            $timestampRaw,
+            $nonce,
+            $timestamp,
+            $window,
+            $auditContext
+        );
     }
 
     private function softwareSignaturePayload(Request $request, array $excludedKeys = []): array
@@ -638,6 +733,119 @@ class SoftwareCompatibilityController
         return strtolower(hash_hmac('sha256', implode('&', $pairs), $secret));
     }
 
+    /**
+     * @param array<string, mixed> $merchant
+     * @param array<string, mixed> $auditContext
+     */
+    private function validateSoftwareStrongSignature(
+        Request $request,
+        array $merchant,
+        string $credentialField,
+        string $providedSignature,
+        string $timestampRaw,
+        string $nonce,
+        int $timestamp,
+        int $window,
+        array $auditContext
+    ): ?Response {
+        if (abs(time() - $timestamp) > $window) {
+            $this->recordSoftwareSignatureAudit(array_merge($auditContext, [
+                'decision' => 'blocked',
+                'reason' => 'signature_expired',
+                'window_seconds' => $window,
+            ]));
+
+            return $this->monitorResponse(201, '软件回调签名已过期');
+        }
+
+        $secret = trim((string)($merchant['appkey'] ?? ''));
+        if ($credentialField === 'token') {
+            $secret = trim((string)($merchant['appkey'] ?? ''));
+        }
+        if ($secret === '') {
+            $this->recordSoftwareSignatureAudit(array_merge($auditContext, [
+                'decision' => 'blocked',
+                'reason' => 'missing_signature_secret',
+            ]));
+
+            return $this->monitorResponse(201, '软件回调签名密钥不存在');
+        }
+
+        $payload = $this->softwareSignaturePayload($request, ['signature', 'sign']);
+        $payload['nonce'] = $nonce;
+        $payload['timestamp'] = $timestampRaw;
+        ksort($payload);
+
+        $expected = $this->softwareSignature($payload, $secret);
+        if (!hash_equals($expected, strtolower($providedSignature))) {
+            $this->recordSoftwareSignatureAudit(array_merge($auditContext, [
+                'decision' => 'blocked',
+                'reason' => 'signature_mismatch',
+            ]));
+
+            return $this->monitorResponse(201, '软件回调签名校验失败');
+        }
+
+        try {
+            $nonceAccepted = $this->claimSoftwareNonce((int)($merchant['id'] ?? 0), $credentialField, $nonce, $timestamp, $window);
+        } catch (\RuntimeException $exception) {
+            $this->recordSoftwareSignatureAudit(array_merge($auditContext, [
+                'decision' => 'blocked',
+                'reason' => 'nonce_backend_unavailable',
+                'window_seconds' => $window,
+            ]));
+
+            return $this->monitorResponse(503, '软件回调防重服务暂不可用');
+        }
+
+        if (!$nonceAccepted) {
+            $this->recordSoftwareSignatureAudit(array_merge($auditContext, [
+                'decision' => 'blocked',
+                'reason' => 'nonce_replayed',
+                'window_seconds' => $window,
+            ]));
+
+            return $this->monitorResponse(201, '软件回调签名重复，请勿重放');
+        }
+
+        $this->recordSoftwareSignatureAudit(array_merge($auditContext, [
+            'decision' => 'allowed',
+            'reason' => 'strong_signature_verified',
+            'window_seconds' => $window,
+        ]));
+
+        return null;
+    }
+
+    private function claimSoftwareNonce(int $merchantId, string $scope, string $nonce, int $timestamp, int $window): bool
+    {
+        $normalizedNonce = trim($nonce);
+        if ($merchantId <= 0 || $normalizedNonce === '') {
+            return false;
+        }
+
+        if (!preg_match('/^[A-Za-z0-9:_\\-]{6,128}$/', $normalizedNonce)) {
+            return false;
+        }
+
+        $normalizedScope = preg_replace('/[^A-Za-z0-9:_\\-]/', '_', trim($scope)) ?: 'default';
+        $now = time();
+        $expireAt = max($timestamp + $window, $now + $window);
+        $ttl = max(1, $expireAt - $now);
+        $claimed = SharedRedis::setIfAbsent(
+            sprintf('merchant:%d:%s:%s', $merchantId, $normalizedScope, $normalizedNonce),
+            (string)$expireAt,
+            $ttl,
+            SharedRedis::softwareNonceConfig()
+        );
+
+        if ($claimed === null) {
+            throw new \RuntimeException('software nonce redis is unavailable');
+        }
+
+        return $claimed;
+    }
+
     private function softwareSecurityContext(Request $request, string $credentialField, bool $writeIntent): array
     {
         $mode = strtolower(trim((string)SystemConfig::get('software_callback_sign_mode', 'strict')));
@@ -675,50 +883,25 @@ class SoftwareCompatibilityController
         ];
     }
 
-    private function rememberSoftwareNonce(int $merchantId, string $scope, string $nonce, int $timestamp, int $window): bool
+    private function anonymousPcReportSecurityContext(Request $request): array
     {
-        $normalizedNonce = trim($nonce);
-        if ($merchantId <= 0 || $normalizedNonce === '') {
-            return false;
-        }
-
-        if (!preg_match('/^[A-Za-z0-9:_\\-]{6,128}$/', $normalizedNonce)) {
-            return false;
-        }
-
-        $directory = runtime_path('software-signatures');
-        if (!is_dir($directory)) {
-            @mkdir($directory, 0777, true);
-        }
-
-        $path = $directory . DIRECTORY_SEPARATOR . 'merchant_' . $merchantId . '_' . $scope . '.json';
-        $now = time();
-        $records = [];
-
-        if (is_file($path)) {
-            $decoded = json_decode((string)@file_get_contents($path), true);
-            if (is_array($decoded)) {
-                foreach ($decoded as $recordNonce => $expireAt) {
-                    if (!is_string($recordNonce) || !is_numeric($expireAt)) {
-                        continue;
-                    }
-
-                    $expireTimestamp = (int)$expireAt;
-                    if ($expireTimestamp >= $now) {
-                        $records[$recordNonce] = $expireTimestamp;
-                    }
-                }
-            }
-        }
-
-        if (isset($records[$normalizedNonce])) {
-            return false;
-        }
-
-        $records[$normalizedNonce] = max($timestamp + $window, $now + $window);
-        @file_put_contents($path, json_encode($records, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX);
-
-        return true;
+        return [
+            'scope' => 'software_pc_report_write',
+            'credential_field' => 'route_merchant_id',
+            'credential_guard' => 'legacy_pc_report_route',
+            'sign_mode' => 'legacy_pc_route_compat',
+            'strong_signature' => [
+                'algorithm' => 'none',
+                'required' => false,
+                'present' => false,
+                'fields' => [],
+            ],
+            'replay_protection' => [
+                'strategy' => 'settlement_idempotency_only',
+                'window_seconds' => null,
+            ],
+            'path' => method_exists($request, 'path') ? (string)$request->path() : '',
+        ];
     }
 
     private function softwareSignatureAuditContext(
@@ -770,45 +953,21 @@ class SoftwareCompatibilityController
         int $channelId,
         float $money,
         string $type,
-        string $orderNo
+        array $orderReferences
     ): ?array {
-        $query = Db::table(BusinessTable::order())
-            ->select(
-                'id',
-                'name',
-                'type',
-                'money',
-                'truemoney',
-                'feilvmoney',
-                'user_id',
-                'account_id',
-                'trade_no',
-                'out_trade_no',
-                'notify_url',
-                'return_url',
-                'status',
-                'api_memo',
-                'out_time'
-            )
-            ->where('status', 0)
-            ->where('out_time', '>', time())
-            ->where('truemoney', number_format($money, 2, '.', ''));
-
-        if ($channelId > 0) {
-            $query->where('account_id', $channelId);
-        } else {
-            $query->where('user_id', $merchantId);
+        $resolvedOrder = $this->findSoftwareOrderMatch(
+            $merchantId,
+            $channelId,
+            $money,
+            $type,
+            $orderReferences,
+            false
+        );
+        if ($resolvedOrder !== null) {
+            return $resolvedOrder;
         }
 
-        if ($type !== '') {
-            $query->where('type', $type);
-        }
-
-        if ($orderNo !== '') {
-            $query->where('out_trade_no', $orderNo);
-        }
-
-        $rows = $query
+        $rows = $this->buildSoftwareOrderBaseQuery($merchantId, $channelId, $money, $type, false)
             ->orderByDesc('id')
             ->limit(2)
             ->get()
@@ -818,7 +977,7 @@ class SoftwareCompatibilityController
             return null;
         }
 
-        if ($orderNo === '' && count($rows) > 1) {
+        if (count($rows) > 1) {
             throw new \RuntimeException('multiple pending orders matched the software callback');
         }
 
@@ -830,11 +989,38 @@ class SoftwareCompatibilityController
         int $channelId,
         float $money,
         string $type,
-        string $orderNo
+        array $orderReferences
     ): ?array {
+        $row = $this->findSoftwareOrderMatch(
+            $merchantId,
+            $channelId,
+            $money,
+            $type,
+            $orderReferences,
+            true
+        );
+        if ($row !== null) {
+            return $row;
+        }
+
         $thresholdTimestamp = time() - 900;
         $thresholdDateTime = date('Y-m-d H:i:s', $thresholdTimestamp);
 
+        $row = $this->buildSoftwareOrderBaseQuery($merchantId, $channelId, $money, $type, true)
+            ->where(function ($builder) use ($thresholdTimestamp, $thresholdDateTime) {
+                $builder
+                    ->where('update_time', '>=', $thresholdDateTime)
+                    ->orWhere('create_time', '>=', $thresholdDateTime)
+                    ->orWhere('out_time', '>=', $thresholdTimestamp);
+            })
+            ->orderByDesc('id')
+            ->first();
+
+        return $row ? (array)$row : null;
+    }
+
+    private function buildSoftwareOrderBaseQuery(int $merchantId, int $channelId, float $money, string $type, bool $processed)
+    {
         $query = Db::table(BusinessTable::order())
             ->select(
                 'id',
@@ -855,8 +1041,12 @@ class SoftwareCompatibilityController
                 'create_time',
                 'update_time'
             )
-            ->where('status', 1)
+            ->where('status', $processed ? 1 : 0)
             ->where('truemoney', number_format($money, 2, '.', ''));
+
+        if (!$processed) {
+            $query->where('out_time', '>', time());
+        }
 
         if ($channelId > 0) {
             $query->where('account_id', $channelId);
@@ -868,22 +1058,41 @@ class SoftwareCompatibilityController
             $query->where('type', $type);
         }
 
-        if ($orderNo !== '') {
-            $query->where('out_trade_no', $orderNo);
-        } else {
-            $query->where(function ($builder) use ($thresholdTimestamp, $thresholdDateTime) {
-                $builder
-                    ->where('update_time', '>=', $thresholdDateTime)
-                    ->orWhere('create_time', '>=', $thresholdDateTime)
-                    ->orWhere('out_time', '>=', $thresholdTimestamp);
-            });
+        return $query;
+    }
+
+    private function findSoftwareOrderMatch(
+        int $merchantId,
+        int $channelId,
+        float $money,
+        string $type,
+        array $orderReferences,
+        bool $processed
+    ): ?array {
+        $normalizedReferences = array_values(array_unique(array_filter(
+            array_map(static fn (mixed $value): string => trim((string)$value), $orderReferences),
+            static fn (string $value): bool => $value !== ''
+        )));
+        if ($normalizedReferences === []) {
+            return null;
         }
 
-        $row = $query
-            ->orderByDesc('id')
-            ->first();
+        foreach ($normalizedReferences as $reference) {
+            $row = $this->buildSoftwareOrderBaseQuery($merchantId, $channelId, $money, $type, $processed)
+                ->where(function ($builder) use ($reference) {
+                    $builder
+                        ->where('out_trade_no', $reference)
+                        ->orWhere('trade_no', $reference);
+                })
+                ->orderByDesc('id')
+                ->first();
 
-        return $row ? (array)$row : null;
+            if ($row) {
+                return (array)$row;
+            }
+        }
+
+        return null;
     }
 
     private function processedSoftwareOrderPayload(array $order): array
@@ -926,7 +1135,6 @@ class SoftwareCompatibilityController
         $settledOrder = (array)($settlement['order'] ?? $order);
         $callbackTask = (new OrderCallbackTaskService())->enqueueForSettledOrder($settledOrder, $merchant, [
             'scene' => 'software_callback',
-            'dispatch_now' => true,
         ]);
 
         return [
@@ -970,6 +1178,261 @@ class SoftwareCompatibilityController
         $decoded = json_decode(urldecode($content), true);
 
         return is_array($decoded) ? $decoded : null;
+    }
+
+    private function isPcReportRequest(Request $request): bool
+    {
+        $path = strtolower(trim((string)(method_exists($request, 'path') ? $request->path() : '')));
+
+        return $path !== '' && str_ends_with($path, '/pc');
+    }
+
+    private function isAnonymousPcReportRequest(Request $request): bool
+    {
+        if (!$this->isPcReportRequest($request)) {
+            return false;
+        }
+
+        $token = trim((string)$request->input('token', $request->input('key', '')));
+        $signature = trim((string)$request->input('signature', $request->input('sign', '')));
+
+        return $token === '' && $signature === '';
+    }
+
+    private function isPcReportHandshake(Request $request, array $content): bool
+    {
+        if (!$this->isPcReportRequest($request)) {
+            return false;
+        }
+
+        $payload = array_merge((array)$request->get(), (array)$request->post());
+        foreach (['id', 'user_id', 'token', 'key', 'signature', 'sign', 'timestamp', 'nonce'] as $ignoredKey) {
+            unset($payload[$ignoredKey]);
+        }
+
+        if ($content !== []) {
+            return false;
+        }
+
+        foreach ($payload as $value) {
+            if (trim((string)$value) !== '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function resolveReportType(Request $request, array $content): ?string
+    {
+        $packageName = trim((string)($content['package_name'] ?? $request->input('package_name', $request->input('package', ''))));
+        if ($packageName !== '') {
+            $type = $this->reportPackageType($packageName);
+            if ($type !== null) {
+                return $type;
+            }
+
+            $normalizedPackageType = $this->normalizePaymentType($packageName);
+            if (in_array($normalizedPackageType, ['alipay', 'wxpay', 'qqpay'], true)) {
+                return $normalizedPackageType;
+            }
+        }
+
+        $candidates = [
+            $content['type'] ?? null,
+            $content['pay_type'] ?? null,
+            $content['channel'] ?? null,
+            $content['channel_code'] ?? null,
+            $content['method'] ?? null,
+            $content['title'] ?? null,
+            $content['payway'] ?? null,
+            $request->input('type', null),
+            $request->input('pay_type', null),
+            $request->input('channel', null),
+            $request->input('channel_code', null),
+            $request->input('method', null),
+            $request->input('title', null),
+            $request->input('payway', null),
+        ];
+
+        foreach ($candidates as $candidate) {
+            $normalized = $this->normalizePaymentType(trim((string)$candidate));
+            if (in_array($normalized, ['alipay', 'wxpay', 'qqpay'], true)) {
+                return $normalized;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveReportMoney(Request $request, array $content, string $message, string $type): ?float
+    {
+        $directValues = [
+            $content['money'] ?? null,
+            $content['amount'] ?? null,
+            $content['truemoney'] ?? null,
+            $content['real_money'] ?? null,
+            $content['pay_amount'] ?? null,
+            $content['price'] ?? null,
+            $request->input('money', null),
+            $request->input('amount', null),
+            $request->input('truemoney', null),
+            $request->input('real_money', null),
+            $request->input('pay_amount', null),
+            $request->input('price', null),
+        ];
+
+        foreach ($directValues as $value) {
+            $money = $this->normalizeMoney($value);
+            if ($money !== null) {
+                return $money;
+            }
+        }
+
+        return $message !== '' ? $this->extractReportAmount($message, $type) : null;
+    }
+
+    private function resolveSoftwareReportOrderReferences(Request $request, array $content): array
+    {
+        $candidates = [
+            $content['out_trade_no'] ?? null,
+            $request->input('out_trade_no', null),
+            $content['out_order_id'] ?? null,
+            $request->input('out_order_id', null),
+            $content['orderNo'] ?? null,
+            $request->input('orderNo', null),
+            $content['order_no'] ?? null,
+            $request->input('order_no', null),
+            $content['order_id'] ?? null,
+            $request->input('order_id', null),
+            $content['trade_no'] ?? null,
+            $request->input('trade_no', null),
+        ];
+
+        $references = [];
+        foreach ($candidates as $candidate) {
+            $reference = trim((string)$candidate);
+            if ($reference === '') {
+                continue;
+            }
+
+            $references[] = $reference;
+        }
+
+        return array_values(array_unique($references));
+    }
+
+    private function buildReportMessageFallback(Request $request, array $content, ?string $type): string
+    {
+        $parts = array_filter([
+            trim((string)($content['title'] ?? $request->input('title', ''))),
+            trim((string)($content['type'] ?? $request->input('type', $type ?? ''))),
+            trim((string)($content['money'] ?? $request->input('money', $request->input('amount', '')))),
+            trim((string)($content['mark'] ?? $request->input('mark', $request->input('memo', '')))),
+        ], static fn (string $value): bool => $value !== '');
+
+        return implode(' ', $parts);
+    }
+
+    private function recordSoftwareReportAudit(Request $request, array $context = []): void
+    {
+        $directory = runtime_path('software-reports');
+        if (!is_dir($directory)) {
+            @mkdir($directory, 0777, true);
+        }
+
+        $query = (array)$request->get();
+        $post = (array)$request->post();
+        $payload = array_merge($query, $post);
+        $entry = array_merge([
+            'recorded_at' => date('Y-m-d H:i:s'),
+            'path' => method_exists($request, 'path') ? (string)$request->path() : '',
+            'method' => method_exists($request, 'method') ? (string)$request->method() : '',
+            'merchant_id_from_route' => (int)($request->route ? $request->route->param('id', 0) : 0),
+            'query_keys' => array_keys($query),
+            'post_keys' => array_keys($post),
+            'payload' => $this->sanitizeSoftwareReportAuditPayload($payload),
+            'ip' => method_exists($request, 'getRealIp') ? (string)$request->getRealIp() : '',
+            'user_agent' => trim((string)$request->header('user-agent', '')),
+        ], $context);
+
+        $encoded = json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($encoded === false) {
+            return;
+        }
+
+        @file_put_contents($directory . DIRECTORY_SEPARATOR . 'incoming.jsonl', $encoded . PHP_EOL, FILE_APPEND | LOCK_EX);
+    }
+
+    private function sanitizeSoftwareReportAuditPayload(array $payload): array
+    {
+        $maskedKeys = ['token', 'key', 'message_key', 'signature', 'sign', 'nonce'];
+        $sanitized = [];
+
+        foreach ($payload as $key => $value) {
+            $name = trim((string)$key);
+            if ($name === '') {
+                continue;
+            }
+
+            if (is_array($value) || is_object($value)) {
+                $sanitized[$name] = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                continue;
+            }
+
+            $stringValue = trim((string)$value);
+            if (in_array(strtolower($name), $maskedKeys, true)) {
+                $sanitized[$name] = $this->maskSoftwareReportAuditValue($stringValue);
+                continue;
+            }
+
+            if ($name === 'content' && strlen($stringValue) > 400) {
+                $sanitized[$name] = substr($stringValue, 0, 400) . '...';
+                continue;
+            }
+
+            $sanitized[$name] = $stringValue;
+        }
+
+        return $sanitized;
+    }
+
+    private function maskSoftwareReportAuditValue(string $value): string
+    {
+        $length = strlen($value);
+        if ($length <= 0) {
+            return '';
+        }
+
+        if ($length <= 8) {
+            return str_repeat('*', $length);
+        }
+
+        return substr($value, 0, 4) . str_repeat('*', max($length - 8, 4)) . substr($value, -4);
+    }
+
+    private function recordSoftwareResponseAudit(array $payload, array $context = []): void
+    {
+        $request = function_exists('request') ? request() : null;
+        $entry = array_merge([
+            'recorded_at' => date('Y-m-d H:i:s'),
+            'path' => $request instanceof Request && method_exists($request, 'path') ? (string)$request->path() : '',
+            'method' => $request instanceof Request && method_exists($request, 'method') ? (string)$request->method() : '',
+            'merchant_id_from_route' => $request instanceof Request && $request->route ? (int)$request->route->param('id', 0) : 0,
+            'payload' => $this->sanitizeSoftwareReportAuditPayload($payload),
+        ], $context);
+
+        $encoded = json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($encoded === false) {
+            return;
+        }
+
+        $directory = runtime_path('software-reports');
+        if (!is_dir($directory)) {
+            @mkdir($directory, 0777, true);
+        }
+
+        @file_put_contents($directory . DIRECTORY_SEPARATOR . 'outgoing.jsonl', $encoded . PHP_EOL, FILE_APPEND | LOCK_EX);
     }
 
     private function reportPackageType(string $packageName): ?string
@@ -1067,6 +1530,8 @@ class SoftwareCompatibilityController
             'data' => $data,
             'redirect' => '',
         ], $extra);
+
+        $this->recordSoftwareResponseAudit($payload, ['response_type' => 'monitor']);
 
         return json($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }

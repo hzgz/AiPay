@@ -108,9 +108,7 @@ const EXACT_MAP: Record<string, string> = {
   'permission status': '权限状态变更',
   'domain recycle smoke fixture': '域名回收记录',
   'news-editor-upload': '公告编辑器上传图片',
-  'plugin-editor-upload': '插件编辑器上传图片',
   'news-editor-upload.png': '公告编辑器上传图片',
-  'plugin-editor-upload.png': '插件编辑器上传图片',
   'rsa 私钥': '站点私钥',
   'think 验证码密钥': '验证码密钥',
   '短信宝 api': '短信宝接口密钥',
@@ -157,7 +155,6 @@ const REGEX_RULES: Array<{ pattern: RegExp; label: string }> = [
   },
   { pattern: /^les_[a-z0-9_]+$/i, label: '商户单号已脱敏' },
   { pattern: /^risk-[a-z0-9]+\.example\.com$/i, label: '风控域名已脱敏' },
-  { pattern: /^plugin_download_recycle_smoke_/i, label: '插件回收记录' },
   { pattern: /^quick_login_write_smoke_[a-z0-9_]+(?:-bound)?$/i, label: '快捷登录记录' },
   { pattern: /^channel_catalog_write_smoke_[a-z0-9_]+$/i, label: '本地通道记录' },
   {
@@ -183,10 +180,6 @@ const REGEX_RULES: Array<{ pattern: RegExp; label: string }> = [
   {
     pattern: /^news-editor-upload(?:-\d+)?\.(png|jpg|jpeg|webp|gif)$/i,
     label: '公告编辑器上传图片'
-  },
-  {
-    pattern: /^plugin-editor-upload(?:-\d+)?\.(png|jpg|jpeg|webp|gif)$/i,
-    label: '插件编辑器上传图片'
   },
   {
     pattern: /^[a-f0-9]{20,}\.(png|jpg|jpeg|webp|gif)$/i,
@@ -241,7 +234,6 @@ function normalizeFixtureFallback(value: string) {
     [/\bAccessKey\b/gi, '访问密钥'],
     [/\bSecretKey\b/gi, '访问密钥密文'],
     [/\bnews-editor-upload\b/gi, '公告编辑器上传图片'],
-    [/\bplugin-editor-upload\b/gi, '插件编辑器上传图片'],
     [/\/admin\.photo\/list\/name\/images/gi, '系统图片目录接口'],
     [/\/admin\.photo\/list\/name\/news/gi, '公告图片目录接口'],
     [/\/admin\.photo\/list\/name\/plugins/gi, '插件素材目录接口'],

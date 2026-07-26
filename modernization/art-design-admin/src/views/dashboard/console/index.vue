@@ -392,6 +392,23 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    --console-card-border: var(--el-border-color-light);
+    --console-highlight-bg: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.96));
+    --console-summary-bg: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(248 250 252 / 0.94));
+    --console-list-bg: rgb(248 250 252 / 0.76);
+    --console-title-color: #0f172a;
+    --console-text-color: #475569;
+    --console-muted-color: #64748b;
+  }
+
+  :global(html.dark .dashboard-console-page ){
+    --console-card-border: rgb(71 85 105 / 0.42);
+    --console-highlight-bg: linear-gradient(180deg, rgb(30 41 59 / 0.94), rgb(15 23 42 / 0.9));
+    --console-summary-bg: linear-gradient(180deg, rgb(17 24 39 / 0.94), rgb(15 23 42 / 0.88));
+    --console-list-bg: rgb(15 23 42 / 0.76);
+    --console-title-color: #e2e8f0;
+    --console-text-color: #cbd5e1;
+    --console-muted-color: #94a3b8;
   }
 
   .hero-row,
@@ -403,7 +420,7 @@
   .highlight-card,
   .summary-card,
   .panel-card {
-    border: 1px solid var(--el-border-color-light);
+    border: 1px solid var(--console-card-border);
   }
 
   .hero-card {
@@ -459,7 +476,7 @@
   .highlight-card {
     height: 100%;
     min-height: 168px;
-    background: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.96));
+    background: var(--console-highlight-bg);
   }
 
   .highlight-card.warning {
@@ -480,13 +497,13 @@
 
   .highlight-label,
   .summary-head span {
-    color: #475569;
+    color: var(--console-text-color);
     font-size: 13px;
     font-weight: 600;
   }
 
   .highlight-value {
-    color: #0f172a;
+    color: var(--console-title-color);
     font-size: 38px;
     line-height: 1;
     font-variant-numeric: tabular-nums;
@@ -497,13 +514,13 @@
   .panel-head p,
   .order-main p,
   .channel-item p {
-    color: #64748b;
+    color: var(--console-muted-color);
     font-size: 13px;
     line-height: 1.7;
   }
 
   .summary-card {
-    background: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(248 250 252 / 0.94));
+    background: var(--console-summary-bg);
   }
 
   .summary-head {
@@ -521,7 +538,7 @@
   .summary-value {
     display: block;
     margin-top: 14px;
-    color: #0f172a;
+    color: var(--console-title-color);
     font-size: 28px;
     font-weight: 700;
     line-height: 1.2;
@@ -541,7 +558,7 @@
 
   .panel-head h3 {
     margin: 0;
-    color: #0f172a;
+    color: var(--console-title-color);
     font-size: 18px;
   }
 
@@ -564,15 +581,15 @@
     gap: 12px;
     align-items: center;
     padding: 12px 14px;
-    border: 1px solid var(--el-border-color-lighter);
+    border: 1px solid var(--console-card-border);
     border-radius: 14px;
-    background: rgb(248 250 252 / 0.76);
+    background: var(--console-list-bg);
   }
 
   .channel-item strong,
   .brief-item strong,
   .order-main strong {
-    color: #0f172a;
+    color: var(--console-title-color);
   }
 
   .channel-item p,
@@ -581,7 +598,7 @@
   }
 
   .brief-item span {
-    color: #475569;
+    color: var(--console-text-color);
     font-size: 13px;
     font-weight: 600;
   }
@@ -595,7 +612,7 @@
 
   .brief-note {
     margin: 0;
-    color: #64748b;
+    color: var(--console-muted-color);
     font-size: 12px;
     line-height: 1.6;
   }

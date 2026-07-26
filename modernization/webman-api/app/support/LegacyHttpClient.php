@@ -4,14 +4,14 @@ namespace app\support;
 
 class LegacyHttpClient
 {
-    public static function get(string $url, array $headers = [], int $timeout = 15): array
+    public static function get(string $url, array $headers = [], int $timeout = 15, int $connectTimeout = 5): array
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, max(1, $connectTimeout));
+        curl_setopt($ch, CURLOPT_TIMEOUT, max(1, $timeout));
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 

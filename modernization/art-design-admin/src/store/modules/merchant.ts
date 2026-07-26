@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { fetchMerchantProfile } from '@/api/merchant'
-import { clearMerchantFrontToken } from '@/utils/merchant-session'
+import { clearMerchantFrontToken } from '@/utils/merchantSession'
 import {
   formatMerchantAccountHint,
   formatMerchantDisplayName,

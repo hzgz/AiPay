@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="admin-account-page art-full-height">
     <ArtSearchBar
       v-model="searchForm"
@@ -143,12 +143,12 @@
 <script setup lang="ts">
   import { storeToRefs } from 'pinia'
   import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtButtonTable from '@/components/core/forms/artButtonTable/index.vue'
   import { useAuth } from '@/hooks'
   import { useTable } from '@/hooks/core/useTable'
   import { useUserStore } from '@/store/modules/user'
-  import AdminAccessDialogs from './modules/admin-access-dialogs.vue'
-  import AdminDetailDrawer from './modules/admin-detail-drawer.vue'
+  import AdminAccessDialogs from './modules/AdminAccessDialogs.vue'
+  import AdminDetailDrawer from './modules/AdminDetailDrawer.vue'
   import {
     assignAdminCreateFormState,
     assignAdminEditFormState,
@@ -166,14 +166,14 @@
     syncAdminEditFormFromItem,
     syncAdminPermissionFormFromEditable,
     syncAdminRoleFormFromEditable
-  } from './modules/admin-form-state'
+  } from './modules/adminFormState'
   import type {
     AdminCreateFormState,
     AdminEditFormState,
     AdminPermissionFormState,
     AdminRoleFormState
-  } from './modules/admin-form-state'
-  import AdminWriteDialogs from './modules/admin-write-dialogs.vue'
+  } from './modules/adminFormState'
+  import AdminWriteDialogs from './modules/AdminWriteDialogs.vue'
   import {
     fetchAuditAdminAccountBatchDelete,
     fetchBatchRestoreAdminAccounts,
@@ -1098,14 +1098,14 @@
   }
 
   .cell-title {
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 14px;
     word-break: break-all;
   }
 
   .cell-sub {
     margin: 0;
-    color: #64748b;
+    color: var(--el-text-color-secondary);
     font-size: 12px;
     line-height: 1.6;
     word-break: break-all;

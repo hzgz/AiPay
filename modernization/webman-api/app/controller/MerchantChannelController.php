@@ -16,6 +16,7 @@ use app\support\RequestPayload;
 use app\support\SystemConfig;
 use app\support\UploadWorkspace;
 use Illuminate\Database\Query\Builder;
+use Plugins\Payments\Leshua\Support\LeshuaGatewayService;
 use Plugins\Payments\Shared\Support\JiaofeiyiSupport;
 use Plugins\Payments\Shared\Managed\AbstractManagedGatewayOrderService;
 use Plugins\Payments\UniversalEpay\Support\UniversalEpayGatewayService;
@@ -32,6 +33,7 @@ class MerchantChannelController
     private const CREDENTIAL_IMAGE_UPLOAD_URL = '/api/merchant/channels/credential-image';
     private const CREDENTIAL_DECODE_URL = '/api/merchant/channels/credential-decode';
     private const TEST_PAY_ORDER_MEMOS = ['merchant_channel_test_pay', 'merchant_channel_test_paid'];
+    private const TEST_PAY_OUT_TRADE_NO_PREFIX = 'TEST';
     private const ALIPAY_BILL_RECONCILE_CODES = ['alipay_bill', 'alipay_mck'];
     private const ALIPAY_BILL_RECONCILE_GRACE_SECONDS = 300;
     private const USDT_RECONCILE_GRACE_SECONDS = 300;
@@ -219,9 +221,8 @@ class MerchantChannelController
         }
 
         $absolutePath = '';
-        $legacyPath = '';
         try {
-            [$photoId, $href] = Db::transaction(function () use ($file, $prepared, &$absolutePath, &$legacyPath): array {
+            [$photoId, $href] = Db::transaction(function () use ($file, $prepared, &$absolutePath): array {
                 $dateSegment = date('Ymd');
                 $relativeChild = $dateSegment . '/' . date('His') . '_' . bin2hex(random_bytes(8)) . '.' . $prepared['ext'];
                 $absolutePath = $this->credentialImageUploadRoot()
@@ -235,7 +236,6 @@ class MerchantChannelController
 
                 $href = UploadWorkspace::publicHref('payment-accounts', $relativeChild);
                 $file->move($absolutePath);
-                $legacyPath = UploadWorkspace::mirrorFileToLegacyPublic($absolutePath, 'payment-accounts', $relativeChild);
 
                 $photoId = (int)Db::table('admin_photo')->insertGetId([
                     'name' => $prepared['name'],
@@ -253,9 +253,6 @@ class MerchantChannelController
         } catch (\Throwable $exception) {
             if ($absolutePath !== '' && is_file($absolutePath)) {
                 @unlink($absolutePath);
-            }
-            if ($legacyPath !== '' && is_file($legacyPath)) {
-                @unlink($legacyPath);
             }
 
             return $this->merchantError(
@@ -760,9 +757,14 @@ class MerchantChannelController
         $accountId = (int)($account['id'] ?? 0);
         $code = strtolower(trim((string)($account['code'] ?? '')));
         $baseAmount = $this->resolveRequestedTestPayAmount($payload);
-        $resolvedAmount = $this->resolveUniquePendingTestPayAmount($baseAmount, $accountId, $code);
+        $resolvedAmount = $code === 'usdt'
+            ? $this->resolveUsdtOrderAmount($account, $baseAmount)
+            : $baseAmount;
+        if (!$this->shouldSkipUniquePendingTestPayAmount($payload)) {
+            $resolvedAmount = $this->resolveUniquePendingTestPayAmount($resolvedAmount, $accountId, $code);
+        }
         $tradeNo = $this->nextTestTradeNo();
-        $outTradeNo = $this->nextTestOutTradeNo();
+        $outTradeNo = $this->resolveRequestedTestOutTradeNo($payload);
         $orderType = strtolower(trim((string)($account['type'] ?? '')));
 
         if ($orderType === '') {
@@ -822,6 +824,18 @@ class MerchantChannelController
                 $payload,
                 new UniversalEpayGatewayService()
             ),
+            'leshua' => $this->buildManagedGatewayTestPayOrder(
+                $merchant,
+                $account,
+                $request,
+                $tradeNo,
+                $outTradeNo,
+                $baseAmount,
+                $resolvedAmount,
+                $orderType,
+                $payload,
+                new LeshuaGatewayService($orderType)
+            ),
             'wxpay_software' => $this->buildStaticQrTestPayOrder(
                 $merchant,
                 $account,
@@ -873,6 +887,7 @@ class MerchantChannelController
             ),
             default => throw new \InvalidArgumentException('当前插件暂不支持测试支付'),
         };
+        $orderPayload['insert']['name'] = $this->resolveRequestedTestPayName($payload);
 
         Db::table(BusinessTable::order())->insert($orderPayload['insert']);
 
@@ -1308,16 +1323,16 @@ class MerchantChannelController
             'qrcode' => $qrcode,
             'h5_qrurl' => $h5QrUrl,
             'api_memo' => 'merchant_channel_test_pay',
-            'out_time' => time() + $this->resolveTestPayTimeoutSeconds((int)($merchant['id'] ?? 0)),
+            'out_time' => time() + $this->resolveTestPayTimeoutSeconds($account, (int)($merchant['id'] ?? 0)),
             'create_time' => date('Y-m-d H:i:s'),
         ];
     }
 
     private function resolveTestPayBaseAmount(): float
     {
-        $amount = SystemConfig::float('demopay_money', 0.01);
+        $amount = SystemConfig::float('demopay_money', 0.10);
         if ($amount <= 0) {
-            $amount = 0.01;
+            $amount = 0.10;
         }
 
         $min = SystemConfig::float('min_orderprice', 0);
@@ -1362,14 +1377,51 @@ class MerchantChannelController
         return (float)number_format($amount, 2, '.', '');
     }
 
+    private function resolveRequestedTestOutTradeNo(array $payload): string
+    {
+        $outTradeNo = trim((string)($payload['_forced_out_trade_no'] ?? ''));
+        if ($outTradeNo === '') {
+            return $this->nextTestOutTradeNo();
+        }
+
+        return function_exists('mb_substr') ? mb_substr($outTradeNo, 0, 64) : substr($outTradeNo, 0, 64);
+    }
+
+    private function resolveRequestedTestPayName(array $payload): string
+    {
+        $subject = trim((string)($payload['_legacy_subject'] ?? ''));
+        if ($subject === '') {
+            return $this->resolveTestPayName();
+        }
+
+        return function_exists('mb_substr') ? mb_substr($subject, 0, 50) : substr($subject, 0, 50);
+    }
+
+    private function shouldSkipUniquePendingTestPayAmount(array $payload): bool
+    {
+        $flag = $payload['_legacy_skip_unique_amount'] ?? false;
+        if (is_bool($flag)) {
+            return $flag;
+        }
+
+        return in_array(strtolower(trim((string)$flag)), ['1', 'true', 'yes', 'on'], true);
+    }
+
     private function resolveTestPayName(): string
     {
         $name = trim((string)SystemConfig::get('demopay_name', ''));
         return $name !== '' ? $name : '通道测试支付';
     }
 
-    private function resolveTestPayTimeoutSeconds(int $merchantId): int
+    private function resolveTestPayTimeoutSeconds(array $account, int $merchantId): int
     {
+        if (strtolower(trim((string)($account['code'] ?? ''))) === 'usdt') {
+            $configuredTimeout = $this->sanitizeUsdtOrderTimeoutText($account['remark'] ?? '');
+            if ($configuredTimeout !== '') {
+                return (int)$configuredTimeout;
+            }
+        }
+
         $timeout = SystemConfig::int('timeout', 180);
         if ($timeout <= 0) {
             $timeout = 180;
@@ -1478,20 +1530,44 @@ class MerchantChannelController
             ->leftJoin(BusinessTable::account('account'), 'orders.account_id', '=', 'account.id')
             ->select(
                 'orders.id',
+                'orders.user_id',
                 'orders.trade_no',
                 'orders.out_trade_no',
                 'orders.money',
                 'orders.truemoney',
                 'orders.status',
+                'orders.api_memo',
+                'orders.notify_url',
+                'orders.return_url',
                 'orders.out_time',
                 'orders.qrcode',
                 'orders.h5_qrurl',
                 'orders.type',
                 'orders.account_id',
-                'account.code as account_code'
+                'account.code as account_code',
+                'account.wxname as account_wallet',
+                'account.qr_url as account_qr_url',
+                'account.cookie as account_cookie'
             )
             ->where('orders.user_id', $merchantId)
-            ->whereIn('orders.api_memo', self::TEST_PAY_ORDER_MEMOS)
+            ->where(function ($query) {
+                $query
+                    ->whereIn('orders.api_memo', self::TEST_PAY_ORDER_MEMOS)
+                    ->orWhere(function ($fallbackQuery) {
+                        $fallbackQuery
+                            ->where('orders.out_trade_no', 'like', self::TEST_PAY_OUT_TRADE_NO_PREFIX . '%')
+                            ->where(function ($notifyQuery) {
+                                $notifyQuery
+                                    ->whereNull('orders.notify_url')
+                                    ->orWhere('orders.notify_url', '');
+                            })
+                            ->where(function ($returnQuery) {
+                                $returnQuery
+                                    ->whereNull('orders.return_url')
+                                    ->orWhere('orders.return_url', '');
+                            });
+                    });
+            })
             ->where('orders.out_trade_no', $outTradeNo)
             ->orderByDesc('orders.id')
             ->first();
@@ -1505,20 +1581,44 @@ class MerchantChannelController
             ->leftJoin(BusinessTable::account('account'), 'orders.account_id', '=', 'account.id')
             ->select(
                 'orders.id',
+                'orders.user_id',
                 'orders.trade_no',
                 'orders.out_trade_no',
                 'orders.money',
                 'orders.truemoney',
                 'orders.status',
+                'orders.api_memo',
+                'orders.notify_url',
+                'orders.return_url',
                 'orders.out_time',
                 'orders.qrcode',
                 'orders.h5_qrurl',
                 'orders.type',
                 'orders.account_id',
-                'account.code as account_code'
+                'account.code as account_code',
+                'account.wxname as account_wallet',
+                'account.qr_url as account_qr_url',
+                'account.cookie as account_cookie'
             )
             ->where('orders.user_id', $merchantId)
-            ->whereIn('orders.api_memo', self::TEST_PAY_ORDER_MEMOS)
+            ->where(function ($query) {
+                $query
+                    ->whereIn('orders.api_memo', self::TEST_PAY_ORDER_MEMOS)
+                    ->orWhere(function ($fallbackQuery) {
+                        $fallbackQuery
+                            ->where('orders.out_trade_no', 'like', self::TEST_PAY_OUT_TRADE_NO_PREFIX . '%')
+                            ->where(function ($notifyQuery) {
+                                $notifyQuery
+                                    ->whereNull('orders.notify_url')
+                                    ->orWhere('orders.notify_url', '');
+                            })
+                            ->where(function ($returnQuery) {
+                                $returnQuery
+                                    ->whereNull('orders.return_url')
+                                    ->orWhere('orders.return_url', '');
+                            });
+                    });
+            })
             ->where('orders.trade_no', $tradeNo)
             ->orderByDesc('orders.id')
             ->first();
@@ -1536,20 +1636,39 @@ class MerchantChannelController
         $rawQrCode = trim((string)($order['qrcode'] ?? ''));
         $qrPayload = $this->buildTestPayQrPayload($rawQrCode, $request);
         $directOpenUrl = trim((string)($order['h5_qrurl'] ?? ''));
+        $isUsdt = strtolower(trim((string)($order['account_code'] ?? $order['type'] ?? ''))) === 'usdt'
+            || strtolower(trim((string)($order['type'] ?? ''))) === 'usdt';
+        $usdtConfig = $isUsdt ? $this->decodeUsdtConfig($order) : [
+            'wallet_address' => '',
+            'memo' => '',
+            'exchange_rate' => '',
+        ];
+        $baseAmount = number_format((float)($order['money'] ?? 0), 2, '.', '');
+        $payAmount = number_format(
+            (float)($isUsdt ? ($order['truemoney'] ?? $order['money'] ?? 0) : ($order['truemoney'] ?? $order['money'] ?? 0)),
+            2,
+            '.',
+            ''
+        );
+        $expiresAtTimestamp = (int)($order['out_time'] ?? 0);
+        $expiresSeconds = $expiresAtTimestamp > 0 ? max(0, $expiresAtTimestamp - time()) : 0;
 
         return [
             'state' => $state,
             'state_label' => $this->testPayStateLabel($state),
-            'state_message' => $this->testPayStateMessage($state),
+            'state_message' => $this->testPayStateMessage($state, $isUsdt),
             'can_poll' => !in_array($state, ['paid', 'timeout'], true),
             'trade_no' => trim((string)($order['trade_no'] ?? '')),
             'out_trade_no' => trim((string)($order['out_trade_no'] ?? '')),
-            'pay_amount' => number_format(
-                (float)($order['truemoney'] ?? $order['money'] ?? 0),
-                2,
-                '.',
-                ''
-            ),
+            'pay_amount' => $payAmount,
+            'pay_amount_unit' => $isUsdt ? 'USDT' : 'CNY',
+            'base_amount' => $baseAmount,
+            'base_amount_unit' => 'CNY',
+            'expires_seconds' => $expiresSeconds,
+            'expires_at' => $expiresAtTimestamp > 0 ? date('Y-m-d H:i:s', $expiresAtTimestamp) : null,
+            'expires_at_timestamp' => $expiresAtTimestamp > 0 ? $expiresAtTimestamp : null,
+            'exchange_rate' => $usdtConfig['exchange_rate'] !== '' ? $usdtConfig['exchange_rate'] : null,
+            'wallet_address' => $usdtConfig['wallet_address'] !== '' ? $usdtConfig['wallet_address'] : null,
             'type' => trim((string)($order['type'] ?? '')),
             'pay_url' => $this->testPayConsoleUrl($request, trim((string)($order['trade_no'] ?? ''))),
             'direct_open_url' => $directOpenUrl !== '' ? $directOpenUrl : null,
@@ -1616,7 +1735,11 @@ class MerchantChannelController
             ];
         }
 
-        if ($this->looksLikeCredentialImageReference($normalized) || preg_match('/^(data:image\/|https?:\/\/.+\.(png|jpe?g|gif|bmp|webp|svg)(\?.*)?$)/i', $normalized) === 1) {
+        if (
+            $this->looksLikeCredentialImageReference($normalized)
+            || preg_match('/^(data:image\/|https?:\/\/.+\.(png|jpe?g|gif|bmp|webp|svg)(\?.*)?$)/i', $normalized) === 1
+            || preg_match('/^https?:\/\/[^\/]+\/sjt\/qr\//i', $normalized) === 1
+        ) {
             return [
                 'display_mode' => 'image',
                 'qrcode_url' => $this->absoluteAssetUrl($normalized, $request),
@@ -1664,8 +1787,19 @@ class MerchantChannelController
         };
     }
 
-    private function testPayStateMessage(string $state): string
+    private function testPayStateMessage(string $state, bool $isUsdt = false): string
     {
+        if ($isUsdt) {
+            return match ($state) {
+                'paid' => '测试订单已到账，链上金额与订单状态已同步。',
+                'reconciling' => '支付时限已到，系统仍在核对链上到账记录，请稍候。',
+                'timeout' => '测试订单已超时，请重新发起新的 USDT 测试订单。',
+                'loading' => '钱包地址二维码正在准备，请稍候刷新。',
+                'missing' => '钱包地址尚未返回，请稍候刷新。',
+                default => '钱包地址已就绪，请按页面金额向该地址转账。',
+            };
+        }
+
         return match ($state) {
             'paid' => '测试订单已支付完成。',
             'reconciling' => '支付时限已到，系统仍在核对到账记录，请稍候。',
@@ -2220,6 +2354,18 @@ class MerchantChannelController
         ];
     }
 
+    private function timestampFromDateTime(string $value): int
+    {
+        $normalized = trim($value);
+        if ($normalized === '') {
+            return 0;
+        }
+
+        $timestamp = strtotime($normalized);
+
+        return $timestamp === false ? 0 : $timestamp;
+    }
+
     /**
      * @param array<string, mixed> $payload
      * @return array{code: string, payment_method_type: string, payment_method_label: string, plugin_name: string}
@@ -2287,11 +2433,10 @@ class MerchantChannelController
             throw new \InvalidArgumentException('插件已启用，但对应通道目录未就绪');
         }
 
-        $identifier = $this->normalizeRequiredText(
-            $payload['identifier'] ?? '',
-            50,
-            (string)($this->createCodeCatalog()[$code]['identifier_label'] ?? '账号标识')
-        );
+        $identifierLabel = (string)($this->createCodeCatalog()[$code]['identifier_label'] ?? '账号标识');
+        $identifier = $code === 'alipay_software' && $this->isAlipaySoftwarePictureMode($payload['qr_type'] ?? '')
+            ? $this->normalizeOptionalText($payload['identifier'] ?? '', 50, $identifierLabel)
+            : $this->normalizeRequiredText($payload['identifier'] ?? '', 50, $identifierLabel);
         $pid = $this->normalizeOptionalText($payload['pid'] ?? '', 50, '商户标识');
         $qrUrl = $this->normalizeOptionalText($payload['qr_url'] ?? '', 12000, '二维码内容');
         $cookie = $this->normalizeOptionalText($payload['cookie'] ?? '', 12000, '凭证内容');
@@ -2388,19 +2533,19 @@ class MerchantChannelController
         $identifierField = $this->identifierFieldForCode($code);
         $identifierLabel = (string)($this->credentialCodeCatalog()[$code]['identifier_label'] ?? '账号标识');
 
+        $identifierValue = $payload['identifier'] ?? $this->identifierValueForCode($record, $code);
+        $identifierQrType = $payload['qr_type'] ?? ($record['qr_type'] ?? '');
         $updates = [
-            $identifierField => $this->normalizeRequiredText(
-                $payload['identifier'] ?? $this->identifierValueForCode($record, $code),
-                50,
-                $identifierLabel
-            ),
+            $identifierField => $code === 'alipay_software' && $this->isAlipaySoftwarePictureMode($identifierQrType)
+                ? $this->normalizeOptionalText($identifierValue, 50, $identifierLabel)
+                : $this->normalizeRequiredText($identifierValue, 50, $identifierLabel),
         ];
 
         if ($code === 'alipay_software') {
             $qrUrl = $this->normalizeOptionalText(
                 $payload['qr_url'] ?? ($record['qr_url'] ?? ''),
                 2500,
-                '二维码图片地址'
+                '二维码内容'
             );
             $updates['qr_type'] = $this->normalizeCreateQrType(
                 $payload['qr_type'] ?? ($record['qr_type'] ?? ''),
@@ -2408,6 +2553,23 @@ class MerchantChannelController
                 $qrUrl
             );
             $updates['qr_url'] = $qrUrl;
+
+            return $updates;
+        }
+
+        if ($code === 'wxpay_software') {
+            $qrUrl = $this->normalizeOptionalText(
+                $payload['qr_url'] ?? ($record['qr_url'] ?? ''),
+                2500,
+                '二维码内容'
+            );
+            $qrType = $this->normalizeWxpaySoftwareQrType(
+                $payload['qr_type'] ?? ($record['qr_type'] ?? ''),
+                $qrUrl
+            );
+            $updates['qr_type'] = $qrType;
+            $updates['qr_url'] = $qrUrl;
+            $updates['cookie'] = '';
 
             return $updates;
         }
@@ -2484,6 +2646,44 @@ class MerchantChannelController
                 'wx_guid' => '',
                 'cloud_id' => '',
                 'qq' => '',
+            ]);
+        }
+
+        if ($code === 'leshua') {
+            return array_merge($updates, [
+                'zfb_pid' => '',
+                'cookie' => $this->normalizeRequiredText(
+                    $payload['cookie'] ?? ($record['cookie'] ?? ''),
+                    12000,
+                    '交易密钥'
+                ),
+                'qr_url' => $this->normalizeOptionalText(
+                    $payload['qr_url'] ?? ($record['qr_url'] ?? ''),
+                    12000,
+                    '异步通知密钥'
+                ),
+                'wx_guid' => '',
+                'cloud_id' => '',
+                'qq' => '',
+                'qr_type' => '',
+            ]);
+        }
+
+        if ($code === 'usdt') {
+            return array_merge($updates, [
+                'zfb_pid' => '',
+                'cookie' => $this->encodeUsdtConfig(
+                    $this->normalizeUsdtExchangeRate(
+                        $payload['extra_value'] ?? ($this->decodeUsdtConfig($record)['exchange_rate'] ?? '')
+                    )
+                ),
+                'remark' => $this->normalizeUsdtOrderTimeout(
+                    $payload['remark'] ?? ($record['remark'] ?? '')
+                ),
+                'wx_guid' => '',
+                'cloud_id' => '',
+                'qq' => '',
+                'qr_type' => '',
             ]);
         }
 
@@ -2672,6 +2872,7 @@ class MerchantChannelController
             ? $this->decodeJiaofeiyiConfig($record)
             : ['store_name' => '', 'remote_api_url' => '', 'proxy_api_url' => ''];
         $managedConfig = $this->loadManagedCredentialConfig($code, (int)($record['id'] ?? 0));
+        $usdtConfig = $code === 'usdt' ? $this->decodeUsdtConfig($record) : ['exchange_rate' => ''];
 
         return [
             'code' => $code,
@@ -2702,7 +2903,9 @@ class MerchantChannelController
                     ? (string)($managedConfig['root_cert'] ?? '')
                     : ($code === 'wxpay_v3'
                         ? trim((string)($record['qq'] ?? ''))
-                        : (string)($jiaofeiyiConfig['remote_api_url'] ?? ''))),
+                        : ($code === 'usdt'
+                            ? (string)($usdtConfig['exchange_rate'] ?? '')
+                            : (string)($jiaofeiyiConfig['remote_api_url'] ?? '')))),
         ];
     }
 
@@ -3278,7 +3481,7 @@ class MerchantChannelController
             'alipay_software' => [
                 'type' => 'alipay',
                 'identifier_field' => 'zfb_pid',
-                'identifier_label' => 'PID',
+                'identifier_label' => '上游标识',
             ],
             'wxpay_software' => [
                 'type' => 'wxpay',
@@ -3319,6 +3522,11 @@ class MerchantChannelController
                 'type' => '',
                 'identifier_field' => 'wxname',
                 'identifier_label' => '商户ID',
+            ],
+            'leshua' => [
+                'type' => '',
+                'identifier_field' => 'wxname',
+                'identifier_label' => '商户号',
             ],
             'jiaofeiyi_alipay' => [
                 'type' => 'alipay',
@@ -3373,6 +3581,10 @@ class MerchantChannelController
     {
         if ($code === 'universal_epay') {
             return ['alipay', 'wxpay', 'qqpay'];
+        }
+
+        if ($code === 'leshua') {
+            return ['alipay', 'wxpay'];
         }
 
         $type = strtolower(trim((string)($this->createCodeCatalog()[$code]['type'] ?? '')));
@@ -3594,6 +3806,112 @@ class MerchantChannelController
             'private_key' => trim((string)($decoded['private_key'] ?? '')),
             'qrcode' => trim((string)($decoded['qrcode'] ?? '')),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $record
+     * @return array{wallet_address: string, memo: string, exchange_rate: string}
+     */
+    private function decodeUsdtConfig(array $record): array
+    {
+        $raw = trim((string)($record['account_cookie'] ?? $record['cookie'] ?? ''));
+        $exchangeRate = '';
+
+        if ($raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $exchangeRate = $this->sanitizeUsdtExchangeRateText(
+                    $decoded['exchange_rate'] ?? ($decoded['rate'] ?? '')
+                );
+            } else {
+                $exchangeRate = $this->sanitizeUsdtExchangeRateText($raw);
+            }
+        }
+
+        return [
+            'wallet_address' => trim((string)($record['account_wallet'] ?? $record['wxname'] ?? '')),
+            'memo' => trim((string)($record['account_qr_url'] ?? $record['qr_url'] ?? '')),
+            'exchange_rate' => $exchangeRate,
+        ];
+    }
+
+    private function encodeUsdtConfig(string $exchangeRate): string
+    {
+        if ($exchangeRate === '') {
+            return '';
+        }
+
+        return json_encode([
+            'exchange_rate' => $exchangeRate,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
+    }
+
+    private function sanitizeUsdtExchangeRateText(mixed $value): string
+    {
+        $raw = trim((string)$value);
+        if ($raw === '' || !preg_match('/^\d+(?:\.\d{1,2})?$/', $raw)) {
+            return '';
+        }
+
+        $rate = (float)$raw;
+        if ($rate <= 0) {
+            return '';
+        }
+
+        return number_format($rate, 2, '.', '');
+    }
+
+    private function normalizeUsdtExchangeRate(mixed $value): string
+    {
+        $normalized = $this->normalizeOptionalDecimal($value, 20, 'USDT 汇率');
+        if ($normalized === '') {
+            return '';
+        }
+
+        if ((float)$normalized <= 0) {
+            throw new \InvalidArgumentException('USDT 汇率必须大于 0');
+        }
+
+        return number_format((float)$normalized, 2, '.', '');
+    }
+
+    private function sanitizeUsdtOrderTimeoutText(mixed $value): string
+    {
+        $raw = trim((string)$value);
+        if ($raw === '' || !preg_match('/^[1-9]\d*$/', $raw)) {
+            return '';
+        }
+
+        return (string)((int)$raw);
+    }
+
+    private function normalizeUsdtOrderTimeout(mixed $value): string
+    {
+        $normalized = $this->sanitizeUsdtOrderTimeoutText($value);
+        if ($normalized === '') {
+            $raw = trim((string)$value);
+            if ($raw !== '') {
+                throw new \InvalidArgumentException('USDT 订单时长必须填写正整数秒');
+            }
+        }
+
+        return $normalized;
+    }
+
+    private function resolveUsdtOrderAmount(array $account, float $baseAmount): float
+    {
+        $config = $this->decodeUsdtConfig($account);
+        $exchangeRate = (float)($config['exchange_rate'] ?? 0);
+        if ($exchangeRate <= 0) {
+            throw new \InvalidArgumentException('USDT 汇率未配置，无法换算测试金额');
+        }
+
+        $converted = round($baseAmount / $exchangeRate, 2);
+        if ($converted <= 0) {
+            throw new \InvalidArgumentException('USDT 换算金额必须大于 0');
+        }
+
+        return (float)number_format($converted, 2, '.', '');
     }
 
     private function encodeJiaofeiyiConfig(string $storeName, string $remoteApiUrl, string $proxyApiUrl = ''): string
@@ -3845,6 +4163,15 @@ class MerchantChannelController
             '0', '2', 'false', 'no', 'off', 'disable', 'disabled' => $normalized === '2' ? 2 : 0,
             default => throw new \InvalidArgumentException('启用状态只能是 0、1 或 2'),
         };
+    }
+
+    private function isAlipaySoftwarePictureMode(mixed $value): bool
+    {
+        if (is_array($value) || is_object($value)) {
+            return false;
+        }
+
+        return strtolower(trim((string)$value)) === 'pic';
     }
 
     private function normalizeCreateQrType(mixed $value, string $code, string $qrUrl): string

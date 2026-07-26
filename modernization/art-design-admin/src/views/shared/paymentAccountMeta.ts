@@ -39,22 +39,22 @@ export const ACCOUNT_CODE_META = {
     createEnabled: true,
     label: '支付宝软件版',
     typeLabel: '支付宝',
-    identifierLabel: 'PID',
-    identifierPlaceholder: '请输入支付宝 PID',
+    identifierLabel: '上游标识',
+    identifierPlaceholder: '请输入上游标识',
     qrTypeOptions: [
-      { label: '代理模式', value: 'agt' },
+      { label: '转账模式', value: 'agt' },
       { label: '图片模式', value: 'pic' }
     ],
     supportsPid: false,
-    pidLabel: 'PID',
+    pidLabel: '上游标识',
     pidPlaceholder: '',
     supportsQrUrl: true,
     supportsCookie: false,
     supportsRemark: false,
     supportsWxGuid: false,
     supportsExtraValue: false,
-    qrUrlLabel: '二维码图片地址',
-    qrUrlPlaceholder: '图片模式下必须上传或填写二维码图片地址',
+    qrUrlLabel: '二维码内容',
+    qrUrlPlaceholder: '可直接粘贴二维码内容，或上传图片自动解析',
     cookieLabel: 'Cookie / 公钥',
     cookiePlaceholder: '',
     remarkLabel: '备注',
@@ -63,8 +63,7 @@ export const ACCOUNT_CODE_META = {
     wxGuidPlaceholder: '',
     extraValueLabel: '扩展值',
     extraValuePlaceholder: '',
-    credentialHelpText:
-      '用于维护路由 PID，可在此切换代理模式或二维码图片模式。'
+    credentialHelpText: '用于维护转账模式的上游标识，或在图片模式下上传二维码图片并自动解析内容。'
   },
   wxpay_software: {
     createEnabled: true,
@@ -135,20 +134,21 @@ export const ACCOUNT_CODE_META = {
     pidPlaceholder: '',
     supportsQrUrl: false,
     supportsCookie: false,
-    supportsRemark: false,
+    supportsRemark: true,
     supportsWxGuid: false,
-    supportsExtraValue: false,
+    supportsExtraValue: true,
     qrUrlLabel: '二维码 / Memo',
     qrUrlPlaceholder: '可填写二维码内容或钱包 Memo',
     cookieLabel: 'Cookie / 公钥',
     cookiePlaceholder: '',
-    remarkLabel: '备注',
-    remarkPlaceholder: '',
+    remarkLabel: '订单时长（秒）',
+    remarkPlaceholder: '留空则使用系统默认超时时间，例如 180',
     wxGuidLabel: '证书序列号',
     wxGuidPlaceholder: '',
-    extraValueLabel: '扩展值',
-    extraValuePlaceholder: '',
-    credentialHelpText: '维护 USDT 收款钱包地址，备注与限额请在独立弹窗中管理。'
+    extraValueLabel: 'USDT 汇率',
+    extraValuePlaceholder: '例如 7.20，表示 1 USDT = 7.20 CNY',
+    credentialHelpText:
+      '维护 USDT 收款钱包地址、汇率和可选订单时长；填写订单时长后测试订单会优先使用该秒数，留空则回退系统默认超时。'
   },
   alipay_bill: {
     createEnabled: true,
@@ -314,6 +314,37 @@ export const ACCOUNT_CODE_META = {
     credentialHelpText:
       '一个插件目录同时支持支付宝、微信、QQ 三种支付方式。先选择支付方式，再填写商户ID、接口地址、商户密钥和接口模式。'
   },
+  leshua: {
+    createEnabled: true,
+    label: '乐刷支付插件',
+    typeLabel: '乐刷',
+    identifierLabel: '商户号',
+    identifierPlaceholder: '请输入乐刷商户号',
+    qrTypeOptions: [],
+    supportsPid: false,
+    pidLabel: '上游标识',
+    pidPlaceholder: '',
+    supportsQrUrl: true,
+    supportsCookie: true,
+    supportsRemark: false,
+    supportsWxGuid: false,
+    supportsCloudId: false,
+    supportsExtraValue: false,
+    qrUrlLabel: '异步通知密钥',
+    qrUrlPlaceholder: '选填；填写后按通知密钥验签，留空则回调时走主动查单确认',
+    cookieLabel: '交易密钥',
+    cookiePlaceholder: '请输入乐刷交易密钥 appkey',
+    remarkLabel: '备注',
+    remarkPlaceholder: '',
+    wxGuidLabel: '证书序列号',
+    wxGuidPlaceholder: '',
+    cloudIdLabel: '云端标识',
+    cloudIdPlaceholder: '',
+    extraValueLabel: '扩展值',
+    extraValuePlaceholder: '',
+    credentialHelpText:
+      '乐刷支付宝与微信共用同一套账户字段：商户号填在账户标识，交易密钥填在 Cookie，异步通知密钥填在二维码内容字段；通知密钥可留空，留空时回调会改为主动查单确认。'
+  },
   jiaofeiyi_alipay: {
     createEnabled: true,
     label: '缴费易支付宝',
@@ -342,8 +373,7 @@ export const ACCOUNT_CODE_META = {
     cloudIdPlaceholder: '填写代理IP提取接口',
     extraValueLabel: '远程API',
     extraValuePlaceholder: '填写完整远程API地址',
-    credentialHelpText:
-      '维护缴费易商户ID、商户号、店铺名、收款备注、指定IP、远程API与代理IP API。'
+    credentialHelpText: '维护缴费易商户ID、商户号、店铺名、收款备注、指定IP、远程API与代理IP API。'
   },
   jiaofeiyi_wxpay: {
     createEnabled: true,
@@ -381,7 +411,6 @@ export const ACCOUNT_CODE_META = {
       '维护缴费易微信通道的商户ID、商户号、微信支付模式、店铺名、收款备注、指定IP、远程API与代理IP API。'
   }
 } as const
-
 ;(ACCOUNT_CODE_META as Record<string, PaymentAccountCodeMeta>).wxpay_v3 = {
   createEnabled: true,
   label: '微信官方版V3插件',
@@ -464,6 +493,7 @@ export const ACCOUNT_METHOD_TYPES_MAP: Record<
   wxpay_v3: ['wxpay'],
   alipay_mck: ['alipay'],
   universal_epay: ['alipay', 'wxpay', 'qqpay'],
+  leshua: ['alipay', 'wxpay'],
   jiaofeiyi_alipay: ['alipay'],
   jiaofeiyi_wxpay: ['wxpay']
 }

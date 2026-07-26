@@ -3,5 +3,5 @@
  */
 
 export * from './storage'
-export * from './storage-config'
-export * from './storage-key-manager'
+export * from './storageConfig'
+export * from './storageKeyManager'

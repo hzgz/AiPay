@@ -258,8 +258,8 @@
   import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
-  import ArtWangEditor from '@/components/core/forms/art-wang-editor/index.vue'
+  import ArtButtonTable from '@/components/core/forms/artButtonTable/index.vue'
+  import ArtWangEditor from '@/components/core/forms/artWangEditor/index.vue'
   import { displayAdminFixtureText } from '@/utils/adminFixtureText'
   import {
     fetchAuditNewsBatchDelete,
@@ -1095,6 +1095,15 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    --news-color-dot-border: rgb(148 163 184 / 0.35);
+    --news-content-box-border: var(--el-border-color-lighter);
+    --news-content-box-bg: rgb(248 250 252 / 0.88);
+  }
+
+  :global(html.dark .news-page ){
+    --news-color-dot-border: rgb(71 85 105 / 0.6);
+    --news-content-box-border: rgb(71 85 105 / 0.42);
+    --news-content-box-bg: rgb(15 23 42 / 0.78);
   }
 
   .news-cell {
@@ -1104,14 +1113,14 @@
   }
 
   .cell-title {
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 14px;
     word-break: break-all;
   }
 
   .cell-sub {
     margin: 0;
-    color: #64748b;
+    color: var(--el-text-color-secondary);
     font-size: 12px;
     line-height: 1.6;
     word-break: break-all;
@@ -1127,7 +1136,7 @@
     width: 10px;
     height: 10px;
     border-radius: 999px;
-    border: 1px solid rgb(148 163 184 / 0.35);
+    border: 1px solid var(--news-color-dot-border);
     background: #cbd5e1;
   }
 
@@ -1189,7 +1198,7 @@
 
   .drawer-section h4 {
     margin: 0 0 12px;
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 15px;
   }
 
@@ -1198,15 +1207,15 @@
     max-height: 420px;
     padding: 16px;
     overflow: auto;
-    color: #334155;
+    color: var(--el-text-color-regular);
     font-family: inherit;
     font-size: 14px;
     line-height: 1.8;
     white-space: pre-wrap;
     word-break: break-word;
-    border: 1px solid var(--el-border-color-lighter);
+    border: 1px solid var(--news-content-box-border);
     border-radius: 14px;
-    background: rgb(248 250 252 / 0.88);
+    background: var(--news-content-box-bg);
   }
 
   .source-box {

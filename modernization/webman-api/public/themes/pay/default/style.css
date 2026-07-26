@@ -1,0 +1,7 @@
+ThemeName: 标准支付模板
+Description: 默认收银台布局，适合绝大多数扫码与 H5 支付场景。
+Version: 1.0.0
+
+:root {
+  --theme-pay-default: 1;
+}

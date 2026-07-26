@@ -254,7 +254,7 @@
   import { ElMessage, ElMessageBox, ElTag, type FormInstance, type FormRules } from 'element-plus'
   import { useAuth } from '@/hooks'
   import { useTable } from '@/hooks/core/useTable'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtButtonTable from '@/components/core/forms/artButtonTable/index.vue'
   import {
     fetchCreateAdminRole,
     fetchDeleteAdminRole,
@@ -887,6 +887,23 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    --detail-hero-bg: linear-gradient(135deg, rgb(248 250 252 / 0.96), rgb(241 245 249 / 0.92));
+    --detail-card-border: var(--el-border-color-lighter);
+    --detail-card-bg: rgb(248 250 252 / 0.82);
+    --detail-scroll-bg: rgb(248 250 252 / 0.55);
+    --detail-title-color: #0f172a;
+    --detail-text-color: #475569;
+    --detail-muted-color: #64748b;
+  }
+
+  :global(html.dark .role-page ){
+    --detail-hero-bg: linear-gradient(135deg, rgb(30 41 59 / 0.96), rgb(15 23 42 / 0.94));
+    --detail-card-border: rgb(71 85 105 / 0.42);
+    --detail-card-bg: rgb(15 23 42 / 0.84);
+    --detail-scroll-bg: rgb(15 23 42 / 0.72);
+    --detail-title-color: #e2e8f0;
+    --detail-text-color: #cbd5e1;
+    --detail-muted-color: #94a3b8;
   }
 
   .role-cell {
@@ -896,14 +913,14 @@
   }
 
   .cell-title {
-    color: #0f172a;
+    color: var(--detail-title-color);
     font-size: 14px;
     word-break: break-all;
   }
 
   .cell-sub {
     margin: 0;
-    color: #64748b;
+    color: var(--detail-muted-color);
     font-size: 12px;
     line-height: 1.6;
     word-break: break-all;
@@ -919,9 +936,9 @@
     gap: 16px;
     margin-bottom: 24px;
     padding: 20px;
-    border: 1px solid var(--el-border-color-lighter);
+    border: 1px solid var(--detail-card-border);
     border-radius: 18px;
-    background: linear-gradient(135deg, rgb(248 250 252 / 0.96), rgb(241 245 249 / 0.92));
+    background: var(--detail-hero-bg);
   }
 
   .detail-hero-copy {
@@ -932,14 +949,14 @@
 
   .detail-hero-copy h3 {
     margin: 0;
-    color: #0f172a;
+    color: var(--detail-title-color);
     font-size: 20px;
   }
 
   .detail-hero-copy p,
   .detail-hero-copy span {
     margin: 0;
-    color: #475569;
+    color: var(--detail-text-color);
     line-height: 1.7;
   }
 
@@ -957,7 +974,7 @@
 
   .drawer-section h4 {
     margin: 0 0 12px;
-    color: #0f172a;
+    color: var(--detail-title-color);
     font-size: 15px;
   }
 
@@ -972,18 +989,18 @@
     flex-direction: column;
     gap: 6px;
     padding: 14px 16px;
-    border: 1px solid var(--el-border-color-lighter);
+    border: 1px solid var(--detail-card-border);
     border-radius: 14px;
-    background: rgb(248 250 252 / 0.82);
+    background: var(--detail-card-bg);
   }
 
   .drawer-item span {
-    color: #64748b;
+    color: var(--detail-muted-color);
     font-size: 12px;
   }
 
   .drawer-item strong {
-    color: #0f172a;
+    color: var(--detail-title-color);
     word-break: break-all;
   }
 
@@ -991,7 +1008,7 @@
   .detail-note,
   .dialog-hint {
     margin: 0;
-    color: #64748b;
+    color: var(--detail-muted-color);
     font-size: 13px;
     line-height: 1.7;
   }
@@ -1013,10 +1030,10 @@
   }
 
   .permission-scroll {
-    border: 1px solid var(--el-border-color-lighter);
+    border: 1px solid var(--detail-card-border);
     border-radius: 14px;
     padding: 12px;
-    background: rgb(248 250 252 / 0.55);
+    background: var(--detail-scroll-bg);
   }
 
   .permission-scroll :deep(.el-tree-node__content) {
@@ -1054,7 +1071,7 @@
   }
 
   .permission-meta strong {
-    color: #0f172a;
+    color: var(--detail-title-color);
     font-size: 13px;
     font-weight: 600;
     line-height: 1.5;
@@ -1063,7 +1080,7 @@
 
   .permission-meta p {
     margin: 0;
-    color: #64748b;
+    color: var(--detail-muted-color);
     font-size: 12px;
     line-height: 1.5;
     word-break: break-all;

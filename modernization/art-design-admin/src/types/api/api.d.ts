@@ -1,27 +1,27 @@
-﻿/**
- * API 鎺ュ彛绫诲瀷瀹氫箟妯″潡
+/**
+ * API 接口类型定义模块
  *
- * 鎻愪緵鎵€鏈夊悗绔帴鍙ｇ殑绫诲瀷瀹氫箟
+ * 提供所有后端接口的类型定义
  *
- * ## 涓昏鍔熻兘
+ * ## 主要功能
  *
- * - 閫氱敤绫诲瀷锛堝垎椤靛弬鏁般€佸搷搴旂粨鏋勭瓑锛?
- * - 璁よ瘉绫诲瀷锛堢櫥褰曘€佺敤鎴蜂俊鎭瓑锛?
- * - 绯荤粺绠＄悊绫诲瀷锛堢敤鎴枫€佽鑹茬瓑锛?
- * - 鍏ㄥ眬鍛藉悕绌洪棿澹版槑
+ * - 通用类型（分页参数、响应结构等）
+ * - 认证类型（登录、用户信息等）
+ * - 系统管理类型（用户、角色等）
+ * - 全局命名空间声明
  *
- * ## 浣跨敤鍦烘櫙
+ * ## 使用场景
  *
- * - API 璇锋眰鍙傛暟绫诲瀷绾︽潫
- * - API 鍝嶅簲鏁版嵁绫诲瀷瀹氫箟
- * - 鎺ュ彛鏂囨。绫诲瀷鍚屾
+ * - API 请求参数类型约束
+ * - API 响应数据类型定义
+ * - 接口文档类型同步
  *
- * ## 娉ㄦ剰浜嬮」
+ * ## 注意事项
  *
- * - 鍦?.vue 鏂囦欢浣跨敤闇€瑕佸湪 eslint.config.mjs 涓厤缃?globals: { Api: 'readonly' }
- * - 浣跨敤鍏ㄥ眬鍛藉悕绌洪棿锛屾棤闇€瀵煎叆鍗冲彲浣跨敤
+ * - 在 `.vue` 文件中使用时，需要在 `eslint.config.mjs` 中配置 `globals: { Api: 'readonly' }`
+ * - 使用全局命名空间，无需导入即可使用
  *
- * ## 浣跨敤鏂瑰紡
+ * ## 使用方式
  *
  * ```typescript
  * const params: Api.Auth.LoginParams = { userName: 'admin', password: '123456' }
@@ -33,22 +33,22 @@
  */
 
 declare namespace Api {
-  /** 閫氱敤绫诲瀷 */
+  /** 通用类型 */
   namespace Common {
-    /** 鍒嗛〉鍙傛暟 */
+    /** 分页参数 */
     interface PaginationParams {
-      /** 褰撳墠椤电爜 */
+      /** 当前页码 */
       current: number
-      /** 姣忛〉鏉℃暟 */
+      /** 每页条数 */
       size: number
-      /** 鎬绘潯鏁?*/
+      /** 总条数 */
       total: number
     }
 
-    /** 閫氱敤鎼滅储鍙傛暟 */
+    /** 通用搜索参数 */
     type CommonSearchParams = Pick<PaginationParams, 'current' | 'size'>
 
-    /** 鍒嗛〉鍝嶅簲鍩虹缁撴瀯 */
+    /** 分页响应基础结构 */
     interface PaginatedResponse<T = any> {
       records: T[]
       current: number
@@ -56,25 +56,25 @@ declare namespace Api {
       total: number
     }
 
-    /** 鍚敤鐘舵€?*/
+    /** 启用状态 */
     type EnableStatus = '1' | '2'
   }
 
-  /** 璁よ瘉绫诲瀷 */
+  /** 认证类型 */
   namespace Auth {
-    /** 鐧诲綍鍙傛暟 */
+    /** 登录参数 */
     interface LoginParams {
       userName: string
       password: string
     }
 
-    /** 鐧诲綍鍝嶅簲 */
+    /** 登录响应 */
     interface LoginResponse {
       token: string
       refreshToken: string
     }
 
-    /** 鐢ㄦ埛淇℃伅 */
+    /** 用户信息 */
     interface UserInfo {
       buttons: string[]
       roles: string[]
@@ -85,12 +85,13 @@ declare namespace Api {
     }
   }
 
-  /** 绯荤粺绠＄悊绫诲瀷 */
+  /** 系统管理类型 */
   namespace SystemManage {
-    /** 鐢ㄦ埛鍒楄〃 */
+    /** 用户列表 */
     type UserList = Api.Common.PaginatedResponse<UserListItem>
 
-    /** 鐢ㄦ埛鍒楄〃椤?*/
+    /** 用户列表项 */
+
     interface UserListItem {
       id: number
       avatar: string
@@ -107,16 +108,19 @@ declare namespace Api {
       updateTime: string
     }
 
-    /** 鐢ㄦ埛鎼滅储鍙傛暟 */
+    /** 用户搜索参数 */
+
     type UserSearchParams = Partial<
       Pick<UserListItem, 'id' | 'userName' | 'userGender' | 'userPhone' | 'userEmail' | 'status'> &
         Api.Common.CommonSearchParams
     >
 
-    /** 瑙掕壊鍒楄〃 */
+    /** 角色列表 */
+
     type RoleList = Api.Common.PaginatedResponse<RoleListItem>
 
-    /** 瑙掕壊鍒楄〃椤?*/
+    /** 角色列表项 */
+
     interface RoleListItem {
       roleId: number
       roleName: string
@@ -126,7 +130,8 @@ declare namespace Api {
       createTime: string
     }
 
-    /** 瑙掕壊鎼滅储鍙傛暟 */
+    /** 角色搜索参数 */
+
     type RoleSearchParams = Partial<
       Pick<RoleListItem, 'roleId' | 'roleName' | 'roleCode' | 'description' | 'enabled'> &
         Api.Common.CommonSearchParams & {
@@ -187,15 +192,6 @@ declare namespace Api {
       windows_runtime_directory: string
     }
 
-    interface ProcessMonitorState {
-      running: boolean
-      paused: boolean
-      lock_file: string
-      paused_at: string | null
-      process_count: number
-      workers: ProcessWorkerRecord[]
-    }
-
     interface ProcessSummary {
       core_total: number
       core_running_total: number
@@ -205,8 +201,6 @@ declare namespace Api {
       payment_plugin_total: number
       payment_plugin_manifest_process_total: number
       supervisor_total: number
-      monitor_running: boolean
-      monitor_paused: boolean
     }
 
     interface ProcessDuplicateCleanupPreview {
@@ -221,9 +215,7 @@ declare namespace Api {
       remove_supervisor_pids: number[]
       remove_worker_pids: number[]
       current_webman_worker_total: number
-      current_monitor_worker_total: number
       expected_webman_worker_total: number
-      expected_monitor_worker_total: number
       warnings: string[]
     }
 
@@ -231,7 +223,6 @@ declare namespace Api {
       generated_at: string
       summary: ProcessSummary
       environment: ProcessEnvironment
-      monitor: ProcessMonitorState
       duplicate_cleanup: ProcessDuplicateCleanupPreview
       supervisors: {
         count: number
@@ -5080,181 +5071,6 @@ declare namespace Api {
     }
   }
 
-  namespace PluginDownloads {
-    type PluginDownloadList = Api.Common.PaginatedResponse<PluginDownloadListItem> & {
-      summary: PluginDownloadSummary
-    }
-
-    interface PluginDownloadListItem {
-      id: number
-      name: string
-      name_label: string
-      downurl: string
-      downurl_link: string | null
-      is_external: boolean
-      has_download_url: boolean
-      introduce: string | null
-      introduce_text: string | null
-      introduce_preview: string
-      has_introduce: boolean
-      status: number
-      status_text?: string
-      status_label: string
-      status_type: string
-      create_time: string | null
-      update_time: string | null
-      delete_time: string | null
-      is_deleted: boolean
-    }
-
-    interface PluginDownloadSummary {
-      visible_count: number
-      hidden_count: number
-      download_ready_count: number
-      introduced_count: number
-      deleted_count: number
-    }
-
-    interface PluginDownloadDetailResponse {
-      item: PluginDownloadListItem
-    }
-
-    interface PluginDownloadWritePayload {
-      name?: string
-      downurl?: string
-      introduce?: string
-      status?: number | string
-    }
-
-    interface PluginDownloadCreateResponse {
-      item: PluginDownloadListItem
-      created_plugin_id: number
-      created_plugin_label: string
-    }
-
-    interface PluginDownloadUpdateResponse {
-      item: PluginDownloadListItem
-      updated_plugin_id: number
-      updated_plugin_label: string
-    }
-
-    interface PluginDownloadStatusPayload {
-      status: number | string | boolean
-    }
-
-    interface PluginDownloadStatusResponse {
-      item: PluginDownloadListItem
-      updated_plugin_id: number
-      updated_plugin_label: string
-      status: number
-      status_text?: string
-      status_label: string
-    }
-
-    interface PluginDownloadDeleteAudit {
-      plugin_id: number
-      plugin_label: string
-      downurl: string
-      status: number
-      can_delete: boolean
-      confirmation_phrase: string
-      blocking_reasons: string[]
-      summary: {
-        delete_row_count: number
-        blocked_count: number
-      }
-      warnings: string[]
-    }
-
-    interface PluginDownloadDeleteAuditResponse {
-      item: PluginDownloadListItem
-      audit: PluginDownloadDeleteAudit
-    }
-
-    interface PluginDownloadDeletePayload {
-      confirmation_phrase: string
-    }
-
-    interface PluginDownloadDeleteResponse {
-      deleted_plugin_id: number
-      deleted_plugin_label: string
-      audit: PluginDownloadDeleteAudit
-    }
-
-    interface PluginDownloadBatchDeleteAuditItem {
-      plugin_id: number
-      plugin_label: string
-      downurl: string
-      exists: boolean
-      can_delete: boolean
-      blocking_reasons: string[]
-      summary: {
-        delete_row_count: number
-        blocked_count: number
-      }
-      warnings: string[]
-    }
-
-    interface PluginDownloadBatchDeleteAudit {
-      requested_plugin_ids: number[]
-      deletable_plugin_ids: number[]
-      blocked_plugin_ids: number[]
-      missing_plugin_ids: number[]
-      confirmation_phrase: string
-      can_delete_all: boolean
-      items: PluginDownloadBatchDeleteAuditItem[]
-      summary: {
-        requested_count: number
-        existing_count: number
-        deletable_count: number
-        blocked_count: number
-        missing_count: number
-        delete_row_count: number
-      }
-      warnings: string[]
-    }
-
-    interface PluginDownloadBatchDeleteAuditPayload {
-      plugin_ids: number[]
-    }
-
-    interface PluginDownloadBatchDeletePayload extends PluginDownloadBatchDeleteAuditPayload {
-      confirmation_phrase: string
-    }
-
-    interface PluginDownloadBatchDeleteAuditResponse {
-      audit: PluginDownloadBatchDeleteAudit
-    }
-
-    interface PluginDownloadBatchDeleteResponse {
-      deleted_plugin_ids: number[]
-      deleted_count: number
-      audit: PluginDownloadBatchDeleteAudit
-    }
-
-    interface PluginDownloadRestoreResponse {
-      item: PluginDownloadListItem
-      restored_plugin_id: number
-      restored_plugin_label: string
-    }
-
-    interface PluginDownloadBatchRestorePayload {
-      plugin_ids: number[]
-    }
-
-    interface PluginDownloadBatchRestoreResponse {
-      restored_plugin_ids: number[]
-      restored_count: number
-      already_active_plugin_ids: number[]
-      missing_plugin_ids: number[]
-    }
-
-    interface PluginDownloadSearchParams extends Partial<Api.Common.CommonSearchParams> {
-      keyword?: string
-      status?: number | string
-    }
-  }
-
   namespace Themes {
     type ThemeList = Api.Common.PaginatedResponse<ThemeListItem> & {
       summary: ThemeSummary
@@ -5288,8 +5104,6 @@ declare namespace Api {
       effective_value: string | null
       config_missing: boolean
       config_state_label: string
-      legacy_controller: string
-      legacy_path: string
       activate_supported: boolean
       delete_supported: boolean
       readonly_note: string
@@ -5312,7 +5126,6 @@ declare namespace Api {
       count: number
       config_key: string | null
       default_value: string | null
-      legacy_controller: string
       activation_supported: boolean
     }
 
@@ -5548,6 +5361,7 @@ declare namespace Api {
       after: ServerCacheTarget
       removed_file_count: number
       removed_directory_count: number
+      removed_key_count: number
       released_size_bytes: number
       released_size_label: string
       errors: string[]
@@ -5558,6 +5372,7 @@ declare namespace Api {
       cleared_target_count: number
       removed_file_count: number
       removed_directory_count: number
+      removed_key_count: number
       released_size_bytes: number
       released_size_label: string
       results: ServerCacheCleanupResult[]
@@ -6077,4 +5892,3 @@ declare namespace Api {
     }
   }
 }
-

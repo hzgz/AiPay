@@ -78,7 +78,7 @@ sudo bash deploy/linux/install-oneclick.sh
 ```bash
 cd /var/www/aipay/backend
 sudo bash deploy/linux/install-oneclick.sh \
-  --domain=p.973700.xyz \
+  --domain=pay.example.com \
   --backend-port=8787 \
   --db-name=aipay \
   --db-user=aipay \
@@ -93,24 +93,43 @@ sudo bash deploy/linux/install-oneclick.sh \
 ## 3. aaPanel 部署
 
 ```bash
-cd /www/wwwroot/aipay/backend
-sudo bash deploy/linux/install-aapanel.sh
+cd /www/wwwroot/aipay-release/backend
+sudo bash deploy/linux/install-aapanel.sh --skip-nginx-apply
+```
+
+aaPanel 操作顺序：
+
+1. 在 aaPanel 里 `Add site -> Static`
+2. 保持 aaPanel 默认生成的站点 `Config`
+3. 运行安装脚本生成 rewrite 模板
+4. 把 rewrite 粘贴到 `网站 -> URL Rewrite`
+5. 在 `SSL` 页签里申请证书并启用 `443`
+6. 详细步骤见 `modernization/webman-api/docs/aapanel-install.md`
+
+目录示例：
+
+```text
+/www/wwwroot/
+  pay.example.com/
+  aipay-release/
+    backend/
+    console/
 ```
 
 非交互示例：
 
 ```bash
 sudo bash deploy/linux/install-aapanel.sh \
-  --domain=p.973700.xyz \
-  --public-root=/www/wwwroot/p.973700.xyz \
-  --nginx-conf=/www/server/panel/vhost/nginx/p.973700.xyz.conf \
+  --domain=pay.example.com \
+  --public-root=/www/wwwroot/pay.example.com \
+  --nginx-conf=/www/server/panel/vhost/nginx/pay.example.com.conf \
+  --rewrite-conf=/www/server/panel/vhost/rewrite/pay.example.com.conf \
   --db-name=aipay \
   --db-user=aipay \
   --db-password='ReplaceMe123!' \
   --admin-user=adminroot \
   --admin-password='ReplaceMe123!' \
-  --install-deps \
-  --certbot-no-email \
+  --skip-nginx-apply \
   --non-interactive
 ```
 
@@ -126,16 +145,22 @@ sudo bash deploy/linux/install-aapanel.sh \
 - `/mapi.php` -> `http://127.0.0.1:8787/mapi.php`
 - `/Pay/*` -> `http://127.0.0.1:8787/Pay/*`
 
-如需自动申请 HTTPS，可传：
+aaPanel 场景注意：
+
+- HTTPS 由 aaPanel 的 `SSL` 页签负责，rewrite 不能代替 `443`
+- 如果模板里开启强制 HTTPS，并且你前面还挂了 Cloudflare，SSL 模式要用 `Full` 或 `Full (strict)`
+- 不建议在 aaPanel 自带 Nginx 场景里首轮直接走 `certbot --nginx`
+
+非 aaPanel 的通用 Linux Nginx 如需自动申请 HTTPS，可传：
 
 - `--certbot-email=you@example.com`
 - 或 `--certbot-no-email`
 
-手工申请示例：
+通用 Linux Nginx 手工申请示例：
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d p.973700.xyz
+sudo certbot --nginx -d pay.example.com
 ```
 
 ## 5. 纯净发布包
@@ -162,9 +187,9 @@ Linux：
 cd /var/www/aipay/backend
 bash deploy/linux/verify-deployment.sh \
   --backend-url=http://127.0.0.1:8787 \
-  --console-url=https://p.973700.xyz \
-  --merchant-url=https://p.973700.xyz \
-  --public-url=https://p.973700.xyz \
+  --console-url=https://pay.example.com \
+  --merchant-url=https://pay.example.com \
+  --public-url=https://pay.example.com \
   --admin-user=adminroot \
   --admin-password='your-password'
 ```

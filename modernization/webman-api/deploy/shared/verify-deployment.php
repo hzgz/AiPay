@@ -318,6 +318,10 @@ function checkPaymentPlugins(string $projectRoot, array &$passes, array &$warnin
             }
 
             $name = basename($path);
+            if ($name === 'shared') {
+                return false;
+            }
+
             return $name !== '' && $name[0] !== '_' && $name[0] !== '.';
         }
     ));
@@ -401,7 +405,6 @@ function checkDatabase(array $env, array &$passes, array &$warnings, array &$fai
         businessTable('payment'),
         businessTable('account'),
         businessTable('order'),
-        businessTable('plug'),
     ];
 
     $missingTables = [];
@@ -433,7 +436,6 @@ function checkDatabase(array $env, array &$passes, array &$warnings, array &$fai
         businessColumn('navs', 'delete_time'),
         businessColumn('news', 'delete_time'),
         businessColumn('vip', 'delete_time'),
-        businessColumn('plug', 'delete_time'),
     ];
 
     $missingColumns = [];
@@ -590,6 +592,38 @@ function checkHttpTargets(array $env, array $options, array &$passes, array &$wa
             }
 
             $passes[] = sprintf('Backend health endpoint responded with HTTP %d', $result['status']);
+
+            $data = $json['data'] ?? null;
+            if (is_array($data)) {
+                if (array_key_exists('database', $data) && $data['database'] !== 'ok') {
+                    $failures[] = 'Backend health payload reported a database status other than ok';
+                    continue;
+                }
+
+                if (array_key_exists('redis', $data) && $data['redis'] !== true) {
+                    $failures[] = 'Backend health payload reported Redis is unavailable';
+                    continue;
+                }
+
+                if (array_key_exists('session_driver', $data)) {
+                    $sessionDriver = strtolower(trim((string)$data['session_driver']));
+                    if (!in_array($sessionDriver, ['redis', 'redis_cluster'], true)) {
+                        $failures[] = sprintf(
+                            'Backend health payload reported an unexpected session driver: %s',
+                            $sessionDriver === '' ? '(empty)' : $sessionDriver
+                        );
+                        continue;
+                    }
+
+                    $passes[] = sprintf('Backend health payload confirmed session driver: %s', $sessionDriver);
+                }
+
+                if (array_key_exists('session_redis', $data) && $data['session_redis'] !== true) {
+                    $failures[] = 'Backend health payload reported session Redis is unavailable';
+                    continue;
+                }
+            }
+
             continue;
         }
 

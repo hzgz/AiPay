@@ -311,9 +311,7 @@
               <div v-else class="merchant-wxpusher-panel__placeholder">
                 <Icon icon="ri:qr-code-line" />
                 <p>
-                  {{
-                    wxpusherQrEnabled ? '点击下方按钮生成二维码。' : '当前未开启扫码绑定能力。'
-                  }}
+                  {{ wxpusherQrEnabled ? '点击下方按钮生成二维码。' : '当前未开启扫码绑定能力。' }}
                 </p>
               </div>
 
@@ -748,7 +746,9 @@
         emailCaptcha.value = emailDebugCode.value
       }
       ElMessage.success(
-        emailDebugCode.value ? `验证码已发送，当前验证码 ${emailDebugCode.value}` : '邮箱验证码已发送'
+        emailDebugCode.value
+          ? `验证码已发送，当前验证码 ${emailDebugCode.value}`
+          : '邮箱验证码已发送'
       )
     } catch (error) {
       ElMessage.error(resolveMerchantError(error, '邮箱验证码发送失败'))
@@ -805,7 +805,9 @@
         mobileCaptcha.value = mobileDebugCode.value
       }
       ElMessage.success(
-        mobileDebugCode.value ? `验证码已发送，当前验证码 ${mobileDebugCode.value}` : '手机验证码已发送'
+        mobileDebugCode.value
+          ? `验证码已发送，当前验证码 ${mobileDebugCode.value}`
+          : '手机验证码已发送'
       )
     } catch (error) {
       ElMessage.error(resolveMerchantError(error, '手机验证码发送失败'))
@@ -1104,6 +1106,24 @@
   .merchant-wxpusher-panel__tip {
     margin: 0;
     line-height: 1.7;
+  }
+
+  :global(html.dark .merchant-wxpusher-panel__loading),
+  :global(html.dark .merchant-wxpusher-panel__qr),
+  :global(html.dark .merchant-wxpusher-panel__placeholder ){
+    background:
+      radial-gradient(circle at top, rgb(15 23 42 / 96%), rgb(30 41 59 / 88%)),
+      linear-gradient(135deg, rgb(30 41 59 / 88%), rgb(15 23 42 / 84%));
+    border-color: rgb(71 85 105 / 34%);
+  }
+
+  :global(html.dark .merchant-wxpusher-panel__qr img ){
+    background: rgb(15 23 42 / 92%);
+    box-shadow: 0 18px 30px rgb(2 6 23 / 32%);
+  }
+
+  :global(html.dark .merchant-wxpusher-panel__placeholder .iconify ){
+    color: #67e8f9;
   }
 
   @media (width <= 900px) {

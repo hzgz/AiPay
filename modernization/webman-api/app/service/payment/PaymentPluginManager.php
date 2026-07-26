@@ -7,6 +7,7 @@ namespace app\service\payment;
 use app\support\BusinessTable;
 use app\support\CorePaymentMethodCatalog;
 use app\support\DatabaseColumnInspector;
+use app\support\Environment;
 use DomainException;
 use InvalidArgumentException;
 use Plugins\Payments\Shared\Contracts\PaymentPluginCleanupHookInterface;
@@ -24,9 +25,22 @@ class PaymentPluginManager
     private const SNAPSHOT_ROOT = 'payment-plugin-snapshots';
     private const REGISTRY_RESIDUE_LEDGER_FILE = 'registry-residue-ledger.json';
     private const CHANNEL_CREATE_TYPE_PLUGIN = 2;
+    private static array $allCache = [];
+    private static array $detailCache = [];
+    private static array $registryCache = [];
+    private static array $manifestListCache = [];
+    private static array $manifestCache = [];
 
     public function all(): array
     {
+        $cacheVersion = $this->pluginDiscoveryVersion() . '|' . $this->registryCacheVersion();
+        if (
+            (self::$allCache['version'] ?? null) === $cacheVersion
+            && (int)(self::$allCache['expires_at'] ?? 0) > time()
+        ) {
+            return self::$allCache['value'];
+        }
+
         $registry = $this->loadRegistry();
         $plugins = [];
 
@@ -61,17 +75,42 @@ class PaymentPluginManager
 
         usort($plugins, static fn (array $left, array $right): int => strcmp($left['code'], $right['code']));
 
+        self::$allCache = [
+            'version' => $cacheVersion,
+            'expires_at' => time() + $this->cacheTtl(),
+            'value' => $plugins,
+        ];
+
         return $plugins;
     }
 
     public function detail(string $code): array
     {
+        $normalizedCode = $this->normalizeCode($code);
+        $manifestVersion = $this->manifestCacheVersion($normalizedCode);
+        $cacheVersion = $manifestVersion . '|' . $this->registryCacheVersion();
+        if (
+            $manifestVersion !== 'missing'
+            && isset(self::$detailCache[$normalizedCode])
+            && (self::$detailCache[$normalizedCode]['version'] ?? null) === $cacheVersion
+            && (int)(self::$detailCache[$normalizedCode]['expires_at'] ?? 0) > time()
+        ) {
+            return self::$detailCache[$normalizedCode]['value'];
+        }
+
         $manifest = $this->loadManifest($code);
         $registry = $this->loadRegistry();
         $snapshot = $this->pluginSnapshot($manifest, $registry);
         $this->persistRegistrySnapshot($manifest, $snapshot, $registry);
 
-        return $this->detailPayload($manifest, $snapshot);
+        $payload = $this->detailPayload($manifest, $snapshot);
+        self::$detailCache[$normalizedCode] = [
+            'version' => $cacheVersion,
+            'expires_at' => time() + $this->cacheTtl(),
+            'value' => $payload,
+        ];
+
+        return $payload;
     }
 
     public function history(string $code): array
@@ -1025,12 +1064,21 @@ class PaymentPluginManager
 
     private function discoverManifests(): array
     {
+        $cacheVersion = $this->pluginDiscoveryVersion();
+        if (
+            (self::$manifestListCache['version'] ?? null) === $cacheVersion
+            && (int)(self::$manifestListCache['expires_at'] ?? 0) > time()
+        ) {
+            return self::$manifestListCache['value'];
+        }
+
         $pluginRoot = $this->pluginRootPath();
         if (!is_dir($pluginRoot)) {
             return [];
         }
 
         $directories = glob($pluginRoot . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [];
+        sort($directories);
         $manifests = [];
 
         foreach ($directories as $directory) {
@@ -1042,18 +1090,40 @@ class PaymentPluginManager
             $manifests[] = $this->parseManifest($manifestPath, basename($directory));
         }
 
+        self::$manifestListCache = [
+            'version' => $cacheVersion,
+            'expires_at' => time() + $this->cacheTtl(),
+            'value' => $manifests,
+        ];
+
         return $manifests;
     }
 
     private function loadManifest(string $code): array
     {
         $code = $this->normalizeCode($code);
+        $cacheVersion = $this->manifestCacheVersion($code);
+        if (
+            $cacheVersion !== 'missing'
+            && isset(self::$manifestCache[$code])
+            && (self::$manifestCache[$code]['version'] ?? null) === $cacheVersion
+            && (int)(self::$manifestCache[$code]['expires_at'] ?? 0) > time()
+        ) {
+            return self::$manifestCache[$code]['value'];
+        }
         $manifestPath = $this->pluginRootPath() . DIRECTORY_SEPARATOR . $code . DIRECTORY_SEPARATOR . 'plugin.json';
         if (!is_file($manifestPath)) {
             throw new InvalidArgumentException("支付插件[$code]不存在");
         }
 
-        return $this->parseManifest($manifestPath, $code);
+        $manifest = $this->parseManifest($manifestPath, $code);
+        self::$manifestCache[$code] = [
+            'version' => $cacheVersion,
+            'expires_at' => time() + $this->cacheTtl(),
+            'value' => $manifest,
+        ];
+
+        return $manifest;
     }
 
     private function parseManifest(string $manifestPath, string $directoryCode): array
@@ -1552,11 +1622,12 @@ class PaymentPluginManager
             $dependencySummary = $this->managedChannelDependencySummary($stats);
             $exists = is_array($row);
             $deleted = $exists && trim((string)($row['delete_time'] ?? '')) !== '';
+            $active = $exists && !$deleted;
             $canCleanup = false;
             $blockingReasons = [];
             $drift = [];
 
-            if (!$exists) {
+            if (!$active) {
                 $blockingReasons[] = '当前插件托管通道记录在 admin_channel 中不存在。';
             } else {
                 if ((int)($row['create_type'] ?? 0) !== self::CHANNEL_CREATE_TYPE_PLUGIN) {
@@ -1582,7 +1653,7 @@ class PaymentPluginManager
                 $canCleanup = $blockingReasons === [];
             }
 
-            if (is_array($definition) && $exists) {
+            if (is_array($definition) && $active) {
                 foreach (['name', 'type', 'info', 'status', 'sort', 'maxcount'] as $field) {
                     $expected = $definition[$field] ?? null;
                     $actual = $row[$field] ?? null;
@@ -1598,7 +1669,7 @@ class PaymentPluginManager
             $audit[] = [
                 'code' => $code,
                 'declared' => is_array($definition),
-                'exists' => $exists,
+                'exists' => $active,
                 'deleted' => $deleted,
                 'can_cleanup' => $canCleanup,
                 'mode' => $purge ? 'purge' : 'safe',
@@ -1624,8 +1695,9 @@ class PaymentPluginManager
 
             $dependencySummary = $this->managedChannelDependencySummary($this->loadManagedChannelStats($code));
             $blockingReasons = [];
+            $deleted = trim((string)($row['delete_time'] ?? '')) !== '';
 
-            if ((int)($row['create_type'] ?? 0) !== self::CHANNEL_CREATE_TYPE_PLUGIN) {
+            if ($deleted || (int)($row['create_type'] ?? 0) !== self::CHANNEL_CREATE_TYPE_PLUGIN) {
                 $blockingReasons[] = '当前插件托管通道记录的 create_type 不是 2。';
             }
 
@@ -1647,8 +1719,8 @@ class PaymentPluginManager
             $audit[] = [
                 'code' => $code,
                 'declared' => false,
-                'exists' => true,
-                'deleted' => trim((string)($row['delete_time'] ?? '')) !== '',
+                'exists' => !$deleted,
+                'deleted' => $deleted,
                 'can_cleanup' => $blockingReasons === [],
                 'mode' => 'purge',
                 'row' => $row,
@@ -3268,19 +3340,23 @@ class PaymentPluginManager
         $managedChannelMissingCount = 0;
         $managedChannelDriftCount = 0;
         $managedChannelExistingCount = 0;
+        $stateInstalled = (bool)($state['installed'] ?? false);
         foreach ($managedChannels as $managedChannel) {
             if (!is_array($managedChannel)) {
                 continue;
             }
 
-            if ((bool)($managedChannel['exists'] ?? false)) {
+            $managedChannelExists = (bool)($managedChannel['exists'] ?? false);
+            $managedChannelDeleted = (bool)($managedChannel['deleted'] ?? false);
+
+            if ($managedChannelExists) {
                 $managedChannelExistingCount++;
-            } else {
+            } elseif (!$managedChannelDeleted || $stateInstalled) {
                 $managedChannelMissingCount++;
                 $managedChannelIssues[] = 'Managed channel [' . (string)($managedChannel['code'] ?? '') . '] is missing from admin_channel.';
             }
 
-            if (!empty($managedChannel['drift'])) {
+            if ($managedChannelExists && !empty($managedChannel['drift'])) {
                 $managedChannelDriftCount++;
                 $managedChannelIssues[] = 'Managed channel [' . (string)($managedChannel['code'] ?? '') . '] has manifest drift and should be resynced.';
             }
@@ -5061,6 +5137,14 @@ class PaymentPluginManager
 
     private function loadRegistry(): array
     {
+        $cacheVersion = $this->registryCacheVersion();
+        if (
+            (self::$registryCache['version'] ?? null) === $cacheVersion
+            && (int)(self::$registryCache['expires_at'] ?? 0) > time()
+        ) {
+            return self::$registryCache['value'];
+        }
+
         $path = $this->registryPath();
         if (!is_file($path)) {
             return [];
@@ -5069,7 +5153,14 @@ class PaymentPluginManager
         $contents = file_get_contents($path);
         $decoded = json_decode($contents ?: '', true);
 
-        return is_array($decoded) ? $decoded : [];
+        $registry = is_array($decoded) ? $decoded : [];
+        self::$registryCache = [
+            'version' => $cacheVersion,
+            'expires_at' => time() + $this->cacheTtl(),
+            'value' => $registry,
+        ];
+
+        return $registry;
     }
 
     private function saveRegistry(array $registry): void
@@ -5086,6 +5177,71 @@ class PaymentPluginManager
         }
 
         file_put_contents($path, $payload . PHP_EOL);
+        $this->invalidateRuntimeCaches();
+    }
+
+    private function cacheTtl(): int
+    {
+        return max(1, Environment::int('PAYMENT_PLUGIN_CACHE_TTL', 5));
+    }
+
+    private function invalidateRuntimeCaches(): void
+    {
+        self::$allCache = [];
+        self::$detailCache = [];
+        self::$registryCache = [];
+        self::$manifestListCache = [];
+    }
+
+    private function registryCacheVersion(): string
+    {
+        return $this->fileCacheSignature($this->registryPath());
+    }
+
+    private function manifestCacheVersion(string $code): string
+    {
+        $code = $this->normalizeCode($code);
+
+        return $this->fileCacheSignature(
+            $this->pluginRootPath() . DIRECTORY_SEPARATOR . $code . DIRECTORY_SEPARATOR . 'plugin.json'
+        );
+    }
+
+    private function pluginDiscoveryVersion(): string
+    {
+        $pluginRoot = $this->pluginRootPath();
+        if (!is_dir($pluginRoot)) {
+            return 'missing';
+        }
+
+        $directories = glob($pluginRoot . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [];
+        sort($directories);
+
+        $parts = [];
+        foreach ($directories as $directory) {
+            $manifestPath = $directory . DIRECTORY_SEPARATOR . 'plugin.json';
+            if (!is_file($manifestPath)) {
+                continue;
+            }
+
+            $parts[] = basename($directory) . ':' . $this->fileCacheSignature($manifestPath);
+        }
+
+        return hash('sha256', implode('|', $parts));
+    }
+
+    private function fileCacheSignature(string $path): string
+    {
+        if (!is_file($path)) {
+            return 'missing';
+        }
+
+        $stat = @stat($path);
+        if (!is_array($stat)) {
+            return 'unreadable';
+        }
+
+        return (string)($stat['size'] ?? 0) . ':' . (string)($stat['mtime'] ?? 0);
     }
 
     private function stateFor(string $code, string $version, array $registry): array

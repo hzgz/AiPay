@@ -27,7 +27,6 @@ final class BusinessTable
         'paylist' => 'paylist',
         'poll_pool' => 'poll_pool',
         'poll_pool_item' => 'poll_pool_item',
-        'plug' => 'plug',
         'quicklogin' => 'quicklogin',
         'recharge' => 'recharge',
         'risk' => 'risk',
@@ -125,11 +124,6 @@ final class BusinessTable
     public static function paylist(string $alias = ''): string
     {
         return self::name('paylist', $alias);
-    }
-
-    public static function plug(string $alias = ''): string
-    {
-        return self::name('plug', $alias);
     }
 
     public static function pollPool(string $alias = ''): string

@@ -6,6 +6,7 @@ namespace app\service\order;
 
 use app\support\BusinessTable;
 use Plugins\Payments\AlipayBill\Support\AlipayBillSupport;
+use Plugins\Payments\Leshua\Support\LeshuaCore;
 use Plugins\Payments\Shared\EpayProtocol\EpayOrderRepository;
 use Plugins\Payments\Shared\Support\JiaofeiyiSupport;
 use Plugins\Payments\Usdt\Support\UsdtTrc20Support;
@@ -18,10 +19,12 @@ final class OrderReconcileTaskService
 {
     private const ALIPAY_BILL_CHANNEL_CODES = ['alipay_bill', 'alipay_mck'];
     private const JIAOFEIYI_CHANNEL_CODES = ['jiaofeiyi_alipay', 'jiaofeiyi_wxpay'];
-    private const SUPPORTED_CHANNEL_CODES = ['alipay_bill', 'alipay_mck', 'usdt', 'jiaofeiyi_alipay', 'jiaofeiyi_wxpay', 'wxpay_v3'];
+    private const LESHUA_CHANNEL_CODE = 'leshua';
+    private const SUPPORTED_CHANNEL_CODES = ['alipay_bill', 'alipay_mck', 'usdt', 'jiaofeiyi_alipay', 'jiaofeiyi_wxpay', 'wxpay_v3', 'leshua'];
     private const ALIPAY_BILL_GRACE_SECONDS = 300;
     private const USDT_GRACE_SECONDS = 300;
     private const WXPAY_V3_GRACE_SECONDS = 86400;
+    private const LESHUA_GRACE_SECONDS = 86400;
     private const STALE_LOCK_SECONDS = 180;
     private const RETRY_DELAYS = [5, 10, 15, 20, 30, 45];
 
@@ -80,6 +83,10 @@ final class OrderReconcileTaskService
                     $wxpayV3Query
                         ->where('account.code', 'wxpay_v3')
                         ->where('orders.out_time', '>', $now - self::WXPAY_V3_GRACE_SECONDS);
+                })->orWhere(function ($leshuaQuery) use ($now) {
+                    $leshuaQuery
+                        ->where('account.code', self::LESHUA_CHANNEL_CODE)
+                        ->where('orders.out_time', '>', $now - self::LESHUA_GRACE_SECONDS);
                 });
             })
             ->orderBy('orders.id')
@@ -286,11 +293,7 @@ final class OrderReconcileTaskService
             ];
         }
 
-        $graceSeconds = in_array($channelCode, self::ALIPAY_BILL_CHANNEL_CODES, true)
-            ? self::ALIPAY_BILL_GRACE_SECONDS
-            : ($channelCode === 'usdt'
-                ? self::USDT_GRACE_SECONDS
-                : ($channelCode === 'wxpay_v3' ? self::WXPAY_V3_GRACE_SECONDS : 0));
+        $graceSeconds = $this->graceSecondsForChannel($channelCode);
         if (((int)($order['out_time'] ?? 0) + $graceSeconds) <= time()) {
             $this->markFinished($task, 'skipped', ['reason' => 'order_timeout'], 'order_timeout');
 
@@ -311,6 +314,10 @@ final class OrderReconcileTaskService
 
         if ($channelCode === 'wxpay_v3') {
             return $this->processWxpayV3Task($task, $order, $account);
+        }
+
+        if ($channelCode === self::LESHUA_CHANNEL_CODE) {
+            return $this->processLeshuaTask($task, $order, $account);
         }
 
         $this->markFinished($task, 'skipped', ['reason' => 'unsupported_channel'], 'unsupported_channel');
@@ -559,6 +566,70 @@ final class OrderReconcileTaskService
             'reason' => 'unexpected_query_status',
             'query' => $queryResult,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $task
+     * @param array<string, mixed> $order
+     * @param array<string, mixed> $account
+     * @return array<string, mixed>
+     */
+    private function processLeshuaTask(array $task, array $order, array $account): array
+    {
+        $tradeNo = trim((string)($order['trade_no'] ?? $task['trade_no'] ?? ''));
+        $gatewayTradeNo = trim((string)($order['alipay_order_no'] ?? $task['query_identifier'] ?? ''));
+        if ($tradeNo === '' && $gatewayTradeNo === '') {
+            $this->completeRetryOrFailure($task, [], 'missing_query_identifier');
+
+            return ['status' => 'retry', 'reason' => 'missing_query_identifier'];
+        }
+
+        $core = LeshuaCore::fromAccount($account);
+        try {
+            $queryResult = $gatewayTradeNo !== ''
+                ? $core->queryOrderByGatewayTradeNo($gatewayTradeNo)
+                : $core->queryOrderByTradeNo($tradeNo);
+        } catch (Throwable $exception) {
+            $this->completeRetryOrFailure($task, [
+                'exception' => $exception->getMessage(),
+            ], 'query_exception');
+
+            return [
+                'status' => 'retry',
+                'reason' => 'query_exception',
+                'query' => ['exception' => $exception->getMessage()],
+            ];
+        }
+
+        if (!$core->isPaid($queryResult)) {
+            $this->completeRetryOrFailure($task, $queryResult, 'query_pending');
+
+            return [
+                'status' => 'retry',
+                'reason' => 'query_pending',
+                'query' => $queryResult,
+            ];
+        }
+
+        try {
+            $this->assertLeshuaQueryMatches($order, $queryResult);
+        } catch (RuntimeException $exception) {
+            $reason = trim($exception->getMessage()) ?: 'query_validation_failed';
+            $this->completeRetryOrFailure($task, $queryResult, $reason);
+
+            return [
+                'status' => 'retry',
+                'reason' => $reason,
+                'query' => $queryResult,
+            ];
+        }
+
+        return $this->settlePaidAndQueue(
+            $task,
+            $order,
+            $this->leshuaSettlementPayloadFromQuery($queryResult),
+            ['query' => $queryResult]
+        );
     }
 
     /**
@@ -849,6 +920,59 @@ final class OrderReconcileTaskService
     }
 
     /**
+     * @param array<string, mixed> $order
+     * @param array<string, string> $queryResult
+     */
+    private function assertLeshuaQueryMatches(array $order, array $queryResult): void
+    {
+        $receivedTradeNo = trim((string)($queryResult['third_order_id'] ?? ''));
+        $expectedTradeNo = trim((string)($order['trade_no'] ?? ''));
+        if ($receivedTradeNo === '' || $expectedTradeNo === '' || !hash_equals($expectedTradeNo, $receivedTradeNo)) {
+            throw new RuntimeException('leshua_trade_no_mismatch');
+        }
+
+        $receivedAmount = $this->integerFen($queryResult['amount'] ?? '');
+        $expectedValue = trim((string)($order['truemoney'] ?? ''));
+        if ($expectedValue === '') {
+            $expectedValue = trim((string)($order['money'] ?? ''));
+        }
+        $expectedAmount = LeshuaCore::amountToFen($expectedValue);
+        if ($receivedAmount <= 0 || $expectedAmount <= 0 || $receivedAmount !== $expectedAmount) {
+            throw new RuntimeException('leshua_amount_mismatch');
+        }
+
+        if (trim((string)($queryResult['leshua_order_id'] ?? '')) === '') {
+            throw new RuntimeException('leshua_gateway_trade_no_missing');
+        }
+    }
+
+    /**
+     * @param array<string, string> $queryResult
+     * @return array<string, string>
+     */
+    private function leshuaSettlementPayloadFromQuery(array $queryResult): array
+    {
+        $gatewayTradeNo = trim((string)($queryResult['leshua_order_id'] ?? ''));
+
+        return [
+            'trade_no' => $gatewayTradeNo,
+            'transaction_id' => $gatewayTradeNo,
+            'buyer_trade_no' => trim((string)($queryResult['out_transaction_id'] ?? '')),
+            'transaction_provider' => self::LESHUA_CHANNEL_CODE,
+        ];
+    }
+
+    private function integerFen(string $value): int
+    {
+        $value = trim($value);
+        if (preg_match('/^\d+$/', $value) !== 1) {
+            return 0;
+        }
+
+        return (int)$value;
+    }
+
+    /**
      * @param array<string, mixed> $payload
      */
     private function encodeJson(array $payload): string
@@ -863,6 +987,20 @@ final class OrderReconcileTaskService
         $index = max(0, min(count(self::RETRY_DELAYS) - 1, $attemptCount - 1));
 
         return self::RETRY_DELAYS[$index];
+    }
+
+    private function graceSecondsForChannel(string $channelCode): int
+    {
+        if (in_array($channelCode, self::ALIPAY_BILL_CHANNEL_CODES, true)) {
+            return self::ALIPAY_BILL_GRACE_SECONDS;
+        }
+
+        return match ($channelCode) {
+            'usdt' => self::USDT_GRACE_SECONDS,
+            'wxpay_v3' => self::WXPAY_V3_GRACE_SECONDS,
+            self::LESHUA_CHANNEL_CODE => self::LESHUA_GRACE_SECONDS,
+            default => 0,
+        };
     }
 
     private function truncate(string $value, int $limit): string

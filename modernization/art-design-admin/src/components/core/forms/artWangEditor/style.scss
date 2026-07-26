@@ -1,0 +1,330 @@
+$box-radius: calc(var(--custom-radius) / 3 + 2px);
+
+// 全屏容器 z-index 调整
+.w-e-full-screen-container {
+  z-index: 100 !important;
+}
+
+/* 编辑器容器 */
+.editor-wrapper {
+  --wang-border-color: var(--art-gray-300);
+  --wang-toolbar-border: var(--default-border);
+  --wang-toolbar-bg: var(--el-bg-color-overlay);
+  --wang-editor-bg: var(--el-bg-color-overlay);
+  --wang-panel-bg: var(--el-bg-color-overlay);
+  --wang-panel-border: var(--default-border);
+  --wang-panel-shadow: 0 12px 28px rgb(15 23 42 / 0.08);
+  --w-e-toolbar-active-bg-color: var(--art-gray-200);
+  --w-e-toolbar-color: var(--art-gray-800);
+  --w-e-textarea-selected-border-color: #ddd;
+  --w-e-textarea-slight-bg-color: var(--art-gray-200);
+  --wang-divider-color: #ccc;
+  --wang-code-bg: var(--art-gray-50);
+  --wang-quote-bg: var(--art-gray-200);
+  --wang-quote-border: var(--art-gray-300);
+  --wang-text-color: var(--el-text-color-primary);
+  --wang-dragger-border: #fff;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--wang-border-color);
+  border-radius: $box-radius !important;
+
+  .w-e-bar {
+    border-radius: $box-radius $box-radius 0 0 !important;
+  }
+
+  .menu-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    i {
+      margin-right: 5px;
+    }
+  }
+
+  /* 工具栏 */
+  .editor-toolbar {
+    background-color: var(--wang-toolbar-bg);
+    border-bottom: 1px solid var(--wang-toolbar-border);
+  }
+
+  /* 下拉选择框配置 */
+  .w-e-select-list {
+    min-width: 140px;
+    padding: 5px 10px 10px;
+    background-color: var(--wang-panel-bg);
+    border: 1px solid var(--wang-panel-border);
+    border-radius: $box-radius;
+    box-shadow: var(--wang-panel-shadow);
+  }
+
+  /* 下拉选择框元素配置 */
+  .w-e-select-list ul li {
+    margin-top: 5px;
+    font-size: 15px !important;
+    border-radius: $box-radius;
+  }
+
+  /* 下拉选择框 正文文字大小调整 */
+  .w-e-select-list ul li:last-of-type {
+    font-size: 16px !important;
+  }
+
+  /* 下拉选择框 hover 样式调整 */
+  .w-e-select-list ul li:hover {
+    background-color: var(--art-gray-200);
+  }
+
+  :root {
+    /* 激活颜色 */
+    --w-e-toolbar-active-bg-color: var(--art-gray-200);
+
+    /* toolbar 图标和文字颜色 */
+    --w-e-toolbar-color: #000;
+
+    /* 表格选中时候的边框颜色 */
+    --w-e-textarea-selected-border-color: #ddd;
+
+    /* 表格头背景颜色 */
+    --w-e-textarea-slight-bg-color: var(--art-gray-200);
+  }
+
+  /* 工具栏按钮样式 */
+  .w-e-bar-item svg {
+    fill: var(--w-e-toolbar-color);
+  }
+
+  .w-e-bar-item button {
+    color: var(--w-e-toolbar-color);
+    border-radius: $box-radius;
+  }
+
+  /* 工具栏 hover 按钮背景颜色 */
+  .w-e-bar-item button:hover {
+    background-color: var(--art-gray-200);
+  }
+
+  /* 工具栏分割线 */
+  .w-e-bar-divider {
+    height: 20px;
+    margin-top: 10px;
+    background-color: var(--wang-divider-color);
+  }
+
+  /* 工具栏菜单 */
+  .w-e-bar-item-group .w-e-bar-item-menus-container {
+    min-width: 120px;
+    padding: 10px 0;
+    background-color: var(--wang-panel-bg);
+    border: 1px solid var(--wang-panel-border);
+    border-radius: $box-radius;
+    box-shadow: var(--wang-panel-shadow);
+
+    .w-e-bar-item {
+      button {
+        width: 100%;
+        margin: 0 5px;
+      }
+    }
+  }
+
+  /* 代码块 */
+  .w-e-text-container [data-slate-editor] pre > code {
+    padding: 0.6rem 1rem;
+    background-color: var(--wang-code-bg);
+    border-radius: $box-radius;
+  }
+
+  /* 弹出框 */
+  .w-e-drop-panel {
+    background-color: var(--wang-panel-bg);
+    border: 1px solid var(--wang-panel-border);
+    border-radius: $box-radius;
+    box-shadow: var(--wang-panel-shadow);
+  }
+
+  a {
+    color: #318ef4;
+  }
+
+  .w-e-text-container {
+    background-color: var(--wang-editor-bg);
+
+    [data-slate-editor] {
+      color: var(--wang-text-color);
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        margin: 0.8em 0 0.4em;
+        font-weight: 700;
+        line-height: 1.35;
+      }
+
+      h1 {
+        font-size: 2em;
+      }
+
+      h2 {
+        font-size: 1.5em;
+      }
+
+      h3 {
+        font-size: 1.25em;
+      }
+
+      h4 {
+        font-size: 1.125em;
+      }
+
+      h5 {
+        font-size: 1em;
+      }
+
+      h6 {
+        font-size: 0.875em;
+      }
+
+      ul,
+      ol {
+        padding-left: 1.5em;
+        margin: 0.8em 0;
+      }
+
+      ul {
+        list-style: disc;
+      }
+
+      ol {
+        list-style: decimal;
+      }
+
+      li {
+        margin: 0.25em 0;
+      }
+
+      ul ul {
+        list-style: circle;
+      }
+
+      ul ul ul {
+        list-style: square;
+      }
+    }
+
+    strong,
+    b {
+      font-weight: 700;
+    }
+
+    i,
+    em {
+      font-style: italic;
+    }
+  }
+
+  /* 表格样式优化 */
+  .w-e-text-container [data-slate-editor] .table-container th {
+    border-right: none;
+  }
+
+  .w-e-text-container [data-slate-editor] .table-container th:last-of-type {
+    border-right: 1px solid var(--wang-divider-color) !important;
+  }
+
+  /* 引用 */
+  .w-e-text-container [data-slate-editor] blockquote {
+    background-color: var(--wang-quote-bg);
+    border-left: 4px solid var(--wang-quote-border);
+  }
+
+  /* 输入区域弹出 bar  */
+  .w-e-hover-bar {
+    border-radius: $box-radius;
+  }
+
+  /* 超链接弹窗 */
+  .w-e-modal {
+    background-color: var(--wang-panel-bg);
+    border: 1px solid var(--wang-panel-border);
+    border-radius: $box-radius;
+    box-shadow: var(--wang-panel-shadow);
+  }
+
+  /* 图片样式调整 */
+  .w-e-text-container [data-slate-editor] .w-e-selected-image-container {
+    overflow: inherit;
+
+    &:hover {
+      border: 0;
+    }
+
+    img {
+      border: 1px solid transparent;
+      transition: border 0.3s;
+
+      &:hover {
+        border: 1px solid #318ef4 !important;
+      }
+    }
+
+    .w-e-image-dragger {
+      width: 12px;
+      height: 12px;
+      background-color: #318ef4;
+      border: 2px solid var(--wang-dragger-border);
+      border-radius: $box-radius;
+    }
+
+    .left-top {
+      top: -6px;
+      left: -6px;
+    }
+
+    .right-top {
+      top: -6px;
+      right: -6px;
+    }
+
+    .left-bottom {
+      bottom: -6px;
+      left: -6px;
+    }
+
+    .right-bottom {
+      right: -6px;
+      bottom: -6px;
+    }
+  }
+}
+
+.dark {
+  .editor-wrapper {
+    --wang-border-color: rgb(71 85 105 / 0.54);
+    --wang-toolbar-border: rgb(71 85 105 / 0.5);
+    --wang-toolbar-bg: rgb(15 23 42 / 0.92);
+    --wang-editor-bg: rgb(15 23 42 / 0.88);
+    --wang-panel-bg: rgb(17 24 39 / 0.96);
+    --wang-panel-border: rgb(71 85 105 / 0.56);
+    --wang-panel-shadow: 0 16px 36px rgb(2 6 23 / 0.4);
+    --w-e-toolbar-active-bg-color: rgb(51 65 85 / 0.72);
+    --w-e-toolbar-color: #e2e8f0;
+    --w-e-textarea-selected-border-color: rgb(96 165 250 / 0.44);
+    --w-e-textarea-slight-bg-color: rgb(30 41 59 / 0.92);
+    --wang-divider-color: rgb(71 85 105 / 0.56);
+    --wang-code-bg: rgb(2 6 23 / 0.6);
+    --wang-quote-bg: rgb(30 41 59 / 0.8);
+    --wang-quote-border: rgb(71 85 105 / 0.72);
+    --wang-text-color: #e2e8f0;
+    --wang-dragger-border: #0f172a;
+
+    .w-e-bar-item button:hover,
+    .w-e-select-list ul li:hover {
+      background-color: rgb(51 65 85 / 0.72);
+    }
+  }
+}

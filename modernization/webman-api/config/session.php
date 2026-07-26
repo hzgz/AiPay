@@ -12,28 +12,37 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
+use app\support\Environment;
+use app\support\SharedRedis;
 use Webman\Session\FileSessionHandler;
 use Webman\Session\RedisSessionHandler;
 use Webman\Session\RedisClusterSessionHandler;
 
+$sessionType = strtolower(Environment::string('SESSION_TYPE', class_exists(\Redis::class) ? 'redis' : 'file'));
+if (!in_array($sessionType, ['file', 'redis', 'redis_cluster'], true)) {
+    $sessionType = 'file';
+}
+if ($sessionType === 'redis' && !class_exists(\Redis::class)) {
+    $sessionType = 'file';
+}
+
+$handlerMap = [
+    'file' => FileSessionHandler::class,
+    'redis' => RedisSessionHandler::class,
+    'redis_cluster' => RedisClusterSessionHandler::class,
+];
+
 return [
 
-    'type' => 'file', // or redis or redis_cluster
+    'type' => $sessionType,
 
-    'handler' => FileSessionHandler::class,
+    'handler' => $handlerMap[$sessionType],
 
     'config' => [
         'file' => [
             'save_path' => runtime_path() . '/sessions',
         ],
-        'redis' => [
-            'host' => '127.0.0.1',
-            'port' => 6379,
-            'auth' => '',
-            'timeout' => 2,
-            'database' => '',
-            'prefix' => 'redis_session_',
-        ],
+        'redis' => SharedRedis::sessionConfig(),
         'redis_cluster' => [
             'host' => ['127.0.0.1:7000', '127.0.0.1:7001', '127.0.0.1:7001'],
             'timeout' => 2,
@@ -43,7 +52,7 @@ return [
     ],
 
     'session_name' => 'PHPSID',
-    
+
     'auto_update_timestamp' => false,
 
     'lifetime' => 7*24*60*60,
@@ -53,12 +62,12 @@ return [
     'cookie_path' => '/',
 
     'domain' => '',
-    
+
     'http_only' => true,
 
-    'secure' => false,
-    
-    'same_site' => '',
+    'secure' => Environment::bool('SESSION_SECURE', false),
+
+    'same_site' => trim(Environment::string('SESSION_SAME_SITE', '')),
 
     'gc_probability' => [1, 1000],
 

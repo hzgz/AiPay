@@ -7,13 +7,24 @@ use support\Db;
 class SystemConfig
 {
     private static ?array $cache = null;
-    private static ?string $signature = null;
+    private static int $cacheExpiresAt = 0;
+    private const CACHE_KEY = 'system-config:all';
 
     public static function all(bool $refresh = false): array
     {
-        if (!$refresh && self::$cache !== null) {
-            $currentSignature = self::loadSignature();
-            if ($currentSignature !== null && $currentSignature === self::$signature) {
+        $ttl = max(1, Environment::int('SYSTEM_CONFIG_CACHE_TTL', 5));
+        $now = time();
+
+        if (!$refresh && self::$cache !== null && self::$cacheExpiresAt > $now) {
+            return self::$cache;
+        }
+
+        if (!$refresh) {
+            $cached = HotPathStore::get(self::CACHE_KEY);
+            if (is_array($cached)) {
+                self::$cache = array_replace(self::defaults(), $cached);
+                self::$cacheExpiresAt = $now + $ttl;
+
                 return self::$cache;
             }
         }
@@ -34,7 +45,8 @@ class SystemConfig
         }
 
         self::$cache = $config;
-        self::$signature = self::loadSignature();
+        self::$cacheExpiresAt = $now + $ttl;
+        HotPathStore::put(self::CACHE_KEY, self::$cache, $ttl);
 
         return self::$cache;
     }
@@ -47,7 +59,8 @@ class SystemConfig
     public static function clearCache(): void
     {
         self::$cache = null;
-        self::$signature = null;
+        self::$cacheExpiresAt = 0;
+        HotPathStore::forget(self::CACHE_KEY);
     }
 
     public static function get(string $key, mixed $default = null): mixed
@@ -101,6 +114,7 @@ class SystemConfig
             'timeout' => '180',
             'min_orderprice' => '0',
             'max_orderprice' => '1000',
+            'demopay_money' => '0.10',
             'shield_key' => '',
             'shield_tips' => '商品存在风控风险',
             'is_pay_money' => '1',
@@ -110,30 +124,10 @@ class SystemConfig
             'merchant_login_drag_verify' => '1',
             'merchant_register_drag_verify' => '1',
             'merchant_retrieve_drag_verify' => '1',
+            'theme_home' => 'default',
+            'theme_pay' => 'default',
             'software_callback_sign_mode' => 'strict',
             'software_callback_sign_window' => '300',
         ];
-    }
-
-    private static function loadSignature(): ?string
-    {
-        $row = Db::table('admin_config')
-            ->selectRaw(
-                "COUNT(*) as row_count, COALESCE(MAX(id), 0) as max_id, "
-                . "COALESCE(SUM(CRC32(CONCAT_WS(':', config_name, config_value))), 0) as checksum"
-            )
-            ->first();
-
-        if (!$row) {
-            return null;
-        }
-
-        $item = (array)$row;
-
-        return implode(':', [
-            (string)($item['row_count'] ?? '0'),
-            (string)($item['max_id'] ?? '0'),
-            (string)($item['checksum'] ?? '0'),
-        ]);
     }
 }

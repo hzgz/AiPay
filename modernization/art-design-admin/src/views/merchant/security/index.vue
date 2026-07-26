@@ -174,7 +174,9 @@
                 </div>
 
                 <template v-if="!googleWriteEnabled">
-                  <div class="merchant-google-placeholder"> 当前页展示谷歌验证状态，二维码开通需按平台安全策略处理。 </div>
+                  <div class="merchant-google-placeholder">
+                    当前页展示谷歌验证状态，二维码开通需按平台安全策略处理。
+                  </div>
                 </template>
 
                 <template v-else-if="payload.google_auth?.bound">
@@ -214,7 +216,9 @@
                 </div>
 
                 <template v-if="!googleWriteEnabled">
-                  <div class="merchant-google-placeholder"> 当前绑定与解绑由平台安全策略统一管理。 </div>
+                  <div class="merchant-google-placeholder">
+                    当前绑定与解绑由平台安全策略统一管理。
+                  </div>
                 </template>
 
                 <template v-else-if="payload.google_auth?.bound">
@@ -485,9 +489,7 @@
   )
 
   const googleManagementDescription = computed(() =>
-    googleWriteEnabled.value
-      ? '可生成二维码并完成绑定或解绑。'
-      : '当前页提供谷歌验证状态查看。'
+    googleWriteEnabled.value ? '可生成二维码并完成绑定或解绑。' : '当前页提供谷歌验证状态查看。'
   )
 
   const accountCancellation = computed<Record<string, any>>(
@@ -946,6 +948,49 @@
     color: #991b1b;
     font-size: 13px;
     line-height: 1.7;
+  }
+
+  :global(html.dark .merchant-google-qr) {
+    background: linear-gradient(180deg, rgb(15 23 42 / 90%), rgb(30 41 59 / 82%));
+    border-color: rgb(71 85 105 / 34%);
+  }
+
+  :global(html.dark .merchant-google-qr img) {
+    background: rgb(15 23 42 / 92%);
+    box-shadow: 0 14px 30px rgb(2 6 23 / 28%);
+  }
+
+  :global(html.dark .merchant-google-secret code) {
+    background: rgb(15 23 42 / 84%);
+    border-color: rgb(71 85 105 / 34%);
+    color: #e2e8f0;
+  }
+
+  :global(html.dark .merchant-google-placeholder) {
+    background: linear-gradient(180deg, rgb(15 23 42 / 88%), rgb(30 41 59 / 80%));
+    border-color: rgb(71 85 105 / 28%);
+  }
+
+  :global(html.dark .merchant-google-placeholder .iconify) {
+    color: #67e8f9;
+  }
+
+  :global(html.dark .merchant-confirm-block code) {
+    background: rgb(15 23 42 / 84%);
+    border-color: rgb(248 113 113 / 30%);
+    color: #fecaca;
+  }
+
+  :global(html.dark .merchant-warning-list--muted .merchant-warning-list__item) {
+    background: rgb(69 26 3 / 42%);
+    border-color: rgb(245 158 11 / 26%);
+    color: #fde68a;
+  }
+
+  :global(html.dark .merchant-warning-list__item) {
+    background: rgb(30 41 59 / 82%);
+    border-color: rgb(71 85 105 / 34%);
+    color: #fecaca;
   }
 
   @media (width <= 1200px) {

@@ -26,6 +26,7 @@ CERTBOT_EMAIL=""
 CERTBOT_NO_EMAIL=0
 INSTALL_DEPS=0
 NON_INTERACTIVE=0
+FRONTEND_SCHEME=""
 
 usage() {
   cat <<'TEXT'
@@ -51,6 +52,7 @@ Options:
   --skip-merchant              Do not create a demo merchant account.
   --certbot-email=EMAIL        Enable HTTPS with certbot using this email.
   --certbot-no-email           Enable HTTPS with certbot and no email.
+  --frontend-scheme=SCHEME     Frontend public scheme written into .env and verification URLs. Allowed: http, https.
   --install-deps               Auto-install Debian/Ubuntu dependencies when missing.
   --non-interactive            Fail instead of prompting for missing values.
   --help                       Show this help message.
@@ -172,6 +174,7 @@ install_dependencies_apt() {
     nginx \
     mariadb-server \
     mariadb-client \
+    redis-server \
     unzip \
     rsync \
     certbot \
@@ -184,12 +187,14 @@ install_dependencies_apt() {
     php-zip \
     php-bcmath \
     php-intl \
-    php-gd
+    php-gd \
+    php-redis \
+    php-opcache
 }
 
 ensure_dependencies() {
   local missing=()
-  local required=(php nginx systemctl)
+  local required=(php nginx systemctl redis-cli)
 
   for command_name in "${required[@]}"; do
     if ! command_exists "${command_name}"; then
@@ -241,14 +246,43 @@ db_client() {
   fail 'Neither mariadb nor mysql client is available.'
 }
 
+systemd_unit_exists() {
+  local unit_name="$1"
+  local unit_listing=""
+  unit_listing="$(systemctl list-unit-files "${unit_name}" --no-legend 2>/dev/null || true)"
+  [[ -n "${unit_listing//[[:space:]]/}" ]]
+}
+
 ensure_database_service() {
-  if systemctl list-unit-files | grep -q '^mariadb\.service'; then
+  if systemd_unit_exists 'mariadb.service'; then
     systemctl enable --now mariadb >/dev/null 2>&1 || true
     return
   fi
 
-  if systemctl list-unit-files | grep -q '^mysql\.service'; then
+  if systemd_unit_exists 'mysql.service'; then
     systemctl enable --now mysql >/dev/null 2>&1 || true
+  fi
+}
+
+ensure_redis_service() {
+  local redis_unit=''
+
+  if systemd_unit_exists 'redis-server.service'; then
+    redis_unit='redis-server.service'
+  elif systemd_unit_exists 'redis.service'; then
+    redis_unit='redis.service'
+  else
+    fail 'Redis service is required but no redis systemd unit was found. Install redis-server first.'
+  fi
+
+  systemctl enable --now "${redis_unit}" >/dev/null 2>&1 || true
+
+  if ! systemctl is-active --quiet "${redis_unit}"; then
+    fail "Redis service failed to start: ${redis_unit}. If this is Debian 13 and redis reports a libjemalloc.so.2 mapping error, apply the systemd override documented in docs/aapanel-install.md and try again."
+  fi
+
+  if command_exists redis-cli; then
+    redis-cli ping >/dev/null 2>&1 || fail 'Redis service is active but redis-cli ping failed. Check local bind/auth settings before continuing.'
   fi
 }
 
@@ -276,16 +310,35 @@ validate_inputs() {
   [[ -n "${DOMAIN}" ]] || fail 'domain is required.'
   [[ "${BACKEND_PORT}" =~ ^[0-9]+$ ]] || fail 'backend port must be numeric.'
   [[ "${DB_PORT}" =~ ^[0-9]+$ ]] || fail 'database port must be numeric.'
+  if [[ -n "${FRONTEND_SCHEME}" && "${FRONTEND_SCHEME}" != 'http' && "${FRONTEND_SCHEME}" != 'https' ]]; then
+    fail 'frontend scheme must be http or https.'
+  fi
 
   if [[ "${DB_USER}" == *"'"* || "${DB_PASSWORD}" == *"'"* ]]; then
     fail "Database user and password cannot contain a single quote (')."
   fi
 }
 
-write_env_file() {
-  local frontend_scheme='http'
+resolve_frontend_scheme() {
+  if [[ -n "${FRONTEND_SCHEME}" ]]; then
+    printf '%s' "${FRONTEND_SCHEME}"
+    return
+  fi
+
   if [[ -n "${CERTBOT_EMAIL}" || "${CERTBOT_NO_EMAIL}" -eq 1 ]]; then
-    frontend_scheme='https'
+    printf '%s' 'https'
+    return
+  fi
+
+  printf '%s' 'http'
+}
+
+write_env_file() {
+  local frontend_scheme=''
+  local session_secure='false'
+  frontend_scheme="$(resolve_frontend_scheme)"
+  if [[ "${frontend_scheme}" == 'https' ]]; then
+    session_secure='true'
   fi
 
   cat > "${BACKEND_ROOT}/.env" <<TEXT
@@ -293,7 +346,18 @@ APP_ENV=production
 APP_DEBUG=false
 APP_HOST=127.0.0.1
 APP_PORT=${BACKEND_PORT}
-APP_WORKER_COUNT=1
+APP_WORKER_COUNT=2
+ENABLE_ORDER_CALLBACK_WORKER=true
+ORDER_CALLBACK_WORKER_COUNT=2
+ORDER_CALLBACK_POLL_INTERVAL=0.2
+ORDER_CALLBACK_BATCH_SIZE=10
+ENABLE_ORDER_RECONCILE_WORKER=true
+ORDER_RECONCILE_WORKER_COUNT=1
+ORDER_RECONCILE_POLL_INTERVAL=0.5
+ORDER_RECONCILE_SEED_BATCH=50
+ORDER_RECONCILE_PROCESS_BATCH=5
+CALLBACK_HTTP_CONNECT_TIMEOUT=3
+CALLBACK_HTTP_TIMEOUT=8
 APP_FILE_MONITOR=false
 APP_MEMORY_MONITOR=false
 
@@ -304,6 +368,50 @@ DB_USERNAME=${DB_USER}
 DB_PASSWORD=${DB_PASSWORD}
 DB_CHARSET=utf8mb4
 DB_COLLATION=utf8mb4_unicode_ci
+DB_POOL_MAX_CONNECTIONS=20
+DB_POOL_MIN_CONNECTIONS=2
+DB_POOL_WAIT_TIMEOUT=10
+DB_POOL_IDLE_TIMEOUT=60
+DB_POOL_HEARTBEAT_INTERVAL=50
+PAYMENT_PLUGIN_CACHE_TTL=5
+SYSTEM_CONFIG_CACHE_TTL=5
+HOT_PATH_REDIS_ENABLE=true
+HOT_PATH_REDIS_HOST=127.0.0.1
+HOT_PATH_REDIS_PORT=6379
+HOT_PATH_REDIS_PASSWORD=
+HOT_PATH_REDIS_DB=1
+HOT_PATH_REDIS_TIMEOUT=1
+HOT_PATH_REDIS_PERSISTENT=true
+HOT_PATH_REDIS_PREFIX=aipay:hot:
+HOT_PATH_FILE_FALLBACK_ENABLE=false
+SESSION_TYPE=redis
+SESSION_REDIS_HOST=127.0.0.1
+SESSION_REDIS_PORT=6379
+SESSION_REDIS_PASSWORD=
+SESSION_REDIS_DB=1
+SESSION_REDIS_PREFIX=aipay:session:
+SESSION_REDIS_TIMEOUT=1
+SESSION_SECURE=${session_secure}
+SESSION_SAME_SITE=lax
+SESSION_REDIS_POOL_MAX_CONNECTIONS=20
+SESSION_REDIS_POOL_MIN_CONNECTIONS=2
+SESSION_REDIS_POOL_WAIT_TIMEOUT=10
+SESSION_REDIS_POOL_IDLE_TIMEOUT=60
+SESSION_REDIS_POOL_HEARTBEAT_INTERVAL=50
+SOFTWARE_NONCE_REDIS_HOST=127.0.0.1
+SOFTWARE_NONCE_REDIS_PORT=6379
+SOFTWARE_NONCE_REDIS_PASSWORD=
+SOFTWARE_NONCE_REDIS_DB=1
+SOFTWARE_NONCE_REDIS_PREFIX=aipay:software:nonce:
+SOFTWARE_NONCE_REDIS_TIMEOUT=1
+SOFTWARE_NONCE_REDIS_PERSISTENT=true
+SHARED_REDIS_RETRY_SECONDS=5
+PUBLIC_AUTH_RATE_LIMIT_MAX=30
+PUBLIC_AUTH_RATE_LIMIT_WINDOW=60
+MERCHANT_LOGIN_RATE_LIMIT_MAX=20
+MERCHANT_LOGIN_RATE_LIMIT_WINDOW=60
+COMPAT_CODE_COOLDOWN_SECONDS=60
+AIPAY_BIZ_TABLE_PREFIX=aipay_
 
 AIPAY_ADMIN_FRONTEND_URL=${frontend_scheme}://${DOMAIN}
 AIPAY_MERCHANT_FRONTEND_URL=${frontend_scheme}://${DOMAIN}
@@ -379,14 +487,13 @@ run_production_install() {
 }
 
 run_verification() {
-  local frontend_scheme='http'
-  if [[ -n "${CERTBOT_EMAIL}" || "${CERTBOT_NO_EMAIL}" -eq 1 ]]; then
-    frontend_scheme='https'
-  fi
+  local frontend_scheme=''
+  frontend_scheme="$(resolve_frontend_scheme)"
 
   (
     cd "${BACKEND_ROOT}"
     bash deploy/linux/verify-deployment.sh \
+      "--site-name=${SITE_NAME}" \
       "--backend-url=http://127.0.0.1:${BACKEND_PORT}" \
       "--console-url=${frontend_scheme}://${DOMAIN}" \
       "--merchant-url=${frontend_scheme}://${DOMAIN}" \
@@ -452,6 +559,9 @@ for argument in "$@"; do
     --certbot-no-email)
       CERTBOT_NO_EMAIL=1
       ;;
+    --frontend-scheme=*)
+      FRONTEND_SCHEME="${argument#*=}"
+      ;;
     --install-deps)
       INSTALL_DEPS=1
       ;;
@@ -472,6 +582,7 @@ require_root
 ensure_package_layout
 ensure_dependencies
 ensure_database_service
+ensure_redis_service
 
 prompt_value DOMAIN 'Public domain' ''
 prompt_value BACKEND_PORT 'Webman backend port' '8787'
@@ -551,10 +662,7 @@ run_production_install
 log 'Running deployment verification'
 run_verification
 
-frontend_scheme='http'
-if [[ -n "${CERTBOT_EMAIL}" || "${CERTBOT_NO_EMAIL}" -eq 1 ]]; then
-  frontend_scheme='https'
-fi
+frontend_scheme="$(resolve_frontend_scheme)"
 
 printf '\n'
 printf '========================================\n'

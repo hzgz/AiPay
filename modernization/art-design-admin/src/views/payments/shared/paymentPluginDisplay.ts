@@ -353,9 +353,12 @@ export const pluginWorkspaceLabel = (profile: PaymentPluginLegacyProfile) => {
 
 export const pluginAccessLabel = (code: string | null | undefined) => {
   const profile = legacyProfileForCode(code)
-  if (profile?.workspace === 'account') return '账号配置'
-  if (profile?.workspace === 'merchant-channel') return '通道配置'
-  return '独立接入'
+  if (!profile || (profile.workspace !== 'account' && profile.workspace !== 'merchant-channel')) {
+    return ''
+  }
+  if (profile.workspace === 'account') return '账号配置'
+  if (profile.workspace === 'merchant-channel') return '通道配置'
+  return ''
 }
 
 const fallbackPluginPaymentFilters = (
@@ -469,9 +472,22 @@ export const auditLabel = (health: PaymentPluginStateAudit['health']) => {
   return '需处理'
 }
 
-export const auditSummaryLabel = (audit: PaymentPluginStateAudit) => {
+export const repairRecommendationLabel = (
+  audit: PaymentPluginStateAudit,
+  installed: boolean
+) => {
+  if (!audit.repair_recommended) return ''
+  if (!installed) return '有残留'
+  if (audit.managed_channel_missing_count > 0 || audit.managed_channel_drift_count > 0) {
+    return '待同步'
+  }
+  return '需修复'
+}
+
+export const auditSummaryLabel = (audit: PaymentPluginStateAudit, installed = true) => {
   if (audit.repair_recommended) {
-    return audit.issues.length > 0 ? `建议修复（${audit.issues.length} 项）` : '建议修复'
+    const label = repairRecommendationLabel(audit, installed)
+    return audit.issues.length > 0 ? `${label}（${audit.issues.length} 项）` : label
   }
 
   if (audit.upgrade_recommended) {
@@ -904,5 +920,3 @@ export const buildPluginConfigSections = (
 }
 
 export { type PaymentPluginLegacyProfile }
-
-

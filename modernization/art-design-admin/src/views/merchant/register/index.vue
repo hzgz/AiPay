@@ -169,10 +169,10 @@
     submitPublicRegister,
     type PublicRegisterPendingPaymentPayload,
     type PublicSoftwareConfigPayload
-  } from '@/api/public-auth'
+  } from '@/api/publicAuth'
   import LoginLeftView from '@/components/core/views/login/LoginLeftView.vue'
   import AuthTopBar from '@/components/core/views/login/AuthTopBar.vue'
-  import MerchantAuthSlider from '../shared/merchant-auth-slider.vue'
+  import MerchantAuthSlider from '../shared/MerchantAuthSlider.vue'
 
   defineOptions({ name: 'MerchantRegister' })
 

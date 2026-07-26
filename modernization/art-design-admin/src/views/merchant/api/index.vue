@@ -164,7 +164,7 @@
                     复制
                   </ElButton>
                   <ElTag :type="payload.sign_key_configured ? 'success' : 'info'" effect="plain">
-                  {{ payload.sign_key_configured ? '已配置' : '未配置' }}
+                    {{ payload.sign_key_configured ? '已配置' : '未配置' }}
                   </ElTag>
                 </div>
               </div>
@@ -188,7 +188,7 @@
                     复制
                   </ElButton>
                   <ElTag :type="payload.appkey_configured ? 'success' : 'info'" effect="plain">
-                  {{ payload.appkey_configured ? '已配置' : '未配置' }}
+                    {{ payload.appkey_configured ? '已配置' : '未配置' }}
                   </ElTag>
                 </div>
               </div>
@@ -986,6 +986,16 @@
     color: var(--merchant-muted);
     font-size: 13px;
     line-height: 1.7;
+  }
+
+  :global(html.dark .merchant-api-qrcode-dialog__image ){
+    background: linear-gradient(180deg, rgb(15 23 42 / 90%), rgb(30 41 59 / 82%));
+    border-color: rgb(71 85 105 / 34%);
+  }
+
+  :global(html.dark .merchant-api-qrcode-dialog__image img ){
+    background: rgb(15 23 42 / 92%);
+    box-shadow: 0 14px 30px rgb(2 6 23 / 28%);
   }
 
   @media (width <= 960px) {

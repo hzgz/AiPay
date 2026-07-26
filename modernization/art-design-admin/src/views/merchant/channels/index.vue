@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="payment-account-page art-full-height">
     <ArtSearchBar
       v-model="searchForm"
@@ -42,11 +42,7 @@
               <ElTag size="small" type="info" effect="plain">
                 成交 {{ summary.paid_order_count }} / {{ formatAmount(summary.paid_amount) }}
               </ElTag>
-              <ElTag
-                size="small"
-                :type="testPayEnabled ? 'primary' : 'info'"
-                effect="plain"
-              >
+              <ElTag size="small" :type="testPayEnabled ? 'primary' : 'info'" effect="plain">
                 {{ testPaySummaryText }}
               </ElTag>
             </ElSpace>
@@ -166,23 +162,24 @@
       :active-test-pay-account="activeTestPayAccount"
       :has-test-pay-auth="hasTestPayAuth"
       @update:visible="testPayVisible = $event"
+      @update:test-pay-form="Object.assign(testPayForm, $event)"
       @refresh="refreshTestPayStatus"
-      @submit="handleTestPay(activeTestPayAccount || undefined, true)"
+      @submit="handleTestPay(activeTestPayAccount || undefined)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-    import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import type { UploadRequestOptions } from 'element-plus'
   import { useRoute } from 'vue-router'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import { resolveBackendOrigin } from '@/utils/http/base'
-  import MerchantChannelCredentialDialog from './modules/channel-credential-dialog.vue'
-  import MerchantChannelCreateDialog from './modules/channel-create-dialog.vue'
-  import MerchantChannelDetailDrawer from './modules/channel-detail-drawer.vue'
-  import MerchantChannelEditStatusDialogs from './modules/channel-edit-status-dialogs.vue'
-  import MerchantChannelTestPayDialog from './modules/channel-test-pay-dialog.vue'
+  import MerchantChannelCredentialDialog from './modules/ChannelCredentialDialog.vue'
+  import MerchantChannelCreateDialog from './modules/ChannelCreateDialog.vue'
+  import MerchantChannelDetailDrawer from './modules/ChannelDetailDrawer.vue'
+  import MerchantChannelEditStatusDialogs from './modules/ChannelEditStatusDialogs.vue'
+  import MerchantChannelTestPayDialog from './modules/ChannelTestPayDialog.vue'
   import {
     batchDeleteMerchantChannels,
     createMerchantChannelTestPay,
@@ -229,7 +226,7 @@
     syncMerchantChannelStatusForm,
     type MerchantChannelFormScope,
     type MerchantChannelPluginOption
-  } from './modules/channel-form-state'
+  } from './modules/channelFormState'
   import {
     displayAccountCode,
     displayAccountFieldText,
@@ -528,7 +525,9 @@
       credentialForm.extra_value = ''
     }
 
-    if (!['jiaofeiyi_alipay', 'jiaofeiyi_wxpay'].includes(String(activeAccount.value?.code || ''))) {
+    if (
+      !['jiaofeiyi_alipay', 'jiaofeiyi_wxpay'].includes(String(activeAccount.value?.code || ''))
+    ) {
       credentialForm.cloud_id = ''
     }
   }
@@ -1035,7 +1034,7 @@
     testPayVisible.value = true
   }
 
-  async function handleTestPay(row?: AccountItem, keepDialogOpen = false) {
+  async function handleTestPay(row?: AccountItem) {
     const target = row || activeAccount.value
     if (!target) {
       return
@@ -1053,10 +1052,8 @@
 
     stopTestPayPolling()
     activeTestPayAccount.value = target
-    if (!keepDialogOpen) {
-      testPayVisible.value = true
-      testPayResult.value = null
-    }
+    testPayVisible.value = true
+    testPayResult.value = null
 
     testingTestPay.value = true
     try {

@@ -182,7 +182,7 @@ class AdminAuthController
                 $this->menuItem(13, 'business', 'AiPayBusinessOverview', '/dashboard/business', '商城总览', 'ri:store-2-line', false, 'AiPayBusinessOverview', $authMap),
             ]),
             $this->menuGroup(2, '/orders-center', 'OrdersCenter', '订单中心', 'ri:file-list-3-line', [
-                $this->menuItem(21, '/orders', 'Orders', '/orders', '订单列表', 'ri:file-list-3-line', true, 'Orders', $authMap),
+                $this->menuItem(21, 'orders', 'Orders', '/orders', '订单列表', 'ri:file-list-3-line', true, 'Orders', $authMap),
             ]),
             $this->menuGroup(3, '/payments', 'Payments', '支付配置', 'ri:bank-card-line', [
                 $this->menuItem(31, 'plugins', 'PaymentPlugins', '/payments/plugins', '支付插件', 'ri:apps-2-line', true, 'PaymentPlugins', $authMap),
@@ -191,14 +191,14 @@ class AdminAuthController
                 $this->menuItem(34, 'pools', 'PaymentPools', '/payments/pools', '轮询池', 'ri:stack-line', true, 'PaymentPools', $authMap),
             ]),
             $this->menuGroup(4, '/finance', 'Finance', '财务审计', 'ri:money-cny-circle-line', [
-                $this->menuItem(41, 'money-logs', 'FinanceMoneyLogs', '/finance/money-logs', '资金日志', 'ri:exchange-funds-line', true, 'FinanceMoneyLogs', $authMap),
+                $this->menuItem(41, 'money-logs', 'FinanceMoneyLogs', '/finance/moneyLogs', '资金日志', 'ri:exchange-funds-line', true, 'FinanceMoneyLogs', $authMap),
                 $this->menuItem(42, 'cdks', 'FinanceCdks', '/finance/cdks', '卡券管理', 'ri:coupon-3-line', true, 'FinanceCdks', $authMap),
-                $this->menuItem(43, '/recharge', 'RechargeRecords', '/recharge', '充值记录', 'ri:wallet-line', true, 'RechargeRecords', $authMap),
+                $this->menuItem(43, 'recharge', 'RechargeRecords', '/recharge', '充值记录', 'ri:wallet-line', true, 'RechargeRecords', $authMap),
             ]),
             $this->menuGroup(5, '/content', 'ContentCenter', '内容中心', 'ri:notification-4-line', [
                 $this->menuItem(51, 'news', 'ContentNews', '/content/news', '公告管理', 'ri:article-line', true, 'ContentNews', $authMap),
                 $this->menuItem(52, 'navs', 'ContentNavs', '/content/navs', '导航管理', 'ri:navigation-line', true, 'ContentNavs', $authMap),
-                $this->menuItem(53, 'plugins', 'ContentPluginDownloads', '/content/plugins', '插件下载', 'ri:download-cloud-2-line', true, 'ContentPluginDownloads', $authMap),
+                $this->menuItem(53, 'themes', 'ContentThemes', '/content/themes', '模板管理', 'ri:layout-grid-line', true, 'ContentThemes', $authMap),
             ]),
             $this->menuGroup(6, '/risk', 'RiskCenter', '风控中心', 'ri:shield-check-line', [
                 $this->menuItem(61, 'records', 'RiskRecords', '/risk/records', '风控记录', 'ri:alarm-warning-line', true, 'RiskRecords', $authMap),
@@ -215,11 +215,11 @@ class AdminAuthController
                 $this->menuItem(85, 'menu', 'SystemMenu', '/system/menu', '菜单配置', 'ri:menu-line', true, 'SystemMenu', $authMap),
                 $this->menuItem(86, 'config', 'SystemConfigOverview', '/system/config', '配置总览', 'ri:database-2-line', true, 'SystemConfigOverview', $authMap),
                 $this->menuItem(87, 'processes', 'SystemProcesses', '/system/processes', '进程管理', 'ri:pulse-line', true, 'SystemProcesses', $authMap),
-                $this->menuItem(88, 'cleanup', 'SystemCleanupAudit', '/system/cleanup', '缓存清理', 'ri:delete-bin-6-line', true, 'SystemCleanupAudit', $authMap),
+                $this->menuItem(88, 'cleanup', 'SystemCleanupAudit', '/system/cleanup', '数据清理', 'ri:delete-bin-6-line', true, 'SystemCleanupAudit', $authMap),
                 $this->menuItem(89, 'domains', 'SystemDomains', '/system/domains', '域名审核', 'ri:global-line', true, 'SystemDomains', $authMap),
-                $this->menuItem(90, 'front-logs', 'SystemFrontLogs', '/system/front-logs', '商户日志', 'ri:file-text-line', true, 'SystemFrontLogs', $authMap),
-                $this->menuItem(91, 'media-library', 'SystemMediaLibrary', '/system/media-library', '素材库', 'ri:image-line', true, 'SystemMediaLibrary', $authMap),
-                $this->menuItem(92, 'quick-logins', 'SystemQuickLogins', '/system/quick-logins', '快捷登录', 'ri:flashlight-line', true, 'SystemQuickLogins', $authMap),
+                $this->menuItem(90, 'front-logs', 'SystemFrontLogs', '/system/frontLogs', '商户日志', 'ri:file-text-line', true, 'SystemFrontLogs', $authMap),
+                $this->menuItem(91, 'media-library', 'SystemMediaLibrary', '/system/mediaLibrary', '素材库', 'ri:image-line', true, 'SystemMediaLibrary', $authMap),
+                $this->menuItem(92, 'quick-logins', 'SystemQuickLogins', '/system/quickLogins', '快捷登录', 'ri:flashlight-line', true, 'SystemQuickLogins', $authMap),
             ]),
         ];
 

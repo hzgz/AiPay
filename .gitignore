@@ -7,6 +7,7 @@
 *.zip
 *.rar
 *.7z
+/tmp-*.png
 
 # Root release/build residue
 /modernization/releases/

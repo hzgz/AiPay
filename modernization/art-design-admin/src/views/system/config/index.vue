@@ -719,7 +719,7 @@
   }
 
   function resolveFieldHelpText(field: ConfigField) {
-    return FIELD_HELP_MAP[field.key] || ''
+    return FIELD_HELP_MAP[field.key] || safeDisplayText(field.help_text) || ''
   }
 
   function resolveOptionLabel(fieldKey: string, optionValue: string, optionLabel: string) {
@@ -734,7 +734,10 @@
   }
 
   function resolveFieldPlaceholder(field: ConfigField) {
-    if (field.editor === 'select') return '请选择'
+    const backendPlaceholder = safeDisplayText(field.placeholder)
+
+    if (field.editor === 'select') return backendPlaceholder || '请选择'
+    if (backendPlaceholder) return backendPlaceholder
     if (HTML_FIELDS.has(field.key) || field.type === 'html') return '请输入富文本内容'
     if (LIST_TEXT_FIELDS.has(field.key)) return '每行一项，或使用英文逗号分隔'
     if (ASSET_FIELDS.has(field.key)) return '请输入图片地址'

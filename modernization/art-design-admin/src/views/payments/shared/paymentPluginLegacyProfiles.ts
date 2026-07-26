@@ -21,29 +21,34 @@ const PAYMENT_PLUGIN_LEGACY_PROFILE_MAP: Record<string, PaymentPluginLegacyProfi
   alipay_software: {
     code: 'alipay_software',
     title: '支付宝软件版',
-    summary: '填写 PID、二维码模式和二维码图片地址。',
+    summary: '填写上游标识、二维码模式，以及图片模式下的二维码内容。',
     workspace: 'account',
     fields: [
-      { key: 'pid', label: 'PID', required: true, source: accountSource('zfb_pid') },
+      {
+        key: 'identifier',
+        label: '上游标识',
+        source: accountSource('zfb_pid'),
+        hint: '转账模式必填，图片模式下不需要。'
+      },
       {
         key: 'qr_type',
         label: '二维码模式',
         required: true,
         source: accountSource('qr_type'),
-        hint: '支持 agt / pic；选择 pic 时再填写二维码图片地址。'
+        hint: '支持转账模式 / 图片模式；选择图片模式后可上传二维码图片自动解析。'
       },
       {
         key: 'qr_url',
-        label: '二维码图片地址',
+        label: '二维码内容',
         source: accountSource('qr_url'),
-        hint: '仅 pic 模式需要。'
+        hint: '仅图片模式需要，可直接粘贴内容或上传图片自动解析。'
       }
     ]
   },
   wxpay_software: {
     code: 'wxpay_software',
     title: '微信软件版',
-    summary: '填写账户标识和二维码内容。',
+    summary: '支持账户标识二维码和赞赏码图片。',
     workspace: 'account',
     fields: [
       {
@@ -236,6 +241,33 @@ const PAYMENT_PLUGIN_LEGACY_PROFILE_MAP: Record<string, PaymentPluginLegacyProfi
       }
     ]
   },
+  leshua: {
+    code: 'leshua',
+    title: '乐刷支付插件',
+    summary: '填写商户号、交易密钥和可选的异步通知密钥，支付宝与微信共用同一套乐刷上游账户字段。',
+    workspace: 'account',
+    fields: [
+      {
+        key: 'merchant_id',
+        label: '商户号',
+        required: true,
+        source: accountSource('wxname')
+      },
+      {
+        key: 'transaction_key',
+        label: '交易密钥',
+        required: true,
+        secret: true,
+        source: accountSource('cookie')
+      },
+      {
+        key: 'notify_key',
+        label: '异步通知密钥',
+        source: accountSource('qr_url'),
+        hint: '选填；填写后按通知密钥验签，留空则回调时改为主动查单确认。'
+      }
+    ]
+  },
   jiaofeiyi_alipay: {
     code: 'jiaofeiyi_alipay',
     title: '缴费易支付宝插件',
@@ -303,7 +335,7 @@ const PAYMENT_PLUGIN_LEGACY_PROFILE_MAP: Record<string, PaymentPluginLegacyProfi
   usdt: {
     code: 'usdt',
     title: 'USDT',
-    summary: '填写钱包地址，需要时补充 Memo。',
+    summary: '填写钱包地址、USDT 汇率，以及可选的订单时长（秒）；留空时继续使用系统默认超时。',
     workspace: 'account',
     fields: [
       {
@@ -311,6 +343,13 @@ const PAYMENT_PLUGIN_LEGACY_PROFILE_MAP: Record<string, PaymentPluginLegacyProfi
         label: '钱包地址',
         required: true,
         source: accountSource('wxname')
+      },
+      { key: 'exchange_rate', label: 'USDT 汇率', source: accountSource('cookie.exchange_rate') },
+      {
+        key: 'order_timeout',
+        label: '订单时长（秒）',
+        source: accountSource('remark'),
+        hint: '留空时继续使用系统默认超时时间。'
       },
       { key: 'memo', label: 'Memo / 附加参数', source: accountSource('qr_url') }
     ]

@@ -65,7 +65,7 @@ aipay-release-YYYYMMDD-HHmmss/
 - 本地测试上传文件
 - 历史演示或旧模板残留
 
-## 推荐部署方式
+## 部署结构
 
 单域名部署，推荐正式商用：
 
@@ -73,12 +73,6 @@ aipay-release-YYYYMMDD-HHmmss/
 - `/#/merchant/...` 走商户端
 - `/#/auth/...` 走管理员端
 - `/api/*`、`/submit.php`、`/mapi.php`、`/Pay/*` 统一由 Nginx 反代到 `127.0.0.1:8787`
-
-优点：
-
-- 前后端同域，无需额外处理 CORS
-- `VITE_API_URL=/api` 可直接使用
-- 部署最简单，适合正式商用
 
 ## 数据库文件说明
 
@@ -102,6 +96,11 @@ aipay-release-YYYYMMDD-HHmmss/
 powershell -ExecutionPolicy Bypass -File tools/build-release-package.ps1
 ```
 
+脚本会同时生成：
+
+- 发布目录 `modernization/releases/aipay-release-<tag>/`
+- 同名 Linux 可直接 `unzip` 的 `.zip` 压缩包
+
 可选参数：
 
 ```powershell
@@ -111,7 +110,7 @@ powershell -ExecutionPolicy Bypass -File tools/build-release-package.ps1 `
   -SkipWorkspaceCleanup
 ```
 
-说明：
+参数：
 
 - `-Tag`：自定义发布包标记
 - `-SkipFrontendBuild`：跳过前端重新构建

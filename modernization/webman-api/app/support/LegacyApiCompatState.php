@@ -2,26 +2,39 @@
 
 namespace app\support;
 
+use Webman\Http\Request;
+
 class LegacyApiCompatState
 {
     private const IMAGE_CAPTCHA_TTL = 300;
     private const VERIFY_CODE_TTL = 300;
+    private const GLOBAL_IMAGE_CAPTCHA_SCOPE = 'global';
+    private const IMAGE_CAPTCHA_PREFIX = 'legacy-api:image-captcha:';
+    private const VERIFICATION_PREFIX = 'legacy-api:verification:';
+    private const LATEST_VERIFICATION_KEY = 'legacy-api:verification:latest';
 
     public static function storeImageCaptcha(string $code, ?int $ttl = null): void
     {
-        $state = self::read();
-        $state['image_captcha'] = [
-            'code' => strtoupper(trim($code)),
-            'expires_at' => time() + max(60, $ttl ?? self::IMAGE_CAPTCHA_TTL),
-        ];
+        self::storeImageCaptchaForScope(self::GLOBAL_IMAGE_CAPTCHA_SCOPE, $code, $ttl);
+    }
 
-        self::write($state);
+    public static function storeImageCaptchaForScope(string $scope, string $code, ?int $ttl = null): void
+    {
+        $expiresIn = max(60, $ttl ?? self::IMAGE_CAPTCHA_TTL);
+        HotPathStore::put(self::imageCaptchaKey($scope), [
+            'code' => strtoupper(trim($code)),
+            'expires_at' => time() + $expiresIn,
+        ], $expiresIn);
     }
 
     public static function verifyImageCaptcha(string $code): bool
     {
-        $state = self::read();
-        $captcha = (array)($state['image_captcha'] ?? []);
+        return self::verifyImageCaptchaForScope(self::GLOBAL_IMAGE_CAPTCHA_SCOPE, $code);
+    }
+
+    public static function verifyImageCaptchaForScope(string $scope, string $code): bool
+    {
+        $captcha = (array)(HotPathStore::get(self::imageCaptchaKey($scope)) ?? []);
         $expiresAt = (int)($captcha['expires_at'] ?? 0);
         $storedCode = strtoupper(trim((string)($captcha['code'] ?? '')));
 
@@ -46,22 +59,17 @@ class LegacyApiCompatState
             return;
         }
 
-        $state = self::read();
-        $key = self::verificationKey($purpose, $channel, $target);
+        $expiresIn = max(60, $ttl ?? self::VERIFY_CODE_TTL);
         $payload = [
             'purpose' => $purpose,
             'channel' => $channel,
             'target' => $target,
             'code' => trim($code),
-            'expires_at' => time() + max(60, $ttl ?? self::VERIFY_CODE_TTL),
+            'expires_at' => time() + $expiresIn,
         ];
 
-        $codes = (array)($state['verification_codes'] ?? []);
-        $codes[$key] = $payload;
-        $state['verification_codes'] = $codes;
-        $state['latest_verification_code'] = $payload;
-
-        self::write($state);
+        HotPathStore::put(self::verificationKey($purpose, $channel, $target), $payload, $expiresIn);
+        HotPathStore::put(self::LATEST_VERIFICATION_KEY, $payload, $expiresIn);
     }
 
     public static function verifyVerificationCode(
@@ -75,17 +83,21 @@ class LegacyApiCompatState
             return false;
         }
 
-        $state = self::read();
-        $codes = (array)($state['verification_codes'] ?? []);
-        $key = self::verificationKey($purpose, $channel, $target);
-        $entry = (array)($codes[$key] ?? []);
-
+        $entry = (array)(HotPathStore::get(self::verificationKey($purpose, $channel, $target)) ?? []);
         if (self::matchesCodeEntry($entry, $submittedCode)) {
             return true;
         }
 
-        $latest = (array)($state['latest_verification_code'] ?? []);
+        $latest = (array)(HotPathStore::get(self::LATEST_VERIFICATION_KEY) ?? []);
         return self::matchesCodeEntry($latest, $submittedCode);
+    }
+
+    public static function captchaScopeFromRequest(Request $request): string
+    {
+        $ip = trim((string)$request->getRealIp());
+        $userAgent = strtolower(trim((string)$request->header('user-agent', '')));
+
+        return hash('sha256', $ip . '|' . $userAgent);
     }
 
     public static function renderCaptchaSvg(string $code): string
@@ -156,70 +168,21 @@ class LegacyApiCompatState
         return hash_equals($storedCode, $submittedCode);
     }
 
-    private static function read(): array
-    {
-        $path = self::path();
-        if (!is_file($path)) {
-            return [];
-        }
-
-        $decoded = json_decode((string)file_get_contents($path), true);
-        if (!is_array($decoded)) {
-            return [];
-        }
-
-        return self::purgeExpired($decoded);
-    }
-
-    private static function write(array $state): void
-    {
-        $state = self::purgeExpired($state);
-        $path = self::path();
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
-        }
-
-        file_put_contents(
-            $path,
-            json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            LOCK_EX
-        );
-    }
-
-    private static function purgeExpired(array $state): array
-    {
-        $now = time();
-        $codes = [];
-        foreach ((array)($state['verification_codes'] ?? []) as $key => $payload) {
-            $item = (array)$payload;
-            if ((int)($item['expires_at'] ?? 0) >= $now) {
-                $codes[$key] = $item;
-            }
-        }
-        $state['verification_codes'] = $codes;
-
-        $image = (array)($state['image_captcha'] ?? []);
-        if ((int)($image['expires_at'] ?? 0) < $now) {
-            unset($state['image_captcha']);
-        }
-
-        $latest = (array)($state['latest_verification_code'] ?? []);
-        if ((int)($latest['expires_at'] ?? 0) < $now) {
-            unset($state['latest_verification_code']);
-        }
-
-        return $state;
-    }
-
-    private static function path(): string
-    {
-        return runtime_path('legacy-api-compat-state.json');
-    }
-
     private static function verificationKey(string $purpose, string $channel, string $target): string
     {
-        return self::normalize($purpose) . '|' . self::normalize($channel) . '|' . self::normalizeTarget($target);
+        return self::VERIFICATION_PREFIX
+            . self::normalize($purpose)
+            . '|'
+            . self::normalize($channel)
+            . '|'
+            . self::normalizeTarget($target);
+    }
+
+    private static function imageCaptchaKey(string $scope): string
+    {
+        $normalizedScope = trim($scope) !== '' ? trim($scope) : self::GLOBAL_IMAGE_CAPTCHA_SCOPE;
+
+        return self::IMAGE_CAPTCHA_PREFIX . hash('sha256', $normalizedScope);
     }
 
     private static function normalize(string $value): string

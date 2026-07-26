@@ -12,7 +12,6 @@ for argument in "$@"; do
   case "${argument}" in
     --site-name=*)
       site_name="${argument#*=}"
-      FORWARD_ARGS+=("${argument}")
       if [[ -z "${SYSTEMD_UNIT}" ]]; then
         SYSTEMD_UNIT="${site_name}-webman.service"
       fi

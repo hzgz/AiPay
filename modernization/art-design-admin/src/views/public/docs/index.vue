@@ -88,9 +88,14 @@
     fetchPublicDoc,
     resolvePublicBackendOrigin,
     type PublicDocPayload
-  } from '@/api/public-site'
-  import PublicShell from '../shared/public-shell.vue'
-  import { resolvePublicErrorMessage, scrollPublicPageToTop } from '../shared/public-state'
+  } from '@/api/publicSite'
+  import PublicShell from '../shared/PublicShell.vue'
+  import {
+    appendPublicAffiliateQuery,
+    resolvePublicAffiliateId,
+    resolvePublicErrorMessage,
+    scrollPublicPageToTop
+  } from '../shared/publicState'
 
   defineOptions({ name: 'PublicDocsPage' })
 
@@ -137,8 +142,13 @@
   const navs = computed(() => payload.value?.navs || [])
   const isLoggedIn = computed(() => Boolean(payload.value?.is_logged_in))
   const merchantLoginUrl = computed(() => payload.value?.merchant_login_url || '/#/merchant/login')
+  const affiliateId = computed(() => resolvePublicAffiliateId(route.query.aff))
   const merchantRegisterUrl = computed(
-    () => payload.value?.merchant_register_url || '/#/merchant/register'
+    () =>
+      appendPublicAffiliateQuery(
+        payload.value?.merchant_register_url || '/#/merchant/register',
+        affiliateId.value
+      )
   )
   const merchantDashboardUrl = computed(() => '/#/merchant/dashboard')
   const merchantApiUrl = computed(() => '/#/merchant/api')
@@ -398,7 +408,7 @@
         items: [
           urlItem('前台首页', '/', frontend || '/'),
           urlItem('商户登录', publicPath('/merchant/login'), frontendHash('/merchant/login')),
-          urlItem('商户注册', publicPath('/merchant/register'), frontendHash('/merchant/register')),
+          urlItem('商户注册', publicPath('/merchant/register'), merchantRegisterUrl.value),
           urlItem('支付测试', publicPath('/demo'), frontendHash('/demo'))
         ]
       },
@@ -508,7 +518,7 @@
     padding: 0 16px;
     border: 1px solid var(--public-border);
     border-radius: 999px;
-    background: #fff;
+    background: var(--public-surface);
     color: var(--public-title);
     font-weight: 700;
     text-decoration: none;
@@ -519,18 +529,18 @@
   }
 
   .docs-link:hover {
-    border-color: rgba(24, 32, 47, 0.16);
-    background: #f8fafc;
+    border-color: var(--public-border-strong);
+    background: var(--public-surface-soft);
   }
 
   .docs-link--primary {
-    background: #18202f;
-    border-color: #18202f;
-    color: #fff;
+    background: var(--public-cta-bg);
+    border-color: var(--public-cta-border);
+    color: var(--public-cta-text);
   }
 
   .docs-alert {
-    color: #b45309;
+    color: var(--public-warning);
     line-height: 1.8;
   }
 
@@ -546,18 +556,18 @@
     justify-content: center;
     min-height: 40px;
     padding: 0 16px;
-    border: 1px solid rgba(15, 23, 42, 0.12);
+    border: 1px solid var(--public-border-strong);
     border-radius: 999px;
-    background: #fff;
+    background: var(--public-surface);
     color: var(--public-title);
     font-weight: 700;
     text-decoration: none;
   }
 
   .docs-nav__item.is-active {
-    background: #18202f;
-    border-color: #18202f;
-    color: #fff;
+    background: var(--public-cta-bg);
+    border-color: var(--public-cta-border);
+    color: var(--public-cta-text);
   }
 
   .docs-content {
@@ -587,7 +597,7 @@
     padding: 0 14px;
     border: 1px solid var(--public-border);
     border-radius: 999px;
-    background: #fff;
+    background: var(--public-surface);
     color: var(--public-title);
     font-weight: 700;
     cursor: pointer;
@@ -598,8 +608,8 @@
   }
 
   .docs-group__toggle:hover {
-    border-color: rgba(24, 32, 47, 0.16);
-    background: #f8fafc;
+    border-color: var(--public-border-strong);
+    background: var(--public-surface-soft);
   }
 
   .docs-rows {
@@ -613,7 +623,7 @@
     gap: 20px;
     align-items: start;
     padding: 16px 0;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    border-bottom: 1px solid var(--public-border);
   }
 
   .docs-row:last-child {
@@ -646,8 +656,8 @@
     min-width: 0;
     padding: 12px 14px;
     border-radius: 16px;
-    background: #f8fafc;
-    color: #1f2937;
+    background: var(--public-surface-soft);
+    color: var(--public-title);
     font-family: 'Cascadia Code', 'Consolas', monospace;
     white-space: normal;
     overflow-wrap: anywhere;
@@ -661,7 +671,7 @@
     padding: 0 14px;
     border: 1px solid var(--public-border);
     border-radius: 999px;
-    background: #fff;
+    background: var(--public-surface);
     color: var(--public-title);
     font-weight: 700;
     cursor: pointer;
@@ -672,8 +682,8 @@
   }
 
   .docs-row__value button:hover {
-    border-color: rgba(24, 32, 47, 0.16);
-    background: #f8fafc;
+    border-color: var(--public-border-strong);
+    background: var(--public-surface-soft);
   }
 
   @media (max-width: 980px) {

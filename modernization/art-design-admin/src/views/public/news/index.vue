@@ -88,13 +88,13 @@
     fetchPublicNewsCategory,
     fetchPublicNewsIndex,
     type PublicNewsListPayload
-  } from '@/api/public-site'
-  import PublicShell from '../shared/public-shell.vue'
+  } from '@/api/publicSite'
+  import PublicShell from '../shared/PublicShell.vue'
   import {
     normalizePublicPage,
     resolvePublicErrorMessage,
     scrollPublicPageToTop
-  } from '../shared/public-state'
+  } from '../shared/publicState'
 
   defineOptions({ name: 'PublicNewsIndexPage' })
 
@@ -242,17 +242,17 @@
     justify-content: center;
     min-height: 40px;
     padding: 0 16px;
-    border: 1px solid rgba(15, 23, 42, 0.12);
+    border: 1px solid var(--public-border-strong);
     border-radius: 999px;
-    background: #fff;
+    background: var(--public-surface);
     color: var(--public-title);
     text-decoration: none;
   }
 
   .news-type.is-active {
-    background: #18202f;
-    border-color: #18202f;
-    color: #fff;
+    background: var(--public-cta-bg);
+    border-color: var(--public-cta-border);
+    color: var(--public-cta-text);
   }
 
   .news-state h2 {
@@ -272,7 +272,7 @@
     padding: 0 16px;
     border: 1px solid var(--public-border);
     border-radius: 999px;
-    background: #fff;
+    background: var(--public-surface);
     color: var(--public-title);
     font-weight: 700;
     cursor: pointer;
@@ -309,7 +309,7 @@
     gap: 20px;
     align-items: start;
     padding: 18px 0;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    border-bottom: 1px solid var(--public-border);
   }
 
   .news-row:last-child {
@@ -367,7 +367,7 @@
     padding: 0 16px;
     border: 1px solid var(--public-border);
     border-radius: 999px;
-    background: #fff;
+    background: var(--public-surface);
     font-weight: 700;
   }
 

@@ -1,8 +1,6 @@
-# AiPay 部署验收说明
+# AiPay 部署验收
 
 ## 目标
-
-这份文档用于正式上线前后做快速自检，确保下面几件事同时成立：
 
 - 后端环境正常
 - 数据库结构完整
@@ -12,14 +10,16 @@
 
 ## 标准访问路径
 
-推荐部署完成后至少能访问：
+部署完成后至少能访问：
 
 - `https://portal.example.com/`
+- `https://portal.example.com/api/health`
 - `https://portal.example.com/#/merchant/login`
 - `https://portal.example.com/#/auth/login`
 - `http://127.0.0.1:8787/api/health`
 
 管理员入口建议只作为直达地址使用，不在游客首页公开暴露。
+在 aaPanel 静态站点 + URL Rewrite 方案下，对外验收健康检查优先使用 `/api/health`，不要把 `/health` 当成公网基准地址。
 
 ## 自检脚本位置
 
@@ -43,7 +43,7 @@ cd backend
 bash deploy/linux/verify-deployment.sh --skip-http
 ```
 
-这一阶段会检查：
+检查项：
 
 - `.env` 是否已改为真实值
 - `runtime/`、`upload-assets/`、`plugins/payments/` 是否齐全
@@ -72,6 +72,7 @@ powershell -ExecutionPolicy Bypass -File deploy/windows/verify-deployment.ps1 `
 ```bash
 cd backend
 bash deploy/linux/verify-deployment.sh \
+  --site-name=aipay \
   --backend-url=http://127.0.0.1:8787 \
   --console-url=https://portal.example.com \
   --merchant-url=https://portal.example.com \
@@ -80,17 +81,29 @@ bash deploy/linux/verify-deployment.sh \
   --admin-password='your-password'
 ```
 
-说明：
+参数：
 
 - `--backend-url` 传基础地址即可，脚本会自动检查 `/api/health`
 - 前端壳统一部署时，`--console-url`、`--merchant-url`、`--public-url` 可以传同一个域名
 - 传入管理员账号后，脚本会继续检查管理员登录、支付插件、支付方式、进程管理等关键接口
+- 如果 systemd 服务名不是默认 `aipay-webman.service`，记得传 `--site-name=你的站点名`
+
+健康检查建议通过标准：
+
+- `redis=true`
+- `session_driver=redis`
+- `session_redis=true`
 
 ## 输出结果含义
 
 - `PASS`：该项通过
 - `WARN`：该项有风险，但不一定阻断上线
 - `FAIL`：该项未通过，必须修复后再继续
+
+如果传了 `--site-name`，Linux 脚本还会继续检查：
+
+- 对应的 systemd 单元是否 active
+- `/run/<site-name>-webman/webman.pid` 是否存在且进程存活
 
 ## 必做人工验收
 
@@ -101,6 +114,7 @@ bash deploy/linux/verify-deployment.sh \
 5. 商户端能正常创建通道、测试支付、查看订单。
 6. 至少完成一笔真实支付或完整模拟支付，确认下单、回调、落账全部成功。
 7. 如启用了依赖后端进程的插件，确认进程在线。
+8. 线上如启用了 HTTPS，检查回包头中 `content-type` 是否为 `application/json; charset=utf-8`，避免中文在某些客户端里被误解码。
 
 ## 推荐验收顺序
 

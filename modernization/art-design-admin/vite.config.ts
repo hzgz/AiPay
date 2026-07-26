@@ -165,7 +165,7 @@ export default ({ mode }: { mode: string }) => {
       // 自动按需导入 API
       AutoImport({
         imports: ['vue', 'vue-router', 'pinia', '@vueuse/core'],
-        dts: 'src/types/import/auto-imports.d.ts',
+        dts: 'src/types/import/autoImports.d.ts',
         resolvers: [ElementPlusResolver()],
         eslintrc: {
           enabled: true,
@@ -222,7 +222,7 @@ export default ({ mode }: { mode: string }) => {
         // sass variable and mixin
         scss: {
           additionalData: `
-            @use "@styles/core/el-light.scss" as *; 
+            @use "@styles/core/elLight.scss" as *; 
             @use "@styles/core/mixin.scss" as *;
           `
         }

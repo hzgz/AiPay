@@ -259,7 +259,7 @@
   import { ElMessage, ElMessageBox, ElTag, type FormInstance, type FormRules } from 'element-plus'
   import { useAuth } from '@/hooks'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtButtonTable from '@/components/core/forms/artButtonTable/index.vue'
   import {
     fetchCreateAdminPermission,
     fetchDeleteAdminPermission,
@@ -1154,6 +1154,27 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    --permission-note-color: #94a3b8;
+    --permission-hero-border: #e2e8f0;
+    --permission-hero-bg:
+      linear-gradient(135deg, rgb(255 255 255 / 0.96), rgb(248 250 252 / 0.88)),
+      radial-gradient(circle at top right, rgb(14 165 233 / 0.1), transparent 48%);
+    --permission-drawer-border: #e2e8f0;
+    --permission-drawer-bg: #f8fafc;
+    --permission-migration-border: #dbeafe;
+    --permission-migration-bg: linear-gradient(135deg, rgb(239 246 255 / 0.92), rgb(248 250 252 / 0.92));
+  }
+
+  :global(html.dark .permission-page ){
+    --permission-note-color: #94a3b8;
+    --permission-hero-border: rgb(71 85 105 / 0.52);
+    --permission-hero-bg:
+      linear-gradient(135deg, rgb(15 23 42 / 0.96), rgb(30 41 59 / 0.9)),
+      radial-gradient(circle at top right, rgb(56 189 248 / 0.18), transparent 48%);
+    --permission-drawer-border: rgb(71 85 105 / 0.42);
+    --permission-drawer-bg: rgb(15 23 42 / 0.84);
+    --permission-migration-border: rgb(59 130 246 / 0.28);
+    --permission-migration-bg: linear-gradient(135deg, rgb(17 24 39 / 0.94), rgb(15 23 42 / 0.88));
   }
 
   .summary-section {
@@ -1177,7 +1198,7 @@
   }
 
   .cell-title {
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 14px;
     font-weight: 600;
     word-break: break-all;
@@ -1192,11 +1213,11 @@
   }
 
   .cell-sub {
-    color: #64748b;
+    color: var(--el-text-color-secondary);
   }
 
   .cell-note {
-    color: #94a3b8;
+    color: var(--permission-note-color);
   }
 
   .permission-detail {
@@ -1210,11 +1231,9 @@
     gap: 16px;
     padding: 18px 20px;
     margin-bottom: 24px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--permission-hero-border);
     border-radius: 18px;
-    background:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.88)),
-      radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 48%);
+    background: var(--permission-hero-bg);
   }
 
   .detail-hero-copy {
@@ -1227,7 +1246,7 @@
 
   .detail-hero-copy h3 {
     margin: 0;
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 22px;
     font-weight: 700;
   }
@@ -1235,7 +1254,7 @@
   .detail-hero-copy p,
   .detail-hero-copy span {
     margin: 0;
-    color: #475569;
+    color: var(--el-text-color-secondary);
     font-size: 13px;
     line-height: 1.7;
     word-break: break-all;
@@ -1255,7 +1274,7 @@
 
   .drawer-section h4 {
     margin: 0 0 12px;
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 15px;
     font-weight: 600;
   }
@@ -1268,20 +1287,20 @@
 
   .drawer-item {
     padding: 14px 16px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--permission-drawer-border);
     border-radius: 14px;
-    background: #f8fafc;
+    background: var(--permission-drawer-bg);
   }
 
   .drawer-item span {
     display: block;
     margin-bottom: 6px;
-    color: #64748b;
+    color: var(--el-text-color-secondary);
     font-size: 12px;
   }
 
   .drawer-item strong {
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 14px;
     font-weight: 600;
     word-break: break-all;
@@ -1290,9 +1309,9 @@
   .migration-panel {
     padding: 18px 20px;
     margin-bottom: 14px;
-    border: 1px solid #dbeafe;
+    border: 1px solid var(--permission-migration-border);
     border-radius: 16px;
-    background: linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(248, 250, 252, 0.92));
+    background: var(--permission-migration-bg);
   }
 
   .migration-panel__header {
@@ -1304,7 +1323,7 @@
   }
 
   .migration-panel__route {
-    color: #0f172a;
+    color: var(--el-text-color-primary);
     font-size: 14px;
     font-weight: 600;
     word-break: break-all;
@@ -1312,7 +1331,7 @@
 
   .migration-panel__note {
     margin: 0;
-    color: #475569;
+    color: var(--el-text-color-secondary);
     font-size: 13px;
     line-height: 1.7;
   }
@@ -1324,7 +1343,7 @@
   }
 
   .empty-copy {
-    color: #64748b;
+    color: var(--el-text-color-secondary);
     font-size: 13px;
   }
 

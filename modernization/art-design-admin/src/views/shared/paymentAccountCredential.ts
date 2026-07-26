@@ -20,7 +20,8 @@ export function isRequiredCredentialCode(code?: string | null) {
 
 export function isMultiModeCredentialCode(code?: string | null) {
   return Boolean(
-    code && MULTI_MODE_CREDENTIAL_CODES.includes(code as (typeof MULTI_MODE_CREDENTIAL_CODES)[number])
+    code &&
+      MULTI_MODE_CREDENTIAL_CODES.includes(code as (typeof MULTI_MODE_CREDENTIAL_CODES)[number])
   )
 }
 
@@ -58,11 +59,7 @@ export function parseModeCsv(value?: null | string) {
 export function formatModeCsv(values?: ReadonlyArray<string> | null) {
   return Array.from(
     new Set(
-      Array.isArray(values)
-        ? values
-            .map((item) => String(item || '').trim())
-            .filter(Boolean)
-        : []
+      Array.isArray(values) ? values.map((item) => String(item || '').trim()).filter(Boolean) : []
     )
   ).join(',')
 }
@@ -77,7 +74,9 @@ export function normalizeQrTypeSelection(
     return normalized || defaultCredentialQrType(code, meta)
   }
 
-  const allowedValues = (meta?.qrTypeOptions || []).map((option) => String(option.value || '').trim())
+  const allowedValues = (meta?.qrTypeOptions || []).map((option) =>
+    String(option.value || '').trim()
+  )
   const selected = parseModeCsv(value).filter((item) => allowedValues.includes(item))
 
   if (selected.length > 0) {
@@ -126,7 +125,9 @@ function isUploadedImageReference(value?: string | null) {
 }
 
 function normalizeWxpaySoftwareQrType(qrType?: string | null, qrUrl?: string | null) {
-  const normalized = String(qrType || '').trim().toLowerCase()
+  const normalized = String(qrType || '')
+    .trim()
+    .toLowerCase()
 
   if (['appreciate', 'reward', 'rewardcode', 'reward_code'].includes(normalized)) {
     return 'appreciate'
@@ -146,6 +147,14 @@ function normalizeWxpaySoftwareQrType(qrType?: string | null, qrUrl?: string | n
   }
 
   return isUploadedImageReference(qrUrl) ? 'appreciate' : 'personOrMerchant'
+}
+
+export function isAlipaySoftwarePictureMode(code?: string | null, qrType?: string | null) {
+  return code === 'alipay_software' && String(qrType || '').trim().toLowerCase() === 'pic'
+}
+
+export function shouldShowAccountIdentifierField(code?: string | null, qrType?: string | null) {
+  return !isAlipaySoftwarePictureMode(code, qrType)
 }
 
 export function resolveNormalizedQrType(
@@ -246,7 +255,7 @@ export function resolveAccountFieldEditor(
 
   if (field === 'qr_url') {
     if (code === 'alipay_software') {
-      return qrType === 'pic' ? 'image' : 'hidden'
+      return isAlipaySoftwarePictureMode(code, qrType) ? 'qr-decode' : 'hidden'
     }
 
     if (code === 'wxpay_software') {
@@ -277,6 +286,10 @@ export function resolveAccountFieldEditor(
   }
 
   if (code === 'wxpay_v3') {
+    return 'text'
+  }
+
+  if (code === 'usdt') {
     return 'text'
   }
 

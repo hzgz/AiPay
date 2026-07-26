@@ -15,6 +15,31 @@ $envString = static function (string $key, string $default = ''): string {
     return is_string($value) && $value !== '' ? $value : $default;
 };
 
+$envInt = static function (string $key, int $default): int {
+    if (class_exists(Environment::class)) {
+        return Environment::int($key, $default);
+    }
+
+    $value = getenv($key);
+    if ($value === false || $value === null || $value === '') {
+        $value = $_ENV[$key] ?? $_SERVER[$key] ?? null;
+    }
+
+    if (!is_scalar($value)) {
+        return $default;
+    }
+
+    $normalized = trim((string)$value);
+
+    return $normalized !== '' && is_numeric($normalized) ? (int)$normalized : $default;
+};
+
+$poolMaxConnections = max(5, $envInt('DB_POOL_MAX_CONNECTIONS', 20));
+$poolMinConnections = max(1, min($poolMaxConnections, $envInt('DB_POOL_MIN_CONNECTIONS', 2)));
+$poolWaitTimeout = max(1, $envInt('DB_POOL_WAIT_TIMEOUT', 10));
+$poolIdleTimeout = max(10, $envInt('DB_POOL_IDLE_TIMEOUT', 60));
+$poolHeartbeatInterval = max(5, $envInt('DB_POOL_HEARTBEAT_INTERVAL', 50));
+
 return [
     'default' => 'mysql',
     'connections' => [
@@ -34,11 +59,11 @@ return [
                 PDO::ATTR_EMULATE_PREPARES => false, // Must be false for Swoole and Swow drivers.
             ],
             'pool' => [
-                'max_connections' => 5,
-                'min_connections' => 1,
-                'wait_timeout' => 3,
-                'idle_timeout' => 60,
-                'heartbeat_interval' => 50,
+                'max_connections' => $poolMaxConnections,
+                'min_connections' => $poolMinConnections,
+                'wait_timeout' => $poolWaitTimeout,
+                'idle_timeout' => $poolIdleTimeout,
+                'heartbeat_interval' => $poolHeartbeatInterval,
             ],
         ],
     ],

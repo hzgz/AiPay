@@ -45,6 +45,8 @@ switch ($command) {
 }
 
 $existingPid = readPid($supervisorPidFile);
+$protectedPids = array_values(array_filter([getmypid(), $existingPid], static fn (int $pid): bool => $pid > 0));
+cleanupStaleProjectPhpProcesses($protectedPids);
 if ($existingPid > 0 && isProcessAlive($existingPid)) {
     fwrite(STDOUT, "Webman Windows supervisor already running. PID={$existingPid}\r\n");
     exit(0);
@@ -336,6 +338,7 @@ function stopSupervisor(string $supervisorPidFile, bool $verbose): int
     $pid = readPid($supervisorPidFile);
     if ($pid <= 0) {
         cleanupResidualRuntime();
+        cleanupStaleProjectPhpProcesses();
         if ($verbose) {
             fwrite(STDOUT, "Webman Windows supervisor is not running.\r\n");
         }
@@ -363,6 +366,7 @@ function stopSupervisor(string $supervisorPidFile, bool $verbose): int
 
     @unlink($supervisorPidFile);
     cleanupResidualRuntime();
+    cleanupStaleProjectPhpProcesses();
 
     if ($verbose) {
         fwrite(STDOUT, "Webman Windows supervisor stopped.\r\n");
@@ -401,4 +405,119 @@ function isProcessAlive(int $pid): bool
     }
 
     return str_contains($output, '"' . $pid . '"');
+}
+
+function cleanupStaleProjectPhpProcesses(array $protectedPids = []): void
+{
+    $processes = listProjectPhpProcesses();
+    if ($processes === []) {
+        return;
+    }
+
+    $protectedLookup = array_fill_keys(
+        collectDescendantProcessIds($processes, array_values(array_unique(array_filter($protectedPids, static fn (int $pid): bool => $pid > 0)))),
+        true
+    );
+
+    $staleProcesses = array_values(array_filter($processes, static function (array $process) use ($protectedLookup): bool {
+        $pid = (int)($process['ProcessId'] ?? 0);
+
+        return $pid > 0 && !isset($protectedLookup[$pid]);
+    }));
+
+    if ($staleProcesses === []) {
+        return;
+    }
+
+    $staleLookup = [];
+    foreach ($staleProcesses as $process) {
+        $pid = (int)($process['ProcessId'] ?? 0);
+        if ($pid > 0) {
+            $staleLookup[$pid] = true;
+        }
+    }
+
+    foreach ($staleProcesses as $process) {
+        $pid = (int)($process['ProcessId'] ?? 0);
+        $parentPid = (int)($process['ParentProcessId'] ?? 0);
+        if ($pid <= 0 || isset($staleLookup[$parentPid])) {
+            continue;
+        }
+
+        shell_exec('taskkill /F /T /PID ' . $pid . ' >NUL 2>NUL');
+    }
+}
+
+function collectDescendantProcessIds(array $processes, array $rootPids): array
+{
+    if ($rootPids === []) {
+        return [];
+    }
+
+    $childrenByParent = [];
+    foreach ($processes as $process) {
+        $pid = (int)($process['ProcessId'] ?? 0);
+        $parentPid = (int)($process['ParentProcessId'] ?? 0);
+        if ($pid <= 0) {
+            continue;
+        }
+
+        $childrenByParent[$parentPid][] = $pid;
+    }
+
+    $collected = [];
+    $queue = array_values(array_unique($rootPids));
+    while ($queue !== []) {
+        $pid = (int)array_shift($queue);
+        if ($pid <= 0 || isset($collected[$pid])) {
+            continue;
+        }
+
+        $collected[$pid] = true;
+        foreach ($childrenByParent[$pid] ?? [] as $childPid) {
+            if (!isset($collected[$childPid])) {
+                $queue[] = $childPid;
+            }
+        }
+    }
+
+    return array_map('intval', array_keys($collected));
+}
+
+function listProjectPhpProcesses(): array
+{
+    $basePath = str_replace("'", "''", str_replace('/', '\\', base_path()));
+    $script = <<<POWERSHELL
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+\$basePath = '$basePath'
+Get-CimInstance Win32_Process -Filter "Name='php.exe'" |
+    Where-Object {
+        \$commandLine = [string]\$_.CommandLine
+        \$commandLine -ne '' -and
+        \$commandLine -like "*\$basePath*" -and
+        (
+            \$commandLine -like '*\\windows.php start*' -or
+            \$commandLine -like '*\\runtime\\windows\\start_*'
+        )
+    } |
+    Select-Object ProcessId, ParentProcessId, CommandLine |
+    ConvertTo-Json -Compress
+POWERSHELL;
+
+    $encoded = base64_encode(mb_convert_encoding($script, 'UTF-16LE', 'UTF-8'));
+    $output = shell_exec('powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand ' . $encoded . ' 2>NUL');
+    if (!is_string($output) || trim($output) === '') {
+        return [];
+    }
+
+    $decoded = json_decode(trim($output), true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+
+    if (array_key_exists('ProcessId', $decoded)) {
+        return [$decoded];
+    }
+
+    return array_values(array_filter($decoded, static fn (mixed $item): bool => is_array($item)));
 }

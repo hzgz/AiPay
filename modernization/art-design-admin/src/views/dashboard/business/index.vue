@@ -184,7 +184,7 @@
   import { Icon } from '@iconify/vue'
   import { ElMessage } from 'element-plus'
   import { useRouter } from 'vue-router'
-  import { fetchGetCommerceOverview } from '@/api/commerce-overview'
+  import { fetchGetCommerceOverview } from '@/api/commerceOverview'
 
   defineOptions({ name: 'BusinessOverview' })
 
@@ -411,6 +411,27 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    --business-panel-border: var(--el-border-color-lighter);
+    --business-panel-bg: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(248 250 252 / 0.94));
+    --business-panel-bg-strong: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.92));
+    --business-stat-bg: rgb(248 250 252 / 0.88);
+    --business-period-meta-bg: rgb(241 245 249 / 0.9);
+    --business-title-color: #0f172a;
+    --business-text-color: #475569;
+    --business-muted-color: #64748b;
+    --business-accent-color: #1d4ed8;
+  }
+
+  :global(html.dark .dashboard-business-page ){
+    --business-panel-border: rgb(71 85 105 / 0.42);
+    --business-panel-bg: linear-gradient(180deg, rgb(15 23 42 / 0.96), rgb(2 6 23 / 0.94));
+    --business-panel-bg-strong: linear-gradient(180deg, rgb(15 23 42 / 0.96), rgb(2 6 23 / 0.94));
+    --business-stat-bg: rgb(15 23 42 / 0.82);
+    --business-period-meta-bg: rgb(30 41 59 / 0.84);
+    --business-title-color: #e2e8f0;
+    --business-text-color: #cbd5e1;
+    --business-muted-color: #94a3b8;
+    --business-accent-color: #60a5fa;
   }
 
   .hero-card,
@@ -480,11 +501,11 @@
   .focus-card,
   .summary-card,
   .period-card {
-    background: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(248 250 252 / 0.94));
+    background: var(--business-panel-bg);
   }
 
   .panel-card {
-    background: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.92));
+    background: var(--business-panel-bg-strong);
   }
 
   .panel-head,
@@ -502,7 +523,7 @@
   .focus-item strong,
   .snapshot-item strong {
     margin: 0;
-    color: #0f172a;
+    color: var(--business-title-color);
   }
 
   .panel-head p,
@@ -511,13 +532,13 @@
   .snapshot-item span,
   .period-note {
     margin: 0;
-    color: #64748b;
+    color: var(--business-muted-color);
     font-size: 13px;
     line-height: 1.7;
   }
 
   .summary-icon {
-    color: #1d4ed8;
+    color: var(--business-accent-color);
     font-size: 20px;
   }
 
@@ -541,7 +562,7 @@
   .period-head p,
   .focus-item span,
   .snapshot-item span {
-    color: #475569;
+    color: var(--business-text-color);
     font-size: 13px;
     font-weight: 600;
   }
@@ -569,7 +590,7 @@
     padding: 14px 16px;
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 16px;
-    background: rgb(248 250 252 / 0.88);
+    background: var(--business-stat-bg);
   }
 
   .focus-item strong {
@@ -597,8 +618,8 @@
     justify-content: center;
     padding: 10px 12px;
     border-radius: 12px;
-    background: rgb(241 245 249 / 0.9);
-    color: #334155;
+    background: var(--business-period-meta-bg);
+    color: var(--business-text-color);
     font-size: 12px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;

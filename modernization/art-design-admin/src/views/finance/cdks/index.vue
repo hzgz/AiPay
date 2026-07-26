@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="cdk-page art-full-height">
     <ArtSearchBar
       v-model="searchForm"
@@ -264,7 +264,7 @@
   import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import { useAuth } from '@/hooks'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtButtonTable from '@/components/core/forms/artButtonTable/index.vue'
   import {
     fetchAuditCdkBatchDelete,
     fetchBatchDeleteCdks,

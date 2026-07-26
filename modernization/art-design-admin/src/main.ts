@@ -6,9 +6,9 @@ import language from './locales'
 import '@styles/core/tailwind.css'
 import '@styles/index.scss'
 import '@utils/sys/console.ts'
-import '@utils/ui/iconify-loader'
+import '@utils/ui/iconifyLoader'
 import { setupGlobDirectives } from './directives'
-import { setupErrorHandle } from './utils/sys/error-handle'
+import { setupErrorHandle } from '@utils/sys/errorHandle'
 
 document.addEventListener(
   'touchstart',

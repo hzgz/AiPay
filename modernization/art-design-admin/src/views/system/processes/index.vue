@@ -9,37 +9,11 @@
               <div class="hero-chips">
                 <ElTag effect="plain">{{ displayOsFamily(environment?.os_family) }}</ElTag>
                 <ElTag effect="plain">主服务实例 {{ summary.supervisor_total }}</ElTag>
-                <ElTag
-                  :type="monitor.paused ? 'warning' : monitor.running ? 'success' : 'info'"
-                  effect="plain"
-                >
-                  {{ monitorStatusLabel }}
-                </ElTag>
               </div>
             </div>
 
             <div class="hero-actions">
               <ElButton :loading="loading" @click="loadData">刷新</ElButton>
-              <ElButton
-                v-if="monitor.paused"
-                type="primary"
-                plain
-                :disabled="!hasResumeMonitorAuth"
-                :loading="actionLoading === 'resume'"
-                @click="handleResumeMonitor"
-              >
-                恢复巡检
-              </ElButton>
-              <ElButton
-                v-else
-                type="warning"
-                plain
-                :disabled="!hasPauseMonitorAuth"
-                :loading="actionLoading === 'pause'"
-                @click="handlePauseMonitor"
-              >
-                暂停巡检
-              </ElButton>
               <ElButton
                 v-if="showDuplicateCleanupAction"
                 type="danger"
@@ -78,8 +52,8 @@
 
       <ElCol :xs="12" :sm="6" :lg="3">
         <ElCard class="metric-card monitor" shadow="never">
-          <span class="metric-label">巡检状态</span>
-          <strong class="metric-value metric-status">{{ monitorStatusShort }}</strong>
+          <span class="metric-label">主服务实例</span>
+          <strong class="metric-value metric-status">{{ summary.supervisor_total }}</strong>
         </ElCard>
       </ElCol>
     </ElRow>
@@ -137,10 +111,6 @@
         <ElTag effect="plain">
           主服务进程 {{ cleanupPreview.current_webman_worker_total }} /
           {{ cleanupPreview.expected_webman_worker_total }}
-        </ElTag>
-        <ElTag effect="plain">
-          巡检进程 {{ cleanupPreview.current_monitor_worker_total }} /
-          {{ cleanupPreview.expected_monitor_worker_total }}
         </ElTag>
         <ElTag
           v-for="warning in cleanupPreview.warnings"
@@ -361,8 +331,10 @@
             <ElDescriptionsItem label="运行目录">
               <span class="mono-text break-all">{{ displayText(environment?.runtime_root) }}</span>
             </ElDescriptionsItem>
-            <ElDescriptionsItem label="监控锁文件">
-              <span class="mono-text break-all">{{ displayText(monitor.lock_file) }}</span>
+            <ElDescriptionsItem label="Windows 运行目录">
+              <span class="mono-text break-all">
+                {{ displayText(environment?.windows_runtime_directory) }}
+              </span>
             </ElDescriptionsItem>
           </ElDescriptions>
         </ElCard>
@@ -374,12 +346,7 @@
 <script setup lang="ts">
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useAuth } from '@/hooks'
-  import {
-    fetchCleanupDuplicateSupervisors,
-    fetchGetProcessOverview,
-    fetchPauseProcessMonitor,
-    fetchResumeProcessMonitor
-  } from '@/api/processes'
+  import { fetchCleanupDuplicateSupervisors, fetchGetProcessOverview } from '@/api/processes'
 
   defineOptions({ name: 'SystemProcesses' })
 
@@ -387,7 +354,7 @@
   type SupervisorItem = Api.SystemManage.ProcessWorkerRecord
 
   const loading = ref(false)
-  const actionLoading = ref<'pause' | 'resume' | 'cleanup' | ''>('')
+  const actionLoading = ref<'cleanup' | ''>('')
   const overview = ref<Api.SystemManage.ProcessOverviewResponse | null>(null)
   const { hasAuth } = useAuth()
 
@@ -401,24 +368,11 @@
         plugin_running_total: 0,
         payment_plugin_total: 0,
         payment_plugin_manifest_process_total: 0,
-        supervisor_total: 0,
-        monitor_running: false,
-        monitor_paused: false
+        supervisor_total: 0
       }
   )
 
   const environment = computed(() => overview.value?.environment || null)
-  const monitor = computed(
-    () =>
-      overview.value?.monitor || {
-        running: false,
-        paused: false,
-        lock_file: '',
-        paused_at: null,
-        process_count: 0,
-        workers: []
-      }
-  )
   const coreProcesses = computed<ProcessItem[]>(() => overview.value?.core_processes || [])
   const runtimeFiles = computed(() => overview.value?.runtime_files || [])
   const supervisors = computed<SupervisorItem[]>(() => overview.value?.supervisors.items || [])
@@ -436,9 +390,7 @@
         remove_supervisor_pids: [],
         remove_worker_pids: [],
         current_webman_worker_total: 0,
-        current_monitor_worker_total: 0,
         expected_webman_worker_total: 0,
-        expected_monitor_worker_total: 0,
         warnings: []
       }
     )
@@ -457,8 +409,6 @@
   })
 
   const pluginProcessCount = computed(() => pluginProcesses.value.length)
-  const hasPauseMonitorAuth = computed(() => hasAuth('pauseMonitor') || hasAuth('index'))
-  const hasResumeMonitorAuth = computed(() => hasAuth('resumeMonitor') || hasAuth('index'))
   const hasCleanupSupervisorsAuth = computed(
     () => hasAuth('cleanupSupervisors') || hasAuth('index')
   )
@@ -485,28 +435,6 @@
 
     return `检测到 ${summary.value.supervisor_total} 个主服务实例，请清理重复进程。`
   })
-  const monitorStatusLabel = computed(() => {
-    if (monitor.value.paused) {
-      return '进程巡检已暂停'
-    }
-
-    if (monitor.value.running) {
-      return '进程巡检运行中'
-    }
-
-    return '进程巡检未运行'
-  })
-  const monitorStatusShort = computed(() => {
-    if (monitor.value.paused) {
-      return '已暂停'
-    }
-
-    if (monitor.value.running) {
-      return '运行中'
-    }
-
-    return '未运行'
-  })
 
   onMounted(() => {
     loadData()
@@ -518,26 +446,6 @@
       overview.value = await fetchGetProcessOverview()
     } finally {
       loading.value = false
-    }
-  }
-
-  async function handlePauseMonitor() {
-    actionLoading.value = 'pause'
-    try {
-      overview.value = await fetchPauseProcessMonitor()
-      ElMessage.success('进程巡检已暂停')
-    } finally {
-      actionLoading.value = ''
-    }
-  }
-
-  async function handleResumeMonitor() {
-    actionLoading.value = 'resume'
-    try {
-      overview.value = await fetchResumeProcessMonitor()
-      ElMessage.success('进程巡检已恢复')
-    } finally {
-      actionLoading.value = ''
     }
   }
 
@@ -645,12 +553,47 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    --process-border-color: var(--el-border-color-light);
+    --process-hero-bg:
+      radial-gradient(circle at top right, rgb(34 197 94 / 0.18), transparent 38%),
+      linear-gradient(135deg, rgb(240 253 244 / 0.96), rgb(255 255 255 / 1));
+    --process-metric-core-bg: linear-gradient(180deg, rgb(239 246 255 / 0.92), rgb(255 255 255 / 1));
+    --process-metric-worker-bg: linear-gradient(180deg, rgb(236 253 245 / 0.92), rgb(255 255 255 / 1));
+    --process-metric-plugin-bg: linear-gradient(180deg, rgb(255 251 235 / 0.92), rgb(255 255 255 / 1));
+    --process-metric-monitor-bg: linear-gradient(180deg, rgb(248 250 252 / 0.96), rgb(255 255 255 / 1));
+    --process-cleanup-bg: linear-gradient(180deg, rgb(255 251 235 / 0.92), rgb(255 255 255 / 1));
+    --process-panel-bg: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.92));
+    --process-title-color: #0f172a;
+    --process-text-color: #334155;
+    --process-muted-color: #64748b;
+    --process-soft-color: #94a3b8;
+    --process-label-color: #166534;
+    --process-cleanup-title-color: #92400e;
+  }
+
+  :global(html.dark .system-processes-page ){
+    --process-border-color: rgb(71 85 105 / 0.42);
+    --process-hero-bg:
+      radial-gradient(circle at top right, rgb(34 197 94 / 0.12), transparent 38%),
+      linear-gradient(135deg, rgb(15 23 42 / 0.96), rgb(2 6 23 / 0.94));
+    --process-metric-core-bg: linear-gradient(180deg, rgb(30 41 59 / 0.94), rgb(15 23 42 / 0.94));
+    --process-metric-worker-bg: linear-gradient(180deg, rgb(15 118 110 / 0.16), rgb(15 23 42 / 0.94));
+    --process-metric-plugin-bg: linear-gradient(180deg, rgb(124 45 18 / 0.16), rgb(15 23 42 / 0.94));
+    --process-metric-monitor-bg: linear-gradient(180deg, rgb(15 23 42 / 0.96), rgb(2 6 23 / 0.94));
+    --process-cleanup-bg: linear-gradient(180deg, rgb(124 45 18 / 0.16), rgb(15 23 42 / 0.94));
+    --process-panel-bg: linear-gradient(180deg, rgb(15 23 42 / 0.94), rgb(2 6 23 / 0.94));
+    --process-title-color: #e2e8f0;
+    --process-text-color: #cbd5e1;
+    --process-muted-color: #94a3b8;
+    --process-soft-color: #64748b;
+    --process-label-color: #86efac;
+    --process-cleanup-title-color: #fdba74;
   }
 
   .hero-card,
   .metric-card,
   .panel-card {
-    border: 1px solid var(--el-border-color-light);
+    border: 1px solid var(--process-border-color);
   }
 
   .process-alert {
@@ -670,7 +613,7 @@
 
   .cleanup-card {
     border: 1px solid rgb(251 191 36 / 0.28);
-    background: linear-gradient(180deg, rgb(255 251 235 / 0.92), rgb(255 255 255 / 1));
+    background: var(--process-cleanup-bg);
   }
 
   .cleanup-head {
@@ -682,7 +625,7 @@
 
   .cleanup-head h3 {
     margin: 0;
-    color: #92400e;
+    color: var(--process-cleanup-title-color);
     font-size: 18px;
   }
 
@@ -694,25 +637,23 @@
   }
 
   .hero-card {
-    background:
-      radial-gradient(circle at top right, rgb(34 197 94 / 0.18), transparent 38%),
-      linear-gradient(135deg, rgb(240 253 244 / 0.96), rgb(255 255 255 / 1));
+    background: var(--process-hero-bg);
   }
 
   .metric-card.core {
-    background: linear-gradient(180deg, rgb(239 246 255 / 0.92), rgb(255 255 255 / 1));
+    background: var(--process-metric-core-bg);
   }
 
   .metric-card.worker {
-    background: linear-gradient(180deg, rgb(236 253 245 / 0.92), rgb(255 255 255 / 1));
+    background: var(--process-metric-worker-bg);
   }
 
   .metric-card.plugin {
-    background: linear-gradient(180deg, rgb(255 251 235 / 0.92), rgb(255 255 255 / 1));
+    background: var(--process-metric-plugin-bg);
   }
 
   .metric-card.monitor {
-    background: linear-gradient(180deg, rgb(248 250 252 / 0.96), rgb(255 255 255 / 1));
+    background: var(--process-metric-monitor-bg);
   }
 
   .hero-content {
@@ -725,7 +666,7 @@
 
   .hero-title {
     margin: 0;
-    color: #0f172a;
+    color: var(--process-title-color);
     font-size: 30px;
     line-height: 1.1;
     font-weight: 700;
@@ -759,13 +700,13 @@
   }
 
   .metric-label {
-    color: #166534;
+    color: var(--process-label-color);
     font-size: 13px;
     font-weight: 600;
   }
 
   .metric-value {
-    color: #0f172a;
+    color: var(--process-title-color);
     font-size: 36px;
     line-height: 1;
     font-variant-numeric: tabular-nums;
@@ -784,7 +725,7 @@
 
   .panel-head h3 {
     margin: 0;
-    color: #0f172a;
+    color: var(--process-title-color);
     font-size: 18px;
   }
 
@@ -795,21 +736,21 @@
   }
 
   .stack-cell strong {
-    color: #0f172a;
+    color: var(--process-title-color);
   }
 
   .sub-copy {
-    color: #64748b;
+    color: var(--process-muted-color);
     font-size: 12px;
   }
 
   .empty-copy {
-    color: #94a3b8;
+    color: var(--process-soft-color);
     font-size: 12px;
   }
 
   .mono-text {
-    color: #334155;
+    color: var(--process-text-color);
     font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
     font-size: 12px;
   }

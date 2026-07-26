@@ -180,9 +180,6 @@ class MediaLibraryController
 
                     $file->move($absolutePath);
                     $createdPaths[] = $absolutePath;
-                    $createdPaths[] = UploadWorkspace::legacyPublicPath($path, $relativeChild);
-                    UploadWorkspace::mirrorFileToLegacyPublic($absolutePath, $path, $relativeChild);
-
                     $dbId = (int)Db::table('admin_photo')->insertGetId([
                         'name' => $prepared['name'],
                         'href' => $href,
@@ -836,13 +833,6 @@ class MediaLibraryController
         $existsInDb = !empty($file['exists_in_db']) && $dbId > 0;
         $absoluteFilePath = $resolved['absolute_file_path'] ?? null;
         $directoryRoot = trim((string)($resolved['directory_absolute_path'] ?? ''));
-        $legacyPublicPath = $this->legacyPublicFileAbsolutePath(
-            trim((string)($file['path'] ?? '')),
-            trim((string)($file['href'] ?? ''))
-        );
-        $legacyDirectoryRoot = trim((string)($file['path'] ?? '')) === ''
-            ? ''
-            : UploadWorkspace::legacyPublicPath(trim((string)($file['path'] ?? '')));
 
         if ($existsOnDisk && is_string($absoluteFilePath) && $absoluteFilePath !== '' && is_file($absoluteFilePath)) {
             if (!@unlink($absoluteFilePath)) {
@@ -851,13 +841,6 @@ class MediaLibraryController
 
             if ($directoryRoot !== '') {
                 $this->cleanupEmptyAncestorDirectories(dirname($absoluteFilePath), $directoryRoot);
-            }
-        }
-
-        if (is_string($legacyPublicPath) && $legacyPublicPath !== '' && is_file($legacyPublicPath)) {
-            @unlink($legacyPublicPath);
-            if ($legacyDirectoryRoot !== '') {
-                $this->cleanupEmptyAncestorDirectories(dirname($legacyPublicPath), $legacyDirectoryRoot);
             }
         }
 
@@ -879,8 +862,6 @@ class MediaLibraryController
         if (is_dir($directoryPath)) {
             $this->deleteDirectoryTree($directoryPath);
         }
-
-        UploadWorkspace::deleteLegacyPublicDirectory($path);
 
         Db::table('admin_photo')
             ->where('path', $path)
@@ -1267,23 +1248,6 @@ class MediaLibraryController
         }
 
         return $this->directoryAbsolutePath($path) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
-    }
-
-    private function legacyPublicFileAbsolutePath(string $path, string $href): ?string
-    {
-        $href = $this->normalizeHref($href);
-        $prefix = '/upload/' . trim($path, '/') . '/';
-
-        if ($href === '' || !str_starts_with($href, $prefix)) {
-            return null;
-        }
-
-        $relative = str_replace('\\', '/', substr($href, strlen($prefix)));
-        if ($relative === '' || str_contains($relative, '../') || str_contains($relative, '..\\')) {
-            return null;
-        }
-
-        return UploadWorkspace::legacyPublicPath($path, $relative);
     }
 
     /**

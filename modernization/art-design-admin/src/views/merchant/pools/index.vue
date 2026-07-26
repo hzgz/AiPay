@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="merchant-page merchant-pool-page">
     <section class="merchant-page-header">
       <div class="merchant-page-header__title">
@@ -112,11 +112,11 @@
 <script setup lang="ts">
   import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtButtonTable from '@/components/core/forms/artButtonTable/index.vue'
   import { useMerchantStore } from '@/store/modules/merchant'
   import { displayAdminFixtureText } from '@/utils/adminFixtureText'
-  import MerchantPoolChannelEditorDialog from './modules/merchant-pool-channel-editor-dialog.vue'
-  import MerchantPoolDetailDrawer from './modules/merchant-pool-detail-drawer.vue'
+  import MerchantPoolChannelEditorDialog from './modules/MerchantPoolChannelEditorDialog.vue'
+  import MerchantPoolDetailDrawer from './modules/MerchantPoolDetailDrawer.vue'
   import {
     assignMerchantPoolCreateFormState,
     assignMerchantPoolEditFormState,
@@ -135,12 +135,12 @@
     syncMerchantPoolEditFormFromEditable,
     toggleMerchantPoolChannelRowSelection,
     updateMerchantPoolChannelRowWeight
-  } from './modules/merchant-pool-form-state'
+  } from './modules/merchantPoolFormState'
   import type {
     MerchantPoolCreateFormState,
     MerchantPoolEditFormState
-  } from './modules/merchant-pool-form-state'
-  import MerchantPoolMaintenanceDialogs from './modules/merchant-pool-maintenance-dialogs.vue'
+  } from './modules/merchantPoolFormState'
+  import MerchantPoolMaintenanceDialogs from './modules/MerchantPoolMaintenanceDialogs.vue'
   import {
     createMerchantPool,
     deleteMerchantPool,

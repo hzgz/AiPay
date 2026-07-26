@@ -14,6 +14,7 @@ use app\support\AdminTicketFormatter;
 use app\support\AdminVipFormatter;
 use app\support\ApiResponse;
 use app\support\BusinessTable;
+use app\support\Environment;
 use app\support\GoogleAuthenticator;
 use app\support\LegacyPassword;
 use app\support\LegacyMojibakeGuard;
@@ -26,6 +27,7 @@ use app\support\MerchantPortalMessageCatalog;
 use app\support\MerchantPortalSecuritySupport;
 use app\support\MerchantPortalReadOnlyGuard;
 use app\support\MerchantSmsCodeSender;
+use app\support\RequestRateLimiter;
 use app\support\RequestPayload;
 use app\support\SystemConfig;
 use Illuminate\Database\Query\Builder;
@@ -2093,7 +2095,6 @@ HTML;
         $callbackTask = (new OrderCallbackTaskService())->enqueueForSettledOrder($order, $merchant, [
             'scene' => 'merchant_replay',
             'force_new' => true,
-            'dispatch_now' => true,
         ]);
         $callbackUrls = [
             'notify' => trim((string)($callbackTask['callback_url'] ?? $callbackTask['notify_url'] ?? '')),
@@ -2932,6 +2933,11 @@ HTML;
 
         if ($username === '' || $password === '') {
             return $this->loginJson(201, 'username and password are required');
+        }
+
+        $throttleError = $this->merchantLoginThrottleError($request, $username);
+        if ($throttleError instanceof Response) {
+            return $throttleError;
         }
 
         $config = SystemConfig::all();
@@ -4473,7 +4479,11 @@ HTML;
             'parent_affiliate_label' => empty($merchant['superior_id'])
                 ? '暂无上级商户'
                 : ('商户 #' . (int)$merchant['superior_id']),
-            'invite_url' => $this->requestOrigin($request) . '/?aff=' . $merchantId,
+            'invite_url' => $this->withHashPath(
+                $this->merchantFrontendBaseUrl($request),
+                '/merchant/register',
+                ['aff' => $merchantId]
+            ),
             'last_invite_time' => $lastInviteTime,
         ];
     }
@@ -5172,6 +5182,35 @@ HTML;
             ->first();
 
         return $row ? (array)$row : null;
+    }
+
+    private function merchantLoginThrottleError(Request $request, string $username): ?Response
+    {
+        $maxAttempts = Environment::int('MERCHANT_LOGIN_RATE_LIMIT_MAX', 20);
+        $windowSeconds = Environment::int('MERCHANT_LOGIN_RATE_LIMIT_WINDOW', 60);
+        if ($maxAttempts <= 0 || $windowSeconds <= 0) {
+            return null;
+        }
+
+        $ip = trim((string)$request->getRealIp());
+        if ($ip === '') {
+            return null;
+        }
+
+        $keys = ['merchant:login:ip:' . $ip];
+        $normalizedUsername = strtolower(trim($username));
+        if ($normalizedUsername !== '') {
+            $keys[] = 'merchant:login:ip-user:' . $ip . ':' . $normalizedUsername;
+        }
+
+        foreach ($keys as $key) {
+            $result = RequestRateLimiter::attempt($key, $maxAttempts, $windowSeconds);
+            if (!$result['allowed']) {
+                return $this->loginJson(429, '请求过于频繁，请稍后再试');
+            }
+        }
+
+        return null;
     }
 
     private function requiresGoogleLogin(array $merchant, array $config): bool

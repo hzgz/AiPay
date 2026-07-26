@@ -75,13 +75,13 @@
     createDefaultPublicSoftwareConfig,
     fetchPublicSoftwareConfig,
     type PublicSoftwareConfigPayload
-  } from '@/api/public-auth'
+  } from '@/api/publicAuth'
   import { useMerchantStore } from '@/store/modules/merchant'
-  import { setMerchantFrontToken } from '@/utils/merchant-session'
+  import { getMerchantFrontToken, setMerchantFrontToken } from '@/utils/merchantSession'
   import { translateMerchantText } from '../shared/text'
   import LoginLeftView from '@/components/core/views/login/LoginLeftView.vue'
   import AuthTopBar from '@/components/core/views/login/AuthTopBar.vue'
-  import MerchantAuthSlider from '../shared/merchant-auth-slider.vue'
+  import MerchantAuthSlider from '../shared/MerchantAuthSlider.vue'
   import { RouterLink } from 'vue-router'
 
   defineOptions({ name: 'MerchantLogin' })
@@ -162,7 +162,11 @@
           ...response.data
         }
       }
-      await merchantStore.hydrate()
+      if (getMerchantFrontToken() !== '') {
+        await merchantStore.hydrate()
+      } else {
+        merchantStore.clearSession()
+      }
       if (merchantStore.authenticated) {
         const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
         await router.replace(redirect || '/merchant/dashboard')

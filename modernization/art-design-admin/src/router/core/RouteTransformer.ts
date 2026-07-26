@@ -1,7 +1,7 @@
-﻿/**
- * 璺敱杞崲鍣?
+/**
+ * Route transformation service.
  *
- * 璐熻矗灏嗚彍鍗曟暟鎹浆鎹负 Vue Router 璺敱閰嶇疆
+ * Converts menu-style route data into Vue Router records.
  *
  * @module router/core/RouteTransformer
  * @author AiPay
@@ -28,18 +28,18 @@ export class RouteTransformer {
   }
 
   /**
-   * 杞崲璺敱閰嶇疆
+   * Transform a menu route into a router-ready record.
    */
   transform(route: AppRouteRecord, depth = 0): ConvertedRoute {
     const { component, children, ...routeConfig } = route
 
-    // 鍩虹璺敱閰嶇疆
+    // Create the base route shape before attaching the resolved component.
     const converted: ConvertedRoute = {
       ...routeConfig,
       component: undefined
     }
 
-    // 澶勭悊涓嶅悓绫诲瀷鐨勮矾鐢?
+    // Resolve the proper component strategy for the current route type.
     if (route.meta.isIframe) {
       this.handleIframeRoute(converted, route, depth)
     } else if (this.isFirstLevelRoute(route, depth)) {
@@ -48,7 +48,7 @@ export class RouteTransformer {
       this.handleNormalRoute(converted, component as string)
     }
 
-    // 閫掑綊澶勭悊瀛愯矾鐢?
+    // Transform children recursively so nested routes keep the same rules.
     if (children?.length) {
       converted.children = children.map((child) => this.transform(child, depth + 1))
     }
@@ -57,14 +57,14 @@ export class RouteTransformer {
   }
 
   /**
-   * 鍒ゆ柇鏄惁涓轰竴绾ц矾鐢憋紙闇€瑕?Layout 鍖呰９锛?
+   * Check whether the route is a first-level page that needs a layout wrapper.
    */
   private isFirstLevelRoute(route: AppRouteRecord, depth: number): boolean {
     return depth === 0 && (!route.children || route.children.length === 0)
   }
 
   /**
-   * 澶勭悊 iframe 绫诲瀷璺敱
+   * Handle iframe-style routes.
    */
   private handleIframeRoute(
     targetRoute: ConvertedRoute,
@@ -72,7 +72,7 @@ export class RouteTransformer {
     depth: number
   ): void {
     if (depth === 0) {
-      // 椤剁骇 iframe锛氱敤 Layout 鍖呰９
+      // Top-level iframe routes are wrapped with the shared layout.
       targetRoute.component = this.componentLoader.loadLayout()
       targetRoute.path = this.extractFirstSegment(sourceRoute.path || '')
       targetRoute.name = ''
@@ -84,16 +84,16 @@ export class RouteTransformer {
         } as ConvertedRoute
       ]
     } else {
-      // 闈為《绾э紙宓屽锛塱frame锛氱洿鎺ヤ娇鐢?Iframe.vue
+      // Nested iframe routes can render the iframe page directly.
       targetRoute.component = this.componentLoader.loadIframe()
     }
 
-    // 璁板綍 iframe 璺敱
+    // Keep a registry of iframe routes for persistence and lookup.
     this.iframeManager.add(sourceRoute)
   }
 
   /**
-   * 澶勭悊涓€绾ц彍鍗曡矾鐢?
+   * Wrap single first-level routes with the shared layout shell.
    */
   private handleFirstLevelRoute(
     converted: ConvertedRoute,
@@ -114,7 +114,7 @@ export class RouteTransformer {
   }
 
   /**
-   * 澶勭悊鏅€氳矾鐢?
+   * Handle standard component-backed routes.
    */
   private handleNormalRoute(converted: ConvertedRoute, component: string | undefined): void {
     if (component) {
@@ -123,11 +123,10 @@ export class RouteTransformer {
   }
 
   /**
-   * 鎻愬彇璺緞鐨勭涓€娈?
+   * Extract the first non-empty segment from a route path.
    */
   private extractFirstSegment(path: string): string {
     const segments = path.split('/').filter(Boolean)
     return segments.length > 0 ? `/${segments[0]}` : '/'
   }
 }
-

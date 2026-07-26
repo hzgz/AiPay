@@ -1,6 +1,6 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { resolveBackendOrigin } from '@/utils/http/base'
-import { clearMerchantFrontToken, getMerchantFrontToken } from '@/utils/merchant-session'
+import { clearMerchantFrontToken, getMerchantFrontToken } from '@/utils/merchantSession'
 
 export interface MerchantApiResponse<T = any> {
   code: number
@@ -77,6 +77,14 @@ export interface MerchantChannelTestPayResponse {
   trade_no: string
   out_trade_no: string
   pay_amount: string
+  pay_amount_unit?: 'CNY' | 'USDT' | string
+  base_amount?: string
+  base_amount_unit?: 'CNY' | string
+  expires_seconds?: number
+  expires_at?: string | null
+  expires_at_timestamp?: number | null
+  exchange_rate?: null | string
+  wallet_address?: null | string
   type: string
   pay_url: string
   direct_open_url?: null | string

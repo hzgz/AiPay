@@ -154,13 +154,13 @@
   import { useRouter } from 'vue-router'
   import { useAuth } from '@/hooks'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
-  import PluginScaffoldDialog from './modules/plugin-scaffold-dialog.vue'
-  import PaymentPluginGovernancePanels from './modules/plugin-governance-panels.vue'
-  import PaymentPluginListWorkspace from './modules/plugin-list-workspace.vue'
-  import PaymentPluginDetailCleanup from './modules/plugin-detail-cleanup.vue'
-  import PaymentPluginDetailConfig from './modules/plugin-detail-config.vue'
-  import PaymentPluginDetailOverview from './modules/plugin-detail-overview.vue'
-  import PaymentPluginDetailSnapshot from './modules/plugin-detail-snapshot.vue'
+  import PluginScaffoldDialog from './modules/PluginScaffoldDialog.vue'
+  import PaymentPluginGovernancePanels from './modules/PluginGovernancePanels.vue'
+  import PaymentPluginListWorkspace from './modules/PluginListWorkspace.vue'
+  import PaymentPluginDetailCleanup from './modules/PluginDetailCleanup.vue'
+  import PaymentPluginDetailConfig from './modules/PluginDetailConfig.vue'
+  import PaymentPluginDetailOverview from './modules/PluginDetailOverview.vue'
+  import PaymentPluginDetailSnapshot from './modules/PluginDetailSnapshot.vue'
   import {
     buildPluginCleanupSuccessMessage,
     buildPluginConfigFormState,
@@ -179,7 +179,7 @@
     purgeConfirmationPhraseForDetail,
     purgeGuardForDetail,
     restoreConfirmationPhrase
-  } from './modules/payment-plugin-lifecycle-display'
+  } from './modules/paymentPluginLifecycleDisplay'
   import type { PaymentPluginScaffoldSubmitPayload } from '@/views/shared/paymentPluginScaffold'
   import {
     getPaymentPluginLegacyProfile,
@@ -203,6 +203,7 @@
     pluginPaymentLabel,
     pluginPaymentLabels,
     pluginPaymentTagType,
+    repairRecommendationLabel,
     residueManagedChannelBlockSummary,
     resolvePluginPaymentFilter,
     resolvePluginPaymentFilters,
@@ -231,7 +232,7 @@
     fetchUpgradePaymentPlugin,
     fetchSavePaymentPluginConfig,
     fetchUninstallPaymentPlugin
-  } from '@/api/system-manage'
+  } from '@/api/systemManage'
 
   defineOptions({ name: 'PaymentPlugins' })
 
@@ -427,7 +428,7 @@
       {
         key: 'audit',
         label: '运行',
-        value: auditSummaryLabel(detail.state_audit),
+        value: auditSummaryLabel(detail.state_audit, Boolean(detail.state.installed)),
         tone: overviewAuditTone(detail)
       },
       {
@@ -697,7 +698,7 @@
       formatter: (row) => {
         const issueCount = row.state_audit.issues.length
         const attentionLabel = row.state_audit.repair_recommended
-          ? '需修复'
+          ? repairRecommendationLabel(row.state_audit, Boolean(row.installed))
           : row.state_audit.upgrade_recommended
             ? '待升级'
             : row.state_audit.health !== 'healthy'
@@ -747,7 +748,7 @@
           ...paymentLabels.map((label) =>
             h(ElTag, { effect: 'plain', type: pluginPaymentTagType(label) }, () => label)
           ),
-          h(ElTag, { effect: 'plain', type: 'info' }, () => accessLabel)
+          ...(accessLabel ? [h(ElTag, { effect: 'plain', type: 'info' }, () => accessLabel)] : [])
         ])
       }
     },
@@ -1554,6 +1555,23 @@
     gap: 16px;
     min-height: 100%;
     padding-bottom: 16px;
+    --plugin-name-color: var(--el-text-color-primary);
+    --plugin-switcher-border: rgb(226 232 240 / 0.92);
+    --plugin-switcher-bg: linear-gradient(180deg, rgb(248 250 252 / 0.96), rgb(255 255 255 / 1));
+    --plugin-switcher-active-bg:
+      radial-gradient(circle at top right, rgb(59 130 246 / 0.12), transparent 36%),
+      linear-gradient(180deg, rgb(239 246 255 / 0.98), rgb(255 255 255 / 1));
+    --plugin-switcher-label-color: #111827;
+  }
+
+  :global(html.dark .payment-plugin-page ){
+    --plugin-name-color: #e2e8f0;
+    --plugin-switcher-border: rgb(71 85 105 / 0.52);
+    --plugin-switcher-bg: linear-gradient(180deg, rgb(15 23 42 / 0.84), rgb(30 41 59 / 0.78));
+    --plugin-switcher-active-bg:
+      radial-gradient(circle at top right, rgb(59 130 246 / 0.18), transparent 36%),
+      linear-gradient(180deg, rgb(30 41 59 / 0.92), rgb(15 23 42 / 0.86));
+    --plugin-switcher-label-color: #dbe7f5;
   }
 
   .plugin-main-cell {
@@ -1579,7 +1597,7 @@
   }
 
   .plugin-name {
-    color: #111827;
+    color: var(--plugin-name-color);
     flex: 1;
     min-width: 0;
     font-size: 14px;
@@ -1628,9 +1646,9 @@
     min-height: 34px;
     padding: 6px 10px;
     text-align: center;
-    border: 1px solid rgb(226 232 240 / 0.92);
+    border: 1px solid var(--plugin-switcher-border);
     border-radius: 8px;
-    background: linear-gradient(180deg, rgb(248 250 252 / 0.96), rgb(255 255 255 / 1));
+    background: var(--plugin-switcher-bg);
     cursor: pointer;
     transition:
       border-color 0.2s ease,
@@ -1646,14 +1664,12 @@
 
   .plugin-detail-switcher__item--active {
     border-color: rgb(59 130 246 / 0.48);
-    background:
-      radial-gradient(circle at top right, rgb(59 130 246 / 0.12), transparent 36%),
-      linear-gradient(180deg, rgb(239 246 255 / 0.98), rgb(255 255 255 / 1));
+    background: var(--plugin-switcher-active-bg);
     box-shadow: 0 8px 18px rgb(59 130 246 / 0.1);
   }
 
   .plugin-detail-switcher__label {
-    color: #111827;
+    color: var(--plugin-switcher-label-color);
     font-size: 12px;
     font-weight: 600;
     line-height: 1.2;

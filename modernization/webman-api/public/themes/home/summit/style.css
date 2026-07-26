@@ -1,0 +1,7 @@
+ThemeName: Summit 首页模板
+Description: 强调入口聚合与信息密度的首页布局，适合突出接入转化。
+Version: 1.0.0
+
+:root {
+  --theme-home-summit: 1;
+}

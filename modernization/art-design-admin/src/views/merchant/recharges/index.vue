@@ -79,9 +79,7 @@
                   <span>{{ translateMerchantText(method.description) }}</span>
                 </button>
               </div>
-              <div v-else class="merchant-empty-box">
-                暂无可用充值方式
-              </div>
+              <div v-else class="merchant-empty-box"> 暂无可用充值方式 </div>
             </div>
           </div>
 
@@ -181,7 +179,6 @@
             <ElButton type="primary" @click="loadRecharges(true)">查询</ElButton>
             <ElButton plain :disabled="!hasActiveFilters" @click="resetFilters">重置</ElButton>
           </div>
-
         </div>
 
         <ElTable :data="records" empty-text="暂无充值记录">
@@ -841,6 +838,21 @@
     margin: 6px 0 0;
     color: var(--merchant-muted);
     line-height: 1.7;
+  }
+
+  :global(html.dark .cashier-dialog__qr ){
+    background: rgb(15 23 42 / 84%);
+    border-color: rgb(71 85 105 / 34%);
+  }
+
+  :global(html.dark .cashier-dialog__qr img ){
+    background: rgb(15 23 42 / 92%);
+    box-shadow: 0 14px 36px rgb(2 6 23 / 28%);
+  }
+
+  :global(html.dark .cashier-status-card ){
+    background: rgb(37 99 235 / 12%);
+    border-color: rgb(96 165 250 / 18%);
   }
 
   @media (width <= 900px) {

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="orders-page art-full-height">
     <ArtSearchBar
       v-model="searchForm"
@@ -128,7 +128,7 @@
 <script setup lang="ts">
   import { ElMessage, ElTag } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtButtonTable from '@/components/core/forms/artButtonTable/index.vue'
   import { fetchGetOrderDetail, fetchGetOrderList } from '@/api/orders'
   import { displayAdminFixtureText } from '@/utils/adminFixtureText'
   import type { ApiResponse } from '@/utils/table/tableCache'

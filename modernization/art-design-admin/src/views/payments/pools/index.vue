@@ -102,8 +102,8 @@
   import { useAuth } from '@/hooks'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import { displayAdminFixtureText } from '@/utils/adminFixtureText'
-  import PaymentPoolChannelEditorDialog from './modules/payment-pool-channel-editor-dialog.vue'
-  import PaymentPoolDetailDrawer from './modules/payment-pool-detail-drawer.vue'
+  import PaymentPoolChannelEditorDialog from './modules/PaymentPoolChannelEditorDialog.vue'
+  import PaymentPoolDetailDrawer from './modules/PaymentPoolDetailDrawer.vue'
   import {
     assignPaymentPoolCreateFormState,
     assignPaymentPoolEditFormState,
@@ -125,13 +125,13 @@
     syncPaymentPoolStatusFormFromEditable,
     togglePaymentPoolChannelRowSelection,
     updatePaymentPoolChannelRowWeight
-  } from './modules/payment-pool-form-state'
+  } from './modules/paymentPoolFormState'
   import type {
     PaymentPoolCreateFormState,
     PaymentPoolEditFormState,
     PaymentPoolStatusFormState
-  } from './modules/payment-pool-form-state'
-  import PaymentPoolMaintenanceDialogs from './modules/payment-pool-maintenance-dialogs.vue'
+  } from './modules/paymentPoolFormState'
+  import PaymentPoolMaintenanceDialogs from './modules/PaymentPoolMaintenanceDialogs.vue'
   import {
     fetchCreatePaymentPool,
     fetchDeletePaymentPool,
@@ -142,7 +142,7 @@
     fetchSavePaymentPoolChannels,
     fetchUpdatePaymentPool,
     fetchUpdatePaymentPoolStatus
-  } from '@/api/payment-pools'
+  } from '@/api/paymentPools'
 
   defineOptions({ name: 'PaymentPools' })
 

@@ -1,0 +1,118 @@
+{
+  "code": "leshua",
+  "name": "乐刷支付插件",
+  "description": "用于统一管理乐刷上游商户号、交易密钥和异步通知密钥的托管插件。",
+  "version": "1.0.0",
+  "provider": "AiPay 官方",
+  "entry": "plugins/payments/leshua/src/Plugin.php",
+  "class": "Plugins\\Payments\\Leshua\\Plugin",
+  "capabilities": [
+    "admin_account",
+    "create_order",
+    "query",
+    "refund",
+    "notify"
+  ],
+  "merchant_enabled": true,
+  "supported_payment_types": [
+    "alipay",
+    "wxpay"
+  ],
+  "managed_channels": [
+    {
+      "code": "leshua",
+      "name": "乐刷支付插件",
+      "type": "alipay",
+      "info": "一个插件目录统一管理乐刷支付宝与微信上游账号。",
+      "status": 1,
+      "sort": 110,
+      "maxcount": 999
+    }
+  ],
+  "migrations": {
+    "strategy": "versioned_sql",
+    "releases": [
+      {
+        "version": "1.0.0",
+        "files": [
+          "001_create_config_table.sql",
+          "002_create_plugin_log_table.sql"
+        ],
+        "notes": [
+          "初始化乐刷支付插件的配置表和日志表。",
+          "统一托管乐刷支付宝与微信账号的商户号、交易密钥和通知密钥。"
+        ]
+      }
+    ]
+  },
+  "upgrade": {
+    "impact": "low",
+    "downtime": "none",
+    "requires_disable_after_upgrade": false,
+    "notes": [
+      "该插件负责乐刷网关下单、查单、退款和异步回调处理。",
+      "账号凭证沿用共享收款账号字段：wxname=商户号，cookie=交易密钥，qr_url=通知密钥。"
+    ],
+    "checklist": [
+      "升级前确认没有未完成的插件清理计划。",
+      "升级后检查 admin_channel 中 leshua 通道仍处于插件托管状态。"
+    ],
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "summary": "乐刷支付插件目录首版。",
+        "breaking": false,
+        "migration_files": [
+          "001_create_config_table.sql",
+          "002_create_plugin_log_table.sql"
+        ],
+        "notes": [
+          "支持乐刷支付宝与微信托管下单。",
+          "支持乐刷查单、退款和异步通知闭环。"
+        ]
+      }
+    ],
+    "rollback": {
+      "supported": true,
+      "mode": "backup_restore",
+      "automatic": false,
+      "requires_backup": true,
+      "notes": [
+        "回滚前请先恢复插件目录和 pay_plugin_leshua_* 数据表。",
+        "业务订单、商户、资金和结算数据不在插件清理范围内。"
+      ]
+    }
+  },
+  "cleanup": {
+    "safe": {
+      "files": [
+        "runtime/payment-plugins/leshua"
+      ],
+      "tables": [
+        "pay_plugin_leshua_config"
+      ],
+      "notes": [
+        "安全清理仅移除运行时目录和插件自有配置表。"
+      ]
+    },
+    "purge": {
+      "files": [
+        "plugins/payments/leshua"
+      ],
+      "tables": [
+        "pay_plugin_leshua_log"
+      ],
+      "notes": [
+        "彻底清理会移除插件目录和日志表，并尝试清理插件托管通道。"
+      ]
+    },
+    "retain": [
+      "支付账户主记录",
+      "历史订单",
+      "资金和结算记录",
+      "商户业务数据",
+      "平台审计日志"
+    ],
+    "purge_requires_confirmation": true
+  }
+}

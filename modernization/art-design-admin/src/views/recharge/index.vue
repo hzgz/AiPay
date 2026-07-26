@@ -152,7 +152,7 @@
 <script setup lang="ts">
   import { ElMessage, ElTag } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtButtonTable from '@/components/core/forms/artButtonTable/index.vue'
   import { fetchGetRechargeDetail, fetchGetRechargeList } from '@/api/recharge'
   import { displayAdminFixtureText } from '@/utils/adminFixtureText'
   import type { ApiResponse } from '@/utils/table/tableCache'
@@ -445,6 +445,17 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    --detail-card-border: var(--el-border-color-lighter);
+    --detail-card-bg: rgb(248 250 252 / 0.82);
+    --detail-title-color: #0f172a;
+    --detail-text-color: #64748b;
+  }
+
+  :global(html.dark .recharge-page ){
+    --detail-card-border: rgb(71 85 105 / 0.42);
+    --detail-card-bg: rgb(15 23 42 / 0.84);
+    --detail-title-color: #e2e8f0;
+    --detail-text-color: #94a3b8;
   }
 
   .recharge-cell,
@@ -456,14 +467,14 @@
   }
 
   .cell-title {
-    color: #0f172a;
+    color: var(--detail-title-color);
     font-size: 14px;
     word-break: break-all;
   }
 
   .cell-sub {
     margin: 0;
-    color: #64748b;
+    color: var(--detail-text-color);
     font-size: 12px;
     line-height: 1.6;
     word-break: break-all;
@@ -479,7 +490,7 @@
 
   .drawer-section h4 {
     margin: 0 0 12px;
-    color: #0f172a;
+    color: var(--detail-title-color);
     font-size: 15px;
   }
 
@@ -494,18 +505,18 @@
     flex-direction: column;
     gap: 6px;
     padding: 14px 16px;
-    border: 1px solid var(--el-border-color-lighter);
+    border: 1px solid var(--detail-card-border);
     border-radius: 14px;
-    background: rgb(248 250 252 / 0.82);
+    background: var(--detail-card-bg);
   }
 
   .drawer-item span {
-    color: #64748b;
+    color: var(--detail-text-color);
     font-size: 12px;
   }
 
   .drawer-item strong {
-    color: #0f172a;
+    color: var(--detail-title-color);
     word-break: break-all;
   }
 

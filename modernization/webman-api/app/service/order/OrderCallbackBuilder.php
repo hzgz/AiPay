@@ -117,4 +117,5 @@ final class OrderCallbackBuilder
 
         return $row ? (array)$row : ['callback_hiddenName' => 0];
     }
+
 }

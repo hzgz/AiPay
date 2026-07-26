@@ -1,3 +1,8 @@
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
+
 // 自定义四点旋转SVG
 export const fourDotsSpinnerSvg = `
   <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">

@@ -1,3 +1,6 @@
+-- 版权归属 TG:RENBUZAIHA 所有
+-- 唯一发布路径: https://github.com/hzgz/AiPay.git
+
 SET @order_table := CONCAT('aip', 'ay_', 'order');
 SET @account_table := CONCAT('aip', 'ay_', 'account');
 SET @pool_item_table := CONCAT('aip', 'ay_', 'poll_pool_item');

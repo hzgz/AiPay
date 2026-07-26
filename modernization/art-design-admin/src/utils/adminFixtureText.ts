@@ -1,3 +1,8 @@
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
+
 const EXACT_MAP: Record<string, string> = {
   'safe dependent update': '安全依赖更新记录',
   'plugin managed fixture': '插件托管记录',

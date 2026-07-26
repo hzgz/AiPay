@@ -1,4 +1,9 @@
-﻿<template>
+﻿<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
+<template>
   <div class="orders-page art-full-height">
     <ArtSearchBar
       v-model="searchForm"

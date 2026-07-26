@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <template>
   <ElSubMenu v-if="hasChildren" :index="item.path || item.meta.title" class="!p-0">
     <template #title>

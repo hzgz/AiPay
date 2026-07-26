@@ -1,3 +1,8 @@
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
+
 /**
  * API 接口类型定义模块
  *
@@ -1043,7 +1048,7 @@ declare namespace Api {
       table_name: string
       column_name: string
       count: number
-      delete_action: 'delete' | 'block'
+      delete_action: 'delete' | 'block' | 'release'
       help_text: string
     }
 

@@ -1,3 +1,8 @@
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
+
 import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { resolveBackendOrigin } from '@/utils/http/base'
 import { clearMerchantFrontToken, getMerchantFrontToken } from '@/utils/merchantSession'

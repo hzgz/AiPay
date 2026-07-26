@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <!-- 图片裁剪组件 github: https://github.com/acccccccb/vue-img-cutter/tree/master -->
 <template>
   <div class="cutter-container">

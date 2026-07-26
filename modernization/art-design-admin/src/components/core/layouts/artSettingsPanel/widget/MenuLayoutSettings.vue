@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <template>
   <div v-if="width > 1000">
     <SectionTitle :title="$t('setting.menuType.title')" />

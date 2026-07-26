@@ -1,3 +1,6 @@
+-- 版权归属 TG:RENBUZAIHA 所有
+-- 唯一发布路径: https://github.com/hzgz/AiPay.git
+
 -- AiPay clean install asset
 -- Generated from the current Webman database on 2026-07-17 12:28:57
 -- This file is intended for brand-new installations.

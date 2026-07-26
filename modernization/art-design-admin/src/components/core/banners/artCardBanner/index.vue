@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <!-- 卡片横幅组件 -->
 <template>
   <div class="art-card-sm flex-c flex-col pb-6" :style="{ height: height }">

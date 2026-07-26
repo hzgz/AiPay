@@ -1,3 +1,6 @@
+-- 版权归属 TG:RENBUZAIHA 所有
+-- 唯一发布路径: https://github.com/hzgz/AiPay.git
+
 -- Replace legacy content permissions with theme management permissions.
 -- Safe to run on upgraded databases.
 

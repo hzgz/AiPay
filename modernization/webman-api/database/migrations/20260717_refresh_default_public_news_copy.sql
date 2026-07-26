@@ -1,3 +1,6 @@
+-- 版权归属 TG:RENBUZAIHA 所有
+-- 唯一发布路径: https://github.com/hzgz/AiPay.git
+
 -- 2026-07-17
 -- Refresh the default public announcement copy for clean AiPay releases.
 -- This keeps existing installs free of internal modernization wording.

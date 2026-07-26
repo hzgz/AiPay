@@ -2,6 +2,9 @@
 
 AiPay 是一款可商用的码支付系统，同时兼容易支付V1协议。
 
+> 版权归属 `TG:RENBUZAIHA` 所有。唯一发布路径：[hzgz/AiPay.git](https://github.com/hzgz/AiPay.git)。
+> 第一方源码、文档、脚本、配置与静态资源统一受仓库版权声明约束，第三方依赖与 SDK 保留各自原始版权与许可证。详见 [COPYRIGHT.md](./COPYRIGHT.md)。
+
 ## 系统定位
 
 - `8132`：统一前端壳，承载游客首页、商户端、管理员端

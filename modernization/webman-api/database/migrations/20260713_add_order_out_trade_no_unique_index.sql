@@ -1,3 +1,6 @@
+-- 版权归属 TG:RENBUZAIHA 所有
+-- 唯一发布路径: https://github.com/hzgz/AiPay.git
+
 SET @order_table := CONCAT('aip', 'ay_', 'order');
 SET @old_index := 'idx_out_trade_no';
 SET @new_index := CONCAT('uq_', 'aip', 'ay_order_out_trade_no');

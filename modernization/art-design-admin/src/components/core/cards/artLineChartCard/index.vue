@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <!-- 折线图卡片 -->
 <template>
   <div class="art-card relative overflow-hidden" :style="{ height: `${height}rem` }">

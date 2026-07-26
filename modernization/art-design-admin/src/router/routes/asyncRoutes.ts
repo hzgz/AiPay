@@ -1,3 +1,8 @@
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
+
 // 权限文档：https://www.artd.pro/docs/zh/guide/in-depth/permission.html
 import { AppRouteRecord } from '@/types/router'
 import { routeModules } from '../modules'

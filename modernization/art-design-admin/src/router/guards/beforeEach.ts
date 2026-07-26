@@ -1,3 +1,8 @@
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
+
 import type { NavigationGuardNext, RouteLocationNormalized, Router } from 'vue-router'
 import { nextTick } from 'vue'
 import NProgress from 'nprogress'

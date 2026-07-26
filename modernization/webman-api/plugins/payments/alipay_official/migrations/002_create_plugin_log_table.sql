@@ -1,3 +1,6 @@
+-- 版权归属 TG:RENBUZAIHA 所有
+-- 唯一发布路径: https://github.com/hzgz/AiPay.git
+
 CREATE TABLE IF NOT EXISTS `pay_plugin_alipay_official_log` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `plugin_code` VARCHAR(64) NOT NULL DEFAULT 'alipay_official',

@@ -1,3 +1,6 @@
+-- 版权归属 TG:RENBUZAIHA 所有
+-- 唯一发布路径: https://github.com/hzgz/AiPay.git
+
 -- 2026-07-12
 -- Repair callback/reconcile task table prefix drift without mutating the
 -- original migration checksum that may already be recorded in production.

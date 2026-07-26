@@ -1,3 +1,8 @@
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
+
 export type PaymentAccountCredentialField = 'extra_value' | 'qr_url'
 export type PaymentAccountFieldEditor = 'hidden' | 'image' | 'qr-decode' | 'text' | 'textarea'
 

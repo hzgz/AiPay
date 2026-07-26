@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <template>
   <div class="merchant-page">
     <section class="merchant-page-header">
@@ -318,7 +323,7 @@
                 >功能状态 {{ accountCancellationEnabled ? '已开启' : '未开启' }}</span
               >
               <span class="merchant-chip"
-                >提交状态 {{ accountCancellationAllowed ? '可提交' : '暂不可提交' }}</span
+                >提交状态 {{ accountCancellationAllowed ? '可提交' : '未开启' }}</span
               >
             </div>
 
@@ -338,7 +343,7 @@
                 <div>{{ accountCancellation.summary?.non_empty_target_count ?? 0 }} 项</div>
               </div>
               <div class="merchant-kv-item">
-                <span>阻塞项</span>
+                <span>风险项</span>
                 <div>{{ accountCancellation.summary?.blocking_reference_count ?? 0 }} 项</div>
               </div>
               <div class="merchant-kv-item">
@@ -347,29 +352,13 @@
               </div>
             </div>
 
-            <div
-              v-if="(accountCancellation.blocking_reasons || []).length"
-              class="merchant-warning-list"
-            >
+            <div v-if="accountCancellationNoticeList.length" class="merchant-warning-list">
               <div
-                v-for="reason in accountCancellation.blocking_reasons || []"
-                :key="reason"
+                v-for="notice in accountCancellationNoticeList"
+                :key="notice"
                 class="merchant-warning-list__item"
               >
-                {{ translateMerchantText(reason) }}
-              </div>
-            </div>
-
-            <div
-              v-else-if="(accountCancellation.warnings || []).length"
-              class="merchant-warning-list merchant-warning-list--muted"
-            >
-              <div
-                v-for="warning in accountCancellation.warnings || []"
-                :key="warning"
-                class="merchant-warning-list__item"
-              >
-                {{ translateMerchantText(warning) }}
+                {{ translateMerchantText(notice) }}
               </div>
             </div>
 
@@ -386,12 +375,10 @@
             />
 
             <div class="merchant-form-actions merchant-form-actions--split">
-              <span class="merchant-fine-print">
-                {{ accountCancellationAllowed ? '提交后会退出当前登录。' : '请先处理阻塞项。' }}
-              </span>
+              <span class="merchant-fine-print">提交后会退出当前登录。</span>
               <ElButton
                 type="danger"
-                :disabled="!accountCancellationAllowed"
+                :disabled="!accountCancellationEnabled"
                 :loading="accountCancellationSubmitting"
                 @click="handleCancelAccount"
               >
@@ -499,8 +486,16 @@
     Boolean(accountCancellation.value?.feature_enabled)
   )
   const accountCancellationAllowed = computed(() =>
-    Boolean(payload.value?.write_actions?.account_cancellation)
+    accountCancellationEnabled.value && Boolean(payload.value?.write_actions?.account_cancellation)
   )
+  const accountCancellationNoticeList = computed<string[]>(() => {
+    const notices = [
+      ...((accountCancellation.value?.warnings as string[]) || []),
+      ...((accountCancellation.value?.blocking_reasons as string[]) || [])
+    ]
+
+    return notices.filter((item) => Boolean(String(item || '').trim()))
+  })
 
   const summaryCards = computed(() => [
     {
@@ -675,15 +670,6 @@
       return
     }
 
-    if (!accountCancellationAllowed.value) {
-      ElMessage.warning(
-        translateMerchantText(
-          accountCancellation.value?.blocking_reasons?.[0] || '当前账号暂不满足注销条件'
-        )
-      )
-      return
-    }
-
     if (!confirmationPhrase || accountCancellationConfirmation.value !== confirmationPhrase) {
       ElMessage.warning('确认口令不正确，请按页面提示输入后再提交')
       return
@@ -691,7 +677,7 @@
 
     try {
       await ElMessageBox.confirm(
-        '注销后将立即清理当前商户归属数据，且不可恢复，确认继续吗？',
+        '注销后将立即清理当前商户归属数据，余额、下级关系和未完成交易等将按自愿放弃处理，且不可恢复，确认继续吗？',
         '确认注销',
         {
           type: 'warning',

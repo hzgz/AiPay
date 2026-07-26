@@ -1,3 +1,8 @@
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
+
 // 从 URL 和路径模块中导入必要的功能
 import fs from 'fs'
 import path, { dirname } from 'path'

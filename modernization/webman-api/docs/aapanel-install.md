@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 # AiPay aaPanel 安装说明
 
 这套流程专门给 aaPanel 使用，核心原则是：

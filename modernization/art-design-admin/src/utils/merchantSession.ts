@@ -1,3 +1,8 @@
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
+
 const MERCHANT_FRONT_TOKEN_KEY = 'aipay_merchant_front_token'
 const MERCHANT_FRONT_COOKIE_KEY = 'front_token'
 

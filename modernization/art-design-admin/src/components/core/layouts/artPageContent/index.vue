@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <!-- 布局内容 -->
 <template>
   <div class="layout-content" :class="{ 'overflow-auto': isFullPage }" :style="containerStyle">

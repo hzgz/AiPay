@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <!-- WangEditor 富文本编辑器 插件地址：https://www.wangeditor.com/ -->
 <template>
   <div class="editor-wrapper">

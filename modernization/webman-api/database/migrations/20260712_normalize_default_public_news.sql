@@ -1,3 +1,6 @@
+-- 版权归属 TG:RENBUZAIHA 所有
+-- 唯一发布路径: https://github.com/hzgz/AiPay.git
+
 -- 2026-07-12
 -- Normalize the default public welcome announcement for clean AiPay releases.
 -- Apply once against the existing project database to remove preview-environment wording.

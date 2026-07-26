@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <!-- 面包屑导航 -->
 <template>
   <nav class="ml-2.5 max-lg:!hidden" aria-label="面包屑导航">

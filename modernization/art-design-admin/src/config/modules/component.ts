@@ -1,4 +1,9 @@
-﻿/**
+﻿/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
+
+/**
  * 全局组件配置
  *
  * 统一管理系统级全局组件的注册。

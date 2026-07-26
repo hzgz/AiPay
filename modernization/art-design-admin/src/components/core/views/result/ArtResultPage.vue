@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <template>
   <div class="page-content box-border !px-20 py-3.5 text-center max-md:!px-5" :class="type">
     <ArtSvgIcon

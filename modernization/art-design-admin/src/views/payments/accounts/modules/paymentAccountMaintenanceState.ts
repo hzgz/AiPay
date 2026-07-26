@@ -1,3 +1,8 @@
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
+
 import { ElMessage } from 'element-plus'
 import { isPaymentAccountDecimalValue as isDecimalValue } from '@/views/shared/paymentAccountPageShared'
 import { getAccountCodeMeta } from '@/views/shared/paymentAccountMeta'

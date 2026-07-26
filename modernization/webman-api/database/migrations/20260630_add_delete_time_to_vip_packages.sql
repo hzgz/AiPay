@@ -1,3 +1,6 @@
+-- 版权归属 TG:RENBUZAIHA 所有
+-- 唯一发布路径: https://github.com/hzgz/AiPay.git
+
 -- 2026-06-30
 -- Add compatibility-safe soft-delete support for VIP recycle / restore in the Webman admin backend.
 -- Apply once against the existing project database before enabling VIP recycle actions.

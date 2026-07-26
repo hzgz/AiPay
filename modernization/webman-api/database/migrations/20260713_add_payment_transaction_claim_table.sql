@@ -1,3 +1,6 @@
+-- 版权归属 TG:RENBUZAIHA 所有
+-- 唯一发布路径: https://github.com/hzgz/AiPay.git
+
 -- 2026-07-13
 -- Create the payment transaction claim table used for replay-safe provider settlement.
 -- Keeps physical legacy table names compatible with existing installs.

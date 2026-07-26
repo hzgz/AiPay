@@ -1,4 +1,8 @@
 <?php
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
 
 namespace app\controller;
 
@@ -985,12 +989,6 @@ HTML;
 
         if (!hash_equals((string)($audit['confirmation_phrase'] ?? ''), $confirmation)) {
             return $this->merchantJson(422, '注销确认口令不正确', 422, [
-                'account_cancellation' => MerchantPortalCancellationSupport::payload($merchant, $audit),
-            ]);
-        }
-
-        if (!($audit['can_delete'] ?? false)) {
-            return $this->merchantJson(422, '当前账号暂不满足注销条件，请先处理拦截项', 422, [
                 'account_cancellation' => MerchantPortalCancellationSupport::payload($merchant, $audit),
             ]);
         }

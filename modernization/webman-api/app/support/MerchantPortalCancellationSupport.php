@@ -1,4 +1,8 @@
 <?php
+/*
+ * 版权归属 TG:RENBUZAIHA 所有
+ * 唯一发布路径: https://github.com/hzgz/AiPay.git
+ */
 
 declare(strict_types=1);
 
@@ -17,7 +21,7 @@ class MerchantPortalCancellationSupport
     {
         $featureEnabled = self::featureEnabled();
         $audit = $audit ?? self::audit($merchant);
-        $canSubmit = $featureEnabled && (bool)($audit['can_delete'] ?? false);
+        $canSubmit = $featureEnabled;
         $summary = (array)($audit['summary'] ?? []);
 
         return [
@@ -40,9 +44,7 @@ class MerchantPortalCancellationSupport
             ],
             'write_message' => !$featureEnabled
                 ? '系统未开启商户账户注销功能。'
-                : ($canSubmit
-                    ? '账号注销已开放，提交后会清理当前商户及其归属数据，并立即退出登录。'
-                    : '当前账号暂不满足注销条件，请先处理拦截项后再提交。'),
+                : '账号注销已开放。余额、下级关系、未完成交易等将按商户自愿放弃处理，不再作为拦截条件；提交后会立即清理当前商户及其归属数据，并退出当前登录。',
         ];
     }
 
@@ -60,8 +62,8 @@ class MerchantPortalCancellationSupport
                 'table_name' => BusinessTable::user(),
                 'column_name' => 'superior_id',
                 'count' => $subordinateCount,
-                'delete_action' => 'block',
-                'help_text' => '存在下级商户时不允许自助注销，避免留下悬空的上下级关系。',
+                'delete_action' => 'release',
+                'help_text' => '注销提交后会自动解除当前商户与下级商户的上下级关系，下级商户账号保留。',
             ],
             [
                 'key' => 'pending_orders',
@@ -69,8 +71,8 @@ class MerchantPortalCancellationSupport
                 'table_name' => BusinessTable::order(),
                 'column_name' => 'user_id',
                 'count' => $pendingOrderCount,
-                'delete_action' => 'block',
-                'help_text' => '请先处理未完成订单，避免支付回调或补单流程中断。',
+                'delete_action' => 'delete',
+                'help_text' => '注销提交后会一并清理未完成订单，相关交易按商户自愿放弃处理。',
             ],
             [
                 'key' => 'pending_recharges',
@@ -78,8 +80,8 @@ class MerchantPortalCancellationSupport
                 'table_name' => BusinessTable::recharge(),
                 'column_name' => 'user_id',
                 'count' => $pendingRechargeCount,
-                'delete_action' => 'block',
-                'help_text' => '请先处理未完成充值记录，避免后续到账与对账异常。',
+                'delete_action' => 'delete',
+                'help_text' => '注销提交后会一并清理未完成充值记录，相关到账与对账按商户自愿放弃处理。',
             ],
         ];
 
@@ -103,45 +105,54 @@ class MerchantPortalCancellationSupport
             ];
         }
 
-        $blockingReasons = [];
+        $warnings = [
+            '账号注销不可恢复，将同步清理当前商户归属的通道、订单、日志、工单等数据。',
+            '余额、下级关系、未完成交易等将按商户自愿放弃处理，不再作为注销拦截条件。',
+        ];
         if ($balanceAmount > 0) {
-            $blockingReasons[] = sprintf('当前账户仍有 %.2f 元余额，请先处理余额后再注销。', $balanceAmount);
+            $warnings[] = sprintf('当前账户仍有 %.2f 元余额，提交注销后将视为自愿放弃，不再返还。', $balanceAmount);
         }
         if ($subordinateCount > 0) {
-            $blockingReasons[] = sprintf('当前账户仍绑定 %d 个下级商户，请先调整上下级关系。', $subordinateCount);
+            $warnings[] = sprintf('当前账户仍绑定 %d 个下级商户，提交注销后会自动解除上下级关系，下级商户账号保留。', $subordinateCount);
         }
         if ($pendingOrderCount > 0) {
-            $blockingReasons[] = sprintf('当前账户仍有 %d 笔未完成订单，请先处理。', $pendingOrderCount);
+            $warnings[] = sprintf('当前账户仍有 %d 笔未完成订单，提交注销后会一并清理，相关交易视为自愿放弃。', $pendingOrderCount);
         }
         if ($pendingRechargeCount > 0) {
-            $blockingReasons[] = sprintf('当前账户仍有 %d 笔未完成充值，请先处理。', $pendingRechargeCount);
+            $warnings[] = sprintf('当前账户仍有 %d 笔未完成充值，提交注销后会一并清理，相关记录视为自愿放弃。', $pendingRechargeCount);
+        }
+
+        $riskReferenceCount = 0;
+        foreach ([$balanceAmount > 0, $subordinateCount > 0, $pendingOrderCount > 0, $pendingRechargeCount > 0] as $flag) {
+            if ($flag) {
+                $riskReferenceCount++;
+            }
         }
 
         return [
             'merchant_id' => $merchantId,
             'merchant_username' => trim((string)($merchant['username'] ?? '')),
             'confirmation_phrase' => self::confirmationPhrase($merchantId),
-            'can_delete' => $blockingReasons === [],
-            'blocking_reasons' => $blockingReasons,
+            'can_delete' => true,
+            'blocking_reasons' => [],
             'related_counts' => $relatedCounts,
             'summary' => [
                 'delete_row_count' => $deleteRowCount,
                 'non_empty_target_count' => $nonEmptyTargetCount,
-                'blocking_reference_count' => $subordinateCount + $pendingOrderCount + $pendingRechargeCount,
+                'blocking_reference_count' => $riskReferenceCount,
                 'balance_blocked' => $balanceAmount > 0,
                 'pending_order_count' => $pendingOrderCount,
                 'pending_recharge_count' => $pendingRechargeCount,
                 'subordinate_count' => $subordinateCount,
             ],
-            'warnings' => [
-                '账号注销不可恢复，将同步清理当前商户归属的通道、订单、日志、工单等数据。',
-                '请务必先确认余额、下级关系和未完成交易都已处理完毕。',
-            ],
+            'warnings' => $warnings,
         ];
     }
 
     public static function deleteOwnedRows(int $merchantId): void
     {
+        self::releaseSubordinateMerchants($merchantId);
+
         foreach (self::targets() as $target) {
             if (!self::targetAvailable($target['table'], $target['column'])) {
                 continue;
@@ -151,6 +162,18 @@ class MerchantPortalCancellationSupport
                 ->where($target['column'], $merchantId)
                 ->delete();
         }
+    }
+
+    private static function releaseSubordinateMerchants(int $merchantId): void
+    {
+        $table = BusinessTable::user();
+        if (!self::targetAvailable($table, 'superior_id')) {
+            return;
+        }
+
+        Db::table($table)
+            ->where('superior_id', $merchantId)
+            ->update(['superior_id' => 0]);
     }
 
     private static function countRows(string $table, string $column, int $merchantId): int

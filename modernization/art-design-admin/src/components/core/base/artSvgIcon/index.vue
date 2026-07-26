@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <!-- 图标组件 -->
 <template>
   <Icon v-if="icon" :icon="icon" v-bind="bindAttrs" class="art-svg-icon inline" />

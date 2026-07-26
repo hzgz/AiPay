@@ -1,4 +1,9 @@
-﻿<template>
+﻿<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
+<template>
   <div v-if="enabled" class="MerchantAuthSlider">
     <div class="MerchantAuthSlider__shell" :class="{ 'is-invalid': invalid && !modelValue }">
       <ArtDragVerify

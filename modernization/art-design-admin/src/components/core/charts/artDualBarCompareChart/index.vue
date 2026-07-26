@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <!-- 双向堆叠柱状图 -->
 <template>
   <div ref="chartRef" :style="{ height: props.height }" v-loading="props.loading"> </div>

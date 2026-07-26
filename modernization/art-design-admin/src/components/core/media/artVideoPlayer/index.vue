@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <!-- 视频播放器组件：https://h5player.bytedance.com/-->
 <template>
   <div :id="playerId" />

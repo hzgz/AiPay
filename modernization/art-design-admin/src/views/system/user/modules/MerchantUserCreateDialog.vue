@@ -1,4 +1,9 @@
-﻿<template>
+﻿<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
+<template>
   <ElDialog v-model="dialogVisible" width="620px" destroy-on-close align-center title="新建商户">
     <div v-loading="loading">
       <ElForm label-position="top">

@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 # QQ 软件版插件
 
 该插件把旧 TP 中的 `qqpay_software` 能力收敛为独立支付插件目录。

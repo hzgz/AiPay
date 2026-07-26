@@ -1,3 +1,6 @@
+-- 版权归属 TG:RENBUZAIHA 所有
+-- 唯一发布路径: https://github.com/hzgz/AiPay.git
+
 CREATE TABLE IF NOT EXISTS `ypay_order_callback_task` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `task_key` varchar(160) NOT NULL,

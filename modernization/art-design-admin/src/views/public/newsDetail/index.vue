@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <template>
   <PublicShell :site-name="siteName" :navs="navs" :is-logged-in="isLoggedIn" page-label="公告详情">
     <div class="public-news-detail-page">

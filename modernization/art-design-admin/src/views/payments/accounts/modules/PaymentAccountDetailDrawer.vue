@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <template>
   <ElDrawer v-model="visible" size="780px" destroy-on-close :title="drawerTitle">
     <div v-loading="detailLoading" class="payment-account-detail">

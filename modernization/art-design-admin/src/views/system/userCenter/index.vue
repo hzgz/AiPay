@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <!-- 个人中心页面 -->
 <template>
   <div class="w-full h-full p-0 bg-transparent border-none shadow-none">

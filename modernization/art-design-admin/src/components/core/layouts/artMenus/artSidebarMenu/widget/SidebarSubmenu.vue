@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <template>
   <template v-for="(item, index) in filteredMenuItems" :key="getUniqueKey(item, index)">
     <ElSubMenu

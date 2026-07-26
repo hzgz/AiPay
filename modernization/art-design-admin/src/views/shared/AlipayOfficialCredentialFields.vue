@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 <template>
   <div class="alipay-official-fields">
     <ElFormItem :label="fieldLabel('请选择可用的接口')">

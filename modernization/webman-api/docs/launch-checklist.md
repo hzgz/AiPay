@@ -1,3 +1,8 @@
+<!--
+  版权归属 TG:RENBUZAIHA 所有
+  唯一发布路径: https://github.com/hzgz/AiPay.git
+-->
+
 # AiPay生产上线检查清单
 
 本文档用于 Webman + Art Design Pro 改造后的生产收口。目标不是“能访问”，而是“可正式上线、可回滚、可维护、可审计”。

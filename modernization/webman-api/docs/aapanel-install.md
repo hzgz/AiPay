@@ -65,6 +65,7 @@ sudo bash deploy/linux/install-aapanel.sh
 - 创建管理员账号
 - 可选创建测试商户
 - 同步 `console/` 到 aaPanel 公网目录
+- 保留历史 `assets/` chunk，避免发版后旧浏览器会话因静态资源切版本出现 `404`
 - 安装 Webman systemd 服务
 - 生成 aaPanel rewrite 模板
 - 生成 aaPanel 整站 Config 模板
@@ -105,6 +106,7 @@ sudo bash deploy/linux/install-aapanel.sh \
 - `Path` 保持 aaPanel 默认的 `/www/wwwroot`，让它自动创建 `/www/wwwroot/<你的域名>`
 - `FTP` 和 `Database` 首轮部署都先不要开
 - 然后把发布包里的 `console/` 内容同步到这个目录
+- 后续升级时不要手工清空站点目录里的 `assets/`，应保留旧 chunk 并覆盖新构建，避免后台打开中的旧页面会话动态加载时报 `404`
 - 不要给这个站点套 PHP 运行规则
 - 不要让 PHP 规则接管 `/submit.php`、`/mapi.php`、`/entry`、`/index.php`、`/admin.php`
 - 如果同步前端时遇到 `.user.ini` 无法删除，先执行：

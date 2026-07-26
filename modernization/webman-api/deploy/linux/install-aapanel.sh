@@ -511,7 +511,12 @@ bootstrap_accounts() {
 
 sync_public_root() {
   mkdir -p "${PUBLIC_ROOT}"
-  rsync -a --delete "${SOURCE_CONSOLE_ROOT}/" "${PUBLIC_ROOT}/"
+  mkdir -p "${PUBLIC_ROOT}/assets"
+
+  # Keep historical hashed chunks so active browser sessions do not break
+  # when a new frontend build is deployed during use.
+  rsync -a --delete --exclude 'assets/' "${SOURCE_CONSOLE_ROOT}/" "${PUBLIC_ROOT}/"
+  rsync -a "${SOURCE_CONSOLE_ROOT}/assets/" "${PUBLIC_ROOT}/assets/"
 }
 
 render_aapanel_conf() {

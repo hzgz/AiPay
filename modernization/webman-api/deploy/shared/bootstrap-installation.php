@@ -61,6 +61,8 @@ try {
         $summary['payment_methods'] = [];
     }
 
+    $summary['system_config'] = AiPayInstallSupport::ensureSystemConfigDefaults($pdo);
+
     if ($options['merchant-user'] !== '') {
         $summary['merchant'] = AiPayInstallSupport::ensureMerchant($pdo, [
             'username' => $options['merchant-user'],

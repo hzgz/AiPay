@@ -125,6 +125,7 @@ class SystemConfig
             'isDiy_orderNo' => '0',
             'diy_orderNo' => '',
             'is_reg' => '1',
+            'is_logOff' => '1',
             'merchant_login_drag_verify' => '1',
             'merchant_register_drag_verify' => '1',
             'merchant_retrieve_drag_verify' => '1',

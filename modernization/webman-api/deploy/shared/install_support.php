@@ -457,6 +457,52 @@ final class AiPayInstallSupport
         return $summary;
     }
 
+    /**
+     * @return array<int,array{config_name:string,config_value:string,created:bool}>
+     */
+    public static function ensureSystemConfigDefaults(PDO $pdo): array
+    {
+        self::assertTableExists($pdo, 'admin_config');
+
+        $defaults = [
+            'is_logOff' => '1',
+        ];
+
+        $summary = [];
+        foreach ($defaults as $configName => $configValue) {
+            $existing = self::fetchValue(
+                $pdo,
+                'SELECT config_value FROM admin_config WHERE config_name = :config_name LIMIT 1',
+                [':config_name' => $configName]
+            );
+
+            if ($existing === null) {
+                $statement = $pdo->prepare(
+                    'INSERT INTO admin_config (config_name, config_value) VALUES (:config_name, :config_value)'
+                );
+                $statement->execute([
+                    ':config_name' => $configName,
+                    ':config_value' => $configValue,
+                ]);
+
+                $summary[] = [
+                    'config_name' => $configName,
+                    'config_value' => $configValue,
+                    'created' => true,
+                ];
+                continue;
+            }
+
+            $summary[] = [
+                'config_name' => $configName,
+                'config_value' => (string)$existing,
+                'created' => false,
+            ];
+        }
+
+        return $summary;
+    }
+
     public static function printJson(array $payload): void
     {
         echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . PHP_EOL;

@@ -223,6 +223,164 @@ class SoftwareCompatibilityController
         return $this->monitorResponse(200, '回调成功', $callback);
     }
 
+    public function appReport(Request $request): Response
+    {
+        $this->recordSoftwareReportAudit($request, ['endpoint' => 'appReport', 'stage' => 'received']);
+
+        [$merchant, $errorResponse] = $this->softwareReportMerchant($request);
+        if ($errorResponse instanceof Response) {
+            return $errorResponse;
+        }
+
+        if ($this->isAnonymousPcReportRequest($request)) {
+            $security = $this->anonymousPcReportSecurityContext($request);
+        } else {
+            if ($signatureError = $this->assertSoftwareSignature($request, $merchant, 'token', true)) {
+                return $signatureError;
+            }
+
+            $security = $this->softwareSecurityContext($request, 'token', true);
+        }
+
+        $rawContent = trim((string)$request->input('content', ''));
+        $content = $rawContent === '' ? [] : $this->decodeReportContent($rawContent);
+        if ($content === null) {
+            return $this->monitorResponse(201, "\u{5185}\u{5bb9}\u{89e3}\u{6790}\u{5931}\u{8d25}");
+        }
+
+        if ($this->isPcReportHandshake($request, $content)) {
+            return $this->monitorResponse(200, "\u{8fde}\u{63a5}\u{6210}\u{529f}", [
+                'merchant_id' => (int)($merchant['id'] ?? 0),
+                'merchant_username' => trim((string)($merchant['username'] ?? '')),
+                'path' => method_exists($request, 'path') ? (string)$request->path() : '',
+            ], [
+                'security' => $security,
+            ]);
+        }
+
+        $message = trim((string)($content['msg'] ?? $content['message'] ?? $request->input('msg', $request->input('message', ''))));
+        $type = $this->resolveReportType($request, $content);
+        if ($message === '') {
+            $message = $this->buildReportMessageFallback($request, $content, $type);
+        }
+
+        if ($type === null) {
+            return $this->monitorResponse(400, "\u{6682}\u{4e0d}\u{652f}\u{6301}\u{7684}\u{652f}\u{4ed8}\u{8f6f}\u{4ef6}");
+        }
+
+        $money = $this->resolveReportMoney($request, $content, $message, $type);
+        if ($money === null) {
+            return $this->monitorResponse(201, "\u{672a}\u{80fd}\u{8bc6}\u{522b}\u{5230}\u{91d1}\u{989d}");
+        }
+
+        [$account, $accountError, $accountResolution] = $this->resolveSoftwareReportAccount(
+            $request,
+            $content,
+            (int)($merchant['id'] ?? 0),
+            $type
+        );
+        if ($accountError instanceof Response) {
+            return $accountError;
+        }
+
+        $channelId = (int)($account['id'] ?? 0);
+        $packageName = trim((string)($content['package_name'] ?? $request->input('package_name', $request->input('package', ''))));
+        $orderReferences = $this->resolveSoftwareReportOrderReferences($request, $content);
+
+        try {
+            $order = $this->findPendingSoftwareOrder(
+                (int)($merchant['id'] ?? 0),
+                $channelId,
+                $money,
+                $type,
+                $orderReferences
+            );
+        } catch (\RuntimeException $exception) {
+            return $this->monitorResponse(201, $exception->getMessage(), [
+                'channel_id' => $channelId,
+                'matched_type' => $type,
+                'matched_money' => number_format($money, 2, '.', ''),
+                'order_references' => $orderReferences,
+                'account_resolution' => $accountResolution,
+            ], [
+                'security' => $security,
+            ]);
+        }
+
+        if ($order === null) {
+            $processedOrder = $this->findProcessedSoftwareOrder(
+                (int)($merchant['id'] ?? 0),
+                $channelId,
+                $money,
+                $type,
+                $orderReferences
+            );
+            if ($processedOrder !== null) {
+                return $this->monitorResponse(200, "\u{8ba2}\u{5355}\u{5df2}\u{5904}\u{7406}", array_merge(
+                    $this->processedSoftwareOrderPayload($processedOrder),
+                    [
+                        'matched_package' => $packageName,
+                        'matched_type' => $type,
+                        'matched_money' => number_format($money, 2, '.', ''),
+                        'channel_id' => $channelId,
+                        'order_references' => $orderReferences,
+                        'account_resolution' => $accountResolution,
+                    ]
+                ), [
+                    'security' => $security,
+                ]);
+            }
+
+            return $this->monitorResponse(201, "\u{8ba2}\u{5355}\u{8d85}\u{65f6}\u{6216}\u{4e0d}\u{5b58}\u{5728}", [
+                'matched_package' => $packageName,
+                'matched_type' => $type,
+                'matched_money' => number_format($money, 2, '.', ''),
+                'channel_id' => $channelId,
+                'order_references' => $orderReferences,
+                'account_resolution' => $accountResolution,
+            ], [
+                'security' => $security,
+            ]);
+        }
+
+        try {
+            $callback = $this->settleAndNotifyMerchant($order, $merchant, array_merge(
+                $this->callbackPayload($request, $money),
+                [
+                    'trade_no' => trim((string)($content['trade_no'] ?? $request->input('trade_no', $request->input('platform_trade_no', '')))),
+                    'transaction_id' => trim((string)($content['transaction_id'] ?? $request->input('transaction_id', ''))),
+                    'buyer_trade_no' => trim((string)($content['buyer_trade_no'] ?? $request->input('buyer_trade_no', ''))),
+                    'orderNo' => trim((string)($content['orderNo'] ?? $request->input('orderNo', $request->input('out_trade_no', '')))),
+                    'software_package' => $packageName,
+                    'software_channel_id' => $channelId,
+                    'software_message' => $message,
+                ]
+            ));
+        } catch (\Throwable $exception) {
+            return $this->monitorResponse(201, "\u{4e0a}\u{62a5}\u{5904}\u{7406}\u{5931}\u{8d25}: " . $exception->getMessage(), [
+                'matched_package' => $packageName,
+                'matched_type' => $type,
+                'matched_money' => number_format($money, 2, '.', ''),
+                'channel_id' => $channelId,
+                'order_references' => $orderReferences,
+                'account_resolution' => $accountResolution,
+            ], [
+                'security' => $security,
+            ]);
+        }
+
+        return $this->monitorResponse(200, "\u{5904}\u{7406}\u{6210}\u{529f}", array_merge($callback, [
+            'matched_package' => $packageName,
+            'matched_type' => $type,
+            'matched_money' => number_format($money, 2, '.', ''),
+            'channel_id' => $channelId,
+            'order_references' => $orderReferences,
+            'account_resolution' => $accountResolution,
+        ]), [
+            'security' => $security,
+        ]);
+    }
+
     private function softwareMerchant(Request $request): array
     {
         $merchantId = (int)$request->input('id', 0);
